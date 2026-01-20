@@ -4,7 +4,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -30,6 +30,14 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Leads', icon: Target, page: 'Leads' },
     { name: 'Sales', icon: Briefcase, page: 'Sales' },
     { name: 'Projects', icon: Building2, page: 'Projects' },
+  ];
+
+  const adminNavigation = [
+    { name: 'Commission Admin', icon: Settings, page: 'CommissionsAdmin' },
+  ];
+
+  const userNavigation = [
+    { name: 'My Commissions', icon: DollarSign, page: 'Commissions' },
   ];
 
   const isActive = (pageName) => currentPageName === pageName;
@@ -89,7 +97,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.page);
@@ -113,6 +121,69 @@ export default function Layout({ children, currentPageName }) {
                 </Link>
               );
             })}
+
+            {/* User-specific navigation */}
+            {user && (
+              <>
+                <div className="h-px bg-slate-200 my-4" />
+                {userNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.page);
+                  return (
+                    <Link
+                      key={item.page}
+                      to={createPageUrl(item.page)}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl
+                        transition-all duration-200 group
+                        ${active 
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30' 
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }
+                      `}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-amber-500'}`} />
+                      <span className="font-medium">{item.name}</span>
+                      {active && <ChevronRight className="w-4 h-4 ml-auto" />}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Admin-only navigation */}
+            {user?.role === 'admin' && (
+              <>
+                <div className="h-px bg-slate-200 my-4" />
+                <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Admin
+                </p>
+                {adminNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.page);
+                  return (
+                    <Link
+                      key={item.page}
+                      to={createPageUrl(item.page)}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl
+                        transition-all duration-200 group
+                        ${active 
+                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30' 
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        }
+                      `}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-amber-500'}`} />
+                      <span className="font-medium">{item.name}</span>
+                      {active && <ChevronRight className="w-4 h-4 ml-auto" />}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
 
           {/* User section */}
