@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, Filter, Columns3, BarChart3 } from 'lucide-react';
+import { X, Plus, Filter, Columns3, BarChart3, Calculator } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -20,6 +20,7 @@ export default function ReportBuilder({
   const [groupBy, setGroupBy] = useState(initialConfig.groupBy || '');
   const [aggregations, setAggregations] = useState(initialConfig.aggregations || []);
   const [dateRange, setDateRange] = useState(initialConfig.dateRange || { start: '', end: '' });
+  const [calculatedFields, setCalculatedFields] = useState(initialConfig.calculatedFields || []);
 
   // Extract field information from schema
   const fields = useMemo(() => {
@@ -87,6 +88,23 @@ export default function ReportBuilder({
     emitConfig({ aggregations: newAggs });
   };
 
+  const addCalculatedField = () => {
+    setCalculatedFields([...calculatedFields, { name: '', type: '', phase: '' }]);
+  };
+
+  const updateCalculatedField = (index, key, value) => {
+    const newFields = [...calculatedFields];
+    newFields[index][key] = value;
+    setCalculatedFields(newFields);
+    emitConfig({ calculatedFields: newFields });
+  };
+
+  const removeCalculatedField = (index) => {
+    const newFields = calculatedFields.filter((_, i) => i !== index);
+    setCalculatedFields(newFields);
+    emitConfig({ calculatedFields: newFields });
+  };
+
   const emitConfig = (updates = {}) => {
     const config = {
       filters,
@@ -94,6 +112,7 @@ export default function ReportBuilder({
       groupBy,
       aggregations,
       dateRange,
+      calculatedFields,
       ...updates
     };
     onConfigChange?.(config);
@@ -245,6 +264,70 @@ export default function ReportBuilder({
           <Button variant="outline" size="sm" onClick={addFilter}>
             <Plus className="w-4 h-4 mr-2" />
             Add Filter
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Calculated Fields */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Calculator className="w-4 h-4" />
+            Calculated Fields
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-slate-500">Create custom metrics like phase duration or margin %</p>
+          {calculatedFields.map((calc, index) => (
+            <div key={index} className="flex gap-2 items-start bg-slate-50 p-3 rounded-lg">
+              <div className="flex-1 space-y-2">
+                <Input
+                  placeholder="Field name (e.g., 'Avg Design Duration')"
+                  value={calc.name || ''}
+                  onChange={(e) => updateCalculatedField(index, 'name', e.target.value)}
+                />
+                <Select
+                  value={calc.type || ''}
+                  onValueChange={(value) => updateCalculatedField(index, 'type', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Calculation type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="phase_duration">Phase Duration (days)</SelectItem>
+                    <SelectItem value="margin_percentage">Margin %</SelectItem>
+                    <SelectItem value="days_since_created">Days Since Created</SelectItem>
+                  </SelectContent>
+                </Select>
+                {calc.type === 'phase_duration' && (
+                  <Select
+                    value={calc.phase || ''}
+                    onValueChange={(value) => updateCalculatedField(index, 'phase', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select phase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="feasibility">Feasibility</SelectItem>
+                      <SelectItem value="design_material_selections">Design & Material Selections</SelectItem>
+                      <SelectItem value="engineering_permits">Engineering & Permits</SelectItem>
+                      <SelectItem value="pending_construction_sale">Pending Construction Sale</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => removeCalculatedField(index)}
+              >
+                <X className="w-4 h-4 text-red-500" />
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" size="sm" onClick={addCalculatedField} className="w-full">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Calculated Field
           </Button>
         </CardContent>
       </Card>

@@ -19,7 +19,8 @@ export default function Reporting() {
     selectedFields: [],
     groupBy: '',
     aggregations: [],
-    dateRange: { start: '', end: '' }
+    dateRange: { start: '', end: '' },
+    calculatedFields: []
   });
   const [viewMode, setViewMode] = useState('table');
 
@@ -103,9 +104,57 @@ export default function Reporting() {
     return schemas[entity] || null;
   }, [entity]);
 
+  // Calculate derived fields for a single record
+  const calculateField = (record, calc) => {
+    if (!calc.type) return null;
+
+    if (calc.type === 'phase_duration') {
+      if (!record.phase_tracking || !calc.phase) return null;
+      const phaseEntry = record.phase_tracking.find(p => p.phase === calc.phase);
+      if (!phaseEntry || !phaseEntry.entered_date) return null;
+      
+      const startDate = new Date(phaseEntry.entered_date);
+      const endDate = phaseEntry.exited_date ? new Date(phaseEntry.exited_date) : new Date();
+      const days = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24));
+      return days;
+    }
+
+    if (calc.type === 'margin_percentage') {
+      if (record.contract_value && record.actual_costs) {
+        return ((record.contract_value - record.actual_costs) / record.contract_value * 100);
+      }
+      if (record.contract_value && record.estimated_construction_budget) {
+        return ((record.contract_value - record.estimated_construction_budget) / record.contract_value * 100);
+      }
+      return null;
+    }
+
+    if (calc.type === 'days_since_created') {
+      if (!record.created_date) return null;
+      const created = new Date(record.created_date);
+      const now = new Date();
+      return Math.round((now - created) / (1000 * 60 * 60 * 24));
+    }
+
+    return null;
+  };
+
   // Apply filters and date range
   const filteredData = useMemo(() => {
     let filtered = [...rawData];
+
+    // Add calculated fields to each record
+    if (reportConfig.calculatedFields && reportConfig.calculatedFields.length > 0) {
+      filtered = filtered.map(record => {
+        const calculated = {};
+        reportConfig.calculatedFields.forEach(calc => {
+          if (calc.name && calc.type) {
+            calculated[calc.name] = calculateField(record, calc);
+          }
+        });
+        return { ...record, ...calculated };
+      });
+    }
 
     // Date range filter
     if (reportConfig.dateRange.start || reportConfig.dateRange.end) {
@@ -151,7 +200,7 @@ export default function Reporting() {
     });
 
     return filtered;
-  }, [rawData, reportConfig]);
+  }, [rawData, reportConfig.calculatedFields, reportConfig.dateRange, reportConfig.filters]);
 
   // Calculate aggregations and grouping
   const processedData = useMemo(() => {
@@ -268,14 +317,23 @@ export default function Reporting() {
       label: def.description || name
     }));
 
-    const allFields = [...builtInFields, ...schemaFields];
+    // Add calculated fields
+    const calcFields = (reportConfig.calculatedFields || [])
+      .filter(calc => calc.name && calc.type)
+      .map(calc => ({
+        name: calc.name,
+        type: 'number',
+        label: calc.name
+      }));
+
+    const allFields = [...builtInFields, ...schemaFields, ...calcFields];
 
     if (reportConfig.selectedFields.length === 0) {
-      return allFields.slice(0, 6);
+      return [...allFields.slice(0, 6), ...calcFields];
     }
 
-    return allFields.filter(f => reportConfig.selectedFields.includes(f.name));
-  }, [schema, reportConfig.selectedFields]);
+    return allFields.filter(f => reportConfig.selectedFields.includes(f.name) || calcFields.find(cf => cf.name === f.name));
+  }, [schema, reportConfig.selectedFields, reportConfig.calculatedFields]);
 
   // Chart configuration
   const chartConfig = useMemo(() => {
