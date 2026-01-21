@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { Switch } from '@/components/ui/switch.jsx';
 import { Plus, Edit2, Trash2, DollarSign, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 
