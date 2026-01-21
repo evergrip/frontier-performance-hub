@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import ProjectedCompletionDialog from '../components/precon/ProjectedCompletionDialog';
 import LoseProjectDialog from '../components/precon/LoseProjectDialog';
-import { formatCurrency } from '../components/utils/formatters';
+import { formatCurrency } from '@/components/utils/formatters';
 
 export default function Sales() {
   const queryClient = useQueryClient();
