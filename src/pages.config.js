@@ -1,21 +1,25 @@
-import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
-import Leads from './pages/Leads';
-import Sales from './pages/Sales';
-import Projects from './pages/Projects';
 import Commissions from './pages/Commissions';
 import CommissionsAdmin from './pages/CommissionsAdmin';
+import Dashboard from './pages/Dashboard';
+import Leads from './pages/Leads';
+import Projects from './pages/Projects';
+import Sales from './pages/Sales';
+import UsersAdmin from './pages/UsersAdmin';
+import CommissionRules from './pages/CommissionRules';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
     "Clients": Clients,
-    "Leads": Leads,
-    "Sales": Sales,
-    "Projects": Projects,
     "Commissions": Commissions,
     "CommissionsAdmin": CommissionsAdmin,
+    "Dashboard": Dashboard,
+    "Leads": Leads,
+    "Projects": Projects,
+    "Sales": Sales,
+    "UsersAdmin": UsersAdmin,
+    "CommissionRules": CommissionRules,
 }
 
 export const pagesConfig = {

@@ -33,6 +33,8 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const adminNavigation = [
+    { name: 'User Management', icon: Users, page: 'UsersAdmin' },
+    { name: 'Commission Rules', icon: Settings, page: 'CommissionRules' },
     { name: 'Commission Admin', icon: Settings, page: 'CommissionsAdmin' },
   ];
 
