@@ -39,11 +39,16 @@ export default function Reporting() {
   const { data: schema, isLoading: isLoadingSchema } = useQuery({
     queryKey: ['schema', entity],
     queryFn: async () => {
-      if (entity === 'Lead') return await base44.entities.Lead.schema();
-      if (entity === 'Sale') return await base44.entities.Sale.schema();
-      if (entity === 'Project') return await base44.entities.Project.schema();
-      if (entity === 'Client') return await base44.entities.Client.schema();
-      return null;
+      try {
+        if (entity === 'Lead') return await base44.entities.Lead.schema();
+        if (entity === 'Sale') return await base44.entities.Sale.schema();
+        if (entity === 'Project') return await base44.entities.Project.schema();
+        if (entity === 'Client') return await base44.entities.Client.schema();
+        return null;
+      } catch (error) {
+        console.error('Error fetching schema:', error);
+        return null;
+      }
     }
   });
 
