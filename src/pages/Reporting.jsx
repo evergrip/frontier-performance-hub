@@ -36,7 +36,7 @@ export default function Reporting() {
   });
 
   // Fetch entity schema
-  const { data: schema } = useQuery({
+  const { data: schema, isLoading: isLoadingSchema } = useQuery({
     queryKey: ['schema', entity],
     queryFn: async () => {
       if (entity === 'Lead') return await base44.entities.Lead.schema();
@@ -374,7 +374,7 @@ export default function Reporting() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {(isLoading || isLoadingSchema) ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
             </div>
