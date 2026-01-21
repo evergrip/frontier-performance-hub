@@ -304,12 +304,21 @@ export default function Reporting() {
       </Card>
 
       {/* Report Builder */}
-      <ReportBuilder
-        entitySchema={schema}
-        entityName={entity}
-        onConfigChange={setReportConfig}
-        initialConfig={reportConfig}
-      />
+      {schema && (
+        <ReportBuilder
+          entitySchema={schema}
+          entityName={entity}
+          onConfigChange={setReportConfig}
+          initialConfig={reportConfig}
+        />
+      )}
+      {!schema && !isLoadingSchema && (
+        <Card>
+          <CardContent className="py-8 text-center text-slate-500">
+            No schema available for this entity
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Statistics */}
       {summaryStats.length > 0 && (
