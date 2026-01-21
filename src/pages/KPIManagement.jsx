@@ -157,7 +157,7 @@ export default function KPIManagement() {
             <BarChart3 className="w-4 h-4 mr-2" />
             Leads
           </TabsTrigger>
-        </Tabs>
+        </TabsList>
 
         {Object.keys(kpiMetrics).map((key) => (
           <TabsContent key={key} value={key} className="space-y-6">
