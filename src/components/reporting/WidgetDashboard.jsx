@@ -46,7 +46,9 @@ export default function WidgetDashboard({ data, dataSource, initialWidgets, onSa
   };
 
   const generateWidgetData = (widget) => {
+    if (!widget || !widget.config) return [];
     const { groupBy, valueField, aggregation } = widget.config;
+    if (!groupBy) return [];
     const grouped = {};
 
     data.forEach(item => {

@@ -112,7 +112,9 @@ export default function PivotTableBuilder({ data, dataSource, initialConfig, onS
     // Calculate aggregations
     return Object.values(grouped).map(group => {
       const result = { ...group };
-      values.forEach(({ field, aggregation }) => {
+      values.forEach(value => {
+        if (!value || !value.field) return;
+        const { field, aggregation } = value;
         const items = group._items;
         const numericValues = items.map(i => parseFloat(i[field])).filter(v => !isNaN(v));
         
