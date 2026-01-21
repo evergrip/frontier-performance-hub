@@ -35,22 +35,73 @@ export default function Reporting() {
     }
   });
 
-  // Fetch entity schema
-  const { data: schema, isLoading: isLoadingSchema } = useQuery({
-    queryKey: ['schema', entity],
-    queryFn: async () => {
-      try {
-        if (entity === 'Lead') return await base44.entities.Lead.schema();
-        if (entity === 'Sale') return await base44.entities.Sale.schema();
-        if (entity === 'Project') return await base44.entities.Project.schema();
-        if (entity === 'Client') return await base44.entities.Client.schema();
-        return null;
-      } catch (error) {
-        console.error('Error fetching schema:', error);
-        return null;
+  // Get entity schema directly from the entities
+  const schema = useMemo(() => {
+    const schemas = {
+      'Lead': {
+        properties: {
+          'client_id': { type: 'string', description: 'Link to Client entity' },
+          'title': { type: 'string', description: 'Lead title/description' },
+          'source': { type: 'string', enum: ['referral', 'website', 'cold_call', 'networking', 'advertisement', 'other'], description: 'How the lead originated' },
+          'status': { type: 'string', enum: ['new_project_lead', 'initial_video_consult', 'initial_inperson_consultation', 'preconstruction_proposal', 'followup', 'converted', 'disqualified'], description: 'Lead pipeline stage' },
+          'lead_score': { type: 'number', description: 'Qualification score (0-100)' },
+          'estimated_precon_value': { type: 'number', description: 'Estimated preconstruction revenue' },
+          'estimated_construction_value': { type: 'number', description: 'Estimated construction revenue' },
+          'assigned_to': { type: 'string', description: 'User ID of assigned salesperson' },
+          'disqualification_reason': { type: 'string', description: 'Reason the lead was disqualified' },
+          'notes': { type: 'string', description: 'Lead notes' }
+        }
+      },
+      'Sale': {
+        properties: {
+          'client_id': { type: 'string', description: 'Link to Client' },
+          'lead_id': { type: 'string', description: 'Link to Lead' },
+          'sale_type': { type: 'string', enum: ['preconstruction', 'construction'], description: 'Type of sale' },
+          'title': { type: 'string', description: 'Sale/project title' },
+          'status': { type: 'string', enum: ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale', 'closed_won', 'closed_lost'], description: 'Pipeline stage' },
+          'contract_value': { type: 'number', description: 'Total contract value' },
+          'final_precon_value': { type: 'number', description: 'Final preconstruction value' },
+          'projected_completion_month': { type: 'number', description: 'Projected month of completion (1-12)' },
+          'projected_completion_year': { type: 'number', description: 'Projected year of completion' },
+          'estimated_construction_budget': { type: 'number', description: 'Projected construction costs' },
+          'estimated_margin': { type: 'number', description: 'Expected margin percentage' },
+          'assigned_to': { type: 'string', description: 'Primary salesperson user ID' },
+          'notes': { type: 'string', description: 'Sale notes' }
+        }
+      },
+      'Project': {
+        properties: {
+          'client_id': { type: 'string', description: 'Link to Client' },
+          'sale_id': { type: 'string', description: 'Link to originating Sale' },
+          'project_type': { type: 'string', enum: ['preconstruction', 'construction'], description: 'Project type' },
+          'title': { type: 'string', description: 'Project name' },
+          'status': { type: 'string', enum: ['planning', 'design', 'permitting', 'execution', 'completion', 'closed'], description: 'Project stage' },
+          'contract_value': { type: 'number', description: 'Total contract value' },
+          'actual_costs': { type: 'number', description: 'Actual costs incurred' },
+          'actual_margin': { type: 'number', description: 'Calculated margin percentage' },
+          'start_date': { type: 'date', description: 'Project start date' },
+          'target_completion_date': { type: 'date', description: 'Expected completion' },
+          'actual_completion_date': { type: 'date', description: 'Actual completion date' },
+          'project_manager_id': { type: 'string', description: 'User ID of project manager' },
+          'crew_assignment': { type: 'string', enum: ['crew_a', 'crew_b', 'crew_c', 'crew_d', 'unassigned'], description: 'Assigned construction crew' },
+          'notes': { type: 'string', description: 'Project notes' }
+        }
+      },
+      'Client': {
+        properties: {
+          'company_name': { type: 'string', description: 'Company or individual name' },
+          'contact_name': { type: 'string', description: 'Primary contact person' },
+          'email': { type: 'string', description: 'Primary email' },
+          'phone': { type: 'string', description: 'Primary phone number' },
+          'address': { type: 'string', description: 'Business address' },
+          'status': { type: 'string', enum: ['active', 'inactive', 'archived'], description: 'Client status' },
+          'total_project_value': { type: 'number', description: 'Lifetime value' },
+          'notes': { type: 'string', description: 'Internal notes' }
+        }
       }
-    }
-  });
+    };
+    return schemas[entity] || null;
+  }, [entity]);
 
   // Apply filters and date range
   const filteredData = useMemo(() => {
@@ -309,21 +360,12 @@ export default function Reporting() {
       </Card>
 
       {/* Report Builder */}
-      {schema && (
-        <ReportBuilder
-          entitySchema={schema}
-          entityName={entity}
-          onConfigChange={setReportConfig}
-          initialConfig={reportConfig}
-        />
-      )}
-      {!schema && !isLoadingSchema && (
-        <Card>
-          <CardContent className="py-8 text-center text-slate-500">
-            No schema available for this entity
-          </CardContent>
-        </Card>
-      )}
+      <ReportBuilder
+        entitySchema={schema}
+        entityName={entity}
+        onConfigChange={setReportConfig}
+        initialConfig={reportConfig}
+      />
 
       {/* Summary Statistics */}
       {summaryStats.length > 0 && (
@@ -388,7 +430,7 @@ export default function Reporting() {
           </div>
         </CardHeader>
         <CardContent>
-          {(isLoading || isLoadingSchema) ? (
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
             </div>
