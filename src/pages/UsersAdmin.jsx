@@ -57,6 +57,12 @@ export default function UsersAdmin() {
     queryFn: () => base44.entities.User.list(),
   });
 
+  const { data: commissionRules = [] } = useQuery({
+    queryKey: ['commissionRules'],
+    queryFn: () => base44.entities.CommissionRule.list(),
+    initialData: [],
+  });
+
   const updateUserMutation = useMutation({
     mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data),
     onSuccess: () => {
@@ -84,17 +90,31 @@ export default function UsersAdmin() {
   });
 
   const handleEditUser = (user) => {
-    setSelectedUser({ ...user });
+    setSelectedUser({ 
+      ...user,
+      departments: user.departments || [],
+      commission_rule_ids: user.commission_rule_ids || []
+    });
     setEditDialogOpen(true);
   };
 
   const handleSaveUser = () => {
     if (!selectedUser) return;
+    
+    // Validate sales department has commission rules
+    if (selectedUser.departments?.includes('sales') && (!selectedUser.commission_rule_ids || selectedUser.commission_rule_ids.length === 0)) {
+      toast.error('Sales department requires at least one commission rule');
+      return;
+    }
+    
     updateUserMutation.mutate({
       userId: selectedUser.id,
       data: {
         full_name: selectedUser.full_name,
         role: selectedUser.role,
+        departments: selectedUser.departments,
+        commission_rule_ids: selectedUser.commission_rule_ids,
+        is_commission_eligible: selectedUser.departments?.includes('sales')
       },
     });
   };
@@ -218,6 +238,7 @@ export default function UsersAdmin() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Departments</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -237,6 +258,18 @@ export default function UsersAdmin() {
                     >
                       {user.role === 'admin' ? 'Admin' : 'User'}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {user.departments?.map((dept, idx) => (
+                        <span key={idx} className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
+                          {dept}
+                        </span>
+                      ))}
+                      {(!user.departments || user.departments.length === 0) && (
+                        <span className="text-xs text-slate-400">None</span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-slate-600">
                     {new Date(user.created_date).toLocaleDateString()}
@@ -297,6 +330,53 @@ export default function UsersAdmin() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Departments</Label>
+                <div className="space-y-2 mt-2">
+                  {['sales', 'preconstruction', 'construction', 'admin', 'management'].map(dept => (
+                    <label key={dept} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedUser.departments?.includes(dept) || false}
+                        onChange={(e) => {
+                          const newDepts = e.target.checked
+                            ? [...(selectedUser.departments || []), dept]
+                            : (selectedUser.departments || []).filter(d => d !== dept);
+                          setSelectedUser({ ...selectedUser, departments: newDepts });
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm capitalize">{dept}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              {selectedUser.departments?.includes('sales') && (
+                <div>
+                  <Label>Commission Rules *</Label>
+                  <div className="space-y-2 mt-2 border rounded-md p-3 bg-amber-50">
+                    {commissionRules.map(rule => (
+                      <label key={rule.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedUser.commission_rule_ids?.includes(rule.id) || false}
+                          onChange={(e) => {
+                            const newRules = e.target.checked
+                              ? [...(selectedUser.commission_rule_ids || []), rule.id]
+                              : (selectedUser.commission_rule_ids || []).filter(r => r !== rule.id);
+                            setSelectedUser({ ...selectedUser, commission_rule_ids: newRules });
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{rule.rule_name}</span>
+                      </label>
+                    ))}
+                    {commissionRules.length === 0 && (
+                      <p className="text-xs text-amber-600">No commission rules available. Create one first.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
