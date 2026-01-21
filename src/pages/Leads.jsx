@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Target, Briefcase, ArrowRight } from 'lucide-react';
+import { Target, Briefcase, ArrowRight, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 
@@ -19,7 +19,7 @@ export default function Leads() {
   const queryClient = useQueryClient();
 
   const [saleForm, setSaleForm] = useState({
-    sale_type: 'construction',
+    sale_type: 'preconstruction',
     contract_value: '',
     estimated_margin: '',
     close_date: ''
@@ -50,7 +50,7 @@ export default function Leads() {
       queryClient.invalidateQueries(['leads']);
       queryClient.invalidateQueries(['sales']);
       setSaleDialogOpen(false);
-      setSaleForm({ sale_type: 'construction', contract_value: '', estimated_margin: '', close_date: '' });
+      setSaleForm({ sale_type: 'preconstruction', contract_value: '', estimated_margin: '', close_date: '' });
       toast.success('Lead converted to sale successfully');
     },
     onError: () => toast.error('Failed to convert lead')
@@ -67,7 +67,7 @@ export default function Leads() {
   const disqualifyLeadMutation = useMutation({
     mutationFn: ({ leadId, reason }) => 
       base44.entities.Lead.update(leadId, { 
-        status: 'unqualified',
+        status: 'disqualified',
         disqualification_reason: reason 
       }),
     onSuccess: () => {
@@ -86,12 +86,18 @@ export default function Leads() {
   const openSaleDialog = (lead) => {
     setSelectedLead(lead);
     setSaleForm({
-      sale_type: lead.project_type === 'both' ? 'construction' : lead.project_type,
+      sale_type: lead.project_type === 'construction' ? 'construction' : 'preconstruction',
       contract_value: lead.estimated_value || '',
       estimated_margin: '25',
       close_date: ''
     });
     setSaleDialogOpen(true);
+  };
+
+  const openDisqualifyDialog = (lead) => {
+    setSelectedLead(lead);
+    setDisqualifyReason('');
+    setDisqualifyDialogOpen(true);
   };
 
   const handleConvertToSale = (e) => {
@@ -107,16 +113,10 @@ export default function Leads() {
         contract_value: parseFloat(saleForm.contract_value) || 0,
         estimated_margin: parseFloat(saleForm.estimated_margin) || 0,
         close_date: saleForm.close_date,
-        status: 'prospect',
+        status: 'feasibility',
         assigned_to: selectedLead.assigned_to
       }
     });
-  };
-
-  const openDisqualifyDialog = (lead) => {
-    setSelectedLead(lead);
-    setDisqualifyReason('');
-    setDisqualifyDialogOpen(true);
   };
 
   const handleDisqualify = (e) => {
@@ -132,104 +132,109 @@ export default function Leads() {
   };
 
   const statusColumns = [
-    { status: 'new', label: 'New', color: 'bg-blue-100 border-blue-200' },
-    { status: 'contacted', label: 'Contacted', color: 'bg-purple-100 border-purple-200' },
-    { status: 'qualified', label: 'Qualified', color: 'bg-emerald-100 border-emerald-200' },
-    { status: 'unqualified', label: 'Disqualified', color: 'bg-red-100 border-red-200' },
-    { status: 'converted', label: 'Converted', color: 'bg-amber-100 border-amber-200' },
+    { status: 'new_project_lead', label: 'New Project Lead', color: 'bg-blue-100 border-blue-200' },
+    { status: 'initial_video_consult', label: 'Video Consult', color: 'bg-purple-100 border-purple-200' },
+    { status: 'initial_inperson_consultation', label: 'In-Person Consult', color: 'bg-indigo-100 border-indigo-200' },
+    { status: 'preconstruction_proposal', label: 'Proposal', color: 'bg-violet-100 border-violet-200' },
+    { status: 'followup', label: 'Follow-up', color: 'bg-emerald-100 border-emerald-200' },
   ];
+
+  const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status));
+  const convertedLeads = leads.filter(l => l.status === 'converted');
+  const disqualifiedLeads = leads.filter(l => l.status === 'disqualified');
+
+  const getNextStatus = (currentStatus) => {
+    const statuses = ['new_project_lead', 'initial_video_consult', 'initial_inperson_consultation', 'preconstruction_proposal', 'followup'];
+    const currentIndex = statuses.indexOf(currentStatus);
+    return currentIndex < statuses.length - 1 ? statuses[currentIndex + 1] : null;
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Leads Pipeline</h1>
-        <p className="text-lg text-slate-500">Track lead progression and convert to sales</p>
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Lead Pipeline</h1>
+        <p className="text-lg text-slate-500">Track leads through consultation and proposal stages</p>
       </div>
 
-      {leads.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-slate-900">{activeLeads.length}</div>
+            <div className="text-sm text-slate-500">Active Leads</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-emerald-600">{convertedLeads.length}</div>
+            <div className="text-sm text-slate-500">Converted</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-red-600">{disqualifiedLeads.length}</div>
+            <div className="text-sm text-slate-500">Disqualified</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {activeLeads.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {statusColumns.map(column => {
-            const columnLeads = leads.filter(l => l.status === column.status);
+            const columnLeads = activeLeads.filter(l => l.status === column.status);
             return (
               <div key={column.status}>
-                <div className="mb-4">
-                  <h3 className="font-bold text-slate-900">{column.label}</h3>
-                  <p className="text-sm text-slate-500">{columnLeads.length} leads</p>
+                <div className="mb-3">
+                  <h3 className="font-bold text-slate-900 text-sm">{column.label}</h3>
+                  <p className="text-xs text-slate-500">{columnLeads.length} leads</p>
                 </div>
-                <div className="space-y-3">
-                  {columnLeads.map(lead => (
-                    <Card key={lead.id} className={`border-2 ${column.color} hover:shadow-lg transition-shadow`}>
-                      <CardContent className="p-4">
-                        <h4 className="font-semibold text-slate-900 mb-1">{lead.title}</h4>
-                        <p className="text-xs text-slate-500 mb-2">{getClientName(lead.client_id)}</p>
-                        {lead.estimated_value && (
-                          <p className="text-sm font-bold text-slate-700 mb-2">
-                            ${lead.estimated_value.toLocaleString()}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs text-slate-500 capitalize">
-                            {lead.project_type?.replace('_', ' ') || 'Unknown'}
-                          </span>
-                          <span className="text-xs font-medium text-slate-600">
-                            Score: {lead.lead_score || 50}
-                          </span>
-                        </div>
-                        
-                        {lead.status === 'unqualified' ? (
-                          <div className="text-xs text-red-600 italic">
-                            {lead.disqualification_reason}
-                          </div>
-                        ) : lead.status !== 'converted' ? (
-                          <div className="space-y-2">
-                            <div className="flex gap-2">
-                              {lead.status === 'new' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-1 text-xs"
-                                  onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'contacted' })}
-                                >
-                                  Mark Contacted
-                                </Button>
-                              )}
-                              {lead.status === 'contacted' && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-1 text-xs"
-                                  onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'qualified' })}
-                                >
-                                  Qualify
-                                </Button>
-                              )}
-                              {lead.status === 'qualified' && (
-                                <Button
-                                  size="sm"
-                                  className="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700"
-                                  onClick={() => openSaleDialog(lead)}
-                                >
-                                  <Briefcase className="w-3 h-3 mr-1" />
-                                  Convert
-                                  <ArrowRight className="w-3 h-3 ml-1" />
-                                </Button>
-                              )}
-                            </div>
-                            {['new', 'contacted', 'qualified'].includes(lead.status) && (
+                <div className="space-y-2">
+                  {columnLeads.map(lead => {
+                    const nextStatus = getNextStatus(lead.status);
+                    return (
+                      <Card key={lead.id} className={`border-2 ${column.color} hover:shadow-lg transition-shadow`}>
+                        <CardContent className="p-3">
+                          <h4 className="font-semibold text-slate-900 text-sm mb-1">{lead.title}</h4>
+                          <p className="text-xs text-slate-500 mb-2">{getClientName(lead.client_id)}</p>
+                          {lead.estimated_value && (
+                            <p className="text-sm font-bold text-slate-700 mb-2">
+                              ${lead.estimated_value.toLocaleString()}
+                            </p>
+                          )}
+                          
+                          <div className="space-y-1.5">
+                            {nextStatus && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50"
-                                onClick={() => openDisqualifyDialog(lead)}
+                                className="w-full text-xs"
+                                onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: nextStatus })}
                               >
-                                Disqualify
+                                <ChevronRight className="w-3 h-3 mr-1" />
+                                Advance
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => openSaleDialog(lead)}
+                            >
+                              <Briefcase className="w-3 h-3 mr-1" />
+                              Convert to Sale
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50"
+                              onClick={() => openDisqualifyDialog(lead)}
+                            >
+                              Disqualify
+                            </Button>
                           </div>
-                        ) : null}
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -241,7 +246,7 @@ export default function Leads() {
             <EmptyState
               icon={Target}
               title="No leads yet"
-              description="Create leads from clients to start your sales pipeline"
+              description="Create leads from clients to start your pipeline"
             />
           </CardContent>
         </Card>
