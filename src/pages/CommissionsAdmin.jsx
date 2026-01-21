@@ -63,6 +63,11 @@ export default function CommissionsAdmin() {
     queryFn: () => base44.entities.User.filter({}),
   });
 
+  const { data: commissionRules = [] } = useQuery({
+    queryKey: ['commissionRules'],
+    queryFn: () => base44.entities.CommissionRule.list(),
+  });
+
   const approveMutation = useMutation({
     mutationFn: async ({ payout_id, approve }) => {
       const response = await base44.functions.invoke('approveBalloonPayment', {
@@ -261,6 +266,7 @@ export default function CommissionsAdmin() {
                     <TableHead>Quarterly Payout</TableHead>
                     <TableHead>Total Earned</TableHead>
                     <TableHead>Total Paid</TableHead>
+                    <TableHead>Commission Rule</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -277,11 +283,20 @@ export default function CommissionsAdmin() {
                       <TableCell>${(bank.quarterly_payout_amount || 0).toLocaleString()}</TableCell>
                       <TableCell>${(bank.total_earned || 0).toLocaleString()}</TableCell>
                       <TableCell>${(bank.total_paid_out || 0).toLocaleString()}</TableCell>
+                      <TableCell>
+                        {bank.commission_rule_id ? (
+                          <Badge variant="outline">
+                            {commissionRules.find(r => r.id === bank.commission_rule_id)?.rule_name || 'Unknown'}
+                          </Badge>
+                        ) : (
+                          <span className="text-slate-400 text-sm">Not assigned</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {allBanks.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                      <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                         No commission banks found
                       </TableCell>
                     </TableRow>
