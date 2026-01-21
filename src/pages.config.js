@@ -9,6 +9,7 @@ import Projects from './pages/Projects';
 import Relationships from './pages/Relationships';
 import Sales from './pages/Sales';
 import UsersAdmin from './pages/UsersAdmin';
+import PreconReporting from './pages/PreconReporting';
 import __Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "Relationships": Relationships,
     "Sales": Sales,
     "UsersAdmin": UsersAdmin,
+    "PreconReporting": PreconReporting,
 }
 
 export const pagesConfig = {
