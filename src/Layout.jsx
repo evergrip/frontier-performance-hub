@@ -29,8 +29,8 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Clients', icon: Users, page: 'Clients' },
     { name: 'Leads', icon: Target, page: 'Leads' },
     { name: 'Pre-Construction', icon: Briefcase, page: 'Sales' },
-    { name: 'Precon Reporting', icon: Settings, page: 'PreconReporting' },
     { name: 'Projects', icon: Building2, page: 'Projects' },
+    { name: 'Reporting', icon: Settings, page: 'Reporting' },
   ];
 
   const adminNavigation = [
