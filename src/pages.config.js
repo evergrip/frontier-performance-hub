@@ -8,6 +8,7 @@ import Sales from './pages/Sales';
 import UsersAdmin from './pages/UsersAdmin';
 import CommissionRules from './pages/CommissionRules';
 import KPIManagement from './pages/KPIManagement';
+import Relationships from './pages/Relationships';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "UsersAdmin": UsersAdmin,
     "CommissionRules": CommissionRules,
     "KPIManagement": KPIManagement,
+    "Relationships": Relationships,
 }
 
 export const pagesConfig = {
