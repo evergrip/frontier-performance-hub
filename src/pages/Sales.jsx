@@ -56,8 +56,8 @@ export default function Sales() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Preconstruction Pipeline</h1>
-        <p className="text-lg text-slate-500">Track preconstruction projects through all phases</p>
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Pre-Construction Sales</h1>
+        <p className="text-lg text-slate-500">Track preconstruction sales through design, engineering, and permitting phases</p>
       </div>
 
       {/* Summary Stats */}
@@ -65,19 +65,19 @@ export default function Sales() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-slate-900">{preconstructionSales.length}</div>
-            <div className="text-sm text-slate-500">Active Preconstruction</div>
+            <div className="text-sm text-slate-500">Active Pre-Construction</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-emerald-600">${(totalValue / 1000000).toFixed(1)}M</div>
-            <div className="text-sm text-slate-500">Total Pipeline Value</div>
+            <div className="text-sm text-slate-500">Pipeline Value</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-amber-600">{closedSales.length}</div>
-            <div className="text-sm text-slate-500">Closed Projects</div>
+            <div className="text-sm text-slate-500">Converted to Construction</div>
           </CardContent>
         </Card>
       </div>
@@ -159,8 +159,8 @@ export default function Sales() {
           <CardContent className="p-0">
             <EmptyState
               icon={Briefcase}
-              title="No active preconstruction projects"
-              description="Convert leads to sales to populate the preconstruction pipeline"
+              title="No active pre-construction sales"
+              description="Convert qualified leads to preconstruction sales to start this pipeline"
             />
           </CardContent>
         </Card>

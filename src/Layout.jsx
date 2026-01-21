@@ -28,7 +28,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
     { name: 'Clients', icon: Users, page: 'Clients' },
     { name: 'Leads', icon: Target, page: 'Leads' },
-    { name: 'Sales', icon: Briefcase, page: 'Sales' },
+    { name: 'Pre-Construction', icon: Briefcase, page: 'Sales' },
     { name: 'Projects', icon: Building2, page: 'Projects' },
   ];
 

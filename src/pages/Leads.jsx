@@ -19,7 +19,6 @@ export default function Leads() {
   const queryClient = useQueryClient();
 
   const [saleForm, setSaleForm] = useState({
-    sale_type: 'preconstruction',
     contract_value: '',
     estimated_margin: '',
     close_date: ''
@@ -50,8 +49,8 @@ export default function Leads() {
       queryClient.invalidateQueries(['leads']);
       queryClient.invalidateQueries(['sales']);
       setSaleDialogOpen(false);
-      setSaleForm({ sale_type: 'preconstruction', contract_value: '', estimated_margin: '', close_date: '' });
-      toast.success('Lead converted to sale successfully');
+      setSaleForm({ contract_value: '', estimated_margin: '', close_date: '' });
+      toast.success('Lead converted to preconstruction sale');
     },
     onError: () => toast.error('Failed to convert lead')
   });
@@ -86,7 +85,6 @@ export default function Leads() {
   const openSaleDialog = (lead) => {
     setSelectedLead(lead);
     setSaleForm({
-      sale_type: lead.project_type === 'construction' ? 'construction' : 'preconstruction',
       contract_value: lead.estimated_value || '',
       estimated_margin: '25',
       close_date: ''
@@ -109,7 +107,7 @@ export default function Leads() {
         title: selectedLead.title,
         client_id: selectedLead.client_id,
         lead_id: selectedLead.id,
-        sale_type: saleForm.sale_type,
+        sale_type: 'preconstruction',
         contract_value: parseFloat(saleForm.contract_value) || 0,
         estimated_margin: parseFloat(saleForm.estimated_margin) || 0,
         close_date: saleForm.close_date,
@@ -262,19 +260,7 @@ export default function Leads() {
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedLead?.title}</p>
               <p className="text-xs text-slate-500">{getClientName(selectedLead?.client_id)}</p>
-            </div>
-
-            <div>
-              <Label>Sale Type *</Label>
-              <select
-                value={saleForm.sale_type}
-                onChange={(e) => setSaleForm({...saleForm, sale_type: e.target.value})}
-                className="w-full px-3 py-2 border rounded-md"
-                required
-              >
-                <option value="preconstruction">Preconstruction</option>
-                <option value="construction">Construction</option>
-              </select>
+              <p className="text-xs text-slate-400 mt-1">Converting to Preconstruction Sale</p>
             </div>
 
             <div>
@@ -313,7 +299,7 @@ export default function Leads() {
               </Button>
               <Button type="submit" disabled={convertToSaleMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
                 <Briefcase className="w-4 h-4 mr-2" />
-                Convert to Sale
+                Convert to Preconstruction Sale
               </Button>
             </div>
           </form>

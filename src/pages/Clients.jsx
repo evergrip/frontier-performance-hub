@@ -29,7 +29,6 @@ export default function Clients() {
   const [leadForm, setLeadForm] = useState({
     title: '',
     source: 'other',
-    project_type: 'construction',
     estimated_value: '',
     assigned_to: '',
     notes: ''
@@ -68,8 +67,8 @@ export default function Clients() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
       setLeadDialogOpen(false);
-      setLeadForm({ title: '', source: 'other', project_type: 'construction', estimated_value: '', assigned_to: '', notes: '' });
-      toast.success('Lead created and linked to client');
+      setLeadForm({ title: '', source: 'other', estimated_value: '', assigned_to: '', notes: '' });
+      toast.success('Preconstruction lead created');
     },
     onError: () => toast.error('Failed to create lead')
   });
@@ -288,19 +287,6 @@ export default function Clients() {
                 <option value="networking">Networking</option>
                 <option value="advertisement">Advertisement</option>
                 <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <Label>Project Type</Label>
-              <select
-                value={leadForm.project_type}
-                onChange={(e) => setLeadForm({...leadForm, project_type: e.target.value})}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="preconstruction">Preconstruction</option>
-                <option value="construction">Construction</option>
-                <option value="both">Both</option>
-                <option value="unknown">Unknown</option>
               </select>
             </div>
             <div>
