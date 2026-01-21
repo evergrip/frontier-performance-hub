@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Briefcase, Building2, ChevronRight } from 'lucide-react';
+import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 
@@ -14,11 +14,16 @@ export default function Sales() {
   const queryClient = useQueryClient();
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
+  const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
+  });
+  const [financeForm, setFinanceForm] = useState({
+    deposit_amount: '',
+    minimum_draw_threshold: ''
   });
 
   const { data: sales = [] } = useQuery({
@@ -41,6 +46,17 @@ export default function Sales() {
       setAdvanceDialogOpen(false);
       setConstructionBudget('');
       toast.success('Sale status updated');
+    }
+  });
+
+  const updateFinanceMutation = useMutation({
+    mutationFn: ({ saleId, deposit_amount, minimum_draw_threshold }) => 
+      base44.entities.Sale.update(saleId, { deposit_amount, minimum_draw_threshold }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      setFinanceDialogOpen(false);
+      setFinanceForm({ deposit_amount: '', minimum_draw_threshold: '' });
+      toast.success('Financial settings updated');
     }
   });
 
@@ -136,6 +152,15 @@ export default function Sales() {
     setConstructionDialogOpen(true);
   };
 
+  const openFinanceDialog = (sale) => {
+    setSelectedSale(sale);
+    setFinanceForm({
+      deposit_amount: sale.deposit_amount || '',
+      minimum_draw_threshold: sale.minimum_draw_threshold || ''
+    });
+    setFinanceDialogOpen(true);
+  };
+
   const handleAdvancePhase = (e) => {
     e.preventDefault();
     const nextStatus = getNextStatus(selectedSale.status);
@@ -160,6 +185,31 @@ export default function Sales() {
       final_precon_value: constructionForm.final_precon_value,
       construction_budget: constructionForm.construction_budget
     });
+  };
+
+  const handleUpdateFinance = (e) => {
+    e.preventDefault();
+    if (!financeForm.deposit_amount || !financeForm.minimum_draw_threshold) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    updateFinanceMutation.mutate({
+      saleId: selectedSale.id,
+      deposit_amount: parseFloat(financeForm.deposit_amount),
+      minimum_draw_threshold: parseFloat(financeForm.minimum_draw_threshold)
+    });
+  };
+
+  const calculateRemainingBalance = (sale) => {
+    if (!sale.deposit_amount) return null;
+    const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
+    return sale.deposit_amount - totalInvoiced;
+  };
+
+  const needsDrawAlert = (sale) => {
+    const balance = calculateRemainingBalance(sale);
+    return balance !== null && sale.minimum_draw_threshold && balance < sale.minimum_draw_threshold;
   };
 
   const totalValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
@@ -236,30 +286,67 @@ export default function Sales() {
                                 </span>
                               </div>
                             )}
+                            {sale.deposit_amount && (
+                              <>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-slate-500">Deposit</span>
+                                  <span className="text-sm font-medium text-emerald-600">
+                                    ${(sale.deposit_amount / 1000).toFixed(1)}k
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-slate-500">Balance</span>
+                                  <span className={`text-sm font-medium ${needsDrawAlert(sale) ? 'text-red-600' : 'text-slate-700'}`}>
+                                    ${((calculateRemainingBalance(sale) || 0) / 1000).toFixed(1)}k
+                                  </span>
+                                </div>
+                              </>
+                            )}
                           </div>
 
-                          {nextStatus && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full text-xs"
-                              onClick={() => openAdvanceDialog(sale)}
-                            >
-                              <ChevronRight className="w-3 h-3 mr-1" />
-                              Move to Next Phase
-                            </Button>
+                          {needsDrawAlert(sale) && (
+                            <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                              <AlertCircle className="w-3 h-3 text-red-600 flex-shrink-0" />
+                              <span className="text-xs text-red-700">Draw needed</span>
+                            </div>
                           )}
 
-                          {sale.status === 'pending_construction_sale' && (
-                            <Button
-                              size="sm"
-                              className="w-full text-xs mt-2 bg-amber-600 hover:bg-amber-700"
-                              onClick={() => openConstructionDialog(sale)}
-                            >
-                              <Building2 className="w-3 h-3 mr-1" />
-                              Convert to Construction
-                            </Button>
-                          )}
+                          <div className="space-y-2">
+                            {!sale.deposit_amount && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-xs"
+                                onClick={() => openFinanceDialog(sale)}
+                              >
+                                <DollarSign className="w-3 h-3 mr-1" />
+                                Setup Deposit & Draw
+                              </Button>
+                            )}
+
+                            {nextStatus && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-xs"
+                                onClick={() => openAdvanceDialog(sale)}
+                              >
+                                <ChevronRight className="w-3 h-3 mr-1" />
+                                Move to Next Phase
+                              </Button>
+                            )}
+
+                            {sale.status === 'pending_construction_sale' && (
+                              <Button
+                                size="sm"
+                                className="w-full text-xs bg-amber-600 hover:bg-amber-700"
+                                onClick={() => openConstructionDialog(sale)}
+                              >
+                                <Building2 className="w-3 h-3 mr-1" />
+                                Convert to Construction
+                              </Button>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     );
@@ -367,6 +454,59 @@ export default function Sales() {
               <Button type="submit" disabled={convertToConstructionMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
                 <Building2 className="w-4 h-4 mr-2" />
                 Convert to Construction
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Finance Setup Dialog */}
+      <Dialog open={financeDialogOpen} onOpenChange={setFinanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Setup Deposit & Draw Alert</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateFinance} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+            </div>
+
+            <div>
+              <Label>Initial Deposit Amount *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Total deposit received to start preconstruction work
+              </p>
+              <Input
+                type="number"
+                value={financeForm.deposit_amount}
+                onChange={(e) => setFinanceForm({...financeForm, deposit_amount: e.target.value})}
+                placeholder="25000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Minimum Draw Threshold *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Alert when balance falls below this amount
+              </p>
+              <Input
+                type="number"
+                value={financeForm.minimum_draw_threshold}
+                onChange={(e) => setFinanceForm({...financeForm, minimum_draw_threshold: e.target.value})}
+                placeholder="5000"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setFinanceDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateFinanceMutation.isPending}>
+                <DollarSign className="w-4 h-4 mr-2" />
+                Save Settings
               </Button>
             </div>
           </form>
