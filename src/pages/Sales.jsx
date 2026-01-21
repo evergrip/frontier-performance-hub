@@ -79,6 +79,16 @@ export default function Sales() {
         converted_to_project_id: project.id
       });
 
+      // Process commission for construction sale
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: constructionSale.id,
+          sale_type: 'construction'
+        });
+      } catch (error) {
+        console.error('Commission processing failed:', error);
+      }
+
       return { constructionSale, project };
     },
     onSuccess: () => {

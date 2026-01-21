@@ -43,6 +43,17 @@ export default function Leads() {
         status: 'converted',
         converted_to_sale_id: sale.id
       });
+      
+      // Process commission for preconstruction sale
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: sale.id,
+          sale_type: 'preconstruction'
+        });
+      } catch (error) {
+        console.error('Commission processing failed:', error);
+      }
+      
       return sale;
     },
     onSuccess: () => {
@@ -85,7 +96,7 @@ export default function Leads() {
   const openSaleDialog = (lead) => {
     setSelectedLead(lead);
     setSaleForm({
-      contract_value: lead.estimated_value || '',
+      contract_value: lead.estimated_precon_value || '',
       estimated_margin: '25',
       close_date: ''
     });
@@ -109,6 +120,7 @@ export default function Leads() {
         lead_id: selectedLead.id,
         sale_type: 'preconstruction',
         contract_value: parseFloat(saleForm.contract_value) || 0,
+        estimated_construction_budget: selectedLead.estimated_construction_value || 0,
         estimated_margin: parseFloat(saleForm.estimated_margin) || 0,
         close_date: saleForm.close_date,
         status: 'feasibility',
@@ -194,10 +206,21 @@ export default function Leads() {
                         <CardContent className="p-3">
                           <h4 className="font-semibold text-slate-900 text-sm mb-1">{lead.title}</h4>
                           <p className="text-xs text-slate-500 mb-2">{getClientName(lead.client_id)}</p>
-                          {lead.estimated_value && (
-                            <p className="text-sm font-bold text-slate-700 mb-2">
-                              ${lead.estimated_value.toLocaleString()}
-                            </p>
+                          {(lead.estimated_precon_value || lead.estimated_construction_value) && (
+                            <div className="text-xs text-slate-600 mb-2 space-y-0.5">
+                              {lead.estimated_precon_value > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Precon:</span>
+                                  <span className="font-semibold">${lead.estimated_precon_value.toLocaleString()}</span>
+                                </div>
+                              )}
+                              {lead.estimated_construction_value > 0 && (
+                                <div className="flex justify-between">
+                                  <span>Construction:</span>
+                                  <span className="font-semibold">${lead.estimated_construction_value.toLocaleString()}</span>
+                                </div>
+                              )}
+                            </div>
                           )}
                           
                           <div className="space-y-1.5">

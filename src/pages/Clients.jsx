@@ -29,7 +29,8 @@ export default function Clients() {
   const [leadForm, setLeadForm] = useState({
     title: '',
     source: 'other',
-    estimated_value: '',
+    estimated_precon_value: '',
+    estimated_construction_value: '',
     assigned_to: '',
     notes: ''
   });
@@ -67,7 +68,7 @@ export default function Clients() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
       setLeadDialogOpen(false);
-      setLeadForm({ title: '', source: 'other', estimated_value: '', assigned_to: '', notes: '' });
+      setLeadForm({ title: '', source: 'other', estimated_precon_value: '', estimated_construction_value: '', assigned_to: '', notes: '' });
       toast.success('Preconstruction lead created');
     },
     onError: () => toast.error('Failed to create lead')
@@ -89,7 +90,8 @@ export default function Clients() {
     createLeadMutation.mutate({
       ...leadForm,
       client_id: selectedClient.id,
-      estimated_value: parseFloat(leadForm.estimated_value) || 0
+      estimated_precon_value: parseFloat(leadForm.estimated_precon_value) || 0,
+      estimated_construction_value: parseFloat(leadForm.estimated_construction_value) || 0
     });
   };
 
@@ -289,14 +291,25 @@ export default function Clients() {
                 <option value="other">Other</option>
               </select>
             </div>
-            <div>
-              <Label>Estimated Value</Label>
-              <Input
-                type="number"
-                value={leadForm.estimated_value}
-                onChange={(e) => setLeadForm({...leadForm, estimated_value: e.target.value})}
-                placeholder="500000"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Est. Precon Revenue</Label>
+                <Input
+                  type="number"
+                  value={leadForm.estimated_precon_value}
+                  onChange={(e) => setLeadForm({...leadForm, estimated_precon_value: e.target.value})}
+                  placeholder="125000"
+                />
+              </div>
+              <div>
+                <Label>Est. Construction Revenue</Label>
+                <Input
+                  type="number"
+                  value={leadForm.estimated_construction_value}
+                  onChange={(e) => setLeadForm({...leadForm, estimated_construction_value: e.target.value})}
+                  placeholder="750000"
+                />
+              </div>
             </div>
             <div>
               <Label>Assign Salesperson *</Label>
