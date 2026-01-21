@@ -5,9 +5,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Building2, Calendar, CalendarDays } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Building2, Calendar, CalendarDays, Users } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState';
-import { format, startOfYear, addWeeks, getWeek, getYear } from 'date-fns';
+import ProjectCalendar from '../components/projects/ProjectCalendar';
+import { format, startOfYear, addWeeks, getWeek, getYear, eachMonthOfInterval, getMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function Projects() {
@@ -16,6 +19,8 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedWeeks, setSelectedWeeks] = useState([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedCrew, setSelectedCrew] = useState('unassigned');
+  const [monthlyAllocations, setMonthlyAllocations] = useState([]);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -23,14 +28,15 @@ export default function Projects() {
     initialData: [],
   });
 
-  const scheduleProjectMutation = useMutation({
-    mutationFn: ({ projectId, weeks }) => 
-      base44.entities.Project.update(projectId, { scheduled_weeks: weeks }),
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ projectId, data }) => 
+      base44.entities.Project.update(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
       setScheduleDialogOpen(false);
       setSelectedWeeks([]);
-      toast.success('Project scheduled');
+      setMonthlyAllocations([]);
+      toast.success('Project updated');
     }
   });
 
@@ -47,6 +53,8 @@ export default function Projects() {
   const openScheduleDialog = (project) => {
     setSelectedProject(project);
     setSelectedWeeks(project.scheduled_weeks || []);
+    setSelectedCrew(project.crew_assignment || 'unassigned');
+    setMonthlyAllocations(project.monthly_revenue_allocations || []);
     setScheduleDialogOpen(true);
   };
 
@@ -61,10 +69,38 @@ export default function Projects() {
     }
   };
 
-  const handleSchedule = () => {
-    scheduleProjectMutation.mutate({
+  const updateMonthlyAllocation = (year, month, percentage) => {
+    const existing = monthlyAllocations.find(a => a.year === year && a.month === month);
+    const value = parseFloat(percentage) || 0;
+    
+    if (existing) {
+      setMonthlyAllocations(
+        monthlyAllocations.map(a => 
+          a.year === year && a.month === month 
+            ? { ...a, percentage: value }
+            : a
+        )
+      );
+    } else {
+      setMonthlyAllocations([...monthlyAllocations, { year, month, percentage: value }]);
+    }
+  };
+
+  const getMonthlyAllocation = (year, month) => {
+    const allocation = monthlyAllocations.find(a => a.year === year && a.month === month);
+    return allocation?.percentage || 0;
+  };
+
+  const totalAllocation = monthlyAllocations.reduce((sum, a) => sum + (a.percentage || 0), 0);
+
+  const handleSaveProject = () => {
+    updateProjectMutation.mutate({
       projectId: selectedProject.id,
-      weeks: selectedWeeks
+      data: {
+        scheduled_weeks: selectedWeeks,
+        crew_assignment: selectedCrew,
+        monthly_revenue_allocations: monthlyAllocations.filter(a => a.percentage > 0)
+      }
     });
   };
 
@@ -82,6 +118,19 @@ export default function Projects() {
     { name: 'Q4', weeks: weeks.slice(39, 52) }
   ];
 
+  const months = eachMonthOfInterval({
+    start: new Date(selectedYear, 0, 1),
+    end: new Date(selectedYear, 11, 31)
+  });
+
+  const crewColors = {
+    crew_a: 'bg-blue-500',
+    crew_b: 'bg-green-500',
+    crew_c: 'bg-purple-500',
+    crew_d: 'bg-orange-500',
+    unassigned: 'bg-slate-400'
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
@@ -89,95 +138,115 @@ export default function Projects() {
         <p className="text-lg text-slate-500">Schedule and track construction projects</p>
       </div>
 
-      {/* Unscheduled Projects */}
-      {unscheduledProjects.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-slate-900">Waiting to be Scheduled</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {unscheduledProjects.map(project => (
-              <Card key={project.id} className="border-2 border-yellow-200 bg-yellow-50 hover:shadow-lg transition-shadow">
-                <CardContent className="p-4">
-                  <h4 className="font-semibold text-slate-900 mb-1">{project.title}</h4>
-                  {project.contract_value && (
-                    <p className="text-sm font-bold text-slate-900 mb-3">
-                      ${project.contract_value.toLocaleString()}
-                    </p>
-                  )}
-                  <Button 
-                    size="sm" 
-                    className="w-full bg-amber-600 hover:bg-amber-700"
-                    onClick={() => openScheduleDialog(project)}
-                  >
-                    <CalendarDays className="w-4 h-4 mr-2" />
-                    Schedule Project
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      <Tabs defaultValue="unscheduled" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="unscheduled">Waiting to Schedule</TabsTrigger>
+          <TabsTrigger value="calendar">Project Calendar</TabsTrigger>
+        </TabsList>
 
-      {/* Scheduled Projects */}
-      {scheduledProjects.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-slate-900">Scheduled Projects</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {statusGroups.map(group => {
-              const groupProjects = scheduledProjects.filter(p => group.statuses.includes(p.status));
-              return (
-                <div key={group.label}>
-                  <div className="mb-4">
-                    <h3 className="font-bold text-slate-900">{group.label}</h3>
-                    <p className="text-sm text-slate-500">{groupProjects.length} projects</p>
-                  </div>
-                  <div className="space-y-3">
-                    {groupProjects.map(project => (
-                      <Card key={project.id} className={`border-2 ${group.color} hover:shadow-lg transition-shadow cursor-pointer`} onClick={() => openScheduleDialog(project)}>
-                        <CardContent className="p-4">
-                          <h4 className="font-semibold text-slate-900 mb-2">{project.title}</h4>
-                          {project.contract_value && (
-                            <p className="text-sm font-bold text-slate-900 mb-2">
-                              ${project.contract_value.toLocaleString()}
-                            </p>
-                          )}
-                          {project.scheduled_weeks && project.scheduled_weeks.length > 0 && (
-                            <div className="flex items-center gap-1 text-xs text-slate-500">
-                              <Calendar className="w-3 h-3" />
-                              <span>{project.scheduled_weeks.length} weeks scheduled</span>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        <TabsContent value="unscheduled" className="space-y-6">
+          {/* Unscheduled Projects */}
+          {unscheduledProjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {unscheduledProjects.map(project => (
+                <Card key={project.id} className="border-2 border-yellow-200 bg-yellow-50 hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-slate-900 mb-1">{project.title}</h4>
+                    {project.contract_value && (
+                      <p className="text-sm font-bold text-slate-900 mb-3">
+                        ${project.contract_value.toLocaleString()}
+                      </p>
+                    )}
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-amber-600 hover:bg-amber-700"
+                      onClick={() => openScheduleDialog(project)}
+                    >
+                      <CalendarDays className="w-4 h-4 mr-2" />
+                      Schedule Project
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <EmptyState
+                  icon={Building2}
+                  title="All projects scheduled"
+                  description="No projects waiting to be scheduled"
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
-      {projects.length === 0 && (
-        <Card>
-          <CardContent className="p-0">
-            <EmptyState
-              icon={Building2}
-              title="No projects yet"
-              description="Projects will appear here once sales are closed"
+        <TabsContent value="calendar" className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Label>Year:</Label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="px-3 py-2 border rounded-md"
+            >
+              {[2026, 2027, 2028, 2029].map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+          
+          {scheduledProjects.length > 0 ? (
+            <ProjectCalendar 
+              projects={scheduledProjects} 
+              year={selectedYear}
+              onProjectClick={openScheduleDialog}
             />
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <Card>
+              <CardContent className="p-0">
+                <EmptyState
+                  icon={Calendar}
+                  title="No scheduled projects"
+                  description="Schedule projects to see them in the calendar view"
+                />
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
-      {/* Schedule Dialog */}
+      {/* Schedule/Edit Dialog */}
       <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Schedule Project: {selectedProject?.title}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
+            {/* Crew Assignment */}
+            <div>
+              <Label className="mb-2 block">Assign Crew</Label>
+              <div className="flex gap-2">
+                {['crew_a', 'crew_b', 'crew_c', 'crew_d', 'unassigned'].map(crew => (
+                  <button
+                    key={crew}
+                    onClick={() => setSelectedCrew(crew)}
+                    className={`
+                      px-4 py-2 rounded-lg font-medium transition-all
+                      ${selectedCrew === crew 
+                        ? `${crewColors[crew]} text-white shadow-lg` 
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }
+                    `}
+                  >
+                    {crew.replace('_', ' ').toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Year Selection */}
             <div>
               <Label>Year</Label>
               <select
@@ -191,46 +260,81 @@ export default function Projects() {
               </select>
             </div>
 
-            <div className="space-y-4">
-              {quarters.map(quarter => (
-                <div key={quarter.name}>
-                  <h3 className="font-semibold text-slate-900 mb-2">{quarter.name}</h3>
-                  <div className="grid grid-cols-13 gap-1">
-                    {quarter.weeks.map(weekNum => {
-                      const isSelected = selectedWeeks.some(w => w.year === selectedYear && w.week === weekNum);
-                      return (
-                        <button
-                          key={weekNum}
-                          onClick={() => toggleWeek(weekNum)}
-                          className={`
-                            px-2 py-2 text-xs rounded border transition-colors
-                            ${isSelected 
-                              ? 'bg-amber-600 text-white border-amber-700 font-semibold' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }
-                          `}
-                          title={`Week ${weekNum} - ${getWeekDateRange(selectedYear, weekNum)}`}
-                        >
-                          {weekNum}
-                        </button>
-                      );
-                    })}
+            {/* Weekly Schedule */}
+            <div>
+              <Label className="mb-2 block">Select Weeks</Label>
+              <div className="space-y-4">
+                {quarters.map(quarter => (
+                  <div key={quarter.name}>
+                    <h3 className="font-semibold text-slate-900 mb-2">{quarter.name}</h3>
+                    <div className="grid grid-cols-13 gap-1">
+                      {quarter.weeks.map(weekNum => {
+                        const isSelected = selectedWeeks.some(w => w.year === selectedYear && w.week === weekNum);
+                        return (
+                          <button
+                            key={weekNum}
+                            onClick={() => toggleWeek(weekNum)}
+                            className={`
+                              px-2 py-2 text-xs rounded border transition-colors
+                              ${isSelected 
+                                ? 'bg-amber-600 text-white border-amber-700 font-semibold' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                              }
+                            `}
+                            title={`Week ${weekNum} - ${getWeekDateRange(selectedYear, weekNum)}`}
+                          >
+                            {weekNum}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <div className="bg-slate-50 p-3 rounded-lg">
-              <p className="text-sm text-slate-600">
-                <strong>{selectedWeeks.filter(w => w.year === selectedYear).length}</strong> weeks selected for {selectedYear}
-              </p>
+            {/* Monthly Revenue Allocation */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Monthly Revenue Allocation (% of ${selectedProject?.contract_value?.toLocaleString()})</Label>
+                <span className={`text-sm font-semibold ${totalAllocation === 100 ? 'text-green-600' : 'text-red-600'}`}>
+                  Total: {totalAllocation.toFixed(1)}%
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {months.map(month => {
+                  const monthNum = getMonth(month) + 1;
+                  const yearNum = getYear(month);
+                  const value = getMonthlyAllocation(yearNum, monthNum);
+                  
+                  return (
+                    <div key={month.toString()} className="space-y-1">
+                      <Label className="text-xs">{format(month, 'MMM yyyy')}</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={value || ''}
+                        onChange={(e) => updateMonthlyAllocation(yearNum, monthNum, e.target.value)}
+                        placeholder="0"
+                        className="text-sm"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex gap-2 justify-end pt-4">
               <Button type="button" variant="outline" onClick={() => setScheduleDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSchedule} disabled={scheduleProjectMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
+              <Button 
+                onClick={handleSaveProject} 
+                disabled={updateProjectMutation.isPending}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
                 <CalendarDays className="w-4 h-4 mr-2" />
                 Save Schedule
               </Button>
