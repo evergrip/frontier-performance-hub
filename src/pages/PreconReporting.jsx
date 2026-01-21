@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Calendar, TrendingUp, Clock, DollarSign, AlertCircle } from 'lucide-react';
-import { formatCurrency, getMonthName, daysBetween } from '../utils/formatters';
+import { formatCurrency, getMonthName, daysBetween } from '../components/utils/formatters';
 
 export default function PreconReporting() {
   const [timeframe, setTimeframe] = useState('month');
