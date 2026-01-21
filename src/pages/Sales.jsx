@@ -64,13 +64,29 @@ export default function Sales() {
         status: 'closed_won'
       });
 
-      return constructionSale;
+      // Create construction project
+      const project = await base44.entities.Project.create({
+        title: preconSale.title,
+        client_id: preconSale.client_id,
+        sale_id: constructionSale.id,
+        project_type: 'construction',
+        status: 'planning',
+        contract_value: parseFloat(construction_budget)
+      });
+
+      // Link construction sale to project
+      await base44.entities.Sale.update(constructionSale.id, {
+        converted_to_project_id: project.id
+      });
+
+      return { constructionSale, project };
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
+      queryClient.invalidateQueries(['projects']);
       setConstructionDialogOpen(false);
       setConstructionForm({ final_precon_value: '', construction_budget: '' });
-      toast.success('Converted to construction sale');
+      toast.success('Converted to construction project');
     }
   });
 
