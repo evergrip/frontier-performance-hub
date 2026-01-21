@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle } from 'lucide-react';
+import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle, FileText, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 
@@ -15,6 +15,7 @@ export default function Sales() {
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
   const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [constructionForm, setConstructionForm] = useState({
@@ -24,6 +25,13 @@ export default function Sales() {
   const [financeForm, setFinanceForm] = useState({
     deposit_amount: '',
     minimum_draw_threshold: ''
+  });
+  const [invoiceForm, setInvoiceForm] = useState({
+    invoice_number: '',
+    amount: '',
+    date_issued: '',
+    status: 'pending',
+    notes: ''
   });
 
   const { data: sales = [] } = useQuery({
@@ -57,6 +65,31 @@ export default function Sales() {
       setFinanceDialogOpen(false);
       setFinanceForm({ deposit_amount: '', minimum_draw_threshold: '' });
       toast.success('Financial settings updated');
+    }
+  });
+
+  const addInvoiceMutation = useMutation({
+    mutationFn: ({ saleId, invoice }) => {
+      const sale = sales.find(s => s.id === saleId);
+      const invoices = [...(sale.invoices || []), invoice];
+      return base44.entities.Sale.update(saleId, { invoices });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      setInvoiceForm({ invoice_number: '', amount: '', date_issued: '', status: 'pending', notes: '' });
+      toast.success('Invoice added');
+    }
+  });
+
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: ({ saleId, invoiceIndex }) => {
+      const sale = sales.find(s => s.id === saleId);
+      const invoices = sale.invoices.filter((_, idx) => idx !== invoiceIndex);
+      return base44.entities.Sale.update(saleId, { invoices });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      toast.success('Invoice deleted');
     }
   });
 
@@ -161,6 +194,11 @@ export default function Sales() {
     setFinanceDialogOpen(true);
   };
 
+  const openInvoiceDialog = (sale) => {
+    setSelectedSale(sale);
+    setInvoiceDialogOpen(true);
+  };
+
   const handleAdvancePhase = (e) => {
     e.preventDefault();
     const nextStatus = getNextStatus(selectedSale.status);
@@ -210,6 +248,35 @@ export default function Sales() {
   const needsDrawAlert = (sale) => {
     const balance = calculateRemainingBalance(sale);
     return balance !== null && sale.minimum_draw_threshold && balance < sale.minimum_draw_threshold;
+  };
+
+  const handleAddInvoice = (e) => {
+    e.preventDefault();
+    if (!invoiceForm.invoice_number || !invoiceForm.amount || !invoiceForm.date_issued) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+
+    addInvoiceMutation.mutate({
+      saleId: selectedSale.id,
+      invoice: {
+        invoice_number: invoiceForm.invoice_number,
+        amount: parseFloat(invoiceForm.amount),
+        date_issued: invoiceForm.date_issued,
+        date_paid: invoiceForm.date_paid || null,
+        status: invoiceForm.status,
+        notes: invoiceForm.notes
+      }
+    });
+  };
+
+  const handleDeleteInvoice = (invoiceIndex) => {
+    if (confirm('Are you sure you want to delete this invoice?')) {
+      deleteInvoiceMutation.mutate({
+        saleId: selectedSale.id,
+        invoiceIndex
+      });
+    }
   };
 
   const totalValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
@@ -321,6 +388,18 @@ export default function Sales() {
                               >
                                 <DollarSign className="w-3 h-3 mr-1" />
                                 Setup Deposit & Draw
+                              </Button>
+                            )}
+
+                            {sale.deposit_amount && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-xs"
+                                onClick={() => openInvoiceDialog(sale)}
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Manage Invoices ({(sale.invoices || []).length})
                               </Button>
                             )}
 
@@ -510,6 +589,149 @@ export default function Sales() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invoice Management Dialog */}
+      <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Invoices</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <div className="grid grid-cols-3 gap-4 mt-2">
+                <div>
+                  <p className="text-xs text-slate-500">Deposit</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    ${((selectedSale?.deposit_amount || 0) / 1000).toFixed(1)}k
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Invoiced</p>
+                  <p className="text-sm font-semibold text-amber-600">
+                    ${(((selectedSale?.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)) / 1000).toFixed(1)}k
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Balance</p>
+                  <p className={`text-sm font-semibold ${needsDrawAlert(selectedSale) ? 'text-red-600' : 'text-emerald-600'}`}>
+                    ${((calculateRemainingBalance(selectedSale) || 0) / 1000).toFixed(1)}k
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Invoice List */}
+            <div>
+              <h4 className="text-sm font-semibold text-slate-900 mb-2">Existing Invoices</h4>
+              {(selectedSale?.invoices || []).length > 0 ? (
+                <div className="space-y-2">
+                  {selectedSale.invoices.map((invoice, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-slate-900">#{invoice.invoice_number}</p>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
+                            invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`}>
+                            {invoice.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Issued: {invoice.date_issued}
+                          {invoice.date_paid && ` • Paid: ${invoice.date_paid}`}
+                        </p>
+                        {invoice.notes && (
+                          <p className="text-xs text-slate-600 mt-1">{invoice.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm font-bold text-slate-900">${(invoice.amount / 1000).toFixed(1)}k</p>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-red-500 hover:text-red-700"
+                          onClick={() => handleDeleteInvoice(idx)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 text-center py-4">No invoices yet</p>
+              )}
+            </div>
+
+            {/* Add Invoice Form */}
+            <form onSubmit={handleAddInvoice} className="border-t border-slate-200 pt-4 space-y-3">
+              <h4 className="text-sm font-semibold text-slate-900">Add New Invoice</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Invoice Number *</Label>
+                  <Input
+                    type="text"
+                    value={invoiceForm.invoice_number}
+                    onChange={(e) => setInvoiceForm({...invoiceForm, invoice_number: e.target.value})}
+                    placeholder="INV-001"
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Amount *</Label>
+                  <Input
+                    type="number"
+                    value={invoiceForm.amount}
+                    onChange={(e) => setInvoiceForm({...invoiceForm, amount: e.target.value})}
+                    placeholder="5000"
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Date Issued *</Label>
+                  <Input
+                    type="date"
+                    value={invoiceForm.date_issued}
+                    onChange={(e) => setInvoiceForm({...invoiceForm, date_issued: e.target.value})}
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Date Paid</Label>
+                  <Input
+                    type="date"
+                    value={invoiceForm.date_paid || ''}
+                    onChange={(e) => setInvoiceForm({...invoiceForm, date_paid: e.target.value})}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Notes</Label>
+                <Input
+                  type="text"
+                  value={invoiceForm.notes}
+                  onChange={(e) => setInvoiceForm({...invoiceForm, notes: e.target.value})}
+                  placeholder="Optional notes"
+                  className="h-9"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" size="sm" onClick={() => setInvoiceDialogOpen(false)}>
+                  Close
+                </Button>
+                <Button type="submit" size="sm" disabled={addInvoiceMutation.isPending}>
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add Invoice
+                </Button>
+              </div>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
