@@ -31,6 +31,7 @@ export default function Clients() {
     source: 'other',
     project_type: 'construction',
     estimated_value: '',
+    assigned_to: '',
     notes: ''
   });
 
@@ -39,6 +40,15 @@ export default function Clients() {
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list('-created_date'),
+    initialData: [],
+  });
+
+  const { data: salesUsers = [] } = useQuery({
+    queryKey: ['salesUsers'],
+    queryFn: async () => {
+      const users = await base44.entities.User.list();
+      return users.filter(u => u.departments?.includes('sales'));
+    },
     initialData: [],
   });
 
@@ -58,7 +68,7 @@ export default function Clients() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
       setLeadDialogOpen(false);
-      setLeadForm({ title: '', source: 'other', project_type: 'construction', estimated_value: '', notes: '' });
+      setLeadForm({ title: '', source: 'other', project_type: 'construction', estimated_value: '', assigned_to: '', notes: '' });
       toast.success('Lead created and linked to client');
     },
     onError: () => toast.error('Failed to create lead')
@@ -301,6 +311,22 @@ export default function Clients() {
                 onChange={(e) => setLeadForm({...leadForm, estimated_value: e.target.value})}
                 placeholder="500000"
               />
+            </div>
+            <div>
+              <Label>Assign Salesperson *</Label>
+              <select
+                value={leadForm.assigned_to}
+                onChange={(e) => setLeadForm({...leadForm, assigned_to: e.target.value})}
+                className="w-full px-3 py-2 border rounded-md"
+                required
+              >
+                <option value="">Select salesperson...</option>
+                {salesUsers.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <Label>Notes</Label>
