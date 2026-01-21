@@ -240,12 +240,13 @@ export default function Sales() {
   };
 
   const calculateRemainingBalance = (sale) => {
-    if (!sale.deposit_amount) return null;
+    if (!sale || !sale.deposit_amount) return null;
     const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
     return sale.deposit_amount - totalInvoiced;
   };
 
   const needsDrawAlert = (sale) => {
+    if (!sale) return false;
     const balance = calculateRemainingBalance(sale);
     return balance !== null && sale.minimum_draw_threshold && balance < sale.minimum_draw_threshold;
   };
@@ -598,37 +599,38 @@ export default function Sales() {
           <DialogHeader>
             <DialogTitle>Manage Invoices</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
-              <div className="grid grid-cols-3 gap-4 mt-2">
-                <div>
-                  <p className="text-xs text-slate-500">Deposit</p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    ${((selectedSale?.deposit_amount || 0) / 1000).toFixed(1)}k
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Invoiced</p>
-                  <p className="text-sm font-semibold text-amber-600">
-                    ${(((selectedSale?.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)) / 1000).toFixed(1)}k
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Balance</p>
-                  <p className={`text-sm font-semibold ${needsDrawAlert(selectedSale) ? 'text-red-600' : 'text-emerald-600'}`}>
-                    ${((calculateRemainingBalance(selectedSale) || 0) / 1000).toFixed(1)}k
-                  </p>
+          {selectedSale && (
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-sm font-medium text-slate-900">{selectedSale.title}</p>
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  <div>
+                    <p className="text-xs text-slate-500">Deposit</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      ${((selectedSale.deposit_amount || 0) / 1000).toFixed(1)}k
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Invoiced</p>
+                    <p className="text-sm font-semibold text-amber-600">
+                      ${(((selectedSale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0)) / 1000).toFixed(1)}k
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Balance</p>
+                    <p className={`text-sm font-semibold ${needsDrawAlert(selectedSale) ? 'text-red-600' : 'text-emerald-600'}`}>
+                      ${((calculateRemainingBalance(selectedSale) || 0) / 1000).toFixed(1)}k
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Invoice List */}
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900 mb-2">Existing Invoices</h4>
-              {(selectedSale?.invoices || []).length > 0 ? (
-                <div className="space-y-2">
-                  {selectedSale.invoices.map((invoice, idx) => (
+              {/* Invoice List */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 mb-2">Existing Invoices</h4>
+                {(selectedSale.invoices || []).length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedSale.invoices.map((invoice, idx) => (
                     <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -661,16 +663,16 @@ export default function Sales() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500 text-center py-4">No invoices yet</p>
-              )}
-            </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 text-center py-4">No invoices yet</p>
+                )}
+              </div>
 
-            {/* Add Invoice Form */}
-            <form onSubmit={handleAddInvoice} className="border-t border-slate-200 pt-4 space-y-3">
-              <h4 className="text-sm font-semibold text-slate-900">Add New Invoice</h4>
+              {/* Add Invoice Form */}
+              <form onSubmit={handleAddInvoice} className="border-t border-slate-200 pt-4 space-y-3">
+                <h4 className="text-sm font-semibold text-slate-900">Add New Invoice</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Invoice Number *</Label>
@@ -721,17 +723,18 @@ export default function Sales() {
                   className="h-9"
                 />
               </div>
-              <div className="flex gap-2 justify-end">
-                <Button type="button" variant="outline" size="sm" onClick={() => setInvoiceDialogOpen(false)}>
-                  Close
-                </Button>
-                <Button type="submit" size="sm" disabled={addInvoiceMutation.isPending}>
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add Invoice
-                </Button>
-              </div>
-            </form>
-          </div>
+                <div className="flex gap-2 justify-end">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setInvoiceDialogOpen(false)}>
+                    Close
+                  </Button>
+                  <Button type="submit" size="sm" disabled={addInvoiceMutation.isPending}>
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Invoice
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
