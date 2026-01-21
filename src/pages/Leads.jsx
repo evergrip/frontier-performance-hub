@@ -13,7 +13,9 @@ import EmptyState from '../components/common/EmptyState';
 
 export default function Leads() {
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [disqualifyDialogOpen, setDisqualifyDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
 
   const [saleForm, setSaleForm] = useState({
@@ -62,6 +64,20 @@ export default function Leads() {
     }
   });
 
+  const disqualifyLeadMutation = useMutation({
+    mutationFn: ({ leadId, reason }) => 
+      base44.entities.Lead.update(leadId, { 
+        status: 'unqualified',
+        disqualification_reason: reason 
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['leads']);
+      setDisqualifyDialogOpen(false);
+      setDisqualifyReason('');
+      toast.success('Lead disqualified');
+    }
+  });
+
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);
     return client?.company_name || 'Unknown Client';
@@ -97,10 +113,29 @@ export default function Leads() {
     });
   };
 
+  const openDisqualifyDialog = (lead) => {
+    setSelectedLead(lead);
+    setDisqualifyReason('');
+    setDisqualifyDialogOpen(true);
+  };
+
+  const handleDisqualify = (e) => {
+    e.preventDefault();
+    if (!disqualifyReason.trim()) {
+      toast.error('Please provide a reason');
+      return;
+    }
+    disqualifyLeadMutation.mutate({
+      leadId: selectedLead.id,
+      reason: disqualifyReason
+    });
+  };
+
   const statusColumns = [
     { status: 'new', label: 'New', color: 'bg-blue-100 border-blue-200' },
     { status: 'contacted', label: 'Contacted', color: 'bg-purple-100 border-purple-200' },
     { status: 'qualified', label: 'Qualified', color: 'bg-emerald-100 border-emerald-200' },
+    { status: 'unqualified', label: 'Disqualified', color: 'bg-red-100 border-red-200' },
     { status: 'converted', label: 'Converted', color: 'bg-amber-100 border-amber-200' },
   ];
 
@@ -141,41 +176,57 @@ export default function Leads() {
                           </span>
                         </div>
                         
-                        {lead.status !== 'converted' && (
-                          <div className="flex gap-2">
-                            {lead.status === 'new' && (
+                        {lead.status === 'unqualified' ? (
+                          <div className="text-xs text-red-600 italic">
+                            {lead.disqualification_reason}
+                          </div>
+                        ) : lead.status !== 'converted' ? (
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              {lead.status === 'new' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 text-xs"
+                                  onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'contacted' })}
+                                >
+                                  Mark Contacted
+                                </Button>
+                              )}
+                              {lead.status === 'contacted' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 text-xs"
+                                  onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'qualified' })}
+                                >
+                                  Qualify
+                                </Button>
+                              )}
+                              {lead.status === 'qualified' && (
+                                <Button
+                                  size="sm"
+                                  className="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700"
+                                  onClick={() => openSaleDialog(lead)}
+                                >
+                                  <Briefcase className="w-3 h-3 mr-1" />
+                                  Convert
+                                  <ArrowRight className="w-3 h-3 ml-1" />
+                                </Button>
+                              )}
+                            </div>
+                            {['new', 'contacted', 'qualified'].includes(lead.status) && (
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="flex-1 text-xs"
-                                onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'contacted' })}
+                                className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50"
+                                onClick={() => openDisqualifyDialog(lead)}
                               >
-                                Mark Contacted
-                              </Button>
-                            )}
-                            {lead.status === 'contacted' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 text-xs"
-                                onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'qualified' })}
-                              >
-                                Qualify
-                              </Button>
-                            )}
-                            {lead.status === 'qualified' && (
-                              <Button
-                                size="sm"
-                                className="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700"
-                                onClick={() => openSaleDialog(lead)}
-                              >
-                                <Briefcase className="w-3 h-3 mr-1" />
-                                Convert
-                                <ArrowRight className="w-3 h-3 ml-1" />
+                                Disqualify
                               </Button>
                             )}
                           </div>
-                        )}
+                        ) : null}
                       </CardContent>
                     </Card>
                   ))}
@@ -258,6 +309,41 @@ export default function Leads() {
               <Button type="submit" disabled={convertToSaleMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
                 <Briefcase className="w-4 h-4 mr-2" />
                 Convert to Sale
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disqualify Lead Dialog */}
+      <Dialog open={disqualifyDialogOpen} onOpenChange={setDisqualifyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Disqualify Lead</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleDisqualify} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedLead?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedLead?.client_id)}</p>
+            </div>
+
+            <div>
+              <Label>Reason for Disqualification *</Label>
+              <Textarea
+                value={disqualifyReason}
+                onChange={(e) => setDisqualifyReason(e.target.value)}
+                placeholder="e.g., Budget too low, Not ready to move forward, Out of scope..."
+                rows={4}
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setDisqualifyDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={disqualifyLeadMutation.isPending} className="bg-red-600 hover:bg-red-700">
+                Disqualify Lead
               </Button>
             </div>
           </form>
