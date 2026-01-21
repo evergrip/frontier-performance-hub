@@ -3,23 +3,21 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Search, Users, Mail, Phone, MapPin } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus, Search, Users, Mail, Phone, MapPin, Target, ArrowRight } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 export default function Clients() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [clientDialogOpen, setClientDialogOpen] = useState(false);
+  const [leadDialogOpen, setLeadDialogOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  
+  const [clientForm, setClientForm] = useState({
     company_name: '',
     contact_name: '',
     email: '',
@@ -28,21 +26,42 @@ export default function Clients() {
     notes: ''
   });
 
+  const [leadForm, setLeadForm] = useState({
+    title: '',
+    source: 'other',
+    project_type: 'construction',
+    estimated_value: '',
+    notes: ''
+  });
+
   const queryClient = useQueryClient();
 
-  const { data: clients = [], isLoading } = useQuery({
+  const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list('-created_date'),
     initialData: [],
   });
 
   const createClientMutation = useMutation({
-    mutationFn: (clientData) => base44.entities.Client.create(clientData),
+    mutationFn: (data) => base44.entities.Client.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-      setDialogOpen(false);
-      setFormData({ company_name: '', contact_name: '', email: '', phone: '', address: '', notes: '' });
+      queryClient.invalidateQueries(['clients']);
+      setClientDialogOpen(false);
+      setClientForm({ company_name: '', contact_name: '', email: '', phone: '', address: '', notes: '' });
+      toast.success('Client created successfully');
     },
+    onError: () => toast.error('Failed to create client')
+  });
+
+  const createLeadMutation = useMutation({
+    mutationFn: (data) => base44.entities.Lead.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['leads']);
+      setLeadDialogOpen(false);
+      setLeadForm({ title: '', source: 'other', project_type: 'construction', estimated_value: '', notes: '' });
+      toast.success('Lead created and linked to client');
+    },
+    onError: () => toast.error('Failed to create lead')
   });
 
   const filteredClients = clients.filter(client =>
@@ -51,9 +70,23 @@ export default function Clients() {
     client.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSubmit = (e) => {
+  const handleCreateClient = (e) => {
     e.preventDefault();
-    createClientMutation.mutate(formData);
+    createClientMutation.mutate(clientForm);
+  };
+
+  const handleCreateLead = (e) => {
+    e.preventDefault();
+    createLeadMutation.mutate({
+      ...leadForm,
+      client_id: selectedClient.id,
+      estimated_value: parseFloat(leadForm.estimated_value) || 0
+    });
+  };
+
+  const openLeadDialog = (client) => {
+    setSelectedClient(client);
+    setLeadDialogOpen(true);
   };
 
   return (
@@ -62,87 +95,12 @@ export default function Clients() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Clients</h1>
-          <p className="text-lg text-slate-500">Manage your client relationships</p>
+          <p className="text-lg text-slate-500">Manage client relationships and create leads</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30">
-              <Plus className="w-5 h-5 mr-2" />
-              New Client
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Client</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="company_name">Company Name *</Label>
-                  <Input
-                    id="company_name"
-                    value={formData.company_name}
-                    onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="contact_name">Contact Name *</Label>
-                  <Input
-                    id="contact_name"
-                    value={formData.contact_name}
-                    onChange={(e) => setFormData({...formData, contact_name: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                  rows={3}
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-gradient-to-r from-amber-500 to-amber-600">
-                  Create Client
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setClientDialogOpen(true)} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30">
+          <Plus className="w-5 h-5 mr-2" />
+          New Client
+        </Button>
       </div>
 
       {/* Search */}
@@ -161,7 +119,7 @@ export default function Clients() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map(client => (
             <Card key={client.id} className="hover:shadow-xl transition-shadow duration-300">
-              <CardContent className="p-6">
+              <CardHeader className="pb-3">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
                     <span className="text-xl font-bold text-white">
@@ -169,30 +127,41 @@ export default function Clients() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-900 mb-1 truncate">{client.company_name}</h3>
-                    <p className="text-sm text-slate-500 mb-3">{client.contact_name}</p>
-                    <div className="space-y-2">
-                      {client.email && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <Mail className="w-4 h-4 text-slate-400" />
-                          <span className="truncate">{client.email}</span>
-                        </div>
-                      )}
-                      {client.phone && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <Phone className="w-4 h-4 text-slate-400" />
-                          <span>{client.phone}</span>
-                        </div>
-                      )}
-                      {client.address && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <MapPin className="w-4 h-4 text-slate-400" />
-                          <span className="truncate">{client.address}</span>
-                        </div>
-                      )}
-                    </div>
+                    <CardTitle className="truncate text-lg">{client.company_name}</CardTitle>
+                    <p className="text-sm text-slate-500">{client.contact_name}</p>
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  {client.email && (
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      <span className="truncate">{client.email}</span>
+                    </div>
+                  )}
+                  {client.phone && (
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Phone className="w-4 h-4 text-slate-400" />
+                      <span>{client.phone}</span>
+                    </div>
+                  )}
+                  {client.address && (
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span className="truncate">{client.address}</span>
+                    </div>
+                  )}
+                </div>
+                <Button 
+                  onClick={() => openLeadDialog(client)} 
+                  variant="outline" 
+                  className="w-full border-amber-200 hover:bg-amber-50"
+                >
+                  <Target className="w-4 h-4 mr-2" />
+                  Create Lead
+                  <ArrowRight className="w-4 h-4 ml-auto" />
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -205,11 +174,153 @@ export default function Clients() {
               title="No clients found"
               description={searchQuery ? "Try adjusting your search" : "Get started by adding your first client"}
               actionLabel={!searchQuery ? "Add Client" : undefined}
-              onAction={!searchQuery ? () => setDialogOpen(true) : undefined}
+              onAction={!searchQuery ? () => setClientDialogOpen(true) : undefined}
             />
           </CardContent>
         </Card>
       )}
+
+      {/* Create Client Dialog */}
+      <Dialog open={clientDialogOpen} onOpenChange={setClientDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateClient} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Company Name *</Label>
+                <Input
+                  value={clientForm.company_name}
+                  onChange={(e) => setClientForm({...clientForm, company_name: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <Label>Contact Name *</Label>
+                <Input
+                  value={clientForm.contact_name}
+                  onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={clientForm.email}
+                  onChange={(e) => setClientForm({...clientForm, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Phone</Label>
+                <Input
+                  value={clientForm.phone}
+                  onChange={(e) => setClientForm({...clientForm, phone: e.target.value})}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Address</Label>
+              <Input
+                value={clientForm.address}
+                onChange={(e) => setClientForm({...clientForm, address: e.target.value})}
+              />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={clientForm.notes}
+                onChange={(e) => setClientForm({...clientForm, notes: e.target.value})}
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={() => setClientDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-gradient-to-r from-amber-500 to-amber-600">
+                Create Client
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Lead Dialog */}
+      <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Lead for {selectedClient?.company_name}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateLead} className="space-y-4">
+            <div>
+              <Label>Lead Title *</Label>
+              <Input
+                value={leadForm.title}
+                onChange={(e) => setLeadForm({...leadForm, title: e.target.value})}
+                placeholder="e.g., Office Renovation Project"
+                required
+              />
+            </div>
+            <div>
+              <Label>Source</Label>
+              <select
+                value={leadForm.source}
+                onChange={(e) => setLeadForm({...leadForm, source: e.target.value})}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="referral">Referral</option>
+                <option value="website">Website</option>
+                <option value="cold_call">Cold Call</option>
+                <option value="networking">Networking</option>
+                <option value="advertisement">Advertisement</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <Label>Project Type</Label>
+              <select
+                value={leadForm.project_type}
+                onChange={(e) => setLeadForm({...leadForm, project_type: e.target.value})}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="preconstruction">Preconstruction</option>
+                <option value="construction">Construction</option>
+                <option value="both">Both</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </div>
+            <div>
+              <Label>Estimated Value</Label>
+              <Input
+                type="number"
+                value={leadForm.estimated_value}
+                onChange={(e) => setLeadForm({...leadForm, estimated_value: e.target.value})}
+                placeholder="500000"
+              />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={leadForm.notes}
+                onChange={(e) => setLeadForm({...leadForm, notes: e.target.value})}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setLeadDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createLeadMutation.isPending}>
+                Create Lead
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
