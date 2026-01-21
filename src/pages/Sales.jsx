@@ -23,8 +23,13 @@ export default function Sales() {
     construction_budget: ''
   });
   const [financeForm, setFinanceForm] = useState({
-    deposit_amount: '',
     minimum_draw_threshold: ''
+  });
+  const [depositForm, setDepositForm] = useState({
+    deposit_number: '',
+    amount: '',
+    date_received: '',
+    notes: ''
   });
   const [invoiceForm, setInvoiceForm] = useState({
     invoice_number: '',
@@ -58,13 +63,40 @@ export default function Sales() {
   });
 
   const updateFinanceMutation = useMutation({
-    mutationFn: ({ saleId, deposit_amount, minimum_draw_threshold }) => 
-      base44.entities.Sale.update(saleId, { deposit_amount, minimum_draw_threshold }),
+    mutationFn: ({ saleId, minimum_draw_threshold }) => 
+      base44.entities.Sale.update(saleId, { minimum_draw_threshold }),
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
       setFinanceDialogOpen(false);
-      setFinanceForm({ deposit_amount: '', minimum_draw_threshold: '' });
+      setFinanceForm({ minimum_draw_threshold: '' });
       toast.success('Financial settings updated');
+    }
+  });
+
+  const addDepositMutation = useMutation({
+    mutationFn: ({ saleId, deposit }) => {
+      const sale = sales.find(s => s.id === saleId);
+      const deposits = [...(sale.deposits || []), deposit];
+      const totalDeposits = deposits.reduce((sum, d) => sum + d.amount, 0);
+      return base44.entities.Sale.update(saleId, { deposits, contract_value: totalDeposits });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      setDepositForm({ deposit_number: '', amount: '', date_received: '', notes: '' });
+      toast.success('Deposit added');
+    }
+  });
+
+  const deleteDepositMutation = useMutation({
+    mutationFn: ({ saleId, depositIndex }) => {
+      const sale = sales.find(s => s.id === saleId);
+      const deposits = sale.deposits.filter((_, idx) => idx !== depositIndex);
+      const totalDeposits = deposits.reduce((sum, d) => sum + d.amount, 0);
+      return base44.entities.Sale.update(saleId, { deposits, contract_value: totalDeposits });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      toast.success('Deposit deleted');
     }
   });
 
@@ -188,7 +220,6 @@ export default function Sales() {
   const openFinanceDialog = (sale) => {
     setSelectedSale(sale);
     setFinanceForm({
-      deposit_amount: sale.deposit_amount || '',
       minimum_draw_threshold: sale.minimum_draw_threshold || ''
     });
     setFinanceDialogOpen(true);
@@ -227,22 +258,55 @@ export default function Sales() {
 
   const handleUpdateFinance = (e) => {
     e.preventDefault();
-    if (!financeForm.deposit_amount || !financeForm.minimum_draw_threshold) {
-      toast.error('Please fill in all fields');
+    if (!financeForm.minimum_draw_threshold) {
+      toast.error('Please enter minimum draw threshold');
       return;
     }
 
     updateFinanceMutation.mutate({
       saleId: selectedSale.id,
-      deposit_amount: parseFloat(financeForm.deposit_amount),
       minimum_draw_threshold: parseFloat(financeForm.minimum_draw_threshold)
     });
   };
 
+  const handleAddDeposit = (e) => {
+    e.preventDefault();
+    if (!depositForm.deposit_number || !depositForm.amount || !depositForm.date_received) {
+      toast.error('Please fill in required fields');
+      return;
+    }
+
+    addDepositMutation.mutate({
+      saleId: selectedSale.id,
+      deposit: {
+        deposit_number: depositForm.deposit_number,
+        amount: parseFloat(depositForm.amount),
+        date_received: depositForm.date_received,
+        notes: depositForm.notes
+      }
+    });
+  };
+
+  const handleDeleteDeposit = (depositIndex) => {
+    if (confirm('Are you sure you want to delete this deposit?')) {
+      deleteDepositMutation.mutate({
+        saleId: selectedSale.id,
+        depositIndex
+      });
+    }
+  };
+
+  const getTotalDeposits = (sale) => {
+    if (!sale) return 0;
+    return (sale.deposits || []).reduce((sum, d) => sum + (d.amount || 0), 0);
+  };
+
   const calculateRemainingBalance = (sale) => {
-    if (!sale || !sale.deposit_amount) return null;
+    if (!sale) return null;
+    const totalDeposits = getTotalDeposits(sale);
+    if (totalDeposits === 0) return null;
     const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
-    return sale.deposit_amount - totalInvoiced;
+    return totalDeposits - totalInvoiced;
   };
 
   const needsDrawAlert = (sale) => {
@@ -354,12 +418,12 @@ export default function Sales() {
                                 </span>
                               </div>
                             )}
-                            {sale.deposit_amount && (
+                            {getTotalDeposits(sale) > 0 && (
                               <>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs text-slate-500">Deposit</span>
+                                  <span className="text-xs text-slate-500">Deposits</span>
                                   <span className="text-sm font-medium text-emerald-600">
-                                    ${(sale.deposit_amount / 1000).toFixed(1)}k
+                                    ${(getTotalDeposits(sale) / 1000).toFixed(1)}k
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-between">
@@ -380,7 +444,7 @@ export default function Sales() {
                           )}
 
                           <div className="space-y-2">
-                            {!sale.deposit_amount && (
+                            {!(sale.deposits || []).length && !sale.minimum_draw_threshold && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -388,11 +452,11 @@ export default function Sales() {
                                 onClick={() => openFinanceDialog(sale)}
                               >
                                 <DollarSign className="w-3 h-3 mr-1" />
-                                Setup Deposit & Draw
+                                Setup Tracking
                               </Button>
                             )}
 
-                            {sale.deposit_amount && (
+                            {((sale.deposits || []).length > 0 || sale.minimum_draw_threshold) && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -400,7 +464,7 @@ export default function Sales() {
                                 onClick={() => openInvoiceDialog(sale)}
                               >
                                 <FileText className="w-3 h-3 mr-1" />
-                                Manage Invoices ({(sale.invoices || []).length})
+                                Manage Deposits & Invoices
                               </Button>
                             )}
 
@@ -544,26 +608,12 @@ export default function Sales() {
       <Dialog open={financeDialogOpen} onOpenChange={setFinanceDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Setup Deposit & Draw Alert</DialogTitle>
+            <DialogTitle>Setup Draw Alert Threshold</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdateFinance} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
               <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
-            </div>
-
-            <div>
-              <Label>Initial Deposit Amount *</Label>
-              <p className="text-xs text-slate-500 mb-2">
-                Total deposit received to start preconstruction work
-              </p>
-              <Input
-                type="number"
-                value={financeForm.deposit_amount}
-                onChange={(e) => setFinanceForm({...financeForm, deposit_amount: e.target.value})}
-                placeholder="25000"
-                required
-              />
             </div>
 
             <div>
@@ -595,9 +645,9 @@ export default function Sales() {
 
       {/* Invoice Management Dialog */}
       <Dialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Manage Invoices</DialogTitle>
+            <DialogTitle>Manage Deposits & Invoices</DialogTitle>
           </DialogHeader>
           {selectedSale && (
             <div className="space-y-4">
@@ -605,9 +655,9 @@ export default function Sales() {
                 <p className="text-sm font-medium text-slate-900">{selectedSale.title}</p>
                 <div className="grid grid-cols-3 gap-4 mt-2">
                   <div>
-                    <p className="text-xs text-slate-500">Deposit</p>
-                    <p className="text-sm font-semibold text-slate-900">
-                      ${((selectedSale.deposit_amount || 0) / 1000).toFixed(1)}k
+                    <p className="text-xs text-slate-500">Total Deposits</p>
+                    <p className="text-sm font-semibold text-emerald-600">
+                      ${(getTotalDeposits(selectedSale) / 1000).toFixed(1)}k
                     </p>
                   </div>
                   <div>
@@ -623,6 +673,90 @@ export default function Sales() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Deposits Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 mb-2">Deposits Received</h4>
+                {(selectedSale.deposits || []).length > 0 ? (
+                  <div className="space-y-2 mb-3">
+                    {selectedSale.deposits.map((deposit, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-900">#{deposit.deposit_number}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            Received: {deposit.date_received}
+                          </p>
+                          {deposit.notes && (
+                            <p className="text-xs text-slate-600 mt-1">{deposit.notes}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm font-bold text-emerald-700">${(deposit.amount / 1000).toFixed(1)}k</p>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-red-500 hover:text-red-700"
+                            onClick={() => handleDeleteDeposit(idx)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 text-center py-4 mb-3">No deposits recorded yet</p>
+                )}
+
+                <form onSubmit={handleAddDeposit} className="border border-emerald-200 bg-emerald-50/30 rounded-lg p-3 space-y-3">
+                  <h5 className="text-sm font-semibold text-slate-900">Add New Deposit</h5>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Deposit Number *</Label>
+                      <Input
+                        type="text"
+                        value={depositForm.deposit_number}
+                        onChange={(e) => setDepositForm({...depositForm, deposit_number: e.target.value})}
+                        placeholder="DEP-001"
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Amount *</Label>
+                      <Input
+                        type="number"
+                        value={depositForm.amount}
+                        onChange={(e) => setDepositForm({...depositForm, amount: e.target.value})}
+                        placeholder="10000"
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Date Received *</Label>
+                      <Input
+                        type="date"
+                        value={depositForm.date_received}
+                        onChange={(e) => setDepositForm({...depositForm, date_received: e.target.value})}
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Notes</Label>
+                      <Input
+                        type="text"
+                        value={depositForm.notes}
+                        onChange={(e) => setDepositForm({...depositForm, notes: e.target.value})}
+                        placeholder="Optional"
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" size="sm" disabled={addDepositMutation.isPending} className="w-full">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Deposit
+                  </Button>
+                </form>
               </div>
 
               {/* Invoice List */}
