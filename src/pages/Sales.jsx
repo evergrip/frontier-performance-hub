@@ -3,12 +3,23 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Briefcase, Building2, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 
 export default function Sales() {
   const queryClient = useQueryClient();
+  const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
+  const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null);
+  const [constructionBudget, setConstructionBudget] = useState('');
+  const [constructionForm, setConstructionForm] = useState({
+    final_precon_value: '',
+    construction_budget: ''
+  });
 
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
@@ -23,10 +34,43 @@ export default function Sales() {
   });
 
   const updateSaleStatusMutation = useMutation({
-    mutationFn: ({ saleId, status }) => base44.entities.Sale.update(saleId, { status }),
+    mutationFn: ({ saleId, status, estimated_construction_budget }) => 
+      base44.entities.Sale.update(saleId, { status, estimated_construction_budget }),
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
+      setAdvanceDialogOpen(false);
+      setConstructionBudget('');
       toast.success('Sale status updated');
+    }
+  });
+
+  const convertToConstructionMutation = useMutation({
+    mutationFn: async ({ preconSale, final_precon_value, construction_budget }) => {
+      // Update preconstruction sale with final value
+      await base44.entities.Sale.update(preconSale.id, {
+        contract_value: parseFloat(final_precon_value),
+        status: 'closed_won'
+      });
+
+      // Create construction sale
+      const constructionSale = await base44.entities.Sale.create({
+        title: `${preconSale.title} - Construction`,
+        client_id: preconSale.client_id,
+        lead_id: preconSale.lead_id,
+        sale_type: 'construction',
+        contract_value: parseFloat(construction_budget),
+        linked_precon_sale_id: preconSale.id,
+        assigned_to: preconSale.assigned_to,
+        status: 'closed_won'
+      });
+
+      return constructionSale;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      setConstructionDialogOpen(false);
+      setConstructionForm({ final_precon_value: '', construction_budget: '' });
+      toast.success('Converted to construction sale');
     }
   });
 
@@ -49,6 +93,47 @@ export default function Sales() {
     const statuses = ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'];
     const currentIndex = statuses.indexOf(currentStatus);
     return currentIndex < statuses.length - 1 ? statuses[currentIndex + 1] : null;
+  };
+
+  const openAdvanceDialog = (sale) => {
+    setSelectedSale(sale);
+    setConstructionBudget(sale.estimated_construction_budget || '');
+    setAdvanceDialogOpen(true);
+  };
+
+  const openConstructionDialog = (sale) => {
+    setSelectedSale(sale);
+    setConstructionForm({
+      final_precon_value: sale.contract_value || '',
+      construction_budget: sale.estimated_construction_budget || ''
+    });
+    setConstructionDialogOpen(true);
+  };
+
+  const handleAdvancePhase = (e) => {
+    e.preventDefault();
+    const nextStatus = getNextStatus(selectedSale.status);
+    if (!nextStatus) return;
+
+    updateSaleStatusMutation.mutate({
+      saleId: selectedSale.id,
+      status: nextStatus,
+      estimated_construction_budget: parseFloat(constructionBudget) || null
+    });
+  };
+
+  const handleConvertToConstruction = (e) => {
+    e.preventDefault();
+    if (!constructionForm.final_precon_value || !constructionForm.construction_budget) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    convertToConstructionMutation.mutate({
+      preconSale: selectedSale,
+      final_precon_value: constructionForm.final_precon_value,
+      construction_budget: constructionForm.construction_budget
+    });
   };
 
   const totalValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
@@ -110,14 +195,20 @@ export default function Sales() {
                           <h4 className="font-semibold text-slate-900 mb-1">{sale.title}</h4>
                           <p className="text-xs text-slate-500 mb-2">{getClientName(sale.client_id)}</p>
                           
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-bold text-slate-700">
-                              ${(sale.contract_value / 1000).toFixed(0)}k
-                            </span>
-                            {sale.estimated_margin && (
-                              <span className="text-xs text-slate-500">
-                                {sale.estimated_margin}% margin
+                          <div className="space-y-1 mb-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-500">Precon Value</span>
+                              <span className="text-sm font-bold text-slate-700">
+                                ${(sale.contract_value / 1000).toFixed(0)}k
                               </span>
+                            </div>
+                            {sale.estimated_construction_budget && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-500">Est. Construction</span>
+                                <span className="text-sm font-semibold text-amber-600">
+                                  ${(sale.estimated_construction_budget / 1000).toFixed(0)}k
+                                </span>
+                              </div>
                             )}
                           </div>
 
@@ -126,10 +217,7 @@ export default function Sales() {
                               size="sm"
                               variant="outline"
                               className="w-full text-xs"
-                              onClick={() => updateSaleStatusMutation.mutate({ 
-                                saleId: sale.id, 
-                                status: nextStatus 
-                              })}
+                              onClick={() => openAdvanceDialog(sale)}
                             >
                               <ChevronRight className="w-3 h-3 mr-1" />
                               Move to Next Phase
@@ -140,6 +228,7 @@ export default function Sales() {
                             <Button
                               size="sm"
                               className="w-full text-xs mt-2 bg-amber-600 hover:bg-amber-700"
+                              onClick={() => openConstructionDialog(sale)}
                             >
                               <Building2 className="w-3 h-3 mr-1" />
                               Convert to Construction
@@ -165,6 +254,98 @@ export default function Sales() {
           </CardContent>
         </Card>
       )}
+
+      {/* Advance Phase Dialog */}
+      <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Construction Budget</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAdvancePhase} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+            </div>
+
+            <div>
+              <Label>Estimated Construction Budget *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Update the projected construction costs as you refine the design
+              </p>
+              <Input
+                type="number"
+                value={constructionBudget}
+                onChange={(e) => setConstructionBudget(e.target.value)}
+                placeholder="750000"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setAdvanceDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateSaleStatusMutation.isPending}>
+                <ChevronRight className="w-4 h-4 mr-2" />
+                Advance to Next Phase
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert to Construction Dialog */}
+      <Dialog open={constructionDialogOpen} onOpenChange={setConstructionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convert to Construction Sale</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleConvertToConstruction} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+            </div>
+
+            <div>
+              <Label>Final Pre-Construction Value *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Lock in the final preconstruction revenue
+              </p>
+              <Input
+                type="number"
+                value={constructionForm.final_precon_value}
+                onChange={(e) => setConstructionForm({...constructionForm, final_precon_value: e.target.value})}
+                placeholder="125000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Construction Budget *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Final construction contract value
+              </p>
+              <Input
+                type="number"
+                value={constructionForm.construction_budget}
+                onChange={(e) => setConstructionForm({...constructionForm, construction_budget: e.target.value})}
+                placeholder="750000"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setConstructionDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={convertToConstructionMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
+                <Building2 className="w-4 h-4 mr-2" />
+                Convert to Construction
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
