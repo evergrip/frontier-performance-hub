@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle, FileText, Plus, Trash2 } from 'lucide-react';
+import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 
@@ -346,6 +347,23 @@ export default function Sales() {
 
   const totalValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
 
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const { source, destination, draggableId } = result;
+    
+    if (source.droppableId === destination.droppableId) return;
+    
+    const newStatus = destination.droppableId;
+    const saleId = draggableId;
+    
+    updateSaleStatusMutation.mutate({
+      saleId,
+      status: newStatus,
+      estimated_construction_budget: null
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
@@ -376,32 +394,55 @@ export default function Sales() {
       </div>
 
       {preconstructionSales.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statusColumns.map(column => {
-            const columnSales = preconstructionSales.filter(s => s.status === column.status);
-            const columnValue = columnSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
-            
-            return (
-              <div key={column.status}>
-                <div className="mb-4">
-                  <h3 className="font-bold text-slate-900">{column.label}</h3>
-                  <p className="text-xs text-slate-500">{column.description}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm text-slate-600">{columnSales.length} projects</span>
-                    <span className="text-xs text-slate-400">•</span>
-                    <span className="text-sm font-semibold text-emerald-600">
-                      ${(columnValue / 1000).toFixed(0)}k
-                    </span>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {statusColumns.map(column => {
+              const columnSales = preconstructionSales.filter(s => s.status === column.status);
+              const columnValue = columnSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+              
+              return (
+                <div key={column.status}>
+                  <div className="mb-4">
+                    <h3 className="font-bold text-slate-900">{column.label}</h3>
+                    <p className="text-xs text-slate-500">{column.description}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm text-slate-600">{columnSales.length} projects</span>
+                      <span className="text-xs text-slate-400">•</span>
+                      <span className="text-sm font-semibold text-emerald-600">
+                        ${(columnValue / 1000).toFixed(0)}k
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-3">
-                  {columnSales.map(sale => {
-                    const nextStatus = getNextStatus(sale.status);
-                    return (
-                      <Card key={sale.id} className={`border-2 ${column.color} hover:shadow-lg transition-shadow`}>
-                        <CardContent className="p-4">
-                          <h4 className="font-semibold text-slate-900 mb-1">{sale.title}</h4>
-                          <p className="text-xs text-slate-500 mb-2">{getClientName(sale.client_id)}</p>
+                  <Droppable droppableId={column.status}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-3 min-h-[200px] p-2 rounded-lg transition-colors ${
+                          snapshot.isDraggingOver ? 'bg-slate-100' : ''
+                        }`}
+                      >
+                        {columnSales.map((sale, index) => {
+                          const nextStatus = getNextStatus(sale.status);
+                          return (
+                            <Draggable key={sale.id} draggableId={sale.id} index={index}>
+                              {(provided, snapshot) => (
+                                <Card 
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`border-2 ${column.color} transition-all ${
+                                    snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
+                                  }`}
+                                >
+                                  <CardContent className="p-4">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="flex items-center gap-2 mb-2 cursor-grab active:cursor-grabbing"
+                                    >
+                                      <GripVertical className="w-4 h-4 text-slate-400" />
+                                      <h4 className="font-semibold text-slate-900 flex-1">{sale.title}</h4>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-2 ml-6">{getClientName(sale.client_id)}</p>
                           
                           <div className="space-y-1 mb-3">
                             <div className="flex items-center justify-between">
@@ -490,16 +531,22 @@ export default function Sales() {
                                 Convert to Construction
                               </Button>
                             )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
       ) : (
         <Card>
           <CardContent className="p-0">
