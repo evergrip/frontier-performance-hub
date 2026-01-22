@@ -40,7 +40,8 @@ export default function SalesReport({ dateRange, staffId }) {
       if (!bySalesperson[salesPersonId]) {
         bySalesperson[salesPersonId] = {
           totalLeads: 0,
-          converted: 0,
+          convertedTotal: 0,
+          convertedAfterProposal: 0,
           disqualifiedAfterProposal: 0,
           disqualifiedBeforeProposal: 0,
           proposalReached: 0,
@@ -55,8 +56,9 @@ export default function SalesReport({ dateRange, staffId }) {
       bySalesperson[salesPersonId].totalLeads++;
       
       if (lead.status === 'converted') {
-        bySalesperson[salesPersonId].converted++;
+        bySalesperson[salesPersonId].convertedTotal++;
         if (reachedProposal) {
+          bySalesperson[salesPersonId].convertedAfterProposal++;
           bySalesperson[salesPersonId].proposalReached++;
         }
       } else if (lead.status === 'disqualified') {
@@ -73,8 +75,8 @@ export default function SalesReport({ dateRange, staffId }) {
 
     Object.keys(bySalesperson).forEach(id => {
       const data = bySalesperson[id];
-      data.conversionRate = data.totalLeads > 0 ? (data.converted / data.totalLeads) * 100 : 0;
-      data.winRate = data.proposalReached > 0 ? (data.converted / data.proposalReached) * 100 : 0;
+      data.conversionRate = data.totalLeads > 0 ? (data.convertedTotal / data.totalLeads) * 100 : 0;
+      data.winRate = data.proposalReached > 0 ? (data.convertedAfterProposal / data.proposalReached) * 100 : 0;
     });
 
     return bySalesperson;
@@ -180,7 +182,7 @@ export default function SalesReport({ dateRange, staffId }) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Badge className="bg-emerald-100 text-emerald-800">{data.converted}</Badge>
+                          <Badge className="bg-emerald-100 text-emerald-800">{data.convertedTotal}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge variant="outline">{data.totalLeads}</Badge>
@@ -236,7 +238,7 @@ export default function SalesReport({ dateRange, staffId }) {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Badge className="bg-emerald-100 text-emerald-800">{data.converted}</Badge>
+                          <Badge className="bg-emerald-100 text-emerald-800">{data.convertedAfterProposal}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Badge variant="outline">{data.proposalReached}</Badge>
