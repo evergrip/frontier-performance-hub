@@ -6,8 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { TrendingUp, TrendingDown, Minus, DollarSign } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Bar, ComposedChart } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, eachQuarterOfInterval, startOfQuarter, endOfQuarter } from 'date-fns';
 
 export default function SalesReport({ dateRange, staffId }) {
@@ -22,6 +22,12 @@ export default function SalesReport({ dateRange, staffId }) {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
+  const { data: sales = [] } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => base44.entities.Sale.list(),
     initialData: [],
   });
 
@@ -122,12 +128,22 @@ export default function SalesReport({ dateRange, staffId }) {
       const proposalTotal = proposalLeads.length;
       const winRateAfterProposal = proposalTotal > 0 ? (convertedAfterProposal / proposalTotal) * 100 : 0;
 
+      // Calculate sales volume for this period
+      const periodSales = sales.filter(sale => {
+        if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
+        const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+        return closeDate >= intervalStart && closeDate <= intervalEnd;
+      });
+      
+      const salesVolume = periodSales.reduce((sum, sale) => sum + (sale.contract_value || 0), 0);
+
       return {
         period: trendPeriod === 'monthly' 
           ? format(intervalStart, 'MMM yyyy')
           : `Q${Math.floor(intervalStart.getMonth() / 3) + 1} ${format(intervalStart, 'yyyy')}`,
         winRate: parseFloat(winRate.toFixed(1)),
         winRateAfterProposal: parseFloat(winRateAfterProposal.toFixed(1)),
+        salesVolume: salesVolume,
         converted,
         disqualified,
         total,
@@ -141,8 +157,66 @@ export default function SalesReport({ dateRange, staffId }) {
   const trendData = calculateTrendData();
   const salespeopleWithData = Object.keys(metricsData);
 
+  // Calculate contract values summary
+  const calculateContractValues = () => {
+    const filteredSales = sales.filter(sale => {
+      if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
+      if (!dateRange.start || !dateRange.end) return true;
+      
+      const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+      return closeDate >= dateRange.start && closeDate <= dateRange.end;
+    });
+
+    const preconTotal = filteredSales
+      .filter(s => s.sale_type === 'preconstruction')
+      .reduce((sum, s) => sum + (s.contract_value || 0), 0);
+    
+    const constructionTotal = filteredSales
+      .filter(s => s.sale_type === 'construction')
+      .reduce((sum, s) => sum + (s.contract_value || 0), 0);
+
+    return {
+      preconTotal,
+      constructionTotal,
+      combinedTotal: preconTotal + constructionTotal
+    };
+  };
+
+  const contractValues = calculateContractValues();
+
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-amber-500" />
+            Contract Values Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-slate-600 mb-1">Pre-Construction</p>
+              <p className="text-3xl font-bold text-blue-600">
+                ${(contractValues.preconTotal / 1000000).toFixed(2)}M
+              </p>
+            </div>
+            <div className="text-center p-4 bg-emerald-50 rounded-lg">
+              <p className="text-sm text-slate-600 mb-1">Construction</p>
+              <p className="text-3xl font-bold text-emerald-600">
+                ${(contractValues.constructionTotal / 1000000).toFixed(2)}M
+              </p>
+            </div>
+            <div className="text-center p-4 bg-amber-50 rounded-lg">
+              <p className="text-sm text-slate-600 mb-1">Combined Total</p>
+              <p className="text-3xl font-bold text-amber-600">
+                ${(contractValues.combinedTotal / 1000000).toFixed(2)}M
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -331,11 +405,20 @@ export default function SalesReport({ dateRange, staffId }) {
           {trendData.length === 0 ? (
             <p className="text-sm text-slate-500">No trend data available for this period</p>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendData}>
+            <ResponsiveContainer width="100%" height={400}>
+              <ComposedChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="period" />
-                <YAxis label={{ value: 'Win Rate (%)', angle: -90, position: 'insideLeft' }} />
+                <YAxis 
+                  yAxisId="left"
+                  label={{ value: 'Win Rate (%)', angle: -90, position: 'insideLeft' }} 
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  label={{ value: 'Sales Volume ($)', angle: 90, position: 'insideRight' }}
+                  tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
+                />
                 <Tooltip 
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
@@ -345,6 +428,7 @@ export default function SalesReport({ dateRange, staffId }) {
                           <p className="font-semibold">{data.period}</p>
                           <p className="text-emerald-600">Overall Win Rate: {data.winRate}%</p>
                           <p className="text-blue-600">Win Rate After Proposal: {data.winRateAfterProposal}%</p>
+                          <p className="text-amber-600">Sales Volume: ${(data.salesVolume / 1000000).toFixed(2)}M</p>
                           <p className="text-sm text-slate-600 mt-2">Overall: {data.converted}/{data.total}</p>
                           <p className="text-sm text-slate-600">After Proposal: {data.convertedAfterProposal}/{data.proposalTotal}</p>
                         </div>
@@ -354,7 +438,15 @@ export default function SalesReport({ dateRange, staffId }) {
                   }}
                 />
                 <Legend />
+                <Bar 
+                  yAxisId="right"
+                  dataKey="salesVolume" 
+                  fill="#f59e0b" 
+                  opacity={0.3}
+                  name="Sales Volume ($)"
+                />
                 <Line 
+                  yAxisId="left"
                   type="monotone" 
                   dataKey="winRate" 
                   stroke="#10b981" 
@@ -363,6 +455,7 @@ export default function SalesReport({ dateRange, staffId }) {
                   dot={{ fill: '#10b981', r: 4 }}
                 />
                 <Line 
+                  yAxisId="left"
                   type="monotone" 
                   dataKey="winRateAfterProposal" 
                   stroke="#3b82f6" 
@@ -370,7 +463,7 @@ export default function SalesReport({ dateRange, staffId }) {
                   name="Win Rate After Proposal (%)"
                   dot={{ fill: '#3b82f6', r: 4 }}
                 />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           )}
         </CardContent>
