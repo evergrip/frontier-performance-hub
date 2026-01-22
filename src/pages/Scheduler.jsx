@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, getMonth, getYear, startOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ export default function Scheduler() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
   });
+
+  const queryClient = useQueryClient();
 
   const { data: assignments = [], refetch: refetchAssignments } = useQuery({
     queryKey: ['employeeAssignments'],
@@ -57,14 +59,39 @@ export default function Scheduler() {
     const projectIndex = projects.findIndex(p => p.id === data.project_id);
     const color = COLORS[projectIndex % COLORS.length];
 
-    createAssignmentMutation.mutate({
-      employee_id: data.employee_id || 'unassigned',
-      assignment_date: data.date,
-      project_id: data.project_id,
-      status: 'Assigned',
-      hours: data.hours || 8,
-      color: color,
-    });
+    // Check if job already exists for this day/project
+    const existingAssignment = assignments.find(
+      a => a.assignment_date === data.date && a.project_id === data.project_id
+    );
+
+    if (existingAssignment) {
+      // Add employee to existing job
+      const updatedEmployees = [...(existingAssignment.employee_assignments || [])];
+      updatedEmployees.push({
+        employee_id: data.employee_id,
+        hours: data.hours || 8
+      });
+
+      base44.entities.EmployeeAssignment.update(existingAssignment.id, {
+        employee_assignments: updatedEmployees
+      }).then(() => refetchAssignments());
+    } else {
+      // Create new job assignment
+      createAssignmentMutation.mutate({
+        assignment_date: data.date,
+        project_id: data.project_id,
+        status: 'Assigned',
+        employee_assignments: [{
+          employee_id: data.employee_id,
+          hours: data.hours || 8
+        }],
+        color: color,
+      });
+    }
+  };
+
+  const updateRefetch = async () => {
+    await refetchAssignments();
   };
 
   return (
