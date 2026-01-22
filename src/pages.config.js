@@ -10,8 +10,8 @@ import Projects from './pages/Projects';
 import Relationships from './pages/Relationships';
 import Reports from './pages/Reports';
 import Sales from './pages/Sales';
-import UsersAdmin from './pages/UsersAdmin';
 import Scheduler from './pages/Scheduler';
+import UsersAdmin from './pages/UsersAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -28,8 +28,8 @@ export const PAGES = {
     "Relationships": Relationships,
     "Reports": Reports,
     "Sales": Sales,
-    "UsersAdmin": UsersAdmin,
     "Scheduler": Scheduler,
+    "UsersAdmin": UsersAdmin,
 }
 
 export const pagesConfig = {
