@@ -2,14 +2,30 @@ import React, { useState } from 'react';
 import { format, startOfMonth, addMonths, getMonth, getYear } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import AllocationDialog from './AllocationDialog';
 
-export default function MonthlyAllocationView({ projects, onSelectMonth, selectedMonth }) {
-  const [allocationEdits, setAllocationEdits] = useState({});
+export default function MonthlyAllocationView({ projects, onSelectMonth }) {
   const [startMonth, setStartMonth] = useState(startOfMonth(new Date()));
+  const [draggedProject, setDraggedProject] = useState(null);
+  const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
+  const [pendingAllocation, setPendingAllocation] = useState(null);
+  const queryClient = useQueryClient();
 
   const months = Array.from({ length: 12 }, (_, i) => addMonths(startMonth, i));
+
+  const updateProjectMutation = useMutation({
+    mutationFn: ({ projectId, allocations }) =>
+      base44.entities.Project.update(projectId, {
+        monthly_work_allocations: allocations,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
 
   const getProjectAllocation = (projectId, month) => {
     const allocation = projects
@@ -20,9 +36,15 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, selecte
     return allocation?.percentage || 0;
   };
 
+  const getAllocationAmount = (projectId, month) => {
+    const project = projects.find(p => p.id === projectId);
+    const percentage = getProjectAllocation(projectId, month);
+    return (project?.contract_value || 0) * (percentage / 100);
+  };
+
   const getMonthlyTotal = (month) => {
     return projects.reduce((sum, project) => {
-      return sum + getProjectAllocation(project.id, month);
+      return sum + getAllocationAmount(project.id, month);
     }, 0);
   };
 
@@ -32,121 +54,176 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, selecte
       ?.monthly_work_allocations?.reduce((sum, a) => sum + (a.percentage || 0), 0) || 0;
   };
 
-  const handleAllocationChange = (projectId, month, value) => {
-    const key = `${projectId}-${format(month, 'yyyy-MM')}`;
-    setAllocationEdits({ ...allocationEdits, [key]: parseFloat(value) || 0 });
+  const handleDragStart = (project) => {
+    setDraggedProject(project);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (month) => {
+    if (!draggedProject) return;
+    setPendingAllocation({ project: draggedProject, month });
+    setAllocationDialogOpen(true);
+  };
+
+  const handleAllocationConfirm = (percentage) => {
+    if (!pendingAllocation) return;
+
+    const { project, month } = pendingAllocation;
+    const allocations = [...(project.monthly_work_allocations || [])];
+
+    const existingIndex = allocations.findIndex(
+      a => a.year === getYear(month) && a.month === getMonth(month) + 1
+    );
+
+    if (existingIndex >= 0) {
+      allocations[existingIndex].percentage = percentage;
+    } else {
+      allocations.push({
+        year: getYear(month),
+        month: getMonth(month) + 1,
+        percentage,
+      });
+    }
+
+    updateProjectMutation.mutate({
+      projectId: project.id,
+      allocations,
+    });
+
+    setAllocationDialogOpen(false);
+    setPendingAllocation(null);
+    setDraggedProject(null);
+  };
+
+  const handleRemoveAllocation = (projectId, month) => {
+    const project = projects.find(p => p.id === projectId);
+    const allocations = (project?.monthly_work_allocations || []).filter(
+      a => !(a.year === getYear(month) && a.month === getMonth(month) + 1)
+    );
+
+    updateProjectMutation.mutate({
+      projectId,
+      allocations,
+    });
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setStartMonth(addMonths(startMonth, -1))}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setStartMonth(addMonths(startMonth, 1))}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-        <CardTitle>Monthly Work Allocations</CardTitle>
-        <div className="w-20" />
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b-2 border-slate-200">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900 w-48 border-r border-slate-200">
-                  Project
-                </th>
-                {months.map(month => (
-                  <th
-                    key={format(month, 'yyyy-MM')}
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-900 border-r border-slate-200 w-24"
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Projects Sidebar */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-lg">Projects</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {projects.map(project => (
+              <div
+                key={project.id}
+                draggable
+                onDragStart={() => handleDragStart(project)}
+                className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 cursor-move hover:shadow-md transition-all group"
+              >
+                <div className="font-medium text-slate-900 text-sm">{project.title}</div>
+                <div className="text-xs text-slate-600 mt-1">${project.contract_value?.toLocaleString() || '0'}</div>
+                <div className="flex items-center justify-between mt-2">
+                  <Badge variant="outline" className="text-xs">
+                    {getTotalAllocated(project.id)}% allocated
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onSelectMonth(project.id)}
+                    className="text-xs"
                   >
-                    <div>{format(month, 'MMM')}</div>
-                    <div className="text-xs text-slate-500">{format(month, 'yy')}</div>
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-900 w-20 border-r border-slate-200">
-                  Total %
-                </th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-900 w-24">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map(project => (
-                <tr key={project.id} className="border-b border-slate-200 hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900 border-r border-slate-200">
-                    {project.title}
-                  </td>
-                  {months.map(month => {
-                    const allocation = getProjectAllocation(project.id, month);
-                    const key = `${project.id}-${format(month, 'yyyy-MM')}`;
-                    const editValue = allocationEdits[key];
-                    const displayValue = editValue !== undefined ? editValue : allocation;
+                    View
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-                    return (
-                      <td
-                        key={format(month, 'yyyy-MM')}
-                        className="px-4 py-3 text-center text-sm border-r border-slate-200"
-                      >
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={displayValue}
-                          onChange={(e) => handleAllocationChange(project.id, month, e.target.value)}
-                          className="text-center text-sm h-8"
-                          placeholder="0"
-                        />
-                      </td>
-                    );
-                  })}
-                  <td className="px-4 py-3 text-center text-sm font-semibold text-slate-900 border-r border-slate-200">
-                    {getTotalAllocated(project.id)}%
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Button
-                      size="sm"
-                      onClick={() => onSelectMonth(project.id)}
-                      className="gap-1"
-                    >
-                      View <ChevronDown className="w-3 h-3" />
-                    </Button>
-                  </td>
-                </tr>
+        {/* Months Grid */}
+        <Card className="lg:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setStartMonth(addMonths(startMonth, -1))}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setStartMonth(addMonths(startMonth, 1))}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            <CardTitle>Drag projects to allocate work by month</CardTitle>
+            <div className="w-20" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {months.map(month => (
+                <div
+                  key={format(month, 'yyyy-MM')}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(month)}
+                  className="p-4 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all min-h-80"
+                >
+                  <div className="font-semibold text-slate-900 mb-2">{format(month, 'MMM yyyy')}</div>
+
+                  {/* Allocations for this month */}
+                  <div className="space-y-2 mb-4">
+                    {projects
+                      .filter(project => getProjectAllocation(project.id, month) > 0)
+                      .map(project => (
+                        <div
+                          key={project.id}
+                          className="p-2 rounded bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xs"
+                        >
+                          <div className="flex items-start justify-between gap-1">
+                            <div>
+                              <div className="font-medium">{project.title}</div>
+                              <div className="text-blue-100">
+                                {getProjectAllocation(project.id, month)}% = ${getAllocationAmount(project.id, month).toLocaleString()}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveAllocation(project.id, month)}
+                              className="p-1 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+
+                  {/* Monthly total */}
+                  <div className="pt-2 border-t border-slate-200 text-sm font-semibold text-slate-700">
+                    Total: ${getMonthlyTotal(month).toLocaleString()}
+                  </div>
+                </div>
               ))}
-              <tr className="border-t-2 border-slate-300 bg-slate-100 font-bold">
-                <td className="px-4 py-3 text-sm text-slate-900 border-r border-slate-200">
-                  Monthly Total
-                </td>
-                {months.map(month => (
-                  <td
-                    key={`total-${format(month, 'yyyy-MM')}`}
-                    className="px-4 py-3 text-center text-sm text-slate-900 border-r border-slate-200"
-                  >
-                    {getMonthlyTotal(month)}%
-                  </td>
-                ))}
-                <td colSpan="2" className="px-4 py-3 text-center text-xs text-slate-500">
-                  Allocate work by month
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <AllocationDialog
+        isOpen={allocationDialogOpen}
+        onClose={() => setAllocationDialogOpen(false)}
+        onConfirm={handleAllocationConfirm}
+        project={pendingAllocation?.project}
+        month={pendingAllocation?.month ? format(pendingAllocation.month, 'MMM yyyy') : ''}
+      />
+    </>
   );
 }
