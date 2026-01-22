@@ -25,18 +25,10 @@ export default function SalesReport({ dateRange, staffId }) {
     initialData: [],
   });
 
-  const calculateWinRatio = () => {
+  const calculateMetrics = () => {
     const filteredLeads = leads.filter(lead => {
-      // Filter by staff if specified
       if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
-      
-      // Include converted leads (regardless of proposal stage) OR leads that reached proposal
-      if (lead.status === 'converted') return true;
-      
-      const statusHistory = lead.status_history || [];
-      const reachedProposal = statusHistory.some(h => h.status === 'preconstruction_proposal');
-      
-      return reachedProposal;
+      return true;
     });
 
     const bySalesperson = {};
@@ -47,25 +39,42 @@ export default function SalesReport({ dateRange, staffId }) {
       
       if (!bySalesperson[salesPersonId]) {
         bySalesperson[salesPersonId] = {
+          totalLeads: 0,
           converted: 0,
-          disqualified: 0,
-          total: 0,
+          disqualifiedAfterProposal: 0,
+          disqualifiedBeforeProposal: 0,
+          proposalReached: 0,
+          conversionRate: 0,
           winRate: 0
         };
       }
       
+      const statusHistory = lead.status_history || [];
+      const reachedProposal = statusHistory.some(h => h.status === 'preconstruction_proposal');
+      
+      bySalesperson[salesPersonId].totalLeads++;
+      
       if (lead.status === 'converted') {
         bySalesperson[salesPersonId].converted++;
+        if (reachedProposal) {
+          bySalesperson[salesPersonId].proposalReached++;
+        }
       } else if (lead.status === 'disqualified') {
-        bySalesperson[salesPersonId].disqualified++;
+        if (reachedProposal) {
+          bySalesperson[salesPersonId].disqualifiedAfterProposal++;
+          bySalesperson[salesPersonId].proposalReached++;
+        } else {
+          bySalesperson[salesPersonId].disqualifiedBeforeProposal++;
+        }
+      } else if (reachedProposal) {
+        bySalesperson[salesPersonId].proposalReached++;
       }
-      
-      bySalesperson[salesPersonId].total++;
     });
 
     Object.keys(bySalesperson).forEach(id => {
       const data = bySalesperson[id];
-      data.winRate = data.total > 0 ? (data.converted / data.total) * 100 : 0;
+      data.conversionRate = data.totalLeads > 0 ? (data.converted / data.totalLeads) * 100 : 0;
+      data.winRate = data.proposalReached > 0 ? (data.converted / data.proposalReached) * 100 : 0;
     });
 
     return bySalesperson;
@@ -122,40 +131,151 @@ export default function SalesReport({ dateRange, staffId }) {
     });
   };
 
-  const winRatioData = calculateWinRatio();
+  const metricsData = calculateMetrics();
   const trendData = calculateTrendData();
-  const salespeopleWithData = Object.keys(winRatioData);
+  const salespeopleWithData = Object.keys(metricsData);
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              Overall Conversion Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {salespeopleWithData.length === 0 ? (
+              <p className="text-sm text-slate-500">No lead data available for this period</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Salesperson</TableHead>
+                    <TableHead className="text-right">Conversion Rate</TableHead>
+                    <TableHead className="text-right">Converted</TableHead>
+                    <TableHead className="text-right">Total Leads</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salespeopleWithData.map(salesPersonId => {
+                    const user = users.find(u => u.id === salesPersonId);
+                    const data = metricsData[salesPersonId];
+                    
+                    const TrendIcon = data.conversionRate >= 30 ? TrendingUp : data.conversionRate >= 15 ? Minus : TrendingDown;
+                    const trendColor = data.conversionRate >= 30 ? 'text-emerald-600' : data.conversionRate >= 15 ? 'text-amber-600' : 'text-red-600';
+                    
+                    return (
+                      <TableRow key={salesPersonId}>
+                        <TableCell className="font-medium">
+                          {user?.full_name || 'Unknown'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <TrendIcon className={`w-4 h-4 ${trendColor}`} />
+                            <span className={`font-bold text-lg ${trendColor}`}>
+                              {data.conversionRate.toFixed(1)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge className="bg-emerald-100 text-emerald-800">{data.converted}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline">{data.totalLeads}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+              Win Rate (After Proposal)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {salespeopleWithData.length === 0 ? (
+              <p className="text-sm text-slate-500">No proposal data available for this period</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Salesperson</TableHead>
+                    <TableHead className="text-right">Win Rate</TableHead>
+                    <TableHead className="text-right">Converted</TableHead>
+                    <TableHead className="text-right">Proposals</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salespeopleWithData.map(salesPersonId => {
+                    const user = users.find(u => u.id === salesPersonId);
+                    const data = metricsData[salesPersonId];
+                    
+                    const TrendIcon = data.winRate >= 50 ? TrendingUp : data.winRate >= 30 ? Minus : TrendingDown;
+                    const trendColor = data.winRate >= 50 ? 'text-emerald-600' : data.winRate >= 30 ? 'text-amber-600' : 'text-red-600';
+                    
+                    return (
+                      <TableRow key={salesPersonId}>
+                        <TableCell className="font-medium">
+                          {user?.full_name || 'Unknown'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <TrendIcon className={`w-4 h-4 ${trendColor}`} />
+                            <span className={`font-bold text-lg ${trendColor}`}>
+                              {data.winRate.toFixed(1)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge className="bg-emerald-100 text-emerald-800">{data.converted}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline">{data.proposalReached}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-emerald-500" />
-            Win Ratio by Salesperson
+            <TrendingDown className="w-5 h-5 text-red-500" />
+            Disqualified Before Proposal
           </CardTitle>
         </CardHeader>
         <CardContent>
           {salespeopleWithData.length === 0 ? (
-            <p className="text-sm text-slate-500">No proposal data available for this period</p>
+            <p className="text-sm text-slate-500">No disqualification data available for this period</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Salesperson</TableHead>
-                  <TableHead className="text-right">Win Rate</TableHead>
-                  <TableHead className="text-right">Converted</TableHead>
-                  <TableHead className="text-right">Disqualified</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Disqualified Before Proposal</TableHead>
+                  <TableHead className="text-right">Disqualified After Proposal</TableHead>
+                  <TableHead className="text-right">Total Disqualified</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {salespeopleWithData.map(salesPersonId => {
                   const user = users.find(u => u.id === salesPersonId);
-                  const data = winRatioData[salesPersonId];
-                  
-                  const TrendIcon = data.winRate >= 50 ? TrendingUp : data.winRate >= 30 ? Minus : TrendingDown;
-                  const trendColor = data.winRate >= 50 ? 'text-emerald-600' : data.winRate >= 30 ? 'text-amber-600' : 'text-red-600';
+                  const data = metricsData[salesPersonId];
+                  const totalDisqualified = data.disqualifiedBeforeProposal + data.disqualifiedAfterProposal;
                   
                   return (
                     <TableRow key={salesPersonId}>
@@ -163,21 +283,13 @@ export default function SalesReport({ dateRange, staffId }) {
                         {user?.full_name || 'Unknown'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <TrendIcon className={`w-4 h-4 ${trendColor}`} />
-                          <span className={`font-bold text-lg ${trendColor}`}>
-                            {data.winRate.toFixed(1)}%
-                          </span>
-                        </div>
+                        <Badge variant="destructive">{data.disqualifiedBeforeProposal}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge className="bg-emerald-100 text-emerald-800">{data.converted}</Badge>
+                        <Badge className="bg-orange-100 text-orange-800">{data.disqualifiedAfterProposal}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant="destructive">{data.disqualified}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="outline">{data.total}</Badge>
+                        <Badge variant="outline">{totalDisqualified}</Badge>
                       </TableCell>
                     </TableRow>
                   );
