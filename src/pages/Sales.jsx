@@ -17,6 +17,7 @@ export default function Sales() {
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
   const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [constructionForm, setConstructionForm] = useState({
@@ -53,8 +54,14 @@ export default function Sales() {
   });
 
   const updateSaleStatusMutation = useMutation({
-    mutationFn: ({ saleId, status, estimated_construction_budget }) => 
-      base44.entities.Sale.update(saleId, { status, estimated_construction_budget }),
+    mutationFn: ({ saleId, status, estimated_construction_budget }) => {
+      const sale = sales.find(s => s.id === saleId);
+      const phase_history = [...(sale.phase_history || []), {
+        status,
+        entered_date: new Date().toISOString()
+      }];
+      return base44.entities.Sale.update(saleId, { status, estimated_construction_budget, phase_history });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
       setAdvanceDialogOpen(false);
@@ -364,6 +371,45 @@ export default function Sales() {
     });
   };
 
+  const openDetailDialog = (sale) => {
+    setSelectedSale(sale);
+    setDetailDialogOpen(true);
+  };
+
+  const calculatePhaseDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : new Date();
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 7) return `${diffDays} days`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks`;
+    return `${Math.floor(diffDays / 30)} months`;
+  };
+
+  const getPhaseTimeline = (sale) => {
+    if (!sale.phase_history || sale.phase_history.length === 0) {
+      return [{
+        status: sale.status,
+        entered_date: sale.created_date,
+        duration: calculatePhaseDuration(sale.created_date, null),
+        isCurrent: true
+      }];
+    }
+
+    const timeline = sale.phase_history.map((phase, index) => {
+      const nextPhase = sale.phase_history[index + 1];
+      return {
+        status: phase.status,
+        entered_date: phase.entered_date,
+        duration: calculatePhaseDuration(phase.entered_date, nextPhase?.entered_date),
+        isCurrent: index === sale.phase_history.length - 1
+      };
+    });
+
+    return timeline;
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
@@ -430,14 +476,16 @@ export default function Sales() {
                                 <Card 
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`border-2 ${column.color} transition-all ${
+                                  className={`border-2 ${column.color} transition-all cursor-pointer ${
                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
                                   }`}
+                                  onClick={() => openDetailDialog(sale)}
                                 >
                                   <CardContent className="p-4">
                                     <div 
                                       {...provided.dragHandleProps}
                                       className="flex items-center gap-2 mb-2 cursor-grab active:cursor-grabbing"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       <GripVertical className="w-4 h-4 text-slate-400" />
                                       <h4 className="font-semibold text-slate-900 flex-1">{sale.title}</h4>
@@ -484,7 +532,7 @@ export default function Sales() {
                             </div>
                           )}
 
-                          <div className="space-y-2">
+                          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                             {!(sale.deposits || []).length && !sale.minimum_draw_threshold && (
                               <Button
                                 size="sm"
@@ -531,7 +579,7 @@ export default function Sales() {
                                 Convert to Construction
                               </Button>
                             )}
-                                    </div>
+                          </div>
                                   </CardContent>
                                 </Card>
                               )}
@@ -914,6 +962,79 @@ export default function Sales() {
                   </Button>
                 </div>
               </form>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Dialog - Phase Timeline */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Project Timeline</DialogTitle>
+          </DialogHeader>
+          {selectedSale && (
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-sm font-medium text-slate-900">{selectedSale.title}</p>
+                <p className="text-xs text-slate-500">{getClientName(selectedSale.client_id)}</p>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <p className="text-xs text-slate-500">Precon Value</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      ${((selectedSale.contract_value || 0) / 1000).toFixed(0)}k
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Started</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {new Date(selectedSale.created_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 mb-3">Phase History</h4>
+                <div className="space-y-3">
+                  {getPhaseTimeline(selectedSale).map((phase, idx) => {
+                    const phaseConfig = statusColumns.find(c => c.status === phase.status) || {
+                      label: phase.status,
+                      color: 'bg-slate-100'
+                    };
+                    
+                    return (
+                      <div key={idx} className={`p-4 rounded-lg border-2 ${phaseConfig.color} ${phase.isCurrent ? 'ring-2 ring-amber-400' : ''}`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h5 className="font-semibold text-slate-900">{phaseConfig.label}</h5>
+                              {phase.isCurrent && (
+                                <span className="text-xs px-2 py-0.5 bg-amber-500 text-white rounded-full">
+                                  Current
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500">
+                              Entered: {new Date(phase.entered_date).toLocaleDateString()} at {new Date(phase.entered_date).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500">Duration</p>
+                            <p className="text-sm font-bold text-slate-900">{phase.duration}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
