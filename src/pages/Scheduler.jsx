@@ -7,10 +7,13 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import MonthlyAllocationView from '@/components/scheduler/MonthlyAllocationView';
 import DayJobAssignmentModal from '@/components/scheduler/DayJobAssignmentModal';
+import DailyStaffScheduleView from '@/components/scheduler/DailyStaffScheduleView';
 
 export default function Scheduler() {
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [showDayModal, setShowDayModal] = useState(false);
+  const [showScheduleView, setShowScheduleView] = useState(false);
+  const [scheduleStartDate, setScheduleStartDate] = useState(null);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -87,10 +90,21 @@ export default function Scheduler() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
-        <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
-      </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
+            <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
+          </div>
+          <Button
+            onClick={() => {
+              setScheduleStartDate(new Date());
+              setShowScheduleView(true);
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            Create Schedule
+          </Button>
+        </div>
 
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
@@ -118,6 +132,18 @@ export default function Scheduler() {
         onAssign={handleAssignJobToDay}
         onRemove={(id) => deleteAssignmentMutation.mutate(id)}
       />
-    </div>
-  );
-}
+
+      {showScheduleView && (
+        <div className="mt-8">
+          <DailyStaffScheduleView
+            assignments={assignments}
+            users={users}
+            projects={projects}
+            startDate={scheduleStartDate}
+            onClose={() => setShowScheduleView(false)}
+          />
+        </div>
+      )}
+      </div>
+      );
+      }
