@@ -8,6 +8,10 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import AllocationDialog from './AllocationDialog';
 
+const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+
+const getProjectColor = (index) => COLORS[index % COLORS.length];
+
 export default function MonthlyAllocationView({ projects, onSelectMonth }) {
   const [startMonth, setStartMonth] = useState(startOfMonth(new Date()));
   const [draggedProject, setDraggedProject] = useState(null);
