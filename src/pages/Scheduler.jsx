@@ -69,11 +69,7 @@ export default function Scheduler() {
     <div className="space-y-6">
       <div>
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
-        <p className="text-lg text-slate-500">
-          {view === 'allocations'
-            ? 'Allocate work to months, then assign to staff'
-            : `Assigning staff to ${selectedProject?.title}`}
-        </p>
+        <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
       </div>
 
       <Card className="bg-blue-50 border-blue-200">
