@@ -6,9 +6,9 @@ import { ChevronLeft, ChevronRight, X, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import SchedulerLayer1 from '@/components/scheduler/SchedulerLayer1';
-import SchedulerLayer2 from '@/components/scheduler/SchedulerLayer2';
-import AllocationEditor from '@/components/scheduler/AllocationEditor';
+import SchedulerLayer1 from '@/components/scheduler/SchedulerLayer1.js';
+import SchedulerLayer2 from '@/components/scheduler/SchedulerLayer2.js';
+import AllocationEditor from '@/components/scheduler/AllocationEditor.js';
 
 export default function Scheduler() {
   const [selectedMonth, setSelectedMonth] = useState(null);
