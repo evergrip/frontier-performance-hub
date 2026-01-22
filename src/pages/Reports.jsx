@@ -63,8 +63,10 @@ export default function Reports() {
         if (fiscalStartMonth) {
           // fiscalStartMonth is 1-12, convert to 0-11 for Date constructor
           const monthIndex = fiscalStartMonth - 1;
-          const startDate = new Date(selectedFiscalYear, monthIndex, 1);
-          const endDate = new Date(selectedFiscalYear + 1, monthIndex, 0);
+          // If fiscal year starts after January, it begins in the previous calendar year
+          const startYear = fiscalStartMonth > 1 ? selectedFiscalYear - 1 : selectedFiscalYear;
+          const startDate = new Date(startYear, monthIndex, 1);
+          const endDate = new Date(startYear + 1, monthIndex, 0);
           return {
             start: startDate,
             end: endDate
