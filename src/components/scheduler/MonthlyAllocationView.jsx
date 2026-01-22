@@ -12,7 +12,7 @@ const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'
 
 const getProjectColor = (index) => COLORS[index % COLORS.length];
 
-export default function MonthlyAllocationView({ projects, onSelectMonth }) {
+export default function MonthlyAllocationView({ projects, onSelectMonth, onMonthClick }) {
   const [startMonth, setStartMonth] = useState(startOfMonth(new Date()));
   const [draggedProject, setDraggedProject] = useState(null);
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
@@ -170,11 +170,12 @@ export default function MonthlyAllocationView({ projects, onSelectMonth }) {
             <div className="grid grid-cols-3 gap-4">
               {months.map(month => (
                 <div
-                  key={format(month, 'yyyy-MM')}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(month)}
-                  className="p-4 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all min-h-80"
-                >
+                   key={format(month, 'yyyy-MM')}
+                   onDragOver={handleDragOver}
+                   onDrop={() => handleDrop(month)}
+                   onClick={() => onMonthClick(month)}
+                   className="p-4 rounded-lg border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 transition-all min-h-80 cursor-pointer"
+                 >
                   <div className="font-semibold text-slate-900 mb-2">{format(month, 'MMM yyyy')}</div>
 
                   {/* Allocations for this month */}
