@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
+import EmployeeAssignmentModal from './EmployeeAssignmentModal';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
@@ -21,6 +22,8 @@ export default function DayJobAssignmentModal({
   onRemove
 }) {
   const [expandedDay, setExpandedDay] = useState(null);
+  const [employeeModalOpen, setEmployeeModalOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   if (!isOpen || !month) return null;
 
@@ -47,6 +50,27 @@ export default function DayJobAssignmentModal({
 
   const handleRemoveJobFromDay = (assignmentId) => {
     onRemove(assignmentId);
+  };
+
+  const handleJobClick = (assignment, day) => {
+    const project = projects.find(p => p.id === assignment.project_id);
+    setSelectedJob({
+      assignment,
+      project,
+      day: format(day, 'MMM d, yyyy')
+    });
+    setEmployeeModalOpen(true);
+  };
+
+  const handleAssignEmployee = (employeeId, hours) => {
+    if (selectedJob) {
+      onAssign({
+        date: selectedJob.assignment.assignment_date,
+        project_id: selectedJob.assignment.project_id,
+        employee_id: employeeId,
+        hours: hours
+      });
+    }
   };
 
   return (
@@ -113,12 +137,16 @@ export default function DayJobAssignmentModal({
                       return (
                         <div
                           key={assignment.id}
-                          className="p-1 rounded text-white text-xs flex items-center justify-between gap-1"
+                          className="p-1 rounded text-white text-xs flex items-center justify-between gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                           style={{ backgroundColor: getProjectColor(projectIdx) }}
+                          onClick={() => handleJobClick(assignment, day)}
                         >
                           <span className="truncate text-xs">{project?.title}</span>
                           <button
-                            onClick={() => handleRemoveJobFromDay(assignment.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveJobFromDay(assignment.id);
+                            }}
                             className="hover:bg-white/30 rounded p-0.5 flex-shrink-0"
                           >
                             <X className="w-2.5 h-2.5" />
@@ -168,6 +196,15 @@ export default function DayJobAssignmentModal({
           </Button>
         </div>
       </DialogContent>
+
+      <EmployeeAssignmentModal
+        isOpen={employeeModalOpen}
+        onClose={() => setEmployeeModalOpen(false)}
+        onAssign={handleAssignEmployee}
+        projectTitle={selectedJob?.project?.title}
+        date={selectedJob?.day}
+        users={users}
+      />
     </Dialog>
   );
 }
