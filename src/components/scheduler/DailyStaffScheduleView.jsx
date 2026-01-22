@@ -130,9 +130,9 @@ export default function DailyStaffScheduleView({
   };
 
   return (
-    <Card className="w-full print:shadow-none print:border-0">
+    <Card className="w-full print:shadow-none print:border-0 print-schedule">
       <CardHeader className="flex flex-row items-center justify-between print:pb-4">
-        <CardTitle>Staff Schedule - {format(weekStart, 'MMM d')} to {format(weekEnd, 'MMM d, yyyy')}</CardTitle>
+        <CardTitle className="print:text-lg">Staff Schedule - {format(weekStart, 'MMM d')} to {format(weekEnd, 'MMM d, yyyy')}</CardTitle>
         <div className="flex gap-2 print:hidden">
           <Button
             variant="outline"
