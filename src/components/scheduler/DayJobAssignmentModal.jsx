@@ -222,6 +222,8 @@ export default function DayJobAssignmentModal({
         date={selectedJob?.day}
         users={users}
         existingAssignments={selectedJob?.existingEmployees}
+        allAssignments={assignments}
+        currentAssignmentId={selectedJob?.assignment?.id}
       />
 
       <DateRangePickerModal
