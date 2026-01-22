@@ -13,6 +13,7 @@ export default function DateRangePickerModal({ isOpen, onClose, onConfirm }) {
       onConfirm(new Date(startDate), new Date(endDate));
       setStartDate('');
       setEndDate('');
+      onClose();
     }
   };
 
