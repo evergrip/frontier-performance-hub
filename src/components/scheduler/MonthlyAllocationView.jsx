@@ -136,19 +136,9 @@ export default function MonthlyAllocationView({ projects, onSelectMonth }) {
               >
                 <div className="font-medium text-sm">{project.title}</div>
                 <div className="text-xs opacity-90 mt-1">${project.contract_value?.toLocaleString() || '0'}</div>
-                <div className="flex items-center justify-between mt-2">
-                  <Badge variant="outline" className="text-xs">
-                    {getTotalAllocated(project.id)}% allocated
-                  </Badge>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onSelectMonth(project.id)}
-                    className="text-xs"
-                  >
-                    View
-                  </Button>
-                </div>
+                <Badge variant="outline" className="text-xs">
+                  {getTotalAllocated(project.id)}% allocated
+                </Badge>
               </div>
             ))}
           </CardContent>
