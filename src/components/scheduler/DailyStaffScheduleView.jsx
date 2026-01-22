@@ -16,11 +16,11 @@ export default function DailyStaffScheduleView({
   endDate,
   onClose
 }) {
-  const [weekStart, setWeekStart] = useState(startDate ? startOfWeek(startDate) : startOfWeek(new Date()));
+  const [weekStart, setWeekStart] = useState(startDate || new Date());
   
-  let weekEnd = endOfWeek(weekStart);
+  let weekEnd = endDate || endOfWeek(weekStart);
   
-  // Limit weekEnd to the range endDate if provided
+  // Ensure weekEnd doesn't exceed the provided endDate
   if (endDate && weekEnd > endDate) {
     weekEnd = endDate;
   }
