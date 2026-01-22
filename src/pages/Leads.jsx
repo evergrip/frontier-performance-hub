@@ -22,7 +22,7 @@ export default function Leads() {
     contract_value: '',
     estimated_construction_budget: '',
     estimated_margin: '',
-    close_date: ''
+    target_precon_completion_date: ''
   });
 
   const { data: leads = [] } = useQuery({
@@ -61,7 +61,7 @@ export default function Leads() {
       queryClient.invalidateQueries(['leads']);
       queryClient.invalidateQueries(['sales']);
       setSaleDialogOpen(false);
-      setSaleForm({ contract_value: '', estimated_construction_budget: '', estimated_margin: '', close_date: '' });
+      setSaleForm({ contract_value: '', estimated_construction_budget: '', estimated_margin: '', target_precon_completion_date: '' });
       toast.success('Lead converted to preconstruction sale');
     },
     onError: () => toast.error('Failed to convert lead')
@@ -123,7 +123,7 @@ export default function Leads() {
       contract_value: lead.estimated_precon_value || '',
       estimated_construction_budget: lead.estimated_construction_value || '',
       estimated_margin: '25',
-      close_date: ''
+      target_precon_completion_date: ''
     });
     setSaleDialogOpen(true);
   };
@@ -147,7 +147,7 @@ export default function Leads() {
         contract_value: parseFloat(saleForm.contract_value) || 0,
         estimated_construction_budget: parseFloat(saleForm.estimated_construction_budget) || 0,
         estimated_margin: parseFloat(saleForm.estimated_margin) || 0,
-        close_date: saleForm.close_date,
+        target_precon_completion_date: saleForm.target_precon_completion_date,
         status: 'feasibility',
         assigned_to: selectedLead.assigned_to
       }
@@ -347,11 +347,12 @@ export default function Leads() {
             </div>
 
             <div>
-              <Label>Expected Close Date</Label>
+              <Label>Target Pre-Construction Completion Date</Label>
+              <p className="text-xs text-slate-500 mb-2">When you expect pre-construction work to be completed</p>
               <Input
                 type="date"
-                value={saleForm.close_date}
-                onChange={(e) => setSaleForm({...saleForm, close_date: e.target.value})}
+                value={saleForm.target_precon_completion_date}
+                onChange={(e) => setSaleForm({...saleForm, target_precon_completion_date: e.target.value})}
               />
             </div>
 
