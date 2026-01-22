@@ -34,7 +34,7 @@ export default function CompanySettings() {
     email: '',
     website: '',
     tax_id: '',
-    fiscal_year_start: '',
+    fiscal_year_start_month: '',
     default_currency: 'USD',
     notes: ''
   });
@@ -62,7 +62,7 @@ export default function CompanySettings() {
         email: setting.email || '',
         website: setting.website || '',
         tax_id: setting.tax_id || '',
-        fiscal_year_start: setting.fiscal_year_start || '',
+        fiscal_year_start_month: setting.fiscal_year_start_month || '',
         default_currency: setting.default_currency || 'USD',
         notes: setting.notes || ''
       });
@@ -131,7 +131,7 @@ export default function CompanySettings() {
   const handleSaveBusinessSettings = (e) => {
     e.preventDefault();
     saveSettingsMutation.mutate({
-      fiscal_year_start: formData.fiscal_year_start,
+      fiscal_year_start_month: formData.fiscal_year_start_month ? Number(formData.fiscal_year_start_month) : null,
       default_currency: formData.default_currency
     });
   };
@@ -260,13 +260,29 @@ export default function CompanySettings() {
         <CardContent>
           <form onSubmit={handleSaveBusinessSettings} className="space-y-4">
             <div>
-              <Label>Fiscal Year Start</Label>
-              <Input 
-                type="month" 
-                value={formData.fiscal_year_start}
-                onChange={(e) => setFormData({...formData, fiscal_year_start: e.target.value})}
-                placeholder="Select month" 
-              />
+              <Label>Fiscal Year Start Month</Label>
+              <Select 
+                value={formData.fiscal_year_start_month.toString()}
+                onValueChange={(value) => setFormData({...formData, fiscal_year_start_month: value})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select month" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">January</SelectItem>
+                  <SelectItem value="2">February</SelectItem>
+                  <SelectItem value="3">March</SelectItem>
+                  <SelectItem value="4">April</SelectItem>
+                  <SelectItem value="5">May</SelectItem>
+                  <SelectItem value="6">June</SelectItem>
+                  <SelectItem value="7">July</SelectItem>
+                  <SelectItem value="8">August</SelectItem>
+                  <SelectItem value="9">September</SelectItem>
+                  <SelectItem value="10">October</SelectItem>
+                  <SelectItem value="11">November</SelectItem>
+                  <SelectItem value="12">December</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Default Currency</Label>
