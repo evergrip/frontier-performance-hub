@@ -78,12 +78,9 @@ export default function EmployeeAssignmentModal({
                     className="w-full px-3 py-2 border rounded-md text-sm"
                   >
                     <option value="">Select employee</option>
-                    {users.filter(user => {
-                      const hasCon = Array.isArray(user.department) 
-                        ? user.department.includes('construction')
-                        : user.department === 'construction';
-                      return hasCon;
-                    }).map(user => (
+                    {users.filter(user => 
+                      user.departments?.includes('construction')
+                    ).map(user => (
                       <option key={user.id} value={user.id}>
                         {user.full_name}
                       </option>
