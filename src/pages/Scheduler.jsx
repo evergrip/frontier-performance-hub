@@ -121,7 +121,9 @@ export default function Scheduler() {
         onAssign={handleAssignJobToDay}
         onRemove={(id) => deleteAssignmentMutation.mutate(id)}
         onCreateSchedule={(startDate, endDate) => {
-          navigate(`${createPageUrl('ScheduleView')}?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
+          const start = startDate.toISOString().split('T')[0];
+          const end = endDate.toISOString().split('T')[0];
+          navigate(`/ScheduleView?startDate=${start}&endDate=${end}`);
         }}
       />
       </div>
