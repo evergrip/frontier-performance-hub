@@ -12,7 +12,9 @@ export default function EmployeeAssignmentModal({
   projectTitle,
   date,
   users,
-  existingAssignments = []
+  existingAssignments = [],
+  allAssignments = [],
+  currentAssignmentId = null
 }) {
   const [assignments, setAssignments] = useState(
     existingAssignments && existingAssignments.length > 0
@@ -49,6 +51,34 @@ export default function EmployeeAssignmentModal({
   const handleSave = () => {
     const validAssignments = assignments.filter(a => a.employee_id && a.hours > 0);
     if (validAssignments.length === 0) return;
+
+    // Get the date from the format "MMM d, yyyy"
+    const dateStr = date ? new Date(date).toISOString().split('T')[0] : null;
+    
+    // Check for 8-hour limit per employee per day
+    for (const assignment of validAssignments) {
+      const employeeId = assignment.employee_id;
+      
+      // Sum hours from existing assignments on this day (excluding current assignment if editing)
+      const otherAssignmentsHours = allAssignments
+        .filter(a => {
+          const assignmentDate = new Date(a.assignment_date).toISOString().split('T')[0];
+          const isOtherAssignment = !currentAssignmentId || a.id !== currentAssignmentId;
+          return a.employee_assignments?.some(ea => ea.employee_id === employeeId) && 
+                 assignmentDate === dateStr && 
+                 isOtherAssignment;
+        })
+        .reduce((total, a) => {
+          const empAssignment = a.employee_assignments?.find(ea => ea.employee_id === employeeId);
+          return total + (empAssignment?.hours || 0);
+        }, 0);
+      
+      const totalHours = otherAssignmentsHours + assignment.hours;
+      if (totalHours > 8) {
+        alert(`Employee would exceed 8 hours on this day. Current: ${otherAssignmentsHours}h, New: ${assignment.hours}h (Total: ${totalHours}h)`);
+        return;
+      }
+    }
 
     onAssign(validAssignments);
     setAssignments([{ employee_id: '', hours: 8 }]);
