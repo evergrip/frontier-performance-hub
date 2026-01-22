@@ -58,18 +58,13 @@ export default function Reports() {
       }
       case 'fiscal': {
         const settings = companySettings[0];
-        const fiscalYearStart = settings?.fiscal_year_start;
+        const fiscalStartMonth = settings?.fiscal_year_start_month;
         
-        if (fiscalYearStart) {
-          // Map month names to numbers
-          const monthMap = {
-            'January': 0, 'February': 1, 'March': 2, 'April': 3, 
-            'May': 4, 'June': 5, 'July': 6, 'August': 7,
-            'September': 8, 'October': 9, 'November': 10, 'December': 11
-          };
-          const fiscalStartMonth = monthMap[fiscalYearStart] ?? 0;
-          const startDate = new Date(selectedFiscalYear, fiscalStartMonth, 1);
-          const endDate = new Date(selectedFiscalYear + 1, fiscalStartMonth, 0);
+        if (fiscalStartMonth) {
+          // fiscalStartMonth is 1-12, convert to 0-11 for Date constructor
+          const monthIndex = fiscalStartMonth - 1;
+          const startDate = new Date(selectedFiscalYear, monthIndex, 1);
+          const endDate = new Date(selectedFiscalYear + 1, monthIndex, 0);
           return {
             start: startDate,
             end: endDate
