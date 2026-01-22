@@ -14,7 +14,7 @@ import PreConstructionReport from '../components/reports/PreConstructionReport';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('sales');
-  const [dateRangeType, setDateRangeType] = useState('month');
+  const [dateRangeType, setDateRangeType] = useState('fiscal');
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [selectedQuarter, setSelectedQuarter] = useState('Q1');
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(new Date().getFullYear());
