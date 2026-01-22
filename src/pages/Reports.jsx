@@ -159,9 +159,19 @@ export default function Reports() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableYears.map(year => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
+                    {availableYears.map(year => {
+                      const settings = companySettings[0];
+                      const fiscalStartMonth = settings?.fiscal_year_start_month || 1;
+                      const startYear = fiscalStartMonth > 1 ? year - 1 : year;
+                      const endYear = fiscalStartMonth > 1 ? year : year + 1;
+                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                      const monthName = monthNames[fiscalStartMonth - 1];
+                      return (
+                        <SelectItem key={year} value={year.toString()}>
+                          FY {year} ({monthName} {startYear} - {monthNames[(fiscalStartMonth + 11 - 1) % 12]} {endYear})
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
