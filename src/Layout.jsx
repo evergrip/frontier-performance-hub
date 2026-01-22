@@ -30,6 +30,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Leads', icon: Target, page: 'Leads' },
     { name: 'Pre-Construction', icon: Briefcase, page: 'Sales' },
     { name: 'Projects', icon: Building2, page: 'Projects' },
+    { name: 'Reports', icon: Settings, page: 'Reports' },
   ];
 
   const adminNavigation = [
