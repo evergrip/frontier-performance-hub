@@ -198,11 +198,23 @@ export default function DayJobAssignmentModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Done
-          </Button>
-        </div>
+        <div className="flex justify-between gap-2">
+                  <Button
+                    onClick={() => {
+                      onClose();
+                      // Trigger schedule view with the selected month
+                      if (month && onCreateSchedule) {
+                        onCreateSchedule(month);
+                      }
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    Create Schedule
+                  </Button>
+                  <Button variant="outline" onClick={onClose}>
+                    Done
+                  </Button>
+                </div>
       </DialogContent>
 
       <EmployeeAssignmentModal

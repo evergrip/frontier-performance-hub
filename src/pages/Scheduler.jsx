@@ -90,20 +90,9 @@ export default function Scheduler() {
 
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
-            <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
-          </div>
-          <Button
-            onClick={() => {
-              setScheduleStartDate(new Date());
-              setShowScheduleView(true);
-            }}
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            Create Schedule
-          </Button>
+        <div>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
+          <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
         </div>
 
       <Card className="bg-blue-50 border-blue-200">
@@ -131,6 +120,10 @@ export default function Scheduler() {
         users={users}
         onAssign={handleAssignJobToDay}
         onRemove={(id) => deleteAssignmentMutation.mutate(id)}
+        onCreateSchedule={(month) => {
+          setScheduleStartDate(month);
+          setShowScheduleView(true);
+        }}
       />
 
       {showScheduleView && (
