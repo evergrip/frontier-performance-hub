@@ -67,7 +67,20 @@ export default function Leads() {
   });
 
   const updateLeadStatusMutation = useMutation({
-    mutationFn: ({ leadId, status }) => base44.entities.Lead.update(leadId, { status }),
+    mutationFn: ({ leadId, status, currentLead }) => {
+      const statusHistory = currentLead.status_history || [];
+      const newHistory = [
+        ...statusHistory,
+        {
+          status: status,
+          entered_date: new Date().toISOString()
+        }
+      ];
+      return base44.entities.Lead.update(leadId, { 
+        status,
+        status_history: newHistory
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
       toast.success('Lead status updated');
@@ -75,11 +88,21 @@ export default function Leads() {
   });
 
   const disqualifyLeadMutation = useMutation({
-    mutationFn: ({ leadId, reason }) => 
-      base44.entities.Lead.update(leadId, { 
+    mutationFn: ({ leadId, reason, currentLead }) => {
+      const statusHistory = currentLead.status_history || [];
+      const newHistory = [
+        ...statusHistory,
+        {
+          status: 'disqualified',
+          entered_date: new Date().toISOString()
+        }
+      ];
+      return base44.entities.Lead.update(leadId, { 
         status: 'disqualified',
-        disqualification_reason: reason 
-      }),
+        disqualification_reason: reason,
+        status_history: newHistory
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
       setDisqualifyDialogOpen(false);
@@ -137,7 +160,8 @@ export default function Leads() {
     }
     disqualifyLeadMutation.mutate({
       leadId: selectedLead.id,
-      reason: disqualifyReason
+      reason: disqualifyReason,
+      currentLead: selectedLead
     });
   };
 
@@ -229,7 +253,7 @@ export default function Leads() {
                                 size="sm"
                                 variant="outline"
                                 className="w-full text-xs"
-                                onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: nextStatus })}
+                                onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: nextStatus, currentLead: lead })}
                               >
                                 <ChevronRight className="w-3 h-3 mr-1" />
                                 Advance
