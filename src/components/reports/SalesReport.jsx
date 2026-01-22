@@ -198,19 +198,19 @@ export default function SalesReport({ dateRange, staffId }) {
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-slate-600 mb-1">Pre-Construction</p>
               <p className="text-3xl font-bold text-blue-600">
-                ${(contractValues.preconTotal / 1000000).toFixed(2)}M
+                ${Math.round(contractValues.preconTotal).toLocaleString()}
               </p>
             </div>
             <div className="text-center p-4 bg-emerald-50 rounded-lg">
               <p className="text-sm text-slate-600 mb-1">Construction</p>
               <p className="text-3xl font-bold text-emerald-600">
-                ${(contractValues.constructionTotal / 1000000).toFixed(2)}M
+                ${Math.round(contractValues.constructionTotal).toLocaleString()}
               </p>
             </div>
             <div className="text-center p-4 bg-amber-50 rounded-lg">
               <p className="text-sm text-slate-600 mb-1">Combined Total</p>
               <p className="text-3xl font-bold text-amber-600">
-                ${(contractValues.combinedTotal / 1000000).toFixed(2)}M
+                ${Math.round(contractValues.combinedTotal).toLocaleString()}
               </p>
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function SalesReport({ dateRange, staffId }) {
                           <p className="font-semibold">{data.period}</p>
                           <p className="text-emerald-600">Overall Win Rate: {data.winRate}%</p>
                           <p className="text-blue-600">Win Rate After Proposal: {data.winRateAfterProposal}%</p>
-                          <p className="text-amber-600">Sales Volume: ${(data.salesVolume / 1000000).toFixed(2)}M</p>
+                          <p className="text-amber-600">Sales Volume: ${Math.round(data.salesVolume).toLocaleString()}</p>
                           <p className="text-sm text-slate-600 mt-2">Overall: {data.converted}/{data.total}</p>
                           <p className="text-sm text-slate-600">After Proposal: {data.convertedAfterProposal}/{data.proposalTotal}</p>
                         </div>
