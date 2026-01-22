@@ -16,6 +16,42 @@ export default function DailyStaffScheduleView({
   endDate,
   onClose
 }) {
+  // Print styles
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @media print {
+        @page {
+          size: landscape;
+          margin: 0.5in;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+        }
+        .print-schedule {
+          width: 100%;
+          font-size: 11px;
+        }
+        .print-schedule table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 10px;
+        }
+        .print-schedule th,
+        .print-schedule td {
+          padding: 4px !important;
+          border: 1px solid #000 !important;
+        }
+        .print-schedule th {
+          background-color: #e2e8f0 !important;
+          font-weight: bold;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
   const [weekStart, setWeekStart] = useState(startDate || new Date());
   
   let weekEnd = endDate || endOfWeek(weekStart);
