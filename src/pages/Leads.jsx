@@ -20,6 +20,7 @@ export default function Leads() {
 
   const [saleForm, setSaleForm] = useState({
     contract_value: '',
+    estimated_construction_budget: '',
     estimated_margin: '',
     close_date: ''
   });
@@ -60,7 +61,7 @@ export default function Leads() {
       queryClient.invalidateQueries(['leads']);
       queryClient.invalidateQueries(['sales']);
       setSaleDialogOpen(false);
-      setSaleForm({ contract_value: '', estimated_margin: '', close_date: '' });
+      setSaleForm({ contract_value: '', estimated_construction_budget: '', estimated_margin: '', close_date: '' });
       toast.success('Lead converted to preconstruction sale');
     },
     onError: () => toast.error('Failed to convert lead')
@@ -120,6 +121,7 @@ export default function Leads() {
     setSelectedLead(lead);
     setSaleForm({
       contract_value: lead.estimated_precon_value || '',
+      estimated_construction_budget: lead.estimated_construction_value || '',
       estimated_margin: '25',
       close_date: ''
     });
@@ -143,7 +145,7 @@ export default function Leads() {
         lead_id: selectedLead.id,
         sale_type: 'preconstruction',
         contract_value: parseFloat(saleForm.contract_value) || 0,
-        estimated_construction_budget: selectedLead.estimated_construction_value || 0,
+        estimated_construction_budget: parseFloat(saleForm.estimated_construction_budget) || 0,
         estimated_margin: parseFloat(saleForm.estimated_margin) || 0,
         close_date: saleForm.close_date,
         status: 'feasibility',
@@ -311,12 +313,25 @@ export default function Leads() {
             </div>
 
             <div>
-              <Label>Contract Value *</Label>
+              <Label>Pre-Construction Contract Value *</Label>
+              <p className="text-xs text-slate-500 mb-2">Revenue for preconstruction work</p>
               <Input
                 type="number"
                 value={saleForm.contract_value}
                 onChange={(e) => setSaleForm({...saleForm, contract_value: e.target.value})}
-                placeholder="500000"
+                placeholder="125000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Estimated Construction Budget *</Label>
+              <p className="text-xs text-slate-500 mb-2">Projected construction costs (will be refined through precon phases)</p>
+              <Input
+                type="number"
+                value={saleForm.estimated_construction_budget}
+                onChange={(e) => setSaleForm({...saleForm, estimated_construction_budget: e.target.value})}
+                placeholder="750000"
                 required
               />
             </div>
