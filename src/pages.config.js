@@ -10,6 +10,7 @@ import Relationships from './pages/Relationships';
 import UsersAdmin from './pages/UsersAdmin';
 import Sales from './pages/Sales';
 import Reports from './pages/Reports';
+import CompanySettings from './pages/CompanySettings';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "UsersAdmin": UsersAdmin,
     "Sales": Sales,
     "Reports": Reports,
+    "CompanySettings": CompanySettings,
 }
 
 export const pagesConfig = {
