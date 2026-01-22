@@ -29,7 +29,6 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Clients', icon: Users, page: 'Clients' },
     { name: 'Leads', icon: Target, page: 'Leads' },
     { name: 'Pre-Construction', icon: Briefcase, page: 'Sales' },
-    { name: 'Precon Reporting', icon: Settings, page: 'PreconReporting' },
     { name: 'Projects', icon: Building2, page: 'Projects' },
   ];
 
@@ -37,7 +36,6 @@ export default function Layout({ children, currentPageName }) {
     { name: 'User Management', icon: Users, page: 'UsersAdmin' },
     { name: 'Commission Rules', icon: Settings, page: 'CommissionRules' },
     { name: 'Commission Admin', icon: Settings, page: 'CommissionsAdmin' },
-    { name: 'Company Settings', icon: Settings, page: 'CompanySettings' },
   ];
 
   const userNavigation = [

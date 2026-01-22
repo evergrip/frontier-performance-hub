@@ -10,9 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
-import ProjectedCompletionDialog from '../components/precon/ProjectedCompletionDialog';
-import LoseProjectDialog from '../components/precon/LoseProjectDialog';
-import { formatCurrency } from '@/components/utils/formatters';
 
 export default function Sales() {
   const queryClient = useQueryClient();
@@ -20,11 +17,8 @@ export default function Sales() {
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
   const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
-  const [projectedCompletionDialogOpen, setProjectedCompletionDialogOpen] = useState(false);
-  const [loseProjectDialogOpen, setLoseProjectDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
-  const [pendingStatusUpdate, setPendingStatusUpdate] = useState(null);
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
@@ -59,56 +53,12 @@ export default function Sales() {
   });
 
   const updateSaleStatusMutation = useMutation({
-    mutationFn: async ({ saleId, status, estimated_construction_budget, projected_completion_month, projected_completion_year }) => {
-      const sale = sales.find(s => s.id === saleId);
-      const updates = { status, estimated_construction_budget };
-      
-      if (projected_completion_month) updates.projected_completion_month = projected_completion_month;
-      if (projected_completion_year) updates.projected_completion_year = projected_completion_year;
-      
-      // Track phase changes
-      const now = new Date().toISOString();
-      const phaseTracking = [...(sale.phase_tracking || [])];
-      
-      // Mark current phase as exited
-      const currentPhaseIndex = phaseTracking.findIndex(p => p.phase === sale.status && !p.exited_date);
-      if (currentPhaseIndex >= 0) {
-        phaseTracking[currentPhaseIndex].exited_date = now;
-      }
-      
-      // Clear future phase dates if moving backwards
-      const phases = ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'];
-      const oldIndex = phases.indexOf(sale.status);
-      const newIndex = phases.indexOf(status);
-      
-      if (newIndex < oldIndex) {
-        // Moving backwards - clear all future phase dates
-        for (let i = newIndex + 1; i < phases.length; i++) {
-          const futurePhaseIndices = phaseTracking
-            .map((p, idx) => p.phase === phases[i] ? idx : -1)
-            .filter(idx => idx >= 0);
-          futurePhaseIndices.forEach(idx => {
-            phaseTracking[idx].exited_date = null;
-          });
-        }
-      }
-      
-      // Add new phase entry
-      phaseTracking.push({
-        phase: status,
-        entered_date: now,
-        exited_date: null
-      });
-      
-      updates.phase_tracking = phaseTracking;
-      
-      return base44.entities.Sale.update(saleId, updates);
-    },
+    mutationFn: ({ saleId, status, estimated_construction_budget }) => 
+      base44.entities.Sale.update(saleId, { status, estimated_construction_budget }),
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
       setAdvanceDialogOpen(false);
       setConstructionBudget('');
-      setPendingStatusUpdate(null);
       toast.success('Sale status updated');
     }
   });
@@ -176,49 +126,12 @@ export default function Sales() {
     }
   });
 
-  const loseProjectMutation = useMutation({
-    mutationFn: async ({ saleId, finalValue, reason }) => {
-      const sale = sales.find(s => s.id === saleId);
-      const now = new Date().toISOString();
-      const phaseTracking = [...(sale.phase_tracking || [])];
-      
-      // Mark current phase as exited
-      const currentPhaseIndex = phaseTracking.findIndex(p => p.phase === sale.status && !p.exited_date);
-      if (currentPhaseIndex >= 0) {
-        phaseTracking[currentPhaseIndex].exited_date = now;
-      }
-      
-      return base44.entities.Sale.update(saleId, {
-        is_lost: true,
-        loss_reason: reason,
-        final_precon_value: finalValue,
-        status: 'closed_lost',
-        phase_tracking: phaseTracking
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['sales']);
-      setLoseProjectDialogOpen(false);
-      toast.success('Project marked as lost');
-    }
-  });
-
   const convertToConstructionMutation = useMutation({
     mutationFn: async ({ preconSale, final_precon_value, construction_budget }) => {
       // Update preconstruction sale with final value
-      const now = new Date().toISOString();
-      const phaseTracking = [...(preconSale.phase_tracking || [])];
-      
-      // Mark current phase as exited
-      const currentPhaseIndex = phaseTracking.findIndex(p => p.phase === preconSale.status && !p.exited_date);
-      if (currentPhaseIndex >= 0) {
-        phaseTracking[currentPhaseIndex].exited_date = now;
-      }
-      
       await base44.entities.Sale.update(preconSale.id, {
-        final_precon_value: parseFloat(final_precon_value),
-        status: 'closed_won',
-        phase_tracking: phaseTracking
+        contract_value: parseFloat(final_precon_value),
+        status: 'closed_won'
       });
 
       // Create construction sale
@@ -274,8 +187,8 @@ export default function Sales() {
     return client?.company_name || 'Unknown Client';
   };
 
-  const preconstructionSales = sales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status) && !s.is_lost);
-  const closedSales = sales.filter(s => ['closed_won', 'closed_lost'].includes(s.status) || s.is_lost);
+  const preconstructionSales = sales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
+  const closedSales = sales.filter(s => ['closed_won', 'closed_lost'].includes(s.status));
 
   const statusColumns = [
     { status: 'feasibility', label: 'Feasibility', color: 'bg-blue-100 border-blue-200', description: 'Initial assessment' },
@@ -323,31 +236,10 @@ export default function Sales() {
     const nextStatus = getNextStatus(selectedSale.status);
     if (!nextStatus) return;
 
-    // Store the pending update and show projected completion dialog
-    setPendingStatusUpdate({
+    updateSaleStatusMutation.mutate({
       saleId: selectedSale.id,
       status: nextStatus,
       estimated_construction_budget: parseFloat(constructionBudget) || null
-    });
-    setAdvanceDialogOpen(false);
-    setProjectedCompletionDialogOpen(true);
-  };
-
-  const handleSaveProjectedCompletion = (month, year) => {
-    if (pendingStatusUpdate) {
-      updateSaleStatusMutation.mutate({
-        ...pendingStatusUpdate,
-        projected_completion_month: month,
-        projected_completion_year: year
-      });
-    }
-  };
-
-  const handleLoseProject = (finalValue, reason) => {
-    loseProjectMutation.mutate({
-      saleId: selectedSale.id,
-      finalValue,
-      reason
     });
   };
 
@@ -464,16 +356,12 @@ export default function Sales() {
     
     const newStatus = destination.droppableId;
     const saleId = draggableId;
-    const sale = sales.find(s => s.id === saleId);
     
-    // Store pending update and show projected completion dialog
-    setSelectedSale(sale);
-    setPendingStatusUpdate({
+    updateSaleStatusMutation.mutate({
       saleId,
       status: newStatus,
       estimated_construction_budget: null
     });
-    setProjectedCompletionDialogOpen(true);
   };
 
   return (
@@ -493,7 +381,7 @@ export default function Sales() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-emerald-600">{formatCurrency(totalValue)}</div>
+            <div className="text-2xl font-bold text-emerald-600">${(totalValue / 1000000).toFixed(1)}M</div>
             <div className="text-sm text-slate-500">Pipeline Value</div>
           </CardContent>
         </Card>
@@ -557,36 +445,36 @@ export default function Sales() {
                                     <p className="text-xs text-slate-500 mb-2 ml-6">{getClientName(sale.client_id)}</p>
                           
                           <div className="space-y-1 mb-3">
-                           <div className="flex items-center justify-between">
-                             <span className="text-xs text-slate-500">Precon Value</span>
-                             <span className="text-sm font-bold text-slate-700">
-                               {formatCurrency(sale.contract_value)}
-                             </span>
-                           </div>
-                           {sale.estimated_construction_budget && (
-                             <div className="flex items-center justify-between">
-                               <span className="text-xs text-slate-500">Est. Construction</span>
-                               <span className="text-sm font-semibold text-amber-600">
-                                 {formatCurrency(sale.estimated_construction_budget)}
-                               </span>
-                             </div>
-                           )}
-                           {getTotalDeposits(sale) > 0 && (
-                             <>
-                               <div className="flex items-center justify-between">
-                                 <span className="text-xs text-slate-500">Deposits</span>
-                                 <span className="text-sm font-medium text-emerald-600">
-                                   {formatCurrency(getTotalDeposits(sale))}
-                                 </span>
-                               </div>
-                               <div className="flex items-center justify-between">
-                                 <span className="text-xs text-slate-500">Balance</span>
-                                 <span className={`text-sm font-medium ${needsDrawAlert(sale) ? 'text-red-600' : 'text-slate-700'}`}>
-                                   {formatCurrency(calculateRemainingBalance(sale) || 0)}
-                                 </span>
-                               </div>
-                             </>
-                           )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-500">Precon Value</span>
+                              <span className="text-sm font-bold text-slate-700">
+                                ${(sale.contract_value / 1000).toFixed(0)}k
+                              </span>
+                            </div>
+                            {sale.estimated_construction_budget && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-slate-500">Est. Construction</span>
+                                <span className="text-sm font-semibold text-amber-600">
+                                  ${(sale.estimated_construction_budget / 1000).toFixed(0)}k
+                                </span>
+                              </div>
+                            )}
+                            {getTotalDeposits(sale) > 0 && (
+                              <>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-slate-500">Deposits</span>
+                                  <span className="text-sm font-medium text-emerald-600">
+                                    ${(getTotalDeposits(sale) / 1000).toFixed(1)}k
+                                  </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-slate-500">Balance</span>
+                                  <span className={`text-sm font-medium ${needsDrawAlert(sale) ? 'text-red-600' : 'text-slate-700'}`}>
+                                    ${((calculateRemainingBalance(sale) || 0) / 1000).toFixed(1)}k
+                                  </span>
+                                </div>
+                              </>
+                            )}
                           </div>
 
                           {needsDrawAlert(sale) && (
@@ -643,18 +531,6 @@ export default function Sales() {
                                 Convert to Construction
                               </Button>
                             )}
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                setSelectedSale(sale);
-                                setLoseProjectDialogOpen(true);
-                              }}
-                            >
-                              Mark as Lost
-                            </Button>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -1042,23 +918,6 @@ export default function Sales() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Projected Completion Dialog */}
-      <ProjectedCompletionDialog
-        open={projectedCompletionDialogOpen}
-        onOpenChange={setProjectedCompletionDialogOpen}
-        onSave={handleSaveProjectedCompletion}
-        currentMonth={selectedSale?.projected_completion_month}
-        currentYear={selectedSale?.projected_completion_year}
-      />
-
-      {/* Lose Project Dialog */}
-      <LoseProjectDialog
-        open={loseProjectDialogOpen}
-        onOpenChange={setLoseProjectDialogOpen}
-        onSave={handleLoseProject}
-        sale={selectedSale}
-      />
     </div>
   );
 }
