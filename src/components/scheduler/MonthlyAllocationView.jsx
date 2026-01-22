@@ -119,15 +119,19 @@ export default function MonthlyAllocationView({ projects, onSelectMonth }) {
             <CardTitle className="text-lg">Projects</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {projects.map(project => (
+            {projects.map((project, index) => (
               <div
                 key={project.id}
                 draggable
                 onDragStart={() => handleDragStart(project)}
-                className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 cursor-move hover:shadow-md transition-all group"
+                className="p-3 rounded-lg border-2 cursor-move hover:shadow-md transition-all group text-white"
+                style={{
+                  backgroundColor: getProjectColor(index),
+                  borderColor: getProjectColor(index),
+                }}
               >
-                <div className="font-medium text-slate-900 text-sm">{project.title}</div>
-                <div className="text-xs text-slate-600 mt-1">${project.contract_value?.toLocaleString() || '0'}</div>
+                <div className="font-medium text-sm">{project.title}</div>
+                <div className="text-xs opacity-90 mt-1">${project.contract_value?.toLocaleString() || '0'}</div>
                 <div className="flex items-center justify-between mt-2">
                   <Badge variant="outline" className="text-xs">
                     {getTotalAllocated(project.id)}% allocated
@@ -185,13 +189,14 @@ export default function MonthlyAllocationView({ projects, onSelectMonth }) {
                       .filter(project => getProjectAllocation(project.id, month) > 0)
                       .map(project => (
                         <div
-                          key={project.id}
-                          className="p-2 rounded bg-gradient-to-r from-blue-400 to-blue-500 text-white text-xs"
-                        >
+                              key={project.id}
+                              className="p-2 rounded text-white text-xs"
+                              style={{ backgroundColor: getProjectColor(projects.findIndex(p => p.id === project.id)) }}
+                            >
                           <div className="flex items-start justify-between gap-1">
                             <div>
                               <div className="font-medium">{project.title}</div>
-                              <div className="text-blue-100">
+                              <div className="opacity-80">
                                 {getProjectAllocation(project.id, month)}% = ${getAllocationAmount(project.id, month).toLocaleString()}
                               </div>
                             </div>

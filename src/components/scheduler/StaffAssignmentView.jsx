@@ -6,12 +6,14 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
+const getProjectColor = (index) => COLORS[index % COLORS.length];
+
 export default function StaffAssignmentView({
   project,
   month,
   users,
+  projects,
   assignments,
-  onDragStart,
   onDrop,
   onClearAssignment,
   onBack,
@@ -36,8 +38,9 @@ export default function StaffAssignmentView({
     );
   };
 
-  const getProjectColor = () => {
-    return COLORS[0];
+  const getProjectColorByIndex = (projectId) => {
+    const index = projects.findIndex(p => p.id === projectId);
+    return getProjectColor(index);
   };
 
   const handleDragOver = (e) => {
@@ -120,7 +123,7 @@ export default function StaffAssignmentView({
                         }`}
                         style={
                           assignment
-                            ? { backgroundColor: getProjectColor(), opacity: 0.9 }
+                            ? { backgroundColor: getProjectColorByIndex(project.id), opacity: 0.9 }
                             : {}
                         }
                       >
