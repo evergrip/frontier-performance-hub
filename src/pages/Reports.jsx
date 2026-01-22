@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { BarChart3, Briefcase, Building2, FileText, TrendingUp, Calendar } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format } from 'date-fns';
 import SalesReport from '../components/reports/SalesReport';
+import PreConstructionReport from '../components/reports/PreConstructionReport';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('sales');
@@ -262,14 +263,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="preconstruction" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pre-Construction Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Pre-construction reports and metrics will be displayed here</p>
-            </CardContent>
-          </Card>
+          <PreConstructionReport dateRange={dateRange} staffId={selectedStaffId} />
         </TabsContent>
 
         <TabsContent value="construction" className="space-y-6 mt-6">
