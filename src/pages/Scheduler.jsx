@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { format, startOfWeek, addWeeks, subWeeks, getMonth, getYear, startOfMonth } from 'date-fns';
+import { format, getMonth, getYear, startOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import MonthlyAllocationView from '@/components/scheduler/MonthlyAllocationView';
-import StaffAssignmentView from '@/components/scheduler/StaffAssignmentView';
+import DayJobAssignmentModal from '@/components/scheduler/DayJobAssignmentModal';
 
 export default function Scheduler() {
-  const [view, setView] = useState('allocations'); // 'allocations' or 'assignments'
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [currentWeekStart, setCurrentWeekStart] = useState(
-    startOfWeek(new Date(), { weekStartsOn: 1 })
-  );
-  const [draggedProject, setDraggedProject] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [showDayModal, setShowDayModal] = useState(false);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -28,13 +23,9 @@ export default function Scheduler() {
   });
 
   const { data: assignments = [], refetch: refetchAssignments } = useQuery({
-    queryKey: ['employeeAssignments', format(currentWeekStart, 'yyyy-MM-dd')],
+    queryKey: ['employeeAssignments'],
     queryFn: async () => {
-      const weekEnd = addWeeks(currentWeekStart, 1);
-      const startDate = format(currentWeekStart, 'yyyy-MM-dd');
-      const endDate = format(weekEnd, 'yyyy-MM-dd');
-      const allAssignments = await base44.entities.EmployeeAssignment.filter({});
-      return allAssignments.filter(a => a.assignment_date >= startDate && a.assignment_date < endDate);
+      return await base44.entities.EmployeeAssignment.list();
     },
   });
 
@@ -48,40 +39,30 @@ export default function Scheduler() {
     onSuccess: () => refetchAssignments(),
   });
 
-  const handleSelectMonth = (projectId) => {
-    const project = projects.find(p => p.id === projectId);
-    setSelectedProject(project);
-    const currentMonth = startOfMonth(new Date());
-    setSelectedMonth(currentMonth);
-    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
-    setView('assignments');
+  const handleMonthClick = (month) => {
+    setSelectedMonth(month);
+    setShowDayModal(true);
   };
 
-  const handleBackToAllocations = () => {
-    setView('allocations');
-    setSelectedProject(null);
+  const getAllocatedProjectsForMonth = (month) => {
+    const year = getYear(month);
+    const monthNum = getMonth(month) + 1;
+    return projects.filter(p =>
+      p.monthly_work_allocations?.some(a => a.year === year && a.month === monthNum)
+    );
   };
 
-  const handleDrop = (employeeId, date, projectId) => {
+  const handleAssignJobToDay = (data) => {
     const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
-    const projectIndex = projects.findIndex(p => p.id === projectId);
+    const projectIndex = projects.findIndex(p => p.id === data.project_id);
     const color = COLORS[projectIndex % COLORS.length];
 
     createAssignmentMutation.mutate({
-      employee_id: employeeId,
-      assignment_date: format(date, 'yyyy-MM-dd'),
-      project_id: projectId,
-      status: selectedProject?.title || 'Assigned',
+      assignment_date: data.date,
+      project_id: data.project_id,
+      status: 'Assigned',
       color: color,
     });
-  };
-
-  const handleClearAssignment = (assignmentId) => {
-    deleteAssignmentMutation.mutate(assignmentId);
-  };
-
-  const handleWeekChange = (direction) => {
-    setCurrentWeekStart(direction > 0 ? addWeeks(currentWeekStart, 1) : subWeeks(currentWeekStart, 1));
   };
 
   return (
@@ -95,51 +76,32 @@ export default function Scheduler() {
         </p>
       </div>
 
-      {view === 'allocations' ? (
-        <>
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="pt-6">
-              <div className="flex gap-2">
-                <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-blue-900">
-                  <strong>Layer 1: Allocations</strong> - Set what % of each project should be worked on each month.
-                  Click "View" on a project to assign that month's work to staff.
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <MonthlyAllocationView
-            projects={projects}
-            onSelectMonth={handleSelectMonth}
-            selectedMonth={selectedMonth}
-          />
-        </>
-      ) : (
-        <>
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="pt-6">
-              <div className="flex gap-2">
-                <AlertCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-green-900">
-                  <strong>Layer 2: Staff Assignment</strong> - Only employees assigned to this month's work can be scheduled.
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <StaffAssignmentView
-            project={selectedProject}
-            month={selectedMonth}
-            users={users}
-            projects={projects}
-            assignments={assignments}
-            onDrop={handleDrop}
-            onClearAssignment={handleClearAssignment}
-            onBack={handleBackToAllocations}
-            currentWeekStart={currentWeekStart}
-            onWeekChange={handleWeekChange}
-          />
-        </>
-      )}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="flex gap-2">
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-900">
+              <strong>Layer 1: Allocations</strong> - Drag projects to months to allocate work. Click a month to assign jobs to specific days.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <MonthlyAllocationView
+        projects={projects}
+        onMonthClick={handleMonthClick}
+      />
+
+      <DayJobAssignmentModal
+        isOpen={showDayModal}
+        onClose={() => setShowDayModal(false)}
+        month={selectedMonth}
+        projects={projects}
+        allocatedProjects={selectedMonth ? getAllocatedProjectsForMonth(selectedMonth) : []}
+        assignments={assignments}
+        users={users}
+        onAssign={handleAssignJobToDay}
+        onRemove={(id) => deleteAssignmentMutation.mutate(id)}
+      />
     </div>
   );
 }
