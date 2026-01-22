@@ -11,6 +11,7 @@ import Relationships from './pages/Relationships';
 import Reports from './pages/Reports';
 import Sales from './pages/Sales';
 import UsersAdmin from './pages/UsersAdmin';
+import Scheduler from './pages/Scheduler';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "Reports": Reports,
     "Sales": Sales,
     "UsersAdmin": UsersAdmin,
+    "Scheduler": Scheduler,
 }
 
 export const pagesConfig = {
