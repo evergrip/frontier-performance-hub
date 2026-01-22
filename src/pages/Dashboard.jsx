@@ -92,8 +92,8 @@ export default function Dashboard() {
         end: endOfQuarter(new Date(selectedYear, quarterStartMonth, 1))
       };
     } else if (selectedDateRangeType === 'fiscal_year') {
-      const fyStart = new Date(fiscalYear, fiscalYearStartMonth - 1, 1);
-      const fyEnd = new Date(fiscalYear + 1, fiscalYearStartMonth - 1, 0);
+      const fyStart = new Date(fiscalYear - 1, fiscalYearStartMonth - 1, 1);
+      const fyEnd = new Date(fiscalYear, fiscalYearStartMonth - 1, 0);
       return { start: fyStart, end: fyEnd };
     } else if (selectedDateRangeType === 'custom') {
       return {
