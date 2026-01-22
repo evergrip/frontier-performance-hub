@@ -49,11 +49,25 @@ export default function Reports() {
         };
       }
       case 'fiscal': {
-        const date = new Date(selectedFiscalYear, 0, 1);
-        return {
-          start: startOfYear(date),
-          end: endOfYear(date)
-        };
+        const settings = companySettings[0];
+        const fiscalYearStart = settings?.fiscal_year_start;
+        
+        if (fiscalYearStart) {
+          const [year, month] = fiscalYearStart.split('-');
+          const fiscalStartMonth = parseInt(month) - 1;
+          const startDate = new Date(selectedFiscalYear, fiscalStartMonth, 1);
+          const endDate = new Date(selectedFiscalYear + 1, fiscalStartMonth, 0);
+          return {
+            start: startDate,
+            end: endDate
+          };
+        } else {
+          const date = new Date(selectedFiscalYear, 0, 1);
+          return {
+            start: startOfYear(date),
+            end: endOfYear(date)
+          };
+        }
       }
       case 'custom': {
         return {
