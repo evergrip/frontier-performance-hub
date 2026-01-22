@@ -6,16 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Building2, Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Building2, Save, TrendingUp, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
   const [settingsId, setSettingsId] = useState(null);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(new Date().getFullYear());
 
   const { data: settings = [] } = useQuery({
     queryKey: ['companySettings'],
     queryFn: () => base44.entities.CompanySettings.list(),
+    initialData: [],
+  });
+
+  const { data: fiscalGoals = [] } = useQuery({
+    queryKey: ['fiscalGoals'],
+    queryFn: () => base44.entities.FiscalGoal.list(),
     initialData: [],
   });
 
@@ -28,6 +36,18 @@ export default function CompanySettings() {
     tax_id: '',
     fiscal_year_start: '',
     default_currency: 'USD',
+    notes: ''
+  });
+
+  const [fiscalData, setFiscalData] = useState({
+    revenue_target: '',
+    gross_margin_target: '',
+    net_margin_target: '',
+    operating_expense_budget: '',
+    project_count_target: '',
+    sales_volume_target: '',
+    ebitda_target: '',
+    cash_flow_target: '',
     notes: ''
   });
 
@@ -48,6 +68,35 @@ export default function CompanySettings() {
       });
     }
   }, [settings]);
+
+  React.useEffect(() => {
+    const currentGoal = fiscalGoals.find(g => g.fiscal_year === selectedFiscalYear);
+    if (currentGoal) {
+      setFiscalData({
+        revenue_target: currentGoal.revenue_target || '',
+        gross_margin_target: currentGoal.gross_margin_target || '',
+        net_margin_target: currentGoal.net_margin_target || '',
+        operating_expense_budget: currentGoal.operating_expense_budget || '',
+        project_count_target: currentGoal.project_count_target || '',
+        sales_volume_target: currentGoal.sales_volume_target || '',
+        ebitda_target: currentGoal.ebitda_target || '',
+        cash_flow_target: currentGoal.cash_flow_target || '',
+        notes: currentGoal.notes || ''
+      });
+    } else {
+      setFiscalData({
+        revenue_target: '',
+        gross_margin_target: '',
+        net_margin_target: '',
+        operating_expense_budget: '',
+        project_count_target: '',
+        sales_volume_target: '',
+        ebitda_target: '',
+        cash_flow_target: '',
+        notes: ''
+      });
+    }
+  }, [selectedFiscalYear, fiscalGoals]);
 
   const saveSettingsMutation = useMutation({
     mutationFn: (data) => {
@@ -86,6 +135,28 @@ export default function CompanySettings() {
       default_currency: formData.default_currency
     });
   };
+
+  const saveFiscalGoalsMutation = useMutation({
+    mutationFn: (data) => {
+      const existingGoal = fiscalGoals.find(g => g.fiscal_year === selectedFiscalYear);
+      if (existingGoal) {
+        return base44.entities.FiscalGoal.update(existingGoal.id, data);
+      } else {
+        return base44.entities.FiscalGoal.create({ ...data, fiscal_year: selectedFiscalYear });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['fiscalGoals']);
+      toast.success('Fiscal goals saved successfully');
+    }
+  });
+
+  const handleSaveFiscalGoals = (e) => {
+    e.preventDefault();
+    saveFiscalGoalsMutation.mutate(fiscalData);
+  };
+
+  const availableYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - 2 + i);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -210,6 +281,132 @@ export default function CompanySettings() {
               <Button type="submit" disabled={saveSettingsMutation.isPending}>
                 <Save className="w-4 h-4 mr-2" />
                 Save Settings
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            Annual Fiscal Goals
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSaveFiscalGoals} className="space-y-4">
+            <div>
+              <Label>Fiscal Year</Label>
+              <Select 
+                value={selectedFiscalYear.toString()} 
+                onValueChange={(value) => setSelectedFiscalYear(Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Revenue Target
+                </Label>
+                <Input
+                  type="number"
+                  value={fiscalData.revenue_target}
+                  onChange={(e) => setFiscalData({...fiscalData, revenue_target: e.target.value})}
+                  placeholder="5000000"
+                />
+              </div>
+              <div>
+                <Label>Sales Volume Target</Label>
+                <Input
+                  type="number"
+                  value={fiscalData.sales_volume_target}
+                  onChange={(e) => setFiscalData({...fiscalData, sales_volume_target: e.target.value})}
+                  placeholder="6000000"
+                />
+              </div>
+              <div>
+                <Label>Gross Margin Target (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={fiscalData.gross_margin_target}
+                  onChange={(e) => setFiscalData({...fiscalData, gross_margin_target: e.target.value})}
+                  placeholder="30"
+                />
+              </div>
+              <div>
+                <Label>Net Margin Target (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={fiscalData.net_margin_target}
+                  onChange={(e) => setFiscalData({...fiscalData, net_margin_target: e.target.value})}
+                  placeholder="15"
+                />
+              </div>
+              <div>
+                <Label>Operating Expense Budget</Label>
+                <Input
+                  type="number"
+                  value={fiscalData.operating_expense_budget}
+                  onChange={(e) => setFiscalData({...fiscalData, operating_expense_budget: e.target.value})}
+                  placeholder="750000"
+                />
+              </div>
+              <div>
+                <Label>EBITDA Target</Label>
+                <Input
+                  type="number"
+                  value={fiscalData.ebitda_target}
+                  onChange={(e) => setFiscalData({...fiscalData, ebitda_target: e.target.value})}
+                  placeholder="1000000"
+                />
+              </div>
+              <div>
+                <Label>Cash Flow Target</Label>
+                <Input
+                  type="number"
+                  value={fiscalData.cash_flow_target}
+                  onChange={(e) => setFiscalData({...fiscalData, cash_flow_target: e.target.value})}
+                  placeholder="800000"
+                />
+              </div>
+              <div>
+                <Label>Project Count Target</Label>
+                <Input
+                  type="number"
+                  value={fiscalData.project_count_target}
+                  onChange={(e) => setFiscalData({...fiscalData, project_count_target: e.target.value})}
+                  placeholder="25"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={fiscalData.notes}
+                onChange={(e) => setFiscalData({...fiscalData, notes: e.target.value})}
+                placeholder="Additional fiscal goals and objectives..."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={saveFiscalGoalsMutation.isPending}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Fiscal Goals
               </Button>
             </div>
           </form>
