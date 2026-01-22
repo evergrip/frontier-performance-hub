@@ -21,31 +21,54 @@ export default function DailyStaffScheduleView({
     const style = document.createElement('style');
     style.textContent = `
       @media print {
-        @page {
-          size: landscape;
-          margin: 0.5in;
+        * {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
-        body {
+        html, body {
+          width: 100%;
+          height: 100%;
           margin: 0;
           padding: 0;
+          overflow: visible;
+        }
+        @page {
+          size: landscape;
+          margin: 0.3in 0.3in 0.3in 0.3in;
         }
         .print-schedule {
           width: 100%;
-          font-size: 11px;
+          height: 100%;
+        }
+        .print-schedule > div:first-child {
+          display: none;
+        }
+        .print-schedule .overflow-x-auto {
+          overflow: visible !important;
         }
         .print-schedule table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 10px;
+          font-size: 9px;
+          font-family: Arial, sans-serif;
         }
         .print-schedule th,
         .print-schedule td {
-          padding: 4px !important;
+          padding: 3px 2px !important;
           border: 1px solid #000 !important;
+          text-align: center;
+          vertical-align: middle;
         }
         .print-schedule th {
-          background-color: #e2e8f0 !important;
+          background-color: #d1d5db !important;
           font-weight: bold;
+        }
+        .print-schedule tr:nth-child(even) {
+          background-color: #f9fafb !important;
+        }
+        .print-schedule div {
+          margin: 0;
+          line-height: 1.2;
         }
       }
     `;
