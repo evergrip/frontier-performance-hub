@@ -121,14 +121,26 @@ export default function SalesReport({ dateRange, staffId }) {
       const total = converted + disqualified;
       const winRate = total > 0 ? (converted / total) * 100 : 0;
 
+      // Calculate win rate after proposal (only leads that reached proposal stage)
+      const proposalLeads = periodLeads.filter(l => {
+        const statusHistory = l.status_history || [];
+        return statusHistory.some(h => h.status === 'preconstruction_proposal');
+      });
+      const convertedAfterProposal = proposalLeads.filter(l => l.status === 'converted').length;
+      const proposalTotal = proposalLeads.length;
+      const winRateAfterProposal = proposalTotal > 0 ? (convertedAfterProposal / proposalTotal) * 100 : 0;
+
       return {
         period: trendPeriod === 'monthly' 
           ? format(intervalStart, 'MMM yyyy')
           : `Q${Math.floor(intervalStart.getMonth() / 3) + 1} ${format(intervalStart, 'yyyy')}`,
         winRate: parseFloat(winRate.toFixed(1)),
+        winRateAfterProposal: parseFloat(winRateAfterProposal.toFixed(1)),
         converted,
         disqualified,
-        total
+        total,
+        convertedAfterProposal,
+        proposalTotal
       };
     });
   };
@@ -339,10 +351,10 @@ export default function SalesReport({ dateRange, staffId }) {
                       return (
                         <div className="bg-white p-3 border rounded-lg shadow-lg">
                           <p className="font-semibold">{data.period}</p>
-                          <p className="text-emerald-600">Win Rate: {data.winRate}%</p>
-                          <p className="text-sm text-slate-600">Converted: {data.converted}</p>
-                          <p className="text-sm text-slate-600">Disqualified: {data.disqualified}</p>
-                          <p className="text-sm text-slate-600">Total: {data.total}</p>
+                          <p className="text-emerald-600">Overall Win Rate: {data.winRate}%</p>
+                          <p className="text-blue-600">Win Rate After Proposal: {data.winRateAfterProposal}%</p>
+                          <p className="text-sm text-slate-600 mt-2">Overall: {data.converted}/{data.total}</p>
+                          <p className="text-sm text-slate-600">After Proposal: {data.convertedAfterProposal}/{data.proposalTotal}</p>
                         </div>
                       );
                     }
@@ -355,8 +367,16 @@ export default function SalesReport({ dateRange, staffId }) {
                   dataKey="winRate" 
                   stroke="#10b981" 
                   strokeWidth={2}
-                  name="Win Rate (%)"
+                  name="Overall Win Rate (%)"
                   dot={{ fill: '#10b981', r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="winRateAfterProposal" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  name="Win Rate After Proposal (%)"
+                  dot={{ fill: '#3b82f6', r: 4 }}
                 />
               </LineChart>
             </ResponsiveContainer>
