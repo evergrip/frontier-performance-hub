@@ -58,10 +58,11 @@ export default function Scheduler() {
     const color = COLORS[projectIndex % COLORS.length];
 
     createAssignmentMutation.mutate({
-      employee_id: users[0]?.id || 'unassigned',
+      employee_id: data.employee_id || 'unassigned',
       assignment_date: data.date,
       project_id: data.project_id,
       status: 'Assigned',
+      hours: data.hours || 8,
       color: color,
     });
   };
