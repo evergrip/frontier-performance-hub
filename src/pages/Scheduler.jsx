@@ -14,6 +14,7 @@ export default function Scheduler() {
   const [showDayModal, setShowDayModal] = useState(false);
   const [showScheduleView, setShowScheduleView] = useState(false);
   const [scheduleStartDate, setScheduleStartDate] = useState(null);
+  const [scheduleEndDate, setScheduleEndDate] = useState(null);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -120,8 +121,9 @@ export default function Scheduler() {
         users={users}
         onAssign={handleAssignJobToDay}
         onRemove={(id) => deleteAssignmentMutation.mutate(id)}
-        onCreateSchedule={(month) => {
-          setScheduleStartDate(month);
+        onCreateSchedule={(startDate, endDate) => {
+          setScheduleStartDate(startDate);
+          setScheduleEndDate(endDate);
           setShowScheduleView(true);
         }}
       />
@@ -133,6 +135,7 @@ export default function Scheduler() {
             users={users}
             projects={projects}
             startDate={scheduleStartDate}
+            endDate={scheduleEndDate}
             onClose={() => setShowScheduleView(false)}
           />
         </div>

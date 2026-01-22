@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Printer, Send } from 'lucide-react';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
@@ -13,11 +13,18 @@ export default function DailyStaffScheduleView({
   users = [],
   projects = [],
   startDate,
+  endDate,
   onClose
 }) {
   const [weekStart, setWeekStart] = useState(startDate ? startOfWeek(startDate) : startOfWeek(new Date()));
   
-  const weekEnd = endOfWeek(weekStart);
+  let weekEnd = endOfWeek(weekStart);
+  
+  // Limit weekEnd to the range endDate if provided
+  if (endDate && weekEnd > endDate) {
+    weekEnd = endDate;
+  }
+  
   const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   // Get unique employees from assignments
@@ -52,15 +59,50 @@ export default function DailyStaffScheduleView({
     return 0;
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleSendToStaff = () => {
+    const scheduleText = generateScheduleText();
+    // In a real app, this would open an email dialog or call a backend function
+    // For now, we'll copy to clipboard and show a message
+    navigator.clipboard.writeText(scheduleText);
+    alert('Schedule copied to clipboard. You can now paste it into an email.');
+  };
+
+  const generateScheduleText = () => {
+    let text = `Staff Schedule - ${format(weekStart, 'MMM d')} to ${format(weekEnd, 'MMM d, yyyy')}\n\n`;
+    
+    activeEmployees.forEach(employee => {
+      text += `${employee.full_name}\n`;
+      daysInWeek.forEach(day => {
+        const assignment = getAssignmentForEmployeeOnDay(employee.id, day);
+        const hours = getHoursForEmployeeOnDay(employee.id, day);
+        const project = assignment ? projects.find(p => p.id === assignment.project_id) : null;
+        
+        if (project) {
+          text += `  ${format(day, 'EEE MMM d')}: ${project.title} (${hours}h)\n`;
+        } else {
+          text += `  ${format(day, 'EEE MMM d')}: Off\n`;
+        }
+      });
+      text += '\n';
+    });
+    
+    return text;
+  };
+
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className="w-full print:shadow-none print:border-0">
+      <CardHeader className="flex flex-row items-center justify-between print:pb-4">
         <CardTitle>Staff Schedule - {format(weekStart, 'MMM d')} to {format(weekEnd, 'MMM d, yyyy')}</CardTitle>
-        <div className="flex gap-2">
+        <div className="flex gap-2 print:hidden">
           <Button
             variant="outline"
             size="icon"
             onClick={() => setWeekStart(addDays(weekStart, -7))}
+            disabled={startDate && weekStart <= startDate}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -68,10 +110,27 @@ export default function DailyStaffScheduleView({
             variant="outline"
             size="icon"
             onClick={() => setWeekStart(addDays(weekStart, 7))}
+            disabled={endDate && addDays(weekStart, 7) > endDate}
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
-          <Button variant="outline" onClick={onClose} className="ml-4">
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+            className="gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Print
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleSendToStaff}
+            className="gap-2"
+          >
+            <Send className="w-4 h-4" />
+            Send to Staff
+          </Button>
+          <Button variant="outline" onClick={onClose}>
             Close
           </Button>
         </div>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
 import EmployeeAssignmentModal from './EmployeeAssignmentModal';
+import DateRangePickerModal from './DateRangePickerModal';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
@@ -25,6 +26,7 @@ export default function DayJobAssignmentModal({
   const [expandedDay, setExpandedDay] = useState(null);
   const [employeeModalOpen, setEmployeeModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [dateRangeModalOpen, setDateRangeModalOpen] = useState(false);
 
   if (!isOpen || !month) return null;
 
@@ -201,13 +203,7 @@ export default function DayJobAssignmentModal({
 
         <div className="flex justify-between gap-2">
                   <Button
-                    onClick={() => {
-                      onClose();
-                      // Trigger schedule view with the selected month
-                      if (month && onCreateSchedule) {
-                        onCreateSchedule(month);
-                      }
-                    }}
+                    onClick={() => setDateRangeModalOpen(true)}
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
                     Create Schedule
@@ -226,6 +222,17 @@ export default function DayJobAssignmentModal({
         date={selectedJob?.day}
         users={users}
         existingAssignments={selectedJob?.existingEmployees}
+      />
+
+      <DateRangePickerModal
+        isOpen={dateRangeModalOpen}
+        onClose={() => setDateRangeModalOpen(false)}
+        onConfirm={(startDate, endDate) => {
+          setDateRangeModalOpen(false);
+          if (onCreateSchedule) {
+            onCreateSchedule(startDate, endDate);
+          }
+        }}
       />
     </Dialog>
   );
