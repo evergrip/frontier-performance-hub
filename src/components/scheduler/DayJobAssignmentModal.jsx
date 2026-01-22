@@ -57,18 +57,18 @@ export default function DayJobAssignmentModal({
     setSelectedJob({
       assignment,
       project,
-      day: format(day, 'MMM d, yyyy')
+      day: format(day, 'MMM d, yyyy'),
+      existingEmployees: assignment.employee_assignments || []
     });
     setEmployeeModalOpen(true);
   };
 
-  const handleAssignEmployee = (employeeId, hours) => {
+  const handleAssignEmployee = (employees) => {
     if (selectedJob) {
       onAssign({
         date: selectedJob.assignment.assignment_date,
         project_id: selectedJob.assignment.project_id,
-        employee_id: employeeId,
-        hours: hours
+        employee_assignments: employees
       });
     }
   };
@@ -212,6 +212,7 @@ export default function DayJobAssignmentModal({
         projectTitle={selectedJob?.project?.title}
         date={selectedJob?.day}
         users={users}
+        existingAssignments={selectedJob?.existingEmployees}
       />
     </Dialog>
   );

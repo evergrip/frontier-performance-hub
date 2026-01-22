@@ -11,9 +11,20 @@ export default function EmployeeAssignmentModal({
   onAssign,
   projectTitle,
   date,
-  users
+  users,
+  existingAssignments = []
 }) {
-  const [assignments, setAssignments] = useState([{ employee_id: '', hours: 8 }]);
+  const [assignments, setAssignments] = useState(
+    existingAssignments && existingAssignments.length > 0
+      ? existingAssignments
+      : [{ employee_id: '', hours: 8 }]
+  );
+
+  React.useEffect(() => {
+    if (isOpen && existingAssignments && existingAssignments.length > 0) {
+      setAssignments(existingAssignments);
+    }
+  }, [isOpen, existingAssignments]);
 
   const handleAddEmployee = () => {
     setAssignments([...assignments, { employee_id: '', hours: 8 }]);
@@ -39,10 +50,7 @@ export default function EmployeeAssignmentModal({
     const validAssignments = assignments.filter(a => a.employee_id && a.hours > 0);
     if (validAssignments.length === 0) return;
 
-    validAssignments.forEach(assignment => {
-      onAssign(assignment.employee_id, assignment.hours);
-    });
-
+    onAssign(validAssignments);
     setAssignments([{ employee_id: '', hours: 8 }]);
     onClose();
   };

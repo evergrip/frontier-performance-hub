@@ -64,27 +64,18 @@ export default function Scheduler() {
       a => a.assignment_date === data.date && a.project_id === data.project_id
     );
 
-    if (existingAssignment) {
-      // Add employee to existing job
-      const updatedEmployees = [...(existingAssignment.employee_assignments || [])];
-      updatedEmployees.push({
-        employee_id: data.employee_id,
-        hours: data.hours || 8
-      });
-
+    if (existingAssignment && data.employee_assignments) {
+      // Update existing job with new employee assignments
       base44.entities.EmployeeAssignment.update(existingAssignment.id, {
-        employee_assignments: updatedEmployees
+        employee_assignments: data.employee_assignments
       }).then(() => refetchAssignments());
-    } else {
+    } else if (!existingAssignment && data.employee_assignments) {
       // Create new job assignment
       createAssignmentMutation.mutate({
         assignment_date: data.date,
         project_id: data.project_id,
         status: 'Assigned',
-        employee_assignments: [{
-          employee_id: data.employee_id,
-          hours: data.hours || 8
-        }],
+        employee_assignments: data.employee_assignments,
         color: color,
       });
     }
