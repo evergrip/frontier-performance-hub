@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { format, startOfWeek, addWeeks, subWeeks, getMonth, getYear } from 'date-fns';
+import { format, startOfWeek, addWeeks, subWeeks, getMonth, getYear, startOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
@@ -49,8 +49,10 @@ export default function Scheduler() {
   });
 
   const handleSelectMonth = (projectId) => {
-    setSelectedProject(projects.find(p => p.id === projectId));
-    setSelectedMonth(new Date());
+    const project = projects.find(p => p.id === projectId);
+    setSelectedProject(project);
+    const currentMonth = startOfMonth(new Date());
+    setSelectedMonth(currentMonth);
     setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
     setView('assignments');
   };
@@ -61,12 +63,16 @@ export default function Scheduler() {
   };
 
   const handleDrop = (employeeId, date, projectId) => {
+    const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+    const projectIndex = projects.findIndex(p => p.id === projectId);
+    const color = COLORS[projectIndex % COLORS.length];
+
     createAssignmentMutation.mutate({
       employee_id: employeeId,
       assignment_date: format(date, 'yyyy-MM-dd'),
       project_id: projectId,
       status: selectedProject?.title || 'Assigned',
-      color: '#45B7D1',
+      color: color,
     });
   };
 
@@ -124,8 +130,8 @@ export default function Scheduler() {
             project={selectedProject}
             month={selectedMonth}
             users={users}
+            projects={projects}
             assignments={assignments}
-            onDragStart={setDraggedProject}
             onDrop={handleDrop}
             onClearAssignment={handleClearAssignment}
             onBack={handleBackToAllocations}
