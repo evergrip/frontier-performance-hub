@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle } from 'lucide-react';
 
-export default function SalesReport({ dateRange }) {
+export default function SalesReport({ dateRange, staffId }) {
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
     queryFn: () => base44.entities.Lead.list(),
@@ -22,6 +22,9 @@ export default function SalesReport({ dateRange }) {
   const analyzeDisqualifiedLeads = () => {
     const disqualifiedAfterProposal = leads.filter(lead => {
       if (lead.status !== 'disqualified') return false;
+      
+      // Filter by staff if specified
+      if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
       
       const statusHistory = lead.status_history || [];
       const reachedProposal = statusHistory.some(h => h.status === 'preconstruction_proposal');

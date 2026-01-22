@@ -19,6 +19,7 @@ export default function Reports() {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(new Date().getFullYear());
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [selectedStaffId, setSelectedStaffId] = useState('all');
 
   const { data: companySettings = [] } = useQuery({
     queryKey: ['companySettings'],
@@ -29,6 +30,12 @@ export default function Reports() {
   const { data: fiscalGoals = [] } = useQuery({
     queryKey: ['fiscalGoals'],
     queryFn: () => base44.entities.FiscalGoal.list(),
+    initialData: [],
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
     initialData: [],
   });
 
@@ -91,15 +98,16 @@ export default function Reports() {
         <p className="text-lg text-slate-500">Department-specific reporting and insights</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Report Date Range
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Report Date Range
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Range Type</Label>
               <Select value={dateRangeType} onValueChange={setDateRangeType}>
@@ -180,19 +188,42 @@ export default function Reports() {
               </>
             )}
 
-            <div className="flex items-end">
-              <div className="text-sm text-slate-600">
-                {dateRange.start && dateRange.end && (
-                  <div>
-                    <p className="font-medium">Selected Range:</p>
-                    <p>{format(dateRange.start, 'MMM d, yyyy')} - {format(dateRange.end, 'MMM d, yyyy')}</p>
-                  </div>
-                )}
+            {dateRange.start && dateRange.end && (
+              <div className="md:col-span-2">
+                <div className="text-sm text-slate-600 p-3 bg-slate-50 rounded-lg">
+                  <p className="font-medium mb-1">Selected Range:</p>
+                  <p>{format(dateRange.start, 'MMM d, yyyy')} - {format(dateRange.end, 'MMM d, yyyy')}</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Staff Filter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div>
+            <Label>Filter by Staff Member</Label>
+            <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Staff</SelectItem>
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -215,7 +246,7 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="sales" className="space-y-6 mt-6">
-          <SalesReport dateRange={dateRange} />
+          <SalesReport dateRange={dateRange} staffId={selectedStaffId} />
         </TabsContent>
 
         <TabsContent value="preconstruction" className="space-y-6 mt-6">
