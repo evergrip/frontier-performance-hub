@@ -134,6 +134,7 @@ export default function DayJobAssignmentModal({
                     {dayAssignmentsList.map(assignment => {
                       const project = projects.find(p => p.id === assignment.project_id);
                       const projectIdx = projects.findIndex(p => p.id === assignment.project_id);
+                      const employeeCount = assignment.employee_assignments?.length || 0;
                       return (
                         <div
                           key={assignment.id}
@@ -141,7 +142,14 @@ export default function DayJobAssignmentModal({
                           style={{ backgroundColor: getProjectColor(projectIdx) }}
                           onClick={() => handleJobClick(assignment, day)}
                         >
-                          <span className="truncate text-xs">{project?.title}</span>
+                          <div className="truncate text-xs flex flex-col">
+                            <span>{project?.title}</span>
+                            {employeeCount > 0 && (
+                              <span className="text-[10px] opacity-80">
+                                {employeeCount} employee{employeeCount !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
