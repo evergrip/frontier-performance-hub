@@ -19,7 +19,8 @@ export default function DayJobAssignmentModal({
   assignments,
   users,
   onAssign,
-  onRemove
+  onRemove,
+  onCreateSchedule
 }) {
   const [expandedDay, setExpandedDay] = useState(null);
   const [employeeModalOpen, setEmployeeModalOpen] = useState(false);
