@@ -11,6 +11,14 @@ import { toast } from 'sonner';
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
+  const [settingsId, setSettingsId] = useState(null);
+
+  const { data: settings = [] } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: () => base44.entities.CompanySettings.list(),
+    initialData: [],
+  });
+
   const [formData, setFormData] = useState({
     company_name: '',
     address: '',
@@ -18,8 +26,66 @@ export default function CompanySettings() {
     email: '',
     website: '',
     tax_id: '',
+    fiscal_year_start: '',
+    default_currency: 'USD',
     notes: ''
   });
+
+  React.useEffect(() => {
+    if (settings.length > 0) {
+      const setting = settings[0];
+      setSettingsId(setting.id);
+      setFormData({
+        company_name: setting.company_name || '',
+        address: setting.address || '',
+        phone: setting.phone || '',
+        email: setting.email || '',
+        website: setting.website || '',
+        tax_id: setting.tax_id || '',
+        fiscal_year_start: setting.fiscal_year_start || '',
+        default_currency: setting.default_currency || 'USD',
+        notes: setting.notes || ''
+      });
+    }
+  }, [settings]);
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: (data) => {
+      if (settingsId) {
+        return base44.entities.CompanySettings.update(settingsId, data);
+      } else {
+        return base44.entities.CompanySettings.create(data);
+      }
+    },
+    onSuccess: (result) => {
+      if (!settingsId) {
+        setSettingsId(result.id);
+      }
+      queryClient.invalidateQueries(['companySettings']);
+      toast.success('Settings saved successfully');
+    }
+  });
+
+  const handleSaveCompanyInfo = (e) => {
+    e.preventDefault();
+    saveSettingsMutation.mutate({
+      company_name: formData.company_name,
+      address: formData.address,
+      phone: formData.phone,
+      email: formData.email,
+      website: formData.website,
+      tax_id: formData.tax_id,
+      notes: formData.notes
+    });
+  };
+
+  const handleSaveBusinessSettings = (e) => {
+    e.preventDefault();
+    saveSettingsMutation.mutate({
+      fiscal_year_start: formData.fiscal_year_start,
+      default_currency: formData.default_currency
+    });
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -36,7 +102,7 @@ export default function CompanySettings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSaveCompanyInfo} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Company Name</Label>
@@ -107,7 +173,7 @@ export default function CompanySettings() {
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button>
+              <Button type="submit" disabled={saveSettingsMutation.isPending}>
                 <Save className="w-4 h-4 mr-2" />
                 Save Settings
               </Button>
@@ -121,22 +187,32 @@ export default function CompanySettings() {
           <CardTitle>Business Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <form onSubmit={handleSaveBusinessSettings} className="space-y-4">
             <div>
               <Label>Fiscal Year Start</Label>
-              <Input type="month" placeholder="Select month" />
+              <Input 
+                type="month" 
+                value={formData.fiscal_year_start}
+                onChange={(e) => setFormData({...formData, fiscal_year_start: e.target.value})}
+                placeholder="Select month" 
+              />
             </div>
             <div>
               <Label>Default Currency</Label>
-              <Input type="text" placeholder="USD" defaultValue="USD" />
+              <Input 
+                type="text" 
+                value={formData.default_currency}
+                onChange={(e) => setFormData({...formData, default_currency: e.target.value})}
+                placeholder="USD" 
+              />
             </div>
             <div className="flex justify-end pt-4">
-              <Button>
+              <Button type="submit" disabled={saveSettingsMutation.isPending}>
                 <Save className="w-4 h-4 mr-2" />
                 Save Settings
               </Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
