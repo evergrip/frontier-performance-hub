@@ -1,16 +1,27 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Clock, DollarSign, TrendingUp } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 
 export default function PreConstructionReport({ dateRange, staffId }) {
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [monthDialogOpen, setMonthDialogOpen] = useState(false);
+
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['sales'],
     queryFn: () => base44.entities.Sale.list(),
+    initialData: [],
+  });
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list(),
     initialData: [],
   });
 
@@ -117,18 +128,37 @@ export default function PreConstructionReport({ dateRange, staffId }) {
         forecastByMonth[monthKey] = {
           month: monthKey,
           total: 0,
-          count: 0
+          count: 0,
+          sales: []
         };
       }
 
       forecastByMonth[monthKey].total += sale.estimated_construction_budget;
       forecastByMonth[monthKey].count += 1;
+      forecastByMonth[monthKey].sales.push(sale);
     });
 
     return Object.values(forecastByMonth).sort((a, b) => 
       new Date(a.month) - new Date(b.month)
     );
   }, [sales, staffId]);
+
+  const handleMonthClick = (monthData) => {
+    setSelectedMonth(monthData);
+    setMonthDialogOpen(true);
+  };
+
+  const getClientName = (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    return client?.company_name || 'Unknown Client';
+  };
+
+  const statusLabels = {
+    feasibility: 'Feasibility',
+    design_material_selections: 'Design & Materials',
+    engineering_permits: 'Engineering & Permits',
+    pending_construction_sale: 'Pending Construction'
+  };
 
   if (isLoading) {
     return <div className="text-center py-12 text-slate-500">Loading pre-construction data...</div>;
@@ -261,7 +291,11 @@ export default function PreConstructionReport({ dateRange, staffId }) {
                 </TableHeader>
                 <TableBody>
                   {pipelineForecast.map((item, idx) => (
-                    <TableRow key={idx}>
+                    <TableRow 
+                      key={idx} 
+                      className="cursor-pointer hover:bg-slate-50"
+                      onClick={() => handleMonthClick(item)}
+                    >
                       <TableCell className="font-medium">{item.month}</TableCell>
                       <TableCell className="text-right">
                         ${Math.round(item.total).toLocaleString()}
@@ -288,6 +322,72 @@ export default function PreConstructionReport({ dateRange, staffId }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Month Details Dialog */}
+      <Dialog open={monthDialogOpen} onOpenChange={setMonthDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Projects Expected to Complete in {selectedMonth?.month}</DialogTitle>
+          </DialogHeader>
+          {selectedMonth && (
+            <div className="space-y-3">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-600">Total Est. Construction</p>
+                    <p className="text-xl font-bold text-emerald-700">
+                      ${Math.round(selectedMonth.total).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-600">Projects</p>
+                    <p className="text-xl font-bold text-slate-900">{selectedMonth.count}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {selectedMonth.sales.map((sale) => (
+                  <Card key={sale.id} className="border-2">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-slate-900">{sale.title}</h4>
+                          <p className="text-sm text-slate-600">{getClientName(sale.client_id)}</p>
+                        </div>
+                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                          {statusLabels[sale.status] || sale.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3 mt-3">
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <p className="text-xs text-slate-600">Precon Value</p>
+                          <p className="text-sm font-semibold text-slate-900">
+                            ${((sale.contract_value || 0) / 1000).toFixed(0)}k
+                          </p>
+                        </div>
+                        <div className="bg-emerald-50 rounded-lg p-2">
+                          <p className="text-xs text-slate-600">Est. Construction</p>
+                          <p className="text-sm font-semibold text-emerald-700">
+                            ${((sale.estimated_construction_budget || 0) / 1000).toFixed(0)}k
+                          </p>
+                        </div>
+                        <div className="bg-blue-50 rounded-lg p-2">
+                          <p className="text-xs text-slate-600">Target Date</p>
+                          <p className="text-sm font-semibold text-blue-700">
+                            {format(new Date(sale.target_precon_completion_date), 'MMM d')}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
