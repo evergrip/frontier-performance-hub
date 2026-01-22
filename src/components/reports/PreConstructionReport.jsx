@@ -108,10 +108,10 @@ export default function PreConstructionReport({ dateRange, staffId }) {
     const forecastByMonth = {};
 
     activePipeline.forEach(sale => {
-      if (!sale.close_date || !sale.estimated_construction_budget) return;
+      if (!sale.target_precon_completion_date || !sale.estimated_construction_budget) return;
 
-      const closeDate = new Date(sale.close_date);
-      const monthKey = format(closeDate, 'MMM yyyy');
+      const completionDate = new Date(sale.target_precon_completion_date);
+      const monthKey = format(completionDate, 'MMM yyyy');
 
       if (!forecastByMonth[monthKey]) {
         forecastByMonth[monthKey] = {
