@@ -32,8 +32,14 @@ export default function DayJobAssignmentModal({
 
   const monthStart = startOfMonth(month);
   const daysInMonth = getDaysInMonth(month);
+  const startingDayOfWeek = monthStart.getDay(); // 0 = Sunday, 1 = Monday, etc.
+  
+  // Create array with empty slots for days before month starts
+  const emptySlots = Array(startingDayOfWeek).fill(null);
   const days = Array.from({ length: daysInMonth }, (_, i) => addDays(monthStart, i));
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const allDays = [...emptySlots, ...days];
+  
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const getAssignmentsForDay = (day) => {
     const dateStr = format(day, 'yyyy-MM-dd');
@@ -110,7 +116,13 @@ export default function DayJobAssignmentModal({
             ))}
 
             {/* Days */}
-            {days.map(day => {
+            {allDays.map((day, idx) => {
+              if (!day) {
+                return (
+                  <div key={`empty-${idx}`} className="border rounded-lg p-2 min-h-32 bg-gray-100" />
+                );
+              }
+
               const dayAssignmentsList = getAssignmentsForDay(day);
               const dayStr = format(day, 'yyyy-MM-dd');
               const isExpanded = expandedDay === dayStr;
