@@ -21,6 +21,7 @@ export default function EmployeeAssignmentModal({
       ? existingAssignments
       : [{ employee_id: '', hours: 8 }]
   );
+  const [overtimeAlert, setOvertimeAlert] = useState(null);
 
   React.useEffect(() => {
     if (isOpen && existingAssignments && existingAssignments.length > 0) {
@@ -52,14 +53,13 @@ export default function EmployeeAssignmentModal({
     const validAssignments = assignments.filter(a => a.employee_id && a.hours > 0);
     if (validAssignments.length === 0) return;
 
-    // Get the date from the format "MMM d, yyyy"
     const dateStr = date ? new Date(date).toISOString().split('T')[0] : null;
     
     // Check for 8-hour limit per employee per day
     for (const assignment of validAssignments) {
       const employeeId = assignment.employee_id;
+      const employee = users.find(u => u.id === employeeId);
       
-      // Sum hours from existing assignments on this day (excluding current assignment if editing)
       const otherAssignmentsHours = allAssignments
         .filter(a => {
           const assignmentDate = new Date(a.assignment_date).toISOString().split('T')[0];
@@ -75,13 +75,23 @@ export default function EmployeeAssignmentModal({
       
       const totalHours = otherAssignmentsHours + assignment.hours;
       if (totalHours > 8) {
-        alert(`Employee would exceed 8 hours on this day. Current: ${otherAssignmentsHours}h, New: ${assignment.hours}h (Total: ${totalHours}h)`);
+        setOvertimeAlert({
+          employeeName: employee?.full_name,
+          currentHours: otherAssignmentsHours,
+          newHours: assignment.hours,
+          totalHours: totalHours
+        });
         return;
       }
     }
 
+    proceedWithSave(validAssignments);
+  };
+
+  const proceedWithSave = (validAssignments) => {
     onAssign(validAssignments);
     setAssignments([{ employee_id: '', hours: 8 }]);
+    setOvertimeAlert(null);
     onClose();
   };
 
@@ -159,6 +169,43 @@ export default function EmployeeAssignmentModal({
           </Button>
         </div>
       </DialogContent>
+
+      {overtimeAlert && (
+        <Dialog open={!!overtimeAlert} onOpenChange={() => setOvertimeAlert(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-amber-600">Overtime Alert</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-700">
+                <strong>{overtimeAlert.employeeName}</strong> would exceed 8 hours on this day:
+              </p>
+              <div className="bg-amber-50 p-3 rounded-lg space-y-1 text-sm">
+                <p>Current assignments: <strong>{overtimeAlert.currentHours}h</strong></p>
+                <p>New assignment: <strong>{overtimeAlert.newHours}h</strong></p>
+                <p className="text-amber-700 font-semibold">Total: {overtimeAlert.totalHours}h (Overtime)</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setOvertimeAlert(null)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => {
+                  const validAssignments = assignments.filter(a => a.employee_id && a.hours > 0);
+                  proceedWithSave(validAssignments);
+                }}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                Approve Overtime
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
