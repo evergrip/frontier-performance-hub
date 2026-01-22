@@ -30,6 +30,9 @@ export default function SalesReport({ dateRange, staffId }) {
       // Filter by staff if specified
       if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
       
+      // Include converted leads (regardless of proposal stage) OR leads that reached proposal
+      if (lead.status === 'converted') return true;
+      
       const statusHistory = lead.status_history || [];
       const reachedProposal = statusHistory.some(h => h.status === 'preconstruction_proposal');
       
@@ -86,6 +89,13 @@ export default function SalesReport({ dateRange, staffId }) {
       const periodLeads = leads.filter(lead => {
         if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
 
+        // Include if converted (check created date)
+        if (lead.status === 'converted') {
+          const createdDate = new Date(lead.created_date);
+          return createdDate >= intervalStart && createdDate <= intervalEnd;
+        }
+
+        // Otherwise check if they reached proposal stage in this period
         const statusHistory = lead.status_history || [];
         const proposalEntry = statusHistory.find(h => h.status === 'preconstruction_proposal');
         
