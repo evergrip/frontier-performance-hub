@@ -21,6 +21,7 @@ export default function Sales() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
+  const [editTargetDate, setEditTargetDate] = useState('');
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
@@ -382,7 +383,28 @@ export default function Sales() {
 
   const openDetailDialog = (sale) => {
     setSelectedSale(sale);
+    setEditTargetDate(sale.target_precon_completion_date || '');
     setDetailDialogOpen(true);
+  };
+
+  const updateTargetDateMutation = useMutation({
+    mutationFn: ({ saleId, target_precon_completion_date }) => 
+      base44.entities.Sale.update(saleId, { target_precon_completion_date }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      toast.success('Target completion date updated');
+    }
+  });
+
+  const handleUpdateTargetDate = () => {
+    if (!editTargetDate) {
+      toast.error('Please select a date');
+      return;
+    }
+    updateTargetDateMutation.mutate({
+      saleId: selectedSale.id,
+      target_precon_completion_date: editTargetDate
+    });
   };
 
   const calculatePhaseDuration = (startDate, endDate) => {
@@ -1012,6 +1034,25 @@ export default function Sales() {
                       {new Date(selectedSale.created_date).toLocaleDateString()}
                     </p>
                   </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Label className="text-xs font-semibold text-slate-700">Target Pre-Construction Completion Date</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    type="date"
+                    value={editTargetDate}
+                    onChange={(e) => setEditTargetDate(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleUpdateTargetDate}
+                    disabled={updateTargetDateMutation.isPending}
+                  >
+                    Save
+                  </Button>
                 </div>
               </div>
 
