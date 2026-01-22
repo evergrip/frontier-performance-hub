@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Briefcase, Building2, FileText, TrendingUp, Calendar } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format } from 'date-fns';
+import SalesReport from '../components/reports/SalesReport';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('sales');
@@ -214,14 +215,7 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="sales" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Sales reports and metrics will be displayed here</p>
-            </CardContent>
-          </Card>
+          <SalesReport dateRange={dateRange} />
         </TabsContent>
 
         <TabsContent value="preconstruction" className="space-y-6 mt-6">
