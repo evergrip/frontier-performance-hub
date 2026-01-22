@@ -20,6 +20,7 @@ export default function Sales() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
+  const [targetCompletionDate, setTargetCompletionDate] = useState('');
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
@@ -54,18 +55,24 @@ export default function Sales() {
   });
 
   const updateSaleStatusMutation = useMutation({
-    mutationFn: ({ saleId, status, estimated_construction_budget }) => {
+    mutationFn: ({ saleId, status, estimated_construction_budget, target_precon_completion_date }) => {
       const sale = sales.find(s => s.id === saleId);
       const phase_history = [...(sale.phase_history || []), {
         status,
         entered_date: new Date().toISOString()
       }];
-      return base44.entities.Sale.update(saleId, { status, estimated_construction_budget, phase_history });
+      return base44.entities.Sale.update(saleId, { 
+        status, 
+        estimated_construction_budget, 
+        target_precon_completion_date,
+        phase_history 
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
       setAdvanceDialogOpen(false);
       setConstructionBudget('');
+      setTargetCompletionDate('');
       toast.success('Sale status updated');
     }
   });
@@ -213,6 +220,7 @@ export default function Sales() {
   const openAdvanceDialog = (sale) => {
     setSelectedSale(sale);
     setConstructionBudget(sale.estimated_construction_budget || '');
+    setTargetCompletionDate(sale.target_precon_completion_date || '');
     setAdvanceDialogOpen(true);
   };
 
@@ -246,7 +254,8 @@ export default function Sales() {
     updateSaleStatusMutation.mutate({
       saleId: selectedSale.id,
       status: nextStatus,
-      estimated_construction_budget: parseFloat(constructionBudget) || null
+      estimated_construction_budget: parseFloat(constructionBudget) || null,
+      target_precon_completion_date: targetCompletionDate || null
     });
   };
 
@@ -611,7 +620,7 @@ export default function Sales() {
       <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Update Construction Budget</DialogTitle>
+            <DialogTitle>Advance to Next Phase</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAdvancePhase} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
@@ -630,6 +639,18 @@ export default function Sales() {
                 onChange={(e) => setConstructionBudget(e.target.value)}
                 placeholder="750000"
                 required
+              />
+            </div>
+
+            <div>
+              <Label>Target Pre-Construction Completion Date</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Expected date to complete pre-construction phase
+              </p>
+              <Input
+                type="date"
+                value={targetCompletionDate}
+                onChange={(e) => setTargetCompletionDate(e.target.value)}
               />
             </div>
 
