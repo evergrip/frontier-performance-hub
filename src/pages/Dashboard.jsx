@@ -1,38 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { DollarSign, Target, Briefcase, Building2, TrendingUp, BarChart3, PieChart, LineChart, Sparkles, RefreshCw } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { DollarSign, Target, Briefcase, Building2, TrendingUp, Settings2, Calendar, CheckCircle2, AlertCircle, Activity } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart, Bar, LineChart as RechartsLine, Line, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BarChart, Bar, LineChart as RechartsLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
+import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format, eachMonthOfInterval } from 'date-fns';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
-  const [timePeriod, setTimePeriod] = useState('ytd');
-  const [dashboardLayout, setDashboardLayout] = useState('default');
+  const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
+  const [selectedDateRangeType, setSelectedDateRangeType] = useState('fiscal_year');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedQuarter, setSelectedQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [fiscalYear, setFiscalYear] = useState(new Date().getFullYear());
+
+  const [visibleMetrics, setVisibleMetrics] = useState({
+    totalRevenue: true,
+    activeProjects: true,
+    activeSales: true,
+    activeLead: true,
+    cashFlow: true,
+    margins: true,
+    conversionRate: true,
+    preconRevenue: true,
+    constructionRevenue: true,
+    winRate: true
+  });
 
   useEffect(() => {
     const loadUser = async () => {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
-      
-      // AI-optimize layout based on role
-      if (currentUser?.role === 'admin') {
-        setDashboardLayout('admin');
-      } else {
-        setDashboardLayout('salesperson');
-      }
     };
     loadUser();
   }, []);
 
-  const { data: clients = [] } = useQuery({
-    queryKey: ['clients'],
-    queryFn: () => base44.entities.Client.list(),
+  const { data: companySettings = [] } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: () => base44.entities.CompanySettings.list(),
+    initialData: [],
+  });
+
+  const { data: fiscalGoals = [] } = useQuery({
+    queryKey: ['fiscalGoals'],
+    queryFn: () => base44.entities.FiscalGoal.list(),
     initialData: [],
   });
 
@@ -54,314 +74,480 @@ export default function Dashboard() {
     initialData: [],
   });
 
-  // Fetch KPIs
-  const { data: kpiData, refetch: refetchKPIs } = useQuery({
-    queryKey: ['kpis', timePeriod, user?.id],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('calculateKPIAggregates', {
-        time_period: timePeriod,
-        user_id: dashboardLayout === 'salesperson' ? user?.id : null
-      });
-      return response.data;
-    },
-    enabled: !!user,
+  const settings = companySettings[0] || {};
+  const fiscalYearStartMonth = settings.fiscal_year_start_month || 10;
+
+  const getDateRange = () => {
+    const now = new Date();
+    
+    if (selectedDateRangeType === 'month') {
+      return {
+        start: startOfMonth(new Date(selectedYear, selectedMonth - 1, 1)),
+        end: endOfMonth(new Date(selectedYear, selectedMonth - 1, 1))
+      };
+    } else if (selectedDateRangeType === 'quarter') {
+      const quarterStartMonth = (selectedQuarter - 1) * 3;
+      return {
+        start: startOfQuarter(new Date(selectedYear, quarterStartMonth, 1)),
+        end: endOfQuarter(new Date(selectedYear, quarterStartMonth, 1))
+      };
+    } else if (selectedDateRangeType === 'fiscal_year') {
+      const fyStart = new Date(fiscalYear, fiscalYearStartMonth - 1, 1);
+      const fyEnd = new Date(fiscalYear + 1, fiscalYearStartMonth - 1, 0);
+      return { start: fyStart, end: fyEnd };
+    } else if (selectedDateRangeType === 'custom') {
+      return {
+        start: customStartDate ? new Date(customStartDate) : null,
+        end: customEndDate ? new Date(customEndDate) : null
+      };
+    }
+    return { start: null, end: null };
+  };
+
+  const dateRange = getDateRange();
+
+  const filteredSales = sales.filter(sale => {
+    if (!dateRange.start || !dateRange.end) return true;
+    const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+    return closeDate >= dateRange.start && closeDate <= dateRange.end;
   });
 
-  // Fetch forecast data
-  const { data: forecastData } = useQuery({
-    queryKey: ['forecast', user?.id],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('generateForecastData', {
-        forecast_months: 6,
-        user_id: dashboardLayout === 'salesperson' ? user?.id : null
-      });
-      return response.data;
-    },
-    enabled: !!user,
+  const filteredProjects = projects.filter(project => {
+    if (!dateRange.start || !dateRange.end) return true;
+    const projectDate = project.start_date ? new Date(project.start_date) : new Date(project.created_date);
+    return projectDate >= dateRange.start && projectDate <= dateRange.end;
   });
 
-  const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EF4444'];
+  const filteredLeads = leads.filter(lead => {
+    if (!dateRange.start || !dateRange.end) return true;
+    const leadDate = new Date(lead.created_date);
+    return leadDate >= dateRange.start && leadDate <= dateRange.end;
+  });
 
-  // Pipeline data for charts
-  const pipelineData = [
-    { name: 'Prospect', value: sales.filter(s => s.status === 'prospect').length },
-    { name: 'Proposal', value: sales.filter(s => s.status === 'proposal_sent').length },
-    { name: 'Negotiation', value: sales.filter(s => s.status === 'negotiation').length },
-    { name: 'Closed Won', value: sales.filter(s => s.status === 'closed_won').length },
-  ];
+  // Calculate metrics
+  const totalRevenue = filteredSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const preconRevenue = filteredSales.filter(s => s.sale_type === 'preconstruction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const constructionRevenue = filteredSales.filter(s => s.sale_type === 'construction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  
+  const activeProjects = projects.filter(p => !['closed', 'completion'].includes(p.status)).length;
+  const activeSales = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
+  const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
+  
+  const totalCosts = filteredProjects.reduce((sum, p) => sum + (p.actual_costs || 0), 0);
+  const totalMargin = totalRevenue - totalCosts;
+  const marginPercent = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
 
-  // Lead status data
-  const leadStatusData = [
-    { name: 'New', value: leads.filter(l => l.status === 'new').length },
-    { name: 'Contacted', value: leads.filter(l => l.status === 'contacted').length },
-    { name: 'Qualified', value: leads.filter(l => l.status === 'qualified').length },
-    { name: 'Converted', value: leads.filter(l => l.status === 'converted').length },
-  ];
+  const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
+  const totalLeadsForConversion = filteredLeads.filter(l => ['converted', 'disqualified'].includes(l.status)).length;
+  const conversionRate = totalLeadsForConversion > 0 ? (convertedLeads / totalLeadsForConversion) * 100 : 0;
 
-  // Monthly trend (last 6 months)
-  const monthlyTrend = forecastData?.monthly_forecasts?.slice(0, 6).map(f => ({
-    month: f.month,
-    revenue: f.forecasted_revenue / 1000,
-    margin: f.forecasted_margin / 1000
-  })) || [];
+  const proposalLeads = filteredLeads.filter(l => {
+    const statusHistory = l.status_history || [];
+    return statusHistory.some(h => h.status === 'preconstruction_proposal');
+  });
+  const convertedAfterProposal = proposalLeads.filter(l => l.status === 'converted').length;
+  const winRate = proposalLeads.length > 0 ? (convertedAfterProposal / proposalLeads.length) * 100 : 0;
 
-  // Goal progress (example - would come from user settings)
-  const salesGoal = 1000000;
-  const currentSales = kpiData?.kpis?.sales?.total_contract_value || 0;
-  const goalProgress = Math.min((currentSales / salesGoal) * 100, 100);
+  const currentFiscalGoal = fiscalGoals.find(g => g.fiscal_year === fiscalYear);
+
+  // Monthly trend data
+  const monthlyTrendData = dateRange.start && dateRange.end ? eachMonthOfInterval({
+    start: dateRange.start,
+    end: dateRange.end
+  }).map(month => {
+    const monthSales = sales.filter(s => {
+      const closeDate = s.close_date ? new Date(s.close_date) : new Date(s.created_date);
+      return closeDate >= startOfMonth(month) && closeDate <= endOfMonth(month);
+    });
+    const revenue = monthSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+    return {
+      month: format(month, 'MMM yy'),
+      revenue: revenue / 1000
+    };
+  }) : [];
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header with AI Badge */}
+      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-            Welcome back{user?.full_name ? `, ${user.full_name}` : ''}
-            <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm rounded-full flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              AI-Optimized
-            </span>
-          </h1>
-          <p className="text-lg text-slate-500">
-            {dashboardLayout === 'admin' ? 'Company-wide performance overview' : 'Your personalized performance dashboard'}
-          </p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Company Health Overview</h1>
+          <p className="text-lg text-slate-500">Real-time snapshot of company performance</p>
         </div>
-        <div className="flex gap-2">
-          <Select value={timePeriod} onValueChange={setTimePeriod}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mtd">This Month</SelectItem>
-              <SelectItem value="qtd">This Quarter</SelectItem>
-              <SelectItem value="ytd">This Year</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon" onClick={() => refetchKPIs()}>
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button onClick={() => setCustomizeDialogOpen(true)} variant="outline">
+          <Settings2 className="w-4 h-4 mr-2" />
+          Customize
+        </Button>
       </div>
+
+      {/* Date Range Selector */}
+      <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-5 h-5 text-amber-600" />
+            <Label className="text-base font-semibold">Date Range</Label>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button
+              variant={selectedDateRangeType === 'month' ? 'default' : 'outline'}
+              onClick={() => setSelectedDateRangeType('month')}
+              className={selectedDateRangeType === 'month' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+            >
+              Month
+            </Button>
+            <Button
+              variant={selectedDateRangeType === 'quarter' ? 'default' : 'outline'}
+              onClick={() => setSelectedDateRangeType('quarter')}
+              className={selectedDateRangeType === 'quarter' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+            >
+              Quarter
+            </Button>
+            <Button
+              variant={selectedDateRangeType === 'fiscal_year' ? 'default' : 'outline'}
+              onClick={() => setSelectedDateRangeType('fiscal_year')}
+              className={selectedDateRangeType === 'fiscal_year' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+            >
+              Fiscal Year
+            </Button>
+            <Button
+              variant={selectedDateRangeType === 'custom' ? 'default' : 'outline'}
+              onClick={() => setSelectedDateRangeType('custom')}
+              className={selectedDateRangeType === 'custom' ? 'bg-amber-500 hover:bg-amber-600' : ''}
+            >
+              Custom
+            </Button>
+          </div>
+
+          {selectedDateRangeType === 'month' && (
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <Label className="text-xs">Month</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Year</Label>
+                <Input
+                  type="number"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+
+          {selectedDateRangeType === 'quarter' && (
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <Label className="text-xs">Quarter</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="4"
+                  value={selectedQuarter}
+                  onChange={(e) => setSelectedQuarter(parseInt(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Year</Label>
+                <Input
+                  type="number"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+
+          {selectedDateRangeType === 'fiscal_year' && (
+            <div className="mt-3">
+              <Label className="text-xs">Fiscal Year</Label>
+              <Input
+                type="number"
+                value={fiscalYear}
+                onChange={(e) => setFiscalYear(parseInt(e.target.value))}
+              />
+            </div>
+          )}
+
+          {selectedDateRangeType === 'custom' && (
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <Label className="text-xs">Start Date</Label>
+                <Input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">End Date</Label>
+                <Input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Revenue"
-          value={`$${((kpiData?.kpis?.sales?.total_contract_value || 0) / 1000).toFixed(0)}K`}
-          icon={DollarSign}
-          trend={`${kpiData?.kpis?.sales?.win_rate || 0}% win rate`}
-          trendDirection="up"
-          subtitle={`${kpiData?.kpis?.sales?.closed_won || 0} closed won`}
-        />
-        <StatCard
-          title="Active Leads"
-          value={kpiData?.kpis?.leads?.total_leads || 0}
-          icon={Target}
-          trend={`${kpiData?.kpis?.leads?.conversion_rate || 0}% conversion`}
-          trendDirection="up"
-          subtitle={`${kpiData?.kpis?.leads?.qualified_leads || 0} qualified`}
-        />
-        <StatCard
-          title="Pipeline"
-          value={`$${((kpiData?.kpis?.pipeline?.pipeline_value || 0) / 1000).toFixed(0)}K`}
-          icon={Briefcase}
-          subtitle={`${sales.filter(s => ['prospect', 'proposal_sent', 'negotiation'].includes(s.status)).length} active deals`}
-        />
-        <StatCard
-          title="Projects"
-          value={kpiData?.kpis?.projects?.active_projects || 0}
-          icon={Building2}
-          trend={`${kpiData?.kpis?.projects?.avg_margin_percentage || 0}% margin`}
-          trendDirection="up"
-          subtitle={`$${((kpiData?.kpis?.projects?.total_margin || 0) / 1000).toFixed(0)}K total`}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {visibleMetrics.totalRevenue && (
+          <StatCard
+            title="Total Revenue"
+            value={`$${(totalRevenue / 1000).toFixed(0)}K`}
+            icon={DollarSign}
+            subtitle={`${filteredSales.length} sales`}
+          />
+        )}
+        {visibleMetrics.preconRevenue && (
+          <StatCard
+            title="Pre-Construction Revenue"
+            value={`$${(preconRevenue / 1000).toFixed(0)}K`}
+            icon={Briefcase}
+            subtitle={`${filteredSales.filter(s => s.sale_type === 'preconstruction').length} precon sales`}
+          />
+        )}
+        {visibleMetrics.constructionRevenue && (
+          <StatCard
+            title="Construction Revenue"
+            value={`$${(constructionRevenue / 1000).toFixed(0)}K`}
+            icon={Building2}
+            subtitle={`${filteredSales.filter(s => s.sale_type === 'construction').length} construction sales`}
+          />
+        )}
+        {visibleMetrics.activeProjects && (
+          <StatCard
+            title="Active Projects"
+            value={activeProjects}
+            icon={Activity}
+            subtitle={`${projects.length} total projects`}
+          />
+        )}
+        {visibleMetrics.activeSales && (
+          <StatCard
+            title="Active Pre-Con Sales"
+            value={activeSales}
+            icon={Briefcase}
+            subtitle="In pipeline"
+          />
+        )}
+        {visibleMetrics.activeLeads && (
+          <StatCard
+            title="Active Leads"
+            value={activeLeads}
+            icon={Target}
+            subtitle={`${leads.length} total leads`}
+          />
+        )}
+        {visibleMetrics.margins && (
+          <StatCard
+            title="Gross Margin"
+            value={`${marginPercent.toFixed(1)}%`}
+            icon={TrendingUp}
+            subtitle={`$${(totalMargin / 1000).toFixed(0)}K margin`}
+            trend={marginPercent > 20 ? 'Healthy' : 'Below target'}
+            trendDirection={marginPercent > 20 ? 'up' : 'down'}
+          />
+        )}
+        {visibleMetrics.conversionRate && (
+          <StatCard
+            title="Lead Conversion Rate"
+            value={`${conversionRate.toFixed(1)}%`}
+            icon={Target}
+            subtitle={`${convertedLeads}/${totalLeadsForConversion} converted`}
+          />
+        )}
+        {visibleMetrics.winRate && (
+          <StatCard
+            title="Win Rate (After Proposal)"
+            value={`${winRate.toFixed(1)}%`}
+            icon={CheckCircle2}
+            subtitle={`${convertedAfterProposal}/${proposalLeads.length} won`}
+          />
+        )}
       </div>
 
-      {/* Goal Progress */}
-      {dashboardLayout === 'salesperson' && (
-        <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+      {/* Fiscal Goal Progress */}
+      {currentFiscalGoal && (
+        <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-amber-600" />
-              Sales Goal Progress
+              <Target className="w-5 h-5 text-emerald-600" />
+              Fiscal Year {fiscalYear} Goals
             </CardTitle>
-            <CardDescription>Your year-to-date target</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">${(currentSales / 1000).toFixed(0)}K / ${(salesGoal / 1000).toFixed(0)}K</span>
-                <span className="text-amber-600 font-bold">{goalProgress.toFixed(1)}%</span>
-              </div>
-              <Progress value={goalProgress} className="h-3" />
-              <p className="text-xs text-slate-500">
-                ${((salesGoal - currentSales) / 1000).toFixed(0)}K remaining to goal
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {currentFiscalGoal.revenue_target && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Revenue Target</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    ${(totalRevenue / 1000).toFixed(0)}K / ${(currentFiscalGoal.revenue_target / 1000).toFixed(0)}K
+                  </p>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-emerald-600 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min((totalRevenue / currentFiscalGoal.revenue_target) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+              {currentFiscalGoal.gross_margin_target && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Margin Target</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {marginPercent.toFixed(1)}% / {currentFiscalGoal.gross_margin_target}%
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    {marginPercent >= currentFiscalGoal.gross_margin_target ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    )}
+                  </div>
+                </div>
+              )}
+              {currentFiscalGoal.project_count_target && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Project Target</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {filteredProjects.length} / {currentFiscalGoal.project_count_target}
+                  </p>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="bg-emerald-600 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min((filteredProjects.length / currentFiscalGoal.project_count_target) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Charts Grid */}
-      <Tabs defaultValue="pipeline" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="pipeline">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Pipeline
-          </TabsTrigger>
-          <TabsTrigger value="leads">
-            <PieChart className="w-4 h-4 mr-2" />
-            Leads
-          </TabsTrigger>
-          <TabsTrigger value="forecast">
-            <LineChart className="w-4 h-4 mr-2" />
-            Forecast
-          </TabsTrigger>
-        </TabsList>
+      {/* Revenue Trend Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Revenue Trend</CardTitle>
+          <CardDescription>Monthly revenue for selected period</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {monthlyTrendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <ComposedChart data={monthlyTrendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => `$${value.toFixed(0)}K`} />
+                <Legend />
+                <Bar dataKey="revenue" fill="#F59E0B" name="Revenue ($K)" />
+                <Line type="monotone" dataKey="revenue" stroke="#0F172A" strokeWidth={2} name="Trend" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-slate-400 py-8">No data for selected period</p>
+          )}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="pipeline" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Sales Pipeline Overview</CardTitle>
-              <CardDescription>Current opportunities by stage</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={pipelineData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#F59E0B" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="leads" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lead Distribution</CardTitle>
-              <CardDescription>Breakdown by status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsPie>
-                  <Pie
-                    data={leadStatusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {leadStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPie>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="forecast" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>6-Month Revenue Forecast</CardTitle>
-              <CardDescription>
-                Projected revenue and margin • {forecastData?.assumptions?.historical_win_rate} win rate
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsLine data={monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#F59E0B" strokeWidth={2} name="Revenue ($K)" />
-                  <Line type="monotone" dataKey="margin" stroke="#10B981" strokeWidth={2} name="Margin ($K)" />
-                </RechartsLine>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-amber-500" />
-              Recent Leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {leads.slice(0, 5).length > 0 ? (
-              <div className="space-y-3">
-                {leads.slice(0, 5).map(lead => (
-                  <div key={lead.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-900">{lead.title}</p>
-                      <p className="text-sm text-slate-500 capitalize">{lead.status.replace('_', ' ')}</p>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      lead.status === 'qualified' ? 'bg-emerald-100 text-emerald-700' :
-                      lead.status === 'new' ? 'bg-blue-100 text-blue-700' :
-                      'bg-slate-200 text-slate-700'
-                    }`}>
-                      {lead.lead_score || 0}
-                    </div>
-                  </div>
-                ))}
+      {/* Customize Dialog */}
+      <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Customize Dashboard</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">Select which metrics to display on your dashboard:</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="totalRevenue"
+                  checked={visibleMetrics.totalRevenue}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, totalRevenue: checked})}
+                />
+                <Label htmlFor="totalRevenue" className="cursor-pointer">Total Revenue</Label>
               </div>
-            ) : (
-              <p className="text-center text-slate-400 py-8">No leads yet</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-amber-500" />
-              Active Opportunities
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {sales.filter(s => ['prospect', 'proposal_sent', 'negotiation'].includes(s.status)).slice(0, 5).length > 0 ? (
-              <div className="space-y-3">
-                {sales.filter(s => ['prospect', 'proposal_sent', 'negotiation'].includes(s.status)).slice(0, 5).map(sale => (
-                  <div key={sale.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-900">{sale.title}</p>
-                      <p className="text-sm text-slate-500">
-                        ${(sale.contract_value || 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      sale.status === 'negotiation' ? 'bg-amber-100 text-amber-700' :
-                      sale.status === 'proposal_sent' ? 'bg-blue-100 text-blue-700' :
-                      'bg-slate-200 text-slate-700'
-                    }`}>
-                      {sale.status.replace('_', ' ')}
-                    </div>
-                  </div>
-                ))}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="preconRevenue"
+                  checked={visibleMetrics.preconRevenue}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, preconRevenue: checked})}
+                />
+                <Label htmlFor="preconRevenue" className="cursor-pointer">Pre-Construction Revenue</Label>
               </div>
-            ) : (
-              <p className="text-center text-slate-400 py-8">No active opportunities</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="constructionRevenue"
+                  checked={visibleMetrics.constructionRevenue}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, constructionRevenue: checked})}
+                />
+                <Label htmlFor="constructionRevenue" className="cursor-pointer">Construction Revenue</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="activeProjects"
+                  checked={visibleMetrics.activeProjects}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, activeProjects: checked})}
+                />
+                <Label htmlFor="activeProjects" className="cursor-pointer">Active Projects</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="activeSales"
+                  checked={visibleMetrics.activeSales}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, activeSales: checked})}
+                />
+                <Label htmlFor="activeSales" className="cursor-pointer">Active Pre-Con Sales</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="activeLeads"
+                  checked={visibleMetrics.activeLeads}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, activeLeads: checked})}
+                />
+                <Label htmlFor="activeLeads" className="cursor-pointer">Active Leads</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="margins"
+                  checked={visibleMetrics.margins}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, margins: checked})}
+                />
+                <Label htmlFor="margins" className="cursor-pointer">Gross Margin</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="conversionRate"
+                  checked={visibleMetrics.conversionRate}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, conversionRate: checked})}
+                />
+                <Label htmlFor="conversionRate" className="cursor-pointer">Lead Conversion Rate</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="winRate"
+                  checked={visibleMetrics.winRate}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, winRate: checked})}
+                />
+                <Label htmlFor="winRate" className="cursor-pointer">Win Rate (After Proposal)</Label>
+              </div>
+            </div>
+            <div className="flex justify-end pt-4">
+              <Button onClick={() => setCustomizeDialogOpen(false)}>Done</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
