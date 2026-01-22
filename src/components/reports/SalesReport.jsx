@@ -100,20 +100,12 @@ export default function SalesReport({ dateRange, staffId }) {
       const periodLeads = leads.filter(lead => {
         if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
 
-        // Include if converted (check created date)
-        if (lead.status === 'converted') {
-          const createdDate = new Date(lead.created_date);
-          return createdDate >= intervalStart && createdDate <= intervalEnd;
-        }
+        // Only include leads that are in a closed state (converted or disqualified)
+        if (lead.status !== 'converted' && lead.status !== 'disqualified') return false;
 
-        // Otherwise check if they reached proposal stage in this period
-        const statusHistory = lead.status_history || [];
-        const proposalEntry = statusHistory.find(h => h.status === 'preconstruction_proposal');
-        
-        if (!proposalEntry) return false;
-
-        const proposalDate = new Date(proposalEntry.entered_date);
-        return proposalDate >= intervalStart && proposalDate <= intervalEnd;
+        // Check if the lead was created in this period
+        const createdDate = new Date(lead.created_date);
+        return createdDate >= intervalStart && createdDate <= intervalEnd;
       });
 
       const converted = periodLeads.filter(l => l.status === 'converted').length;
