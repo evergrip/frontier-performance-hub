@@ -3,7 +3,7 @@ import { format, getDaysInMonth, startOfMonth, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, Users } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
@@ -20,8 +20,7 @@ export default function DayJobAssignmentModal({
   onAssign,
   onRemove
 }) {
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [dayAssignments, setDayAssignments] = useState({});
+  const [expandedDay, setExpandedDay] = useState(null);
 
   if (!isOpen || !month) return null;
 
@@ -86,20 +85,28 @@ export default function DayJobAssignmentModal({
             {/* Days */}
             {days.map(day => {
               const dayAssignmentsList = getAssignmentsForDay(day);
-              const projectIndex = days[0].getDay();
-              const startDayOffset = monthStart.getDay() === 0 ? 6 : monthStart.getDay() - 1;
-              const dayOfWeek = (days.indexOf(day) + startDayOffset) % 7;
+              const dayStr = format(day, 'yyyy-MM-dd');
+              const isExpanded = expandedDay === dayStr;
 
               return (
                 <div
-                  key={format(day, 'yyyy-MM-dd')}
-                  className="border rounded-lg p-2 min-h-32 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
-                  onClick={() => setSelectedDay(day)}
+                  key={dayStr}
+                  className="border rounded-lg p-2 min-h-32 bg-slate-50 hover:bg-slate-100 transition-colors"
                 >
-                  <div className="font-semibold text-slate-900 text-sm mb-2">{format(day, 'd')}</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-semibold text-slate-900 text-sm">{format(day, 'd')}</div>
+                    {!isExpanded && (
+                      <button
+                        onClick={() => setExpandedDay(dayStr)}
+                        className="p-1 hover:bg-slate-200 rounded"
+                      >
+                        <Plus className="w-3 h-3 text-slate-600" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Jobs assigned to this day */}
-                  <div className="space-y-1">
+                  <div className="space-y-1 mb-2">
                     {dayAssignmentsList.map(assignment => {
                       const project = projects.find(p => p.id === assignment.project_id);
                       const projectIdx = projects.findIndex(p => p.id === assignment.project_id);
@@ -109,37 +116,44 @@ export default function DayJobAssignmentModal({
                           className="p-1 rounded text-white text-xs flex items-center justify-between gap-1"
                           style={{ backgroundColor: getProjectColor(projectIdx) }}
                         >
-                          <span className="truncate">{project?.title}</span>
+                          <span className="truncate text-xs">{project?.title}</span>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveJobFromDay(assignment.id);
-                            }}
-                            className="hover:bg-white/30 rounded p-0.5"
+                            onClick={() => handleRemoveJobFromDay(assignment.id)}
+                            className="hover:bg-white/30 rounded p-0.5 flex-shrink-0"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-2.5 h-2.5" />
                           </button>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Add job button */}
-                  {selectedDay && format(selectedDay, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd') && (
-                    <div className="mt-2 space-y-1">
+                  {/* Add job options when expanded */}
+                  {isExpanded && (
+                    <div className="space-y-1">
                       {allocatedProjects.map(project => {
                         const projectIdx = projects.findIndex(p => p.id === project.id);
                         return (
                           <button
                             key={project.id}
-                            onClick={() => handleAddJobToDay(day, project.id)}
-                            className="w-full px-2 py-1 rounded text-white text-xs font-medium transition-opacity hover:opacity-80"
+                            onClick={() => {
+                              handleAddJobToDay(day, project.id);
+                              setExpandedDay(null);
+                            }}
+                            className="w-full px-2 py-1 rounded text-white text-xs font-medium transition-opacity hover:opacity-80 truncate"
                             style={{ backgroundColor: getProjectColor(projectIdx) }}
+                            title={project.title}
                           >
                             + {project.title}
                           </button>
                         );
                       })}
+                      <button
+                        onClick={() => setExpandedDay(null)}
+                        className="w-full px-2 py-1 rounded text-slate-600 text-xs hover:bg-slate-200"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   )}
                 </div>
