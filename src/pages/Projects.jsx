@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Calendar, CalendarDays, Users } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState';
-import ProjectCalendar from '../components/projects/ProjectCalendar';
 import { format, startOfYear, addWeeks, getWeek, getYear, eachMonthOfInterval, getMonth, startOfMonth, endOfMonth } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -183,36 +182,15 @@ export default function Projects() {
         </TabsContent>
 
         <TabsContent value="calendar" className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Label>Year:</Label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-3 py-2 border rounded-md"
-            >
-              {[2026, 2027, 2028, 2029].map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          
-          {scheduledProjects.length > 0 ? (
-            <ProjectCalendar 
-              projects={scheduledProjects} 
-              year={selectedYear}
-              onProjectClick={openScheduleDialog}
-            />
-          ) : (
-            <Card>
-              <CardContent className="p-0">
-                <EmptyState
-                  icon={Calendar}
-                  title="No scheduled projects"
-                  description="Schedule projects to see them in the calendar view"
-                />
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardContent className="p-8">
+              <EmptyState
+                icon={Calendar}
+                title="New scheduling system coming soon"
+                description="The daily employee assignment calendar will be available here"
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
