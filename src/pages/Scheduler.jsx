@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, getMonth, getYear, startOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { createPageUrl } from '../utils';
 import MonthlyAllocationView from '@/components/scheduler/MonthlyAllocationView';
 import DayJobAssignmentModal from '@/components/scheduler/DayJobAssignmentModal';
-import DailyStaffScheduleView from '@/components/scheduler/DailyStaffScheduleView';
 
 export default function Scheduler() {
+  const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [showDayModal, setShowDayModal] = useState(false);
-  const [showScheduleView, setShowScheduleView] = useState(false);
-  const [scheduleStartDate, setScheduleStartDate] = useState(null);
-  const [scheduleEndDate, setScheduleEndDate] = useState(null);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -122,24 +121,9 @@ export default function Scheduler() {
         onAssign={handleAssignJobToDay}
         onRemove={(id) => deleteAssignmentMutation.mutate(id)}
         onCreateSchedule={(startDate, endDate) => {
-          setScheduleStartDate(startDate);
-          setScheduleEndDate(endDate);
-          setShowScheduleView(true);
+          navigate(`${createPageUrl('ScheduleView')}?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`);
         }}
       />
-
-      {showScheduleView && (
-        <div className="mt-8">
-          <DailyStaffScheduleView
-            assignments={assignments}
-            users={users}
-            projects={projects}
-            startDate={scheduleStartDate}
-            endDate={scheduleEndDate}
-            onClose={() => setShowScheduleView(false)}
-          />
-        </div>
-      )}
       </div>
       );
       }
