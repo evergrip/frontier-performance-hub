@@ -167,7 +167,7 @@ export default function Sales() {
         client_id: preconSale.client_id,
         sale_id: constructionSale.id,
         project_type: 'construction',
-        status: 'planning',
+        status: 'awaiting_to_be_scheduled',
         contract_value: parseFloat(construction_budget)
       });
 
