@@ -75,8 +75,8 @@ export default function Projects() {
   const openAdvanceDialog = (project) => {
     setSelectedProject(project);
     setProjectForm({
-      actual_costs: project.actual_costs || '',
-      actual_margin: project.actual_margin || ''
+      actual_costs: project.actual_costs || project.contract_value || '',
+      actual_margin: project.actual_margin || 45
     });
     setAdvanceDialogOpen(true);
   };
@@ -84,8 +84,8 @@ export default function Projects() {
   const openCloseoutDialog = (project) => {
     setSelectedProject(project);
     setProjectForm({
-      actual_costs: project.actual_costs || '',
-      actual_margin: project.actual_margin || ''
+      actual_costs: project.actual_costs || project.contract_value || '',
+      actual_margin: project.actual_margin || 45
     });
     setCloseoutDialogOpen(true);
   };
@@ -93,8 +93,8 @@ export default function Projects() {
   const openEditDialog = (project) => {
     setSelectedProject(project);
     setProjectForm({
-      actual_costs: project.actual_costs || '',
-      actual_margin: project.actual_margin || ''
+      actual_costs: project.actual_costs || project.contract_value || '',
+      actual_margin: project.actual_margin || 45
     });
     setEditDialogOpen(true);
   };
