@@ -10,7 +10,7 @@ import AllocationDialog from './AllocationDialog';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
-const getProjectColor = (index) => COLORS[index % COLORS.length];
+const getProjectColor = (project, index) => project.color || COLORS[index % COLORS.length];
 
 export default function MonthlyAllocationView({ projects, onSelectMonth, onMonthClick }) {
   // Filter out projects that are still awaiting to be scheduled
