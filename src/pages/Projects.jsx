@@ -74,6 +74,25 @@ export default function Projects() {
     return client?.company_name || 'Unknown Client';
   };
 
+  const getProjectClientName = (project) => {
+    // First try direct client_id
+    if (project.client_id) {
+      const client = clients.find(c => c.id === project.client_id);
+      if (client?.company_name) return client.company_name;
+    }
+    
+    // Fall back to linked sale's client_id
+    if (project.sale_id) {
+      const sale = sales.find(s => s.id === project.sale_id);
+      if (sale?.client_id) {
+        const client = clients.find(c => c.id === sale.client_id);
+        if (client?.company_name) return client.company_name;
+      }
+    }
+    
+    return 'Unknown Client';
+  };
+
   const activeProjects = projects.filter(p => !['closed'].includes(p.status));
   const closedProjects = projects.filter(p => p.status === 'closed');
 
