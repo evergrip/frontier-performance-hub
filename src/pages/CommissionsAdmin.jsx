@@ -354,6 +354,98 @@ export default function CommissionsAdmin() {
           </Card>
         </TabsContent>
 
+        {/* Legacy Sales Tab */}
+        <TabsContent value="legacy">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Add Legacy Sales</CardTitle>
+              <Dialog open={legacySaleDialogOpen} onOpenChange={setLegacySaleDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Legacy Sale
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Legacy Sale</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAddLegacySale} className="space-y-4">
+                    <div>
+                      <Label>Salesperson *</Label>
+                      <select
+                        value={legacySaleForm.salesperson_id}
+                        onChange={(e) => setLegacySaleForm({...legacySaleForm, salesperson_id: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-md"
+                        required
+                      >
+                        <option value="">Select salesperson...</option>
+                        {users.map(u => (
+                          <option key={u.id} value={u.id}>{u.full_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Lead Name *</Label>
+                      <Input
+                        value={legacySaleForm.lead_name}
+                        onChange={(e) => setLegacySaleForm({...legacySaleForm, lead_name: e.target.value})}
+                        placeholder="Project name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Sale Date *</Label>
+                      <Input
+                        type="date"
+                        value={legacySaleForm.sale_date}
+                        onChange={(e) => setLegacySaleForm({...legacySaleForm, sale_date: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Sale Amount *</Label>
+                      <Input
+                        type="number"
+                        value={legacySaleForm.sale_amount}
+                        onChange={(e) => setLegacySaleForm({...legacySaleForm, sale_amount: e.target.value})}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Commission Amount *</Label>
+                      <Input
+                        type="number"
+                        value={legacySaleForm.commission_amount}
+                        onChange={(e) => setLegacySaleForm({...legacySaleForm, commission_amount: e.target.value})}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-3 justify-end pt-4">
+                      <Button type="button" variant="outline" onClick={() => setLegacySaleDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={legacySaleMutation.isPending} className="bg-amber-500 hover:bg-amber-600">
+                        {legacySaleMutation.isPending ? 'Adding...' : 'Add Sale'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              <p className="text-slate-600 text-sm mb-4">
+                Add legacy sales to backfill commission history. These will be recorded as banked commissions.
+              </p>
+              <div className="text-center py-12 text-slate-500">
+                <p>Legacy sales will appear in salesperson commission transactions</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Payout History Tab */}
         <TabsContent value="history">
           <Card>
