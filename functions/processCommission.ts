@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
         current_bank_balance: 0,
         total_paid_out: 0,
         ytd_sales_volume: 0,
-        commission_rule_id: commissionRuleId
+        commission_rule_id: commissionRule.id
       });
     }
 
