@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { DollarSign, Target, Briefcase, Building2, TrendingUp, Settings2, Calendar, CheckCircle2, AlertCircle, Activity } from 'lucide-react';
+import { DollarSign, Target, Briefcase, Building2, TrendingUp, Settings2, Calendar, CheckCircle2, AlertCircle, Activity, Clock } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -149,6 +149,42 @@ export default function Dashboard() {
   const winRate = proposalLeads.length > 0 ? (convertedAfterProposal / proposalLeads.length) * 100 : 0;
 
   const currentFiscalGoal = fiscalGoals.find(g => g.fiscal_year === fiscalYear);
+
+  // Calculate build capacity forecast
+  const capacityForecast = useMemo(() => {
+    if (!currentFiscalGoal?.revenue_target) return null;
+
+    // Monthly capacity = annual revenue target / 12
+    const monthlyCapacity = currentFiscalGoal.revenue_target / 12;
+
+    // Sum active construction projects (not closed)
+    const activeProjectsValue = projects
+      .filter(p => p.status !== 'closed')
+      .reduce((sum, p) => sum + (p.contract_value || 0), 0);
+
+    // Sum precon pipeline expected construction budgets
+    const preconPipelineValue = sales
+      .filter(s => 
+        s.sale_type === 'preconstruction' && 
+        s.status !== 'closed_won' && 
+        s.status !== 'closed_lost'
+      )
+      .reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
+
+    // Total pipeline
+    const totalPipeline = activeProjectsValue + preconPipelineValue;
+
+    // Months of backlog
+    const monthsOfBacklog = monthlyCapacity > 0 ? totalPipeline / monthlyCapacity : 0;
+
+    return {
+      monthlyCapacity,
+      activeProjectsValue,
+      preconPipelineValue,
+      totalPipeline,
+      monthsOfBacklog
+    };
+  }, [currentFiscalGoal, projects, sales]);
 
   // Monthly trend data
   const monthlyTrendData = dateRange.start && dateRange.end ? eachMonthOfInterval({
@@ -375,6 +411,64 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      {/* Build Capacity Forecast */}
+      {capacityForecast && (
+        <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              Build Capacity Forecast
+            </CardTitle>
+            <CardDescription>
+              Based on FY{fiscalYear} revenue target of ${(currentFiscalGoal.revenue_target / 1000000).toFixed(1)}M
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="p-4 bg-white rounded-lg border border-blue-200">
+                <p className="text-xs text-slate-600 mb-1">Monthly Capacity</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  ${(capacityForecast.monthlyCapacity / 1000).toFixed(0)}K
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Per month</p>
+              </div>
+              
+              <div className="p-4 bg-white rounded-lg border border-amber-200">
+                <p className="text-xs text-slate-600 mb-1">Active Projects</p>
+                <p className="text-2xl font-bold text-amber-700">
+                  ${(capacityForecast.activeProjectsValue / 1000).toFixed(0)}K
+                </p>
+                <p className="text-xs text-slate-500 mt-1">In construction</p>
+              </div>
+              
+              <div className="p-4 bg-white rounded-lg border border-emerald-200">
+                <p className="text-xs text-slate-600 mb-1">Precon Pipeline</p>
+                <p className="text-2xl font-bold text-emerald-700">
+                  ${(capacityForecast.preconPipelineValue / 1000).toFixed(0)}K
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Expected construction</p>
+              </div>
+              
+              <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border-2 border-slate-300">
+                <p className="text-xs text-slate-600 mb-1 font-semibold">New Client Wait Time</p>
+                <p className="text-3xl font-bold text-slate-900">
+                  {capacityForecast.monthsOfBacklog.toFixed(1)}
+                </p>
+                <p className="text-xs text-slate-600 mt-1">Months backlog</p>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-900">
+                <strong>Total Pipeline:</strong> ${(capacityForecast.totalPipeline / 1000).toFixed(0)}K
+                <span className="mx-2">•</span>
+                New clients can expect to start construction in approximately <strong>{Math.ceil(capacityForecast.monthsOfBacklog)} months</strong>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Fiscal Goal Progress */}
       {currentFiscalGoal && (
