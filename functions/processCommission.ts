@@ -66,9 +66,14 @@ Deno.serve(async (req) => {
     }
 
     // Calculate commission with tier splitting
-    const ytdVolume = commissionBank.ytd_sales_volume || 0;
+    // IMPORTANT: Only construction sales count towards tier progression
+    const ytdConstructionVolume = commissionBank.ytd_construction_volume || 0;
+    const ytdPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
     const saleAmount = final_amount || sale.contract_value || 0;
-    const newTotalVolume = ytdVolume + saleAmount;
+    
+    // Use construction volume for tier calculation
+    const ytdVolume = sale_type === 'construction' ? ytdConstructionVolume : ytdConstructionVolume;
+    const newTotalVolume = ytdVolume + (sale_type === 'construction' ? saleAmount : 0);
     
     // Sort tiers by min_volume
     const sortedTiers = [...commissionRule.tiers].sort((a, b) => a.min_volume - b.min_volume);
@@ -166,7 +171,19 @@ Deno.serve(async (req) => {
         }
         
         // Adjust YTD to remove the old sale amount (we'll re-add the new amount)
-        const adjustedYTD = (commissionBank.ytd_sales_volume || 0) - oldSaleAmount;
+        // IMPORTANT: Only construction sales count towards tier progression
+        const currentConstructionVolume = commissionBank.ytd_construction_volume || 0;
+        const currentPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
+        
+        const adjustedConstructionYTD = sale_type === 'construction' 
+          ? currentConstructionVolume - oldSaleAmount 
+          : currentConstructionVolume;
+        const adjustedPreconYTD = sale_type === 'preconstruction' 
+          ? currentPreconVolume - oldSaleAmount 
+          : currentPreconVolume;
+        
+        // Use construction volume for tier calculation
+        const adjustedYTD = adjustedConstructionYTD;
         
         // Now recalculate commission from scratch with adjusted YTD
         let newCommissionAmount = 0;
@@ -216,11 +233,11 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Get the final tier
+        // Get the final tier (based on construction volume only)
         let newApplicableTier = sortedTiers[0];
-        const finalYTD = adjustedYTD + saleAmount;
+        const finalConstructionYTD = adjustedConstructionYTD + (sale_type === 'construction' ? saleAmount : 0);
         for (const tier of sortedTiers) {
-          if (finalYTD >= tier.min_volume && (!tier.max_volume || finalYTD < tier.max_volume)) {
+          if (finalConstructionYTD >= tier.min_volume && (!tier.max_volume || finalConstructionYTD < tier.max_volume)) {
             newApplicableTier = tier;
             break;
           }
@@ -254,12 +271,18 @@ Deno.serve(async (req) => {
         // Update commission bank with the difference
         const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedDiff;
         const newTotalEarned = (commissionBank.total_earned || 0) + amountDiff;
-        const newYtdVolume = adjustedYTD + saleAmount;
+        
+        // Update volumes based on sale type
+        const finalConstructionVolume = adjustedConstructionYTD + (sale_type === 'construction' ? saleAmount : 0);
+        const finalPreconVolume = adjustedPreconYTD + (sale_type === 'preconstruction' ? saleAmount : 0);
+        const finalTotalVolume = finalConstructionVolume + finalPreconVolume;
 
         await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
           current_bank_balance: newBankBalance,
           total_earned: newTotalEarned,
-          ytd_sales_volume: newYtdVolume
+          ytd_sales_volume: finalTotalVolume,
+          ytd_construction_volume: finalConstructionVolume,
+          ytd_preconstruction_volume: finalPreconVolume
         });
 
         return Response.json({
@@ -298,12 +321,22 @@ Deno.serve(async (req) => {
     // Update commission bank
     const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedAmount;
     const newTotalEarned = (commissionBank.total_earned || 0) + commissionAmount;
-    const newYtdVolume = ytdVolume + saleAmount;
+    
+    // Update volumes based on sale type
+    const newConstructionVolume = sale_type === 'construction' 
+      ? ytdConstructionVolume + saleAmount 
+      : ytdConstructionVolume;
+    const newPreconVolume = sale_type === 'preconstruction' 
+      ? ytdPreconVolume + saleAmount 
+      : ytdPreconVolume;
+    const newTotalVolume = newConstructionVolume + newPreconVolume;
 
     await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
       current_bank_balance: newBankBalance,
       total_earned: newTotalEarned,
-      ytd_sales_volume: newYtdVolume
+      ytd_sales_volume: newTotalVolume,
+      ytd_construction_volume: newConstructionVolume,
+      ytd_preconstruction_volume: newPreconVolume
     });
 
     // Update sale to mark commission as processed

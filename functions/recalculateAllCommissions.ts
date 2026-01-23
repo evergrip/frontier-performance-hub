@@ -24,7 +24,9 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.CommissionBank.update(bank.id, {
         total_earned: 0,
         current_bank_balance: 0,
-        ytd_sales_volume: 0
+        ytd_sales_volume: 0,
+        ytd_construction_volume: 0,
+        ytd_preconstruction_volume: 0
       });
     }
 
@@ -85,9 +87,14 @@ Deno.serve(async (req) => {
         }
 
         // Calculate commission with tier splitting
-        const ytdVolume = commissionBank.ytd_sales_volume || 0;
+        // IMPORTANT: Only construction sales count towards tier progression
+        const ytdConstructionVolume = commissionBank.ytd_construction_volume || 0;
+        const ytdPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
         const saleAmount = transaction.sale_amount || sale.contract_value || 0;
-        const newTotalVolume = ytdVolume + saleAmount;
+        
+        // Use construction volume for tier calculation
+        const ytdVolume = ytdConstructionVolume;
+        const newTotalVolume = ytdVolume + (sale_type === 'construction' ? saleAmount : 0);
         
         // Sort tiers by min_volume
         const sortedTiers = [...commissionRule.tiers].sort((a, b) => a.min_volume - b.min_volume);
@@ -180,12 +187,22 @@ Deno.serve(async (req) => {
         // Update commission bank
         const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedAmount;
         const newTotalEarned = (commissionBank.total_earned || 0) + commissionAmount;
-        const newYtdVolume = ytdVolume + saleAmount;
+        
+        // Update volumes based on sale type
+        const newConstructionVolume = sale_type === 'construction' 
+          ? ytdConstructionVolume + saleAmount 
+          : ytdConstructionVolume;
+        const newPreconVolume = sale_type === 'preconstruction' 
+          ? ytdPreconVolume + saleAmount 
+          : ytdPreconVolume;
+        const newTotalYtdVolume = newConstructionVolume + newPreconVolume;
 
         await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
           current_bank_balance: newBankBalance,
           total_earned: newTotalEarned,
-          ytd_sales_volume: newYtdVolume
+          ytd_sales_volume: newTotalYtdVolume,
+          ytd_construction_volume: newConstructionVolume,
+          ytd_preconstruction_volume: newPreconVolume
         });
 
         results.push({
