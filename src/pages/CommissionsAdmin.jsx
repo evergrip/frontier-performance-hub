@@ -374,90 +374,106 @@ export default function CommissionsAdmin() {
         {/* Legacy Sales Tab */}
         <TabsContent value="legacy">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Add Legacy Sales</CardTitle>
-              <Dialog open={legacySaleDialogOpen} onOpenChange={setLegacySaleDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Legacy Sale
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add Legacy Sale</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleAddLegacySale} className="space-y-4">
-                    <div>
-                      <Label>Salesperson *</Label>
-                      <select
-                        value={legacySaleForm.salesperson_id}
-                        onChange={(e) => setLegacySaleForm({...legacySaleForm, salesperson_id: e.target.value})}
-                        className="w-full px-3 py-2 border rounded-md"
-                        required
-                      >
-                        <option value="">Select salesperson...</option>
-                        {users.map(u => (
-                          <option key={u.id} value={u.id}>{u.full_name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label>Lead Name *</Label>
-                      <Input
-                        value={legacySaleForm.lead_name}
-                        onChange={(e) => setLegacySaleForm({...legacySaleForm, lead_name: e.target.value})}
-                        placeholder="Project name"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label>Sale Date *</Label>
-                      <Input
-                        type="date"
-                        value={legacySaleForm.sale_date}
-                        onChange={(e) => setLegacySaleForm({...legacySaleForm, sale_date: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label>Sale Amount *</Label>
-                      <Input
-                        type="number"
-                        value={legacySaleForm.sale_amount}
-                        onChange={(e) => setLegacySaleForm({...legacySaleForm, sale_amount: e.target.value})}
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label>Commission Amount *</Label>
-                      <Input
-                        type="number"
-                        value={legacySaleForm.commission_amount}
-                        onChange={(e) => setLegacySaleForm({...legacySaleForm, commission_amount: e.target.value})}
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                    <div className="flex gap-3 justify-end pt-4">
-                      <Button type="button" variant="outline" onClick={() => setLegacySaleDialogOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={legacySaleMutation.isPending} className="bg-amber-500 hover:bg-amber-600">
-                        {legacySaleMutation.isPending ? 'Adding...' : 'Add Sale'}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+            <CardHeader>
+              <CardTitle>Add Legacy Sales (Spreadsheet)</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-slate-600 text-sm mb-4">
-                Add legacy sales to backfill commission history. These will be recorded as banked commissions.
+            <CardContent className="space-y-4">
+              <p className="text-slate-600 text-sm">
+                Enter multiple legacy sales at once. Fill in all fields for each row.
               </p>
-              <div className="text-center py-12 text-slate-500">
-                <p>Legacy sales will appear in salesperson commission transactions</p>
+              <div className="overflow-x-auto border rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100 border-b">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-700">Salesperson</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-700">Lead Name</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-700">Sale Date</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-700">Sale Amount</th>
+                      <th className="px-3 py-2 text-left font-semibold text-slate-700">Commission</th>
+                      <th className="px-3 py-2 text-center font-semibold text-slate-700">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {legacySales.map((row) => (
+                      <tr key={row.id} className="border-b hover:bg-slate-50">
+                        <td className="px-3 py-2">
+                          <select
+                            value={row.salesperson_id}
+                            onChange={(e) => handleUpdateRow(row.id, 'salesperson_id', e.target.value)}
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          >
+                            <option value="">Select...</option>
+                            {users.map(u => (
+                              <option key={u.id} value={u.id}>{u.full_name}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={row.lead_name}
+                            onChange={(e) => handleUpdateRow(row.id, 'lead_name', e.target.value)}
+                            placeholder="Project name"
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="date"
+                            value={row.sale_date}
+                            onChange={(e) => handleUpdateRow(row.id, 'sale_date', e.target.value)}
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            value={row.sale_amount}
+                            onChange={(e) => handleUpdateRow(row.id, 'sale_amount', e.target.value)}
+                            placeholder="0.00"
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="number"
+                            value={row.commission_amount}
+                            onChange={(e) => handleUpdateRow(row.id, 'commission_amount', e.target.value)}
+                            placeholder="0.00"
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveRow(row.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Remove
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleAddRow}
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Row
+                </Button>
+                <Button
+                  onClick={handleSubmitLegacySales}
+                  disabled={legacySaleMutation.isPending}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 flex-1"
+                >
+                  {legacySaleMutation.isPending ? 'Submitting...' : `Submit ${legacySales.filter(r => r.lead_name).length} Sale(s)`}
+                </Button>
               </div>
             </CardContent>
           </Card>

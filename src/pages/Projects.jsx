@@ -23,6 +23,8 @@ export default function Projects() {
     actual_margin: '',
     variance_explanation: ''
   });
+  const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
+  const [monthlyAllocations, setMonthlyAllocations] = useState([]);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
