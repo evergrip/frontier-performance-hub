@@ -297,15 +297,16 @@ export default function Projects() {
                           const nextStatus = getNextStatus(project.status);
                           return (
                             <Draggable key={project.id} draggableId={project.id} index={index}>
-                              {(provided, snapshot) => (
-                                <Card 
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`border-2 ${column.color} transition-all cursor-pointer ${
-                                    snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
-                                  }`}
-                                  onClick={() => openEditDialog(project)}
-                                >
+                               {(provided, snapshot) => (
+                                 <Card 
+                                   ref={provided.innerRef}
+                                   {...provided.draggableProps}
+                                   style={project.color ? { borderColor: project.color, borderWidth: '2px' } : {}}
+                                   className={`border-2 ${!project.color ? column.color : ''} transition-all cursor-pointer ${
+                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
+                                   }`}
+                                   onClick={() => openEditDialog(project)}
+                                 >
                                   <CardContent className="p-4">
                                     <div 
                                       {...provided.dragHandleProps}
