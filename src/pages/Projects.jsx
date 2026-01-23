@@ -526,12 +526,12 @@ export default function Projects() {
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                   {clients.map(client => (
+                     <SelectItem key={client.id} value={client.id}>
+                       {client.company_name || client.contact_name}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
               </Select>
             </div>
 
