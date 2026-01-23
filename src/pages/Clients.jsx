@@ -133,69 +133,88 @@ export default function Clients() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <Input
-          placeholder="Search clients..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search & Filters */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            placeholder="Search clients..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button
+          variant={showArchived ? "default" : "outline"}
+          onClick={() => setShowArchived(!showArchived)}
+          className="gap-2"
+        >
+          <Archive className="w-4 h-4" />
+          {showArchived ? 'Hide' : 'Show'} Archived
+        </Button>
       </div>
 
-      {/* Clients Grid */}
+      {/* Clients Table */}
       {filteredClients.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map(client => (
-            <Card key={client.id} className="hover:shadow-xl transition-shadow duration-300">
-              <CardHeader className="pb-3">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl font-bold text-white">
-                      {client.company_name?.charAt(0)?.toUpperCase() || 'C'}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="truncate text-lg">{client.company_name}</CardTitle>
-                    <p className="text-sm text-slate-500">{client.contact_name}</p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  {client.email && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Mail className="w-4 h-4 text-slate-400" />
-                      <span className="truncate">{client.email}</span>
-                    </div>
-                  )}
-                  {client.phone && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Phone className="w-4 h-4 text-slate-400" />
-                      <span>{client.phone}</span>
-                    </div>
-                  )}
-                  {client.address && (
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <MapPin className="w-4 h-4 text-slate-400" />
-                      <span className="truncate">{client.address}</span>
-                    </div>
-                  )}
-                </div>
-                <Button 
-                  onClick={() => openLeadDialog(client)} 
-                  variant="outline" 
-                  className="w-full border-amber-200 hover:bg-amber-50"
-                >
-                  <Target className="w-4 h-4 mr-2" />
-                  Create Lead
-                  <ArrowRight className="w-4 h-4 ml-auto" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredClients.map(client => (
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">{client.company_name || '—'}</TableCell>
+                    <TableCell>{client.contact_name}</TableCell>
+                    <TableCell className="text-sm text-slate-500">{client.email || '—'}</TableCell>
+                    <TableCell className="text-sm text-slate-500">{client.phone || '—'}</TableCell>
+                    <TableCell>
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        client.status === 'archived' ? 'bg-slate-100 text-slate-700' :
+                        client.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {client.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openLeadDialog(client)}>
+                            <Target className="w-4 h-4 mr-2" />
+                            Create Lead
+                          </DropdownMenuItem>
+                          {client.status !== 'archived' && (
+                            <DropdownMenuItem
+                              onClick={() => archiveClientMutation.mutate(client.id)}
+                              className="text-amber-600"
+                            >
+                              <Archive className="w-4 h-4 mr-2" />
+                              Archive
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
           <CardContent className="p-0">
