@@ -348,6 +348,10 @@ Deno.serve(async (req) => {
           commission_rate: null,
           sale_amount: saleAmount,
           tier_at_time: newApplicableTier.tier_name,
+          phase_name: phaseApplied,
+          phase_payout_percentage: newAvailablePercentage,
+          amount_made_available: newAvailableAmount,
+          banking_percentage: newBankedPercentage,
           banked_amount: newBankedAmount,
           immediate_payout_amount: newImmediatePayout,
           notes: adjustmentNote
