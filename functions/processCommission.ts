@@ -138,7 +138,8 @@ Deno.serve(async (req) => {
       banking_percentage: bankingPercentage,
       banked_amount: bankedAmount,
       immediate_payout_amount: immediatePayout,
-      status: 'banked'
+      status: 'banked',
+      sale_type: sale_type
     });
 
     // Update commission bank
