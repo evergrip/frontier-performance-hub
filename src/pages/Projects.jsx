@@ -593,6 +593,43 @@ export default function Projects() {
               ) : null;
             })()}
 
+            {/* Monthly Revenue Allocation */}
+            <div>
+              <Label className="block mb-2">Monthly Revenue Allocation *</Label>
+              <p className="text-xs text-slate-500 mb-3">
+                Distribute the ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} gross revenue across months. Must total 100%.
+              </p>
+              <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
+                {monthlyAllocations.map((alloc) => {
+                  const monthName = new Date(alloc.year, alloc.month - 1).toLocaleString('default', { month: 'short' });
+                  return (
+                    <div key={`${alloc.year}-${alloc.month}`}>
+                      <label className="text-xs text-slate-600">{monthName}</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={alloc.percentage}
+                        onChange={(e) => setMonthlyAllocations(monthlyAllocations.map(a => 
+                          a.month === alloc.month && a.year === alloc.year 
+                            ? { ...a, percentage: parseFloat(e.target.value) || 0 }
+                            : a
+                        ))}
+                        className="w-full px-2 py-1 border rounded text-xs"
+                        placeholder="0"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-xs mt-2 p-2 bg-blue-50 rounded">
+                Total: <span className={`font-semibold ${monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0) === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0).toFixed(1)}%
+                </span>
+              </div>
+            </div>
+
             {selectedProject && projectForm.actual_costs && projectForm.actual_margin && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <h4 className="text-xs font-semibold text-slate-700 mb-2">Final Project Summary</h4>
