@@ -84,45 +84,66 @@ Deno.serve(async (req) => {
     let tierBreakdown = [];
     
     // Calculate commission across tiers
-    for (let i = 0; i < sortedTiers.length; i++) {
-      const tier = sortedTiers[i];
-      
-      // Skip if we're already past this tier
-      if (currentVolume > (tier.max_volume || Infinity)) {
-        continue;
-      }
-      
-      // Skip if we haven't reached this tier's minimum yet
-      if (currentVolume < tier.min_volume) {
-        continue;
-      }
-      
-      // Calculate the effective end of this tier
-      const effectiveTierEnd = tier.max_volume || Infinity;
-      
-      // How much volume can fit in this tier
-      const volumeInTier = Math.min(
-        effectiveTierEnd - currentVolume,
-        remainingAmount
-      );
-      
-      if (volumeInTier > 0) {
-        const tierCommission = (volumeInTier * tier.commission_rate) / 100;
-        commissionAmount += tierCommission;
-        currentVolume += volumeInTier;
-        remainingAmount -= volumeInTier;
+    // For construction: split across tiers as volume increases
+    // For preconstruction: apply current tier rate to entire amount
+    if (sale_type === 'construction') {
+      for (let i = 0; i < sortedTiers.length; i++) {
+        const tier = sortedTiers[i];
         
-        tierBreakdown.push({
-          tier_name: tier.tier_name,
-          amount: volumeInTier,
-          rate: tier.commission_rate,
-          commission: tierCommission
-        });
+        // Skip if we're already past this tier
+        if (currentVolume > (tier.max_volume || Infinity)) {
+          continue;
+        }
+        
+        // Skip if we haven't reached this tier's minimum yet
+        if (currentVolume < tier.min_volume) {
+          continue;
+        }
+        
+        // Calculate the effective end of this tier
+        const effectiveTierEnd = tier.max_volume || Infinity;
+        
+        // How much volume can fit in this tier
+        const volumeInTier = Math.min(
+          effectiveTierEnd - currentVolume,
+          remainingAmount
+        );
+        
+        if (volumeInTier > 0) {
+          const tierCommission = (volumeInTier * tier.commission_rate) / 100;
+          commissionAmount += tierCommission;
+          currentVolume += volumeInTier;
+          remainingAmount -= volumeInTier;
+          
+          tierBreakdown.push({
+            tier_name: tier.tier_name,
+            amount: volumeInTier,
+            rate: tier.commission_rate,
+            commission: tierCommission
+          });
+        }
+        
+        if (remainingAmount <= 0) {
+          break;
+        }
+      }
+    } else {
+      // Preconstruction: apply current tier rate based on construction volume
+      let applicableTier = sortedTiers[0];
+      for (const tier of sortedTiers) {
+        if (currentVolume >= tier.min_volume && (!tier.max_volume || currentVolume < tier.max_volume)) {
+          applicableTier = tier;
+          break;
+        }
       }
       
-      if (remainingAmount <= 0) {
-        break;
-      }
+      commissionAmount = (saleAmount * applicableTier.commission_rate) / 100;
+      tierBreakdown.push({
+        tier_name: applicableTier.tier_name,
+        amount: saleAmount,
+        rate: applicableTier.commission_rate,
+        commission: commissionAmount
+      });
     }
     
     // Get the final tier for recording purposes
@@ -192,45 +213,66 @@ Deno.serve(async (req) => {
         let newTierBreakdown = [];
         
         // Calculate commission across tiers from scratch
-        for (let i = 0; i < sortedTiers.length; i++) {
-          const tier = sortedTiers[i];
-          
-          // Skip if we're already past this tier
-          if (newCurrentVolume > (tier.max_volume || Infinity)) {
-            continue;
-          }
-          
-          // Skip if we haven't reached this tier's minimum yet
-          if (newCurrentVolume < tier.min_volume) {
-            continue;
-          }
-          
-          // Calculate the effective end of this tier
-          const effectiveTierEnd = tier.max_volume || Infinity;
-          
-          // How much volume can fit in this tier
-          const volumeInTier = Math.min(
-            effectiveTierEnd - newCurrentVolume,
-            newRemainingAmount
-          );
-          
-          if (volumeInTier > 0) {
-            const tierCommission = (volumeInTier * tier.commission_rate) / 100;
-            newCommissionAmount += tierCommission;
-            newCurrentVolume += volumeInTier;
-            newRemainingAmount -= volumeInTier;
+        // For construction: split across tiers as volume increases
+        // For preconstruction: apply current tier rate to entire amount
+        if (sale_type === 'construction') {
+          for (let i = 0; i < sortedTiers.length; i++) {
+            const tier = sortedTiers[i];
             
-            newTierBreakdown.push({
-              tier_name: tier.tier_name,
-              amount: volumeInTier,
-              rate: tier.commission_rate,
-              commission: tierCommission
-            });
+            // Skip if we're already past this tier
+            if (newCurrentVolume > (tier.max_volume || Infinity)) {
+              continue;
+            }
+            
+            // Skip if we haven't reached this tier's minimum yet
+            if (newCurrentVolume < tier.min_volume) {
+              continue;
+            }
+            
+            // Calculate the effective end of this tier
+            const effectiveTierEnd = tier.max_volume || Infinity;
+            
+            // How much volume can fit in this tier
+            const volumeInTier = Math.min(
+              effectiveTierEnd - newCurrentVolume,
+              newRemainingAmount
+            );
+            
+            if (volumeInTier > 0) {
+              const tierCommission = (volumeInTier * tier.commission_rate) / 100;
+              newCommissionAmount += tierCommission;
+              newCurrentVolume += volumeInTier;
+              newRemainingAmount -= volumeInTier;
+              
+              newTierBreakdown.push({
+                tier_name: tier.tier_name,
+                amount: volumeInTier,
+                rate: tier.commission_rate,
+                commission: tierCommission
+              });
+            }
+            
+            if (newRemainingAmount <= 0) {
+              break;
+            }
+          }
+        } else {
+          // Preconstruction: apply current tier rate based on construction volume
+          let applicableTier = sortedTiers[0];
+          for (const tier of sortedTiers) {
+            if (newCurrentVolume >= tier.min_volume && (!tier.max_volume || newCurrentVolume < tier.max_volume)) {
+              applicableTier = tier;
+              break;
+            }
           }
           
-          if (newRemainingAmount <= 0) {
-            break;
-          }
+          newCommissionAmount = (saleAmount * applicableTier.commission_rate) / 100;
+          newTierBreakdown.push({
+            tier_name: applicableTier.tier_name,
+            amount: saleAmount,
+            rate: applicableTier.commission_rate,
+            commission: newCommissionAmount
+          });
         }
         
         // Get the final tier (based on construction volume only)
