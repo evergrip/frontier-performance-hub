@@ -149,6 +149,18 @@ export default function Sales() {
         status: 'closed_won'
       });
 
+      // Update preconstruction commission with final value
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: preconSale.id,
+          sale_type: 'preconstruction',
+          final_amount: parseFloat(final_precon_value),
+          is_update: true
+        });
+      } catch (error) {
+        console.error('Precon commission update failed:', error);
+      }
+
       // Create construction sale
       const constructionSale = await base44.entities.Sale.create({
         title: `${preconSale.title} - Construction`,
