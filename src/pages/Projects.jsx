@@ -201,6 +201,14 @@ export default function Projects() {
     setEditDialogOpen(false);
   };
 
+  const generateRandomColor = () => {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+      '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#82E0AA'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
   const handleDragEnd = (result) => {
     if (!result.destination) return;
     
@@ -210,10 +218,17 @@ export default function Projects() {
     
     const newStatus = destination.droppableId;
     const projectId = draggableId;
+    const project = projects.find(p => p.id === projectId);
+    
+    // Generate random color when moving away from awaiting_to_be_scheduled
+    const updates = { status: newStatus };
+    if (project?.status === 'awaiting_to_be_scheduled' && newStatus !== 'awaiting_to_be_scheduled') {
+      updates.color = generateRandomColor();
+    }
     
     updateProjectStatusMutation.mutate({
       projectId,
-      status: newStatus
+      ...updates
     });
   };
 
