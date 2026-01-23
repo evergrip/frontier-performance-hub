@@ -75,16 +75,14 @@ export default function DailyStaffScheduleView({
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
   }, []);
-  const [weekStart, setWeekStart] = useState(startDate || new Date());
+  // Calculate all weeks needed to display the entire date range
+  const allDays = eachDayOfInterval({ start: startDate, end: endDate });
   
-  let weekEnd = endDate || endOfWeek(weekStart);
-  
-  // Ensure weekEnd doesn't exceed the provided endDate
-  if (endDate && weekEnd > endDate) {
-    weekEnd = endDate;
+  // Group days into weeks (7 days each)
+  const weeks = [];
+  for (let i = 0; i < allDays.length; i += 7) {
+    weeks.push(allDays.slice(i, i + 7));
   }
-  
-  const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   // Get unique employees from assignments
   const employeesInAssignments = new Set();
