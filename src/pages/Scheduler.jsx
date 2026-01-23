@@ -20,10 +20,13 @@ export default function Scheduler() {
     queryFn: () => base44.entities.User.list(),
   });
 
-  const { data: projects = [] } = useQuery({
+  const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
   });
+
+  // Filter out closed projects from scheduler
+  const projects = allProjects.filter(p => p.status !== 'closed');
 
   const queryClient = useQueryClient();
 
