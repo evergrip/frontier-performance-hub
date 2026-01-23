@@ -16,6 +16,7 @@ export default function Projects() {
   const queryClient = useQueryClient();
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [closeoutDialogOpen, setCloseoutDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectForm, setProjectForm] = useState({
     actual_costs: '',
@@ -89,6 +90,15 @@ export default function Projects() {
     setCloseoutDialogOpen(true);
   };
 
+  const openEditDialog = (project) => {
+    setSelectedProject(project);
+    setProjectForm({
+      actual_costs: project.actual_costs || '',
+      actual_margin: project.actual_margin || ''
+    });
+    setEditDialogOpen(true);
+  };
+
   const handleAdvanceStatus = (e) => {
     e.preventDefault();
     const nextStatus = getNextStatus(selectedProject.status);
@@ -111,6 +121,18 @@ export default function Projects() {
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0
     });
+  };
+
+  const handleUpdateProject = (e) => {
+    e.preventDefault();
+    
+    updateProjectStatusMutation.mutate({
+      projectId: selectedProject.id,
+      status: selectedProject.status, // Keep same status
+      actual_costs: parseFloat(projectForm.actual_costs) || 0,
+      actual_margin: parseFloat(projectForm.actual_margin) || 0
+    });
+    setEditDialogOpen(false);
   };
 
   const handleDragEnd = (result) => {
@@ -197,14 +219,16 @@ export default function Projects() {
                                 <Card 
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`border-2 ${column.color} transition-all ${
+                                  className={`border-2 ${column.color} transition-all cursor-pointer ${
                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
                                   }`}
+                                  onClick={() => openEditDialog(project)}
                                 >
                                   <CardContent className="p-4">
                                     <div 
                                       {...provided.dragHandleProps}
                                       className="flex items-center gap-2 mb-2 cursor-grab active:cursor-grabbing"
+                                      onClick={(e) => e.stopPropagation()}
                                     >
                                       <GripVertical className="w-4 h-4 text-slate-400" />
                                       <h4 className="font-semibold text-slate-900 flex-1">{project.title}</h4>
@@ -244,7 +268,7 @@ export default function Projects() {
                                       )}
                                     </div>
 
-                                    <div className="space-y-2">
+                                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
                                       {nextStatus && (
                                         <Button
                                           size="sm"
@@ -367,6 +391,78 @@ export default function Projects() {
               <Button type="submit" disabled={updateProjectStatusMutation.isPending}>
                 <ChevronRight className="w-4 h-4 mr-2" />
                 Update & Advance Phase
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Project Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Project Metrics</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateProject} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedProject?.client_id)}</p>
+            </div>
+
+            <div>
+              <Label>Actual Project Costs</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Current total costs incurred for this project
+              </p>
+              <Input
+                type="number"
+                value={projectForm.actual_costs}
+                onChange={(e) => setProjectForm({...projectForm, actual_costs: e.target.value})}
+                placeholder="650000"
+              />
+            </div>
+
+            <div>
+              <Label>Actual Gross Margin (%)</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Current margin percentage based on actual costs
+              </p>
+              <Input
+                type="number"
+                step="0.01"
+                value={projectForm.actual_margin}
+                onChange={(e) => setProjectForm({...projectForm, actual_margin: e.target.value})}
+                placeholder="15.5"
+              />
+            </div>
+
+            {selectedProject && projectForm.actual_costs && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="text-xs text-slate-700 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Contract Value:</span>
+                    <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Actual Costs:</span>
+                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Gross Revenue:</span>
+                    <span className="font-semibold text-emerald-700">
+                      ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs || 0)) / 1000).toFixed(0)}k
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateProjectStatusMutation.isPending}>
+                Save Changes
               </Button>
             </div>
           </form>
