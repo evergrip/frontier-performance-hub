@@ -4,13 +4,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, ChevronRight, GripVertical } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Building2, ChevronRight, GripVertical, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
 
 export default function Projects() {
   const queryClient = useQueryClient();
+  const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
+  const [closeoutDialogOpen, setCloseoutDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projectForm, setProjectForm] = useState({
+    actual_costs: '',
+    actual_margin: ''
+  });
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -25,11 +35,18 @@ export default function Projects() {
   });
 
   const updateProjectStatusMutation = useMutation({
-    mutationFn: ({ projectId, status }) => 
-      base44.entities.Project.update(projectId, { status }),
+    mutationFn: ({ projectId, status, actual_costs, actual_margin }) => 
+      base44.entities.Project.update(projectId, { 
+        status, 
+        actual_costs: actual_costs !== undefined ? actual_costs : undefined,
+        actual_margin: actual_margin !== undefined ? actual_margin : undefined
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
-      toast.success('Project status updated');
+      setAdvanceDialogOpen(false);
+      setCloseoutDialogOpen(false);
+      setProjectForm({ actual_costs: '', actual_margin: '' });
+      toast.success('Project updated');
     }
   });
 
@@ -54,13 +71,45 @@ export default function Projects() {
     return currentIndex < statuses.length - 1 ? statuses[currentIndex + 1] : null;
   };
 
-  const handleAdvanceStatus = (projectId, currentStatus) => {
-    const nextStatus = getNextStatus(currentStatus);
+  const openAdvanceDialog = (project) => {
+    setSelectedProject(project);
+    setProjectForm({
+      actual_costs: project.actual_costs || '',
+      actual_margin: project.actual_margin || ''
+    });
+    setAdvanceDialogOpen(true);
+  };
+
+  const openCloseoutDialog = (project) => {
+    setSelectedProject(project);
+    setProjectForm({
+      actual_costs: project.actual_costs || '',
+      actual_margin: project.actual_margin || ''
+    });
+    setCloseoutDialogOpen(true);
+  };
+
+  const handleAdvanceStatus = (e) => {
+    e.preventDefault();
+    const nextStatus = getNextStatus(selectedProject.status);
     if (!nextStatus) return;
     
     updateProjectStatusMutation.mutate({
-      projectId,
-      status: nextStatus
+      projectId: selectedProject.id,
+      status: nextStatus,
+      actual_costs: parseFloat(projectForm.actual_costs) || 0,
+      actual_margin: parseFloat(projectForm.actual_margin) || 0
+    });
+  };
+
+  const handleCloseoutProject = (e) => {
+    e.preventDefault();
+    
+    updateProjectStatusMutation.mutate({
+      projectId: selectedProject.id,
+      status: 'closed',
+      actual_costs: parseFloat(projectForm.actual_costs) || 0,
+      actual_margin: parseFloat(projectForm.actual_margin) || 0
     });
   };
 
@@ -195,17 +244,29 @@ export default function Projects() {
                                       )}
                                     </div>
 
-                                    {nextStatus && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="w-full text-xs"
-                                        onClick={() => handleAdvanceStatus(project.id, project.status)}
-                                      >
-                                        <ChevronRight className="w-3 h-3 mr-1" />
-                                        Move to Next Phase
-                                      </Button>
-                                    )}
+                                    <div className="space-y-2">
+                                      {nextStatus && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="w-full text-xs"
+                                          onClick={() => openAdvanceDialog(project)}
+                                        >
+                                          <ChevronRight className="w-3 h-3 mr-1" />
+                                          Move to Next Phase
+                                        </Button>
+                                      )}
+                                      {project.status === 'substantial_completion_closeout' && (
+                                        <Button
+                                          size="sm"
+                                          className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
+                                          onClick={() => openCloseoutDialog(project)}
+                                        >
+                                          <CheckCircle className="w-3 h-3 mr-1" />
+                                          Close Out Project
+                                        </Button>
+                                      )}
+                                    </div>
                                   </CardContent>
                                 </Card>
                               )}
@@ -232,6 +293,172 @@ export default function Projects() {
           </CardContent>
         </Card>
       )}
+
+      {/* Advance Phase Dialog */}
+      <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Project Metrics & Advance Phase</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAdvanceStatus} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedProject?.client_id)}</p>
+            </div>
+
+            <div>
+              <Label>Actual Project Costs *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Current total costs incurred for this project
+              </p>
+              <Input
+                type="number"
+                value={projectForm.actual_costs}
+                onChange={(e) => setProjectForm({...projectForm, actual_costs: e.target.value})}
+                placeholder="650000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Actual Gross Margin (%) *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Current margin percentage based on actual costs
+              </p>
+              <Input
+                type="number"
+                step="0.01"
+                value={projectForm.actual_margin}
+                onChange={(e) => setProjectForm({...projectForm, actual_margin: e.target.value})}
+                placeholder="15.5"
+                required
+              />
+            </div>
+
+            {selectedProject && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="text-xs text-slate-700 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Contract Value:</span>
+                    <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
+                  </div>
+                  {projectForm.actual_costs && (
+                    <div className="flex justify-between">
+                      <span>Actual Costs:</span>
+                      <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                    </div>
+                  )}
+                  {projectForm.actual_costs && (
+                    <div className="flex justify-between">
+                      <span>Gross Revenue:</span>
+                      <span className="font-semibold text-emerald-700">
+                        ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs || 0)) / 1000).toFixed(0)}k
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setAdvanceDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateProjectStatusMutation.isPending}>
+                <ChevronRight className="w-4 h-4 mr-2" />
+                Update & Advance Phase
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Closeout Dialog */}
+      <Dialog open={closeoutDialogOpen} onOpenChange={setCloseoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close Out Project</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCloseoutProject} className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedProject?.client_id)}</p>
+              <p className="text-xs text-amber-600 mt-2">Finalizing this project will remove it from the scheduler and active projects</p>
+            </div>
+
+            <div>
+              <Label>Final Project Costs *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Total actual costs incurred for this project
+              </p>
+              <Input
+                type="number"
+                value={projectForm.actual_costs}
+                onChange={(e) => setProjectForm({...projectForm, actual_costs: e.target.value})}
+                placeholder="720000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Final Gross Margin (%) *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Final margin percentage based on actual costs
+              </p>
+              <Input
+                type="number"
+                step="0.01"
+                value={projectForm.actual_margin}
+                onChange={(e) => setProjectForm({...projectForm, actual_margin: e.target.value})}
+                placeholder="13.2"
+                required
+              />
+            </div>
+
+            {selectedProject && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <h4 className="text-xs font-semibold text-slate-700 mb-2">Final Project Summary</h4>
+                <div className="text-xs text-slate-700 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Contract Value:</span>
+                    <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
+                  </div>
+                  {projectForm.actual_costs && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Final Costs:</span>
+                        <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                      </div>
+                      <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
+                        <span className="font-bold">Final Gross Revenue:</span>
+                        <span className="font-bold text-emerald-700">
+                          ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs || 0)) / 1000).toFixed(0)}k
+                        </span>
+                      </div>
+                      {projectForm.actual_margin && (
+                        <div className="flex justify-between">
+                          <span className="font-bold">Final Margin:</span>
+                          <span className="font-bold text-emerald-700">{parseFloat(projectForm.actual_margin).toFixed(2)}%</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setCloseoutDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateProjectStatusMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Close Out Project
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
