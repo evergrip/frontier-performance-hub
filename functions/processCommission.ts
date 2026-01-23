@@ -105,6 +105,17 @@ Deno.serve(async (req) => {
           notes: `Updated with final amount: $${saleAmount.toLocaleString()}`
         });
 
+        // Create adjustment transaction to log the change
+        await base44.asServiceRole.entities.CommissionTransaction.create({
+          user_id: sale.assigned_to,
+          sale_id: sale.id,
+          transaction_type: 'adjustment',
+          amount: amountDiff,
+          sale_type: sale_type,
+          status: 'banked',
+          notes: `Commission adjustment due to final ${sale_type} value update. Original: $${oldAmount.toLocaleString()}, New: $${commissionAmount.toLocaleString()}, Difference: ${amountDiff >= 0 ? '+' : ''}$${amountDiff.toLocaleString()}`
+        });
+
         // Update commission bank with the difference
         const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedDiff;
         const newTotalEarned = (commissionBank.total_earned || 0) + amountDiff;
