@@ -359,27 +359,27 @@ export default function Projects() {
               />
             </div>
 
-            {selectedProject && (
+            {selectedProject && projectForm.actual_costs && projectForm.actual_margin && (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="text-xs text-slate-700 space-y-1">
                   <div className="flex justify-between">
                     <span>Contract Value:</span>
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
-                  {projectForm.actual_costs && (
-                    <div className="flex justify-between">
-                      <span>Actual Costs:</span>
-                      <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
-                    </div>
-                  )}
-                  {projectForm.actual_costs && (
-                    <div className="flex justify-between">
-                      <span>Gross Revenue:</span>
-                      <span className="font-semibold text-emerald-700">
-                        ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs || 0)) / 1000).toFixed(0)}k
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span>Actual Costs:</span>
+                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Gross Revenue:</span>
+                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Gross Profit:</span>
+                    <span className="font-semibold text-emerald-700">
+                      ${((parseFloat(projectForm.actual_costs) * (parseFloat(projectForm.actual_margin) / 100)) / 1000).toFixed(0)}k
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -515,7 +515,7 @@ export default function Projects() {
               />
             </div>
 
-            {selectedProject && (
+            {selectedProject && projectForm.actual_costs && projectForm.actual_margin && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <h4 className="text-xs font-semibold text-slate-700 mb-2">Final Project Summary</h4>
                 <div className="text-xs text-slate-700 space-y-1">
@@ -523,26 +523,24 @@ export default function Projects() {
                     <span>Contract Value:</span>
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
-                  {projectForm.actual_costs && (
-                    <>
-                      <div className="flex justify-between">
-                        <span>Final Costs:</span>
-                        <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
-                      </div>
-                      <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
-                        <span className="font-bold">Final Gross Revenue:</span>
-                        <span className="font-bold text-emerald-700">
-                          ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs || 0)) / 1000).toFixed(0)}k
-                        </span>
-                      </div>
-                      {projectForm.actual_margin && (
-                        <div className="flex justify-between">
-                          <span className="font-bold">Final Margin:</span>
-                          <span className="font-bold text-emerald-700">{parseFloat(projectForm.actual_margin).toFixed(2)}%</span>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  <div className="flex justify-between">
+                    <span>Final Costs:</span>
+                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Gross Revenue:</span>
+                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
+                    <span className="font-bold">Gross Profit:</span>
+                    <span className="font-bold text-emerald-700">
+                      ${((parseFloat(projectForm.actual_costs) * (parseFloat(projectForm.actual_margin) / 100)) / 1000).toFixed(0)}k
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-bold">Margin:</span>
+                    <span className="font-bold text-emerald-700">{parseFloat(projectForm.actual_margin).toFixed(2)}%</span>
+                  </div>
                 </div>
               </div>
             )}
