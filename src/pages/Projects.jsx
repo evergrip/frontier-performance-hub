@@ -99,6 +99,14 @@ export default function Projects() {
       actual_margin: project.actual_margin || 45,
       variance_explanation: ''
     });
+    // Initialize monthly allocations from current year
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const allocations = [];
+    for (let month = 1; month <= 12; month++) {
+      allocations.push({ year: currentYear, month, percentage: 0 });
+    }
+    setMonthlyAllocations(allocations);
     setCloseoutDialogOpen(true);
   };
 
