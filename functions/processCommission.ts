@@ -31,13 +31,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Salesperson has no commission rules assigned' }, { status: 400 });
     }
 
-    // Get the commission rule
-    const commissionRuleId = salesperson.commission_rule_ids[0];
-    const rules = await base44.asServiceRole.entities.CommissionRule.filter({ id: commissionRuleId });
-    const commissionRule = rules[0];
+    // Get all commission rules for the salesperson
+    const allRules = await base44.asServiceRole.entities.CommissionRule.filter({ 
+      id: { $in: salesperson.commission_rule_ids }
+    });
+
+    // Find the appropriate rule based on sale_type
+    let commissionRule = allRules.find(rule => 
+      rule.sale_type === sale_type || rule.sale_type === 'both'
+    );
+
+    // If no matching rule, fall back to first rule
+    if (!commissionRule) {
+      commissionRule = allRules[0];
+    }
 
     if (!commissionRule || !commissionRule.tiers?.length) {
-      return Response.json({ error: 'Commission rule not found or has no tiers' }, { status: 404 });
+      return Response.json({ error: `No commission rule found for ${sale_type} sales` }, { status: 404 });
     }
 
     // Get commission bank or create if doesn't exist
