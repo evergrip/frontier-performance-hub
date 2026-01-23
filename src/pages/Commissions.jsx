@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import StatCard from '@/components/common/StatCard';
@@ -21,6 +22,7 @@ export default function Commissions() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [requestedAmount, setRequestedAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [transactionPeriod, setTransactionPeriod] = useState('current_fiscal_year');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -41,6 +43,14 @@ export default function Commissions() {
     enabled: !!user,
   });
 
+  const { data: companySettings } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: async () => {
+      const settings = await base44.entities.CompanySettings.list();
+      return settings && settings.length > 0 ? settings[0] : null;
+    },
+  });
+
   const { data: transactions = [] } = useQuery({
     queryKey: ['commissionTransactions', user?.id],
     queryFn: async () => {
@@ -55,6 +65,51 @@ export default function Commissions() {
     queryFn: () => base44.entities.Sale.list(),
     initialData: [],
   });
+
+  const getFiscalYearStart = (fiscalStartMonth = 1) => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    
+    if (currentMonth >= fiscalStartMonth) {
+      return new Date(currentYear, fiscalStartMonth - 1, 1);
+    } else {
+      return new Date(currentYear - 1, fiscalStartMonth - 1, 1);
+    }
+  };
+
+  const getFilteredTransactions = () => {
+    const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+    const fiscalYearStart = getFiscalYearStart(fiscalStartMonth);
+    const today = new Date();
+    
+    return transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.created_date);
+      
+      switch (transactionPeriod) {
+        case 'current_fiscal_year':
+          return transactionDate >= fiscalYearStart;
+        case 'last_30_days':
+          const thirtyDaysAgo = new Date(today);
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return transactionDate >= thirtyDaysAgo;
+        case 'last_90_days':
+          const ninetyDaysAgo = new Date(today);
+          ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+          return transactionDate >= ninetyDaysAgo;
+        case 'last_year':
+          const oneYearAgo = new Date(today);
+          oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+          return transactionDate >= oneYearAgo;
+        case 'all_time':
+          return true;
+        default:
+          return transactionDate >= fiscalYearStart;
+      }
+    });
+  };
+
+  const filteredTransactions = getFilteredTransactions();
 
   const { data: payouts = [] } = useQuery({
     queryKey: ['commissionPayouts', user?.id],
@@ -256,10 +311,24 @@ export default function Commissions() {
       {/* Recent Transactions */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="w-5 h-5" />
-            Recent Transactions
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Recent Transactions
+            </CardTitle>
+            <Select value={transactionPeriod} onValueChange={setTransactionPeriod}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="current_fiscal_year">Current Fiscal Year</SelectItem>
+                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                <SelectItem value="last_90_days">Last 90 Days</SelectItem>
+                <SelectItem value="last_year">Last Year</SelectItem>
+                <SelectItem value="all_time">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -274,7 +343,7 @@ export default function Commissions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {transactions.slice(0, 10).map((transaction) => (
+              {filteredTransactions.map((transaction) => (
                 <TableRow 
                   key={transaction.id} 
                   className="cursor-pointer hover:bg-slate-50"
@@ -297,10 +366,10 @@ export default function Commissions() {
                   </TableCell>
                 </TableRow>
               ))}
-              {transactions.length === 0 && (
+              {filteredTransactions.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-slate-500 py-8">
-                    No transactions yet
+                    No transactions in this period
                   </TableCell>
                 </TableRow>
               )}
