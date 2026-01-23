@@ -154,8 +154,15 @@ export default function Dashboard() {
   const capacityForecast = useMemo(() => {
     if (!currentFiscalGoal?.revenue_target) return null;
 
-    // Monthly capacity = annual revenue target / 12
-    const monthlyCapacity = currentFiscalGoal.revenue_target / 12;
+    const currentDate = new Date();
+    const fiscalYearEnd = new Date(fiscalYear, fiscalYearStartMonth - 1, 0);
+    const monthsLeftInYear = Math.max(0, (fiscalYearEnd.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+    
+    // Use current year capacity for remaining months, then next year capacity
+    const currentYearMonthlyCapacity = currentFiscalGoal.revenue_target / 12;
+    const nextYearMonthlyCapacity = settings.next_year_revenue_target 
+      ? settings.next_year_revenue_target / 12 
+      : currentYearMonthlyCapacity;
 
     // Sum active construction projects (not closed)
     const activeProjectsValue = projects
@@ -174,17 +181,31 @@ export default function Dashboard() {
     // Total pipeline
     const totalPipeline = activeProjectsValue + preconPipelineValue;
 
-    // Months of backlog
-    const monthsOfBacklog = monthlyCapacity > 0 ? totalPipeline / monthlyCapacity : 0;
+    // Calculate months of backlog with growth consideration
+    let remainingPipeline = totalPipeline;
+    let monthsOfBacklog = 0;
+    
+    // First, use current year's remaining capacity
+    const currentYearCapacity = currentYearMonthlyCapacity * monthsLeftInYear;
+    if (remainingPipeline > currentYearCapacity) {
+      monthsOfBacklog += monthsLeftInYear;
+      remainingPipeline -= currentYearCapacity;
+      // Use next year's capacity for remaining pipeline
+      monthsOfBacklog += remainingPipeline / nextYearMonthlyCapacity;
+    } else {
+      monthsOfBacklog = remainingPipeline / currentYearMonthlyCapacity;
+    }
 
     return {
-      monthlyCapacity,
+      monthlyCapacity: currentYearMonthlyCapacity,
+      nextYearMonthlyCapacity,
       activeProjectsValue,
       preconPipelineValue,
       totalPipeline,
-      monthsOfBacklog
+      monthsOfBacklog,
+      usingGrowthForecast: !!settings.next_year_revenue_target
     };
-  }, [currentFiscalGoal, projects, sales]);
+  }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth]);
 
   // Monthly trend data
   const monthlyTrendData = dateRange.start && dateRange.end ? eachMonthOfInterval({
@@ -422,6 +443,9 @@ export default function Dashboard() {
             </CardTitle>
             <CardDescription>
               Based on FY{fiscalYear} revenue target of ${(currentFiscalGoal.revenue_target / 1000000).toFixed(1)}M
+              {capacityForecast.usingGrowthForecast && settings.next_year_revenue_target && (
+                <> · Next year: ${(settings.next_year_revenue_target / 1000000).toFixed(1)}M</>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -431,7 +455,12 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold text-blue-700">
                   ${(capacityForecast.monthlyCapacity / 1000).toFixed(0)}K
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Per month</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Current year
+                  {capacityForecast.usingGrowthForecast && (
+                    <> · Next: ${(capacityForecast.nextYearMonthlyCapacity / 1000).toFixed(0)}K</>
+                  )}
+                </p>
               </div>
               
               <div className="p-4 bg-white rounded-lg border border-amber-200">

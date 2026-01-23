@@ -37,6 +37,7 @@ export default function CompanySettings() {
     fiscal_year_start_month: '',
     project_closeout_variance_threshold: 3,
     default_currency: 'USD',
+    next_year_revenue_target: '',
     notes: ''
   });
 
@@ -66,6 +67,7 @@ export default function CompanySettings() {
         fiscal_year_start_month: setting.fiscal_year_start_month || '',
         project_closeout_variance_threshold: setting.project_closeout_variance_threshold || 3,
         default_currency: setting.default_currency || 'USD',
+        next_year_revenue_target: setting.next_year_revenue_target || '',
         notes: setting.notes || ''
       });
     }
@@ -135,7 +137,8 @@ export default function CompanySettings() {
     saveSettingsMutation.mutate({
       fiscal_year_start_month: formData.fiscal_year_start_month ? Number(formData.fiscal_year_start_month) : null,
       project_closeout_variance_threshold: formData.project_closeout_variance_threshold ? Number(formData.project_closeout_variance_threshold) : 3,
-      default_currency: formData.default_currency
+      default_currency: formData.default_currency,
+      next_year_revenue_target: formData.next_year_revenue_target ? Number(formData.next_year_revenue_target) : null
     });
   };
 
@@ -308,6 +311,18 @@ export default function CompanySettings() {
                 value={formData.default_currency}
                 onChange={(e) => setFormData({...formData, default_currency: e.target.value})}
                 placeholder="USD" 
+              />
+            </div>
+            <div>
+              <Label>Next Year Revenue Target</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Set the revenue target for next fiscal year to forecast growth capacity
+              </p>
+              <Input 
+                type="number" 
+                value={formData.next_year_revenue_target}
+                onChange={(e) => setFormData({...formData, next_year_revenue_target: e.target.value})}
+                placeholder="6000000" 
               />
             </div>
             <div className="flex justify-end pt-4">
