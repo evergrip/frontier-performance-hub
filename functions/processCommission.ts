@@ -71,8 +71,8 @@ Deno.serve(async (req) => {
     const ytdPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
     const saleAmount = final_amount || sale.contract_value || 0;
     
-    // Use construction volume for tier calculation
-    const ytdVolume = sale_type === 'construction' ? ytdConstructionVolume : ytdConstructionVolume;
+    // Always use construction volume for tier calculation (both sale types use same tiers)
+    const ytdVolume = ytdConstructionVolume;
     const newTotalVolume = ytdVolume + (sale_type === 'construction' ? saleAmount : 0);
     
     // Sort tiers by min_volume
