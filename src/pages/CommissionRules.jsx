@@ -357,16 +357,93 @@ export default function CommissionRules() {
                 </SelectContent>
               </Select>
             </div>
+            {/* Phase Availability */}
             {(formData.sale_type === 'preconstruction' || formData.sale_type === 'both') && (
-              <div>
-                <Label>Preconstruction Banking Rate (%)</Label>
-                <Input
-                  type="number"
-                  value={formData.precon_banking_rate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, precon_banking_rate: parseFloat(e.target.value) || 0 })
-                  }
-                />
+              <div className="space-y-3">
+                <Label className="text-base">Preconstruction Phase Availability</Label>
+                <div className="space-y-2">
+                  {formData.precon_phase_availability?.map((phase, index) => (
+                    <Card key={index} className="p-3 bg-slate-50">
+                      <div className="grid grid-cols-3 gap-3 items-center">
+                        <div>
+                          <p className="font-medium text-sm text-slate-700 capitalize">
+                            {phase.phase.replace(/_/g, ' ')}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Available %</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={phase.available_percentage}
+                            onChange={(e) =>
+                              handlePhaseAvailabilityChange('precon', index, 'available_percentage', parseFloat(e.target.value) || 0)
+                            }
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Banked %</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={phase.banked_percentage}
+                            onChange={(e) =>
+                              handlePhaseAvailabilityChange('precon', index, 'banked_percentage', parseFloat(e.target.value) || 0)
+                            }
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            {(formData.sale_type === 'construction' || formData.sale_type === 'both') && (
+              <div className="space-y-3">
+                <Label className="text-base">Construction Phase Availability</Label>
+                <div className="space-y-2">
+                  {formData.construction_phase_availability?.map((phase, index) => (
+                    <Card key={index} className="p-3 bg-slate-50">
+                      <div className="grid grid-cols-3 gap-3 items-center">
+                        <div>
+                          <p className="font-medium text-sm text-slate-700 capitalize">
+                            {phase.phase.replace(/_/g, ' ')}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Available %</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={phase.available_percentage}
+                            onChange={(e) =>
+                              handlePhaseAvailabilityChange('construction', index, 'available_percentage', parseFloat(e.target.value) || 0)
+                            }
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Banked %</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={phase.banked_percentage}
+                            onChange={(e) =>
+                              handlePhaseAvailabilityChange('construction', index, 'banked_percentage', parseFloat(e.target.value) || 0)
+                            }
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
             <div className="flex items-center gap-2">
