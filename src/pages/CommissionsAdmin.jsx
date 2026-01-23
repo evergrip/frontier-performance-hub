@@ -219,6 +219,7 @@ export default function CommissionsAdmin() {
           </TabsTrigger>
           <TabsTrigger value="banks">Commission Banks</TabsTrigger>
           <TabsTrigger value="history">Payout History</TabsTrigger>
+          <TabsTrigger value="legacy">Legacy Sales</TabsTrigger>
         </TabsList>
 
         {/* Pending Requests Tab */}
