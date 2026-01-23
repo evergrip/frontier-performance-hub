@@ -155,8 +155,6 @@ Deno.serve(async (req) => {
         break;
       }
     }
-    
-    const commissionRate = (commissionAmount / saleAmount) * 100; // Effective blended rate
 
     // Determine banking percentage based on sale type
     let bankingPercentage = 0;
@@ -288,24 +286,28 @@ Deno.serve(async (req) => {
           }
         }
         
-        const newCommissionRate = (newCommissionAmount / saleAmount) * 100;
         const newBankedAmount = (newCommissionAmount * bankingPercentage) / 100;
         const newImmediatePayout = newCommissionAmount - newBankedAmount;
         
         const amountDiff = newCommissionAmount - oldAmount;
         const bankedDiff = newBankedAmount - oldBankedAmount;
 
-        // Build tier breakdown note if applicable
-        const tierBreakdownNote = newTierBreakdown.length > 1 
-          ? `\nTier breakdown: ${newTierBreakdown.map(t => `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`).join(', ')}`
-          : '';
+        // Build tier breakdown note - required for construction, helpful for all
+        let tierBreakdownNote = '';
+        if (sale_type === 'construction' && newTierBreakdown.length > 0) {
+          tierBreakdownNote = `\nTier breakdown: ${newTierBreakdown.map(t => 
+            `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`
+          ).join(' + ')} = Total: $${newCommissionAmount.toLocaleString()}`;
+        } else if (newTierBreakdown.length === 1) {
+          tierBreakdownNote = `\nApplied at ${newTierBreakdown[0].tier_name} tier: $${saleAmount.toLocaleString()} @ ${newTierBreakdown[0].rate}% = $${newCommissionAmount.toLocaleString()}`;
+        }
 
         // Update the transaction with adjustment note
-        const adjustmentNote = `Updated with final ${sale_type} amount: $${saleAmount.toLocaleString()}. Original commission: $${oldAmount.toLocaleString()}, New: $${newCommissionAmount.toLocaleString()}, Adjustment: ${amountDiff >= 0 ? '+' : ''}$${amountDiff.toLocaleString()}${tierBreakdownNote}`;
-        
+        const adjustmentNote = `ADJUSTED: Original sale amount: $${oldSaleAmount.toLocaleString()}, New amount: $${saleAmount.toLocaleString()}. Original commission: $${oldAmount.toLocaleString()}, New commission: $${newCommissionAmount.toLocaleString()}, Net adjustment: ${amountDiff >= 0 ? '+' : ''}$${amountDiff.toLocaleString()}${tierBreakdownNote}`;
+
         await base44.asServiceRole.entities.CommissionTransaction.update(existingTransaction.id, {
           amount: newCommissionAmount,
-          commission_rate: newCommissionRate,
+          commission_rate: null,
           sale_amount: saleAmount,
           tier_at_time: newApplicableTier.tier_name,
           banked_amount: newBankedAmount,
@@ -343,16 +345,21 @@ Deno.serve(async (req) => {
     }
 
     // Create commission transaction with tier breakdown
-    const tierBreakdownNote = tierBreakdown.length > 1 
-      ? `\nTier breakdown: ${tierBreakdown.map(t => `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`).join(', ')}`
-      : '';
-    
+    let tierBreakdownNote = '';
+    if (sale_type === 'construction' && tierBreakdown.length > 0) {
+      tierBreakdownNote = `Tier breakdown: ${tierBreakdown.map(t => 
+        `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`
+      ).join(' + ')} = Total: $${commissionAmount.toLocaleString()}`;
+    } else if (tierBreakdown.length === 1) {
+      tierBreakdownNote = `Applied at ${tierBreakdown[0].tier_name} tier: $${saleAmount.toLocaleString()} @ ${tierBreakdown[0].rate}% = $${commissionAmount.toLocaleString()}`;
+    }
+
     const transaction = await base44.asServiceRole.entities.CommissionTransaction.create({
       user_id: sale.assigned_to,
       sale_id: sale.id,
       transaction_type: 'sale_commission',
       amount: commissionAmount,
-      commission_rate: commissionRate,
+      commission_rate: null,
       sale_amount: saleAmount,
       tier_at_time: applicableTier.tier_name,
       banking_percentage: bankingPercentage,
@@ -360,7 +367,7 @@ Deno.serve(async (req) => {
       immediate_payout_amount: immediatePayout,
       status: 'banked',
       sale_type: sale_type,
-      notes: tierBreakdown.length > 1 ? `Split across tiers${tierBreakdownNote}` : undefined
+      notes: tierBreakdownNote || undefined
     });
 
     // Update commission bank

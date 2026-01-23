@@ -177,8 +177,6 @@ Deno.serve(async (req) => {
             break;
           }
         }
-        
-        const commissionRate = (commissionAmount / saleAmount) * 100; // Effective blended rate
 
         // Determine banking percentage
         let bankingPercentage = 0;
@@ -192,13 +190,18 @@ Deno.serve(async (req) => {
         const immediatePayout = commissionAmount - bankedAmount;
 
         // Update transaction with tier breakdown
-        const tierBreakdownNote = tierBreakdown.length > 1 
-          ? ` Split across: ${tierBreakdown.map(t => `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}%`).join(', ')}`
-          : '';
+        let tierBreakdownNote = '';
+        if (sale_type === 'construction' && tierBreakdown.length > 0) {
+          tierBreakdownNote = ` Tier breakdown: ${tierBreakdown.map(t => 
+            `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`
+          ).join(' + ')} = Total: $${commissionAmount.toLocaleString()}`;
+        } else if (tierBreakdown.length === 1) {
+          tierBreakdownNote = ` Applied at ${tierBreakdown[0].tier_name} tier: $${saleAmount.toLocaleString()} @ ${tierBreakdown[0].rate}% = $${commissionAmount.toLocaleString()}`;
+        }
         
         await base44.asServiceRole.entities.CommissionTransaction.update(transaction.id, {
           amount: commissionAmount,
-          commission_rate: commissionRate,
+          commission_rate: null,
           tier_at_time: applicableTier.tier_name,
           banking_percentage: bankingPercentage,
           banked_amount: bankedAmount,
