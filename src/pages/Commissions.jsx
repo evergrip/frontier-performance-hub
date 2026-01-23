@@ -140,20 +140,39 @@ export default function Commissions() {
     )
     .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
 
-  // Find next tier and calculate progress
-  const currentTier = commissionRule?.tiers?.find(tier => 
-    (commissionBank?.ytd_sales_volume || 0) >= tier.min_volume && 
-    (!tier.max_volume || (commissionBank?.ytd_sales_volume || 0) < tier.max_volume)
+  // Get construction-specific commission rule
+  const { data: allRules = [] } = useQuery({
+    queryKey: ['allCommissionRules', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const userDetails = await base44.entities.User.filter({ id: user.id });
+      if (!userDetails[0]?.commission_rule_ids) return [];
+      return await base44.entities.CommissionRule.filter({ 
+        id: { $in: userDetails[0].commission_rule_ids }
+      });
+    },
+    enabled: !!user,
+  });
+
+  // Find the construction rule for tier calculation (ignore precon-only rules)
+  const constructionRule = allRules.find(rule => 
+    rule.sale_type === 'construction' || rule.sale_type === 'both'
   );
 
-  const sortedTiers = commissionRule?.tiers ? [...commissionRule.tiers].sort((a, b) => a.min_volume - b.min_volume) : [];
+  // Find current tier based on construction sales ONLY
+  const currentTier = constructionRule?.tiers?.find(tier => 
+    ytdConstructionSales >= tier.min_volume && 
+    (!tier.max_volume || ytdConstructionSales < tier.max_volume)
+  );
+
+  const sortedTiers = constructionRule?.tiers ? [...constructionRule.tiers].sort((a, b) => a.min_volume - b.min_volume) : [];
   const currentTierIndex = sortedTiers.findIndex(t => t.tier_name === currentTier?.tier_name);
   const nextTier = currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1 
     ? sortedTiers[currentTierIndex + 1] 
     : null;
 
   const progressToNextTier = nextTier 
-    ? ((commissionBank?.ytd_sales_volume || 0) - (currentTier?.min_volume || 0)) / 
+    ? (ytdConstructionSales - (currentTier?.min_volume || 0)) / 
       (nextTier.min_volume - (currentTier?.min_volume || 0)) * 100
     : 100;
 
