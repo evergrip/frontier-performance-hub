@@ -314,9 +314,12 @@ export default function Commissions() {
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-600 mb-1">Total YTD Sales Volume</p>
+                    <p className="text-xs text-slate-600 mb-1">YTD Construction (Tier Calc)</p>
                     <p className="text-xl font-bold text-slate-900">
-                      ${(commissionBank.ytd_sales_volume || 0).toLocaleString()}
+                      ${ytdConstructionSales.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Total YTD (all sales): ${(commissionBank.ytd_sales_volume || 0).toLocaleString()}
                     </p>
                   </div>
 
