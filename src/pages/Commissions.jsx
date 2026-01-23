@@ -330,7 +330,7 @@ export default function Commissions() {
                           Progress to {nextTier.tier_name}
                         </p>
                         <p className="text-xs text-slate-500">
-                          ${(commissionBank.ytd_sales_volume || 0).toLocaleString()} / ${nextTier.min_volume.toLocaleString()}
+                          ${ytdConstructionSales.toLocaleString()} / ${nextTier.min_volume.toLocaleString()}
                         </p>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-2.5">
@@ -340,7 +340,7 @@ export default function Commissions() {
                         />
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
-                        ${(nextTier.min_volume - (commissionBank.ytd_sales_volume || 0)).toLocaleString()} until next tier ({nextTier.commission_rate}%)
+                        ${(nextTier.min_volume - ytdConstructionSales).toLocaleString()} until next tier ({nextTier.commission_rate}%)
                       </p>
                     </div>
                   )}
