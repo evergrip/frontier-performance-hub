@@ -174,16 +174,44 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Determine banking percentage
-        let bankingPercentage = 0;
+        // Determine available/banked percentages based on phase
+        let availablePercentage = 0;
+        let bankedPercentage = 0;
+        let phaseApplied = 'N/A';
+        
         if (sale_type === 'preconstruction') {
-          bankingPercentage = commissionRule.precon_banking_rate || 25;
+          const phaseAvailability = commissionRule.precon_phase_availability || [];
+          const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
+          if (matchingPhase) {
+            availablePercentage = matchingPhase.available_percentage || 0;
+            bankedPercentage = matchingPhase.banked_percentage || 100;
+            phaseApplied = sale.status;
+          } else {
+            availablePercentage = 0;
+            bankedPercentage = 100;
+          }
         } else if (sale_type === 'construction') {
-          bankingPercentage = 100;
+          // Fetch the project associated with the sale to get its current status
+          const projects = await base44.asServiceRole.entities.Project.filter({ sale_id: sale.id });
+          const currentProject = projects[0];
+
+          if (currentProject) {
+            const phaseAvailability = commissionRule.construction_phase_availability || [];
+            const matchingPhase = phaseAvailability.find(p => p.phase === currentProject.status);
+            if (matchingPhase) {
+              availablePercentage = matchingPhase.available_percentage || 0;
+              bankedPercentage = matchingPhase.banked_percentage || 100;
+              phaseApplied = currentProject.status;
+            } else {
+              availablePercentage = 0;
+              bankedPercentage = 100;
+            }
+          }
         }
 
-        const bankedAmount = (commissionAmount * bankingPercentage) / 100;
-        const immediatePayout = commissionAmount - bankedAmount;
+        const availableAmount = (commissionAmount * availablePercentage) / 100;
+        const bankedAmount = (commissionAmount * bankedPercentage) / 100;
+        const immediatePayout = availableAmount;
 
         // Update transaction with tier breakdown
         let tierBreakdownNote = '';
@@ -199,7 +227,10 @@ Deno.serve(async (req) => {
           amount: commissionAmount,
           commission_rate: null,
           tier_at_time: applicableTier.tier_name,
-          banking_percentage: bankingPercentage,
+          phase_name: phaseApplied,
+          phase_payout_percentage: availablePercentage,
+          amount_made_available: availableAmount,
+          banking_percentage: bankedPercentage,
           banked_amount: bankedAmount,
           immediate_payout_amount: immediatePayout,
           sale_type: sale_type,
