@@ -435,7 +435,7 @@ export default function Projects() {
           <form onSubmit={handleAdvanceStatus} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
-              <p className="text-xs text-slate-500">{getClientName(selectedProject?.client_id)}</p>
+              <p className="text-xs text-slate-500">{getProjectClientName(selectedProject)}</p>
             </div>
 
             <div>
@@ -510,7 +510,7 @@ export default function Projects() {
           <form onSubmit={handleUpdateProject} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
-              <p className="text-xs text-slate-500">{getClientName(selectedProject?.client_id)}</p>
+              <p className="text-xs text-slate-500">{getProjectClientName(selectedProject)}</p>
             </div>
 
             <div>
