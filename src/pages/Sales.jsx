@@ -755,7 +755,7 @@ export default function Sales() {
             <div>
               <Label>Construction Budget *</Label>
               <p className="text-xs text-slate-500 mb-2">
-                Final construction contract value
+                Pre-filled with latest estimate. Override as needed.
               </p>
               <Input
                 type="number"
