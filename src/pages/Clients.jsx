@@ -200,11 +200,10 @@ export default function Clients() {
           <form onSubmit={handleCreateClient} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Company Name *</Label>
+                <Label>Company Name</Label>
                 <Input
                   value={clientForm.company_name}
                   onChange={(e) => setClientForm({...clientForm, company_name: e.target.value})}
-                  required
                 />
               </div>
               <div>
