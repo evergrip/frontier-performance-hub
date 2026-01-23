@@ -9,9 +9,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Get all commission transactions
+    // Get all commission transactions and sort by creation date
     const allTransactions = await base44.asServiceRole.entities.CommissionTransaction.list();
-    const saleCommissions = allTransactions.filter(t => t.transaction_type === 'sale_commission' && t.sale_id);
+    const saleCommissions = allTransactions
+      .filter(t => t.transaction_type === 'sale_commission' && t.sale_id)
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
     const results = [];
     const errors = [];
