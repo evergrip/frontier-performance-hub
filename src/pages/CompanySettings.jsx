@@ -35,6 +35,7 @@ export default function CompanySettings() {
     website: '',
     tax_id: '',
     fiscal_year_start_month: '',
+    project_closeout_variance_threshold: 3,
     default_currency: 'USD',
     notes: ''
   });
@@ -63,6 +64,7 @@ export default function CompanySettings() {
         website: setting.website || '',
         tax_id: setting.tax_id || '',
         fiscal_year_start_month: setting.fiscal_year_start_month || '',
+        project_closeout_variance_threshold: setting.project_closeout_variance_threshold || 3,
         default_currency: setting.default_currency || 'USD',
         notes: setting.notes || ''
       });
@@ -132,6 +134,7 @@ export default function CompanySettings() {
     e.preventDefault();
     saveSettingsMutation.mutate({
       fiscal_year_start_month: formData.fiscal_year_start_month ? Number(formData.fiscal_year_start_month) : null,
+      project_closeout_variance_threshold: formData.project_closeout_variance_threshold ? Number(formData.project_closeout_variance_threshold) : 3,
       default_currency: formData.default_currency
     });
   };
@@ -283,6 +286,20 @@ export default function CompanySettings() {
                   <SelectItem value="12">December</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Project Closeout Variance Threshold (%)</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                When actual gross revenue differs from contract value by more than this percentage, 
+                construction managers must explain the variance during project closeout.
+              </p>
+              <Input 
+                type="number" 
+                step="0.1"
+                value={formData.project_closeout_variance_threshold}
+                onChange={(e) => setFormData({...formData, project_closeout_variance_threshold: e.target.value})}
+                placeholder="3" 
+              />
             </div>
             <div>
               <Label>Default Currency</Label>
