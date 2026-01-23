@@ -194,7 +194,11 @@ Deno.serve(async (req) => {
           old_amount: transaction.amount,
           new_amount: commissionAmount,
           rule_used: commissionRule.rule_name,
-          tier: applicableTier.tier_name
+          tier: applicableTier.tier_name,
+          ytd_before: ytdVolume,
+          ytd_after: newYtdVolume,
+          sale_amount: saleAmount,
+          tier_breakdown: tierBreakdown
         });
 
       } catch (error) {
