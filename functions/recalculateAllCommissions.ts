@@ -82,20 +82,70 @@ Deno.serve(async (req) => {
           });
         }
 
-        // Calculate commission based on current YTD (accumulated so far)
+        // Calculate commission with tier splitting
         const ytdVolume = commissionBank.ytd_sales_volume || 0;
-        let applicableTier = commissionRule.tiers[0];
+        const saleAmount = transaction.sale_amount || sale.contract_value || 0;
+        const newTotalVolume = ytdVolume + saleAmount;
         
-        for (const tier of commissionRule.tiers) {
-          if (ytdVolume >= tier.min_volume && (!tier.max_volume || ytdVolume < tier.max_volume)) {
+        // Sort tiers by min_volume
+        const sortedTiers = [...commissionRule.tiers].sort((a, b) => a.min_volume - b.min_volume);
+        
+        let commissionAmount = 0;
+        let remainingAmount = saleAmount;
+        let currentVolume = ytdVolume;
+        let tierBreakdown = [];
+        
+        // Calculate commission across tiers
+        for (let i = 0; i < sortedTiers.length; i++) {
+          const tier = sortedTiers[i];
+          const nextTier = sortedTiers[i + 1];
+          
+          // Skip if we haven't reached this tier yet
+          if (currentVolume >= (tier.max_volume || Infinity)) {
+            continue;
+          }
+          
+          // Calculate how much of the sale falls in this tier
+          const tierStart = Math.max(tier.min_volume, currentVolume);
+          const tierEnd = nextTier ? nextTier.min_volume : Infinity;
+          const tierCap = tier.max_volume || Infinity;
+          const effectiveTierEnd = Math.min(tierEnd, tierCap);
+          
+          // How much volume can fit in this tier
+          const volumeInTier = Math.min(
+            effectiveTierEnd - currentVolume,
+            remainingAmount
+          );
+          
+          if (volumeInTier > 0) {
+            const tierCommission = (volumeInTier * tier.commission_rate) / 100;
+            commissionAmount += tierCommission;
+            currentVolume += volumeInTier;
+            remainingAmount -= volumeInTier;
+            
+            tierBreakdown.push({
+              tier_name: tier.tier_name,
+              amount: volumeInTier,
+              rate: tier.commission_rate,
+              commission: tierCommission
+            });
+          }
+          
+          if (remainingAmount <= 0 || currentVolume >= newTotalVolume) {
+            break;
+          }
+        }
+        
+        // Get the final tier for recording purposes
+        let applicableTier = sortedTiers[0];
+        for (const tier of sortedTiers) {
+          if (newTotalVolume >= tier.min_volume && (!tier.max_volume || newTotalVolume < tier.max_volume)) {
             applicableTier = tier;
             break;
           }
         }
-
-        const commissionRate = applicableTier.commission_rate || 0;
-        const saleAmount = transaction.sale_amount || sale.contract_value || 0;
-        const commissionAmount = (saleAmount * commissionRate) / 100;
+        
+        const commissionRate = (commissionAmount / saleAmount) * 100; // Effective blended rate
 
         // Determine banking percentage
         let bankingPercentage = 0;
@@ -108,7 +158,11 @@ Deno.serve(async (req) => {
         const bankedAmount = (commissionAmount * bankingPercentage) / 100;
         const immediatePayout = commissionAmount - bankedAmount;
 
-        // Update transaction
+        // Update transaction with tier breakdown
+        const tierBreakdownNote = tierBreakdown.length > 1 
+          ? ` Split across: ${tierBreakdown.map(t => `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}%`).join(', ')}`
+          : '';
+        
         await base44.asServiceRole.entities.CommissionTransaction.update(transaction.id, {
           amount: commissionAmount,
           commission_rate: commissionRate,
@@ -117,7 +171,7 @@ Deno.serve(async (req) => {
           banked_amount: bankedAmount,
           immediate_payout_amount: immediatePayout,
           sale_type: sale_type,
-          notes: `Recalculated using ${sale_type} rules (${commissionRule.rule_name})`
+          notes: `Recalculated using ${sale_type} rules (${commissionRule.rule_name}).${tierBreakdownNote}`
         });
 
         // Update commission bank
