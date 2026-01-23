@@ -165,8 +165,8 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
                 onDragStart={() => handleDragStart(project)}
                 className="p-3 rounded-lg border-2 cursor-move hover:shadow-md transition-all group text-white"
                 style={{
-                  backgroundColor: getProjectColor(index),
-                  borderColor: getProjectColor(index),
+                  backgroundColor: getProjectColor(project, index),
+                  borderColor: getProjectColor(project, index),
                 }}
               >
                 <div className="font-medium text-sm">{project.title}</div>
