@@ -226,9 +226,10 @@ export default function Projects() {
     
     updateProjectStatusMutation.mutate({
       projectId: selectedProject.id,
-      status: selectedProject.status, // Keep same status
+      status: selectedProject.status,
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
-      actual_margin: parseFloat(projectForm.actual_margin) || 0
+      actual_margin: parseFloat(projectForm.actual_margin) || 0,
+      client_id: projectForm.client_id || selectedProject.client_id
     });
     setEditDialogOpen(false);
   };
