@@ -410,11 +410,12 @@ export default function Sales() {
     
     const newStatus = destination.droppableId;
     const saleId = draggableId;
+    const sale = sales.find(s => s.id === saleId);
     
     updateSaleStatusMutation.mutate({
       saleId,
       status: newStatus,
-      estimated_construction_budget: null
+      estimated_construction_budget: sale?.estimated_construction_budget || null
     });
   };
 
