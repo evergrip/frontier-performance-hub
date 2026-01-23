@@ -300,8 +300,32 @@ Deno.serve(async (req) => {
           }
         }
         
-        const newBankedAmount = (newCommissionAmount * bankingPercentage) / 100;
-        const newImmediatePayout = newCommissionAmount - newBankedAmount;
+        let newAvailablePercentage = 0;
+        let newBankedPercentage = 0;
+        if (sale_type === 'preconstruction') {
+          const phaseAvailability = commissionRule.precon_phase_availability || [];
+          const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
+          if (matchingPhase) {
+            newAvailablePercentage = matchingPhase.available_percentage || 0;
+            newBankedPercentage = matchingPhase.banked_percentage || 100;
+          } else {
+            newAvailablePercentage = 0;
+            newBankedPercentage = 100;
+          }
+        } else if (sale_type === 'construction') {
+          const phaseAvailability = commissionRule.construction_phase_availability || [];
+          const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
+          if (matchingPhase) {
+            newAvailablePercentage = matchingPhase.available_percentage || 0;
+            newBankedPercentage = matchingPhase.banked_percentage || 100;
+          } else {
+            newAvailablePercentage = 0;
+            newBankedPercentage = 100;
+          }
+        }
+        const newBankedAmount = (newCommissionAmount * newBankedPercentage) / 100;
+        const newAvailableAmount = (newCommissionAmount * newAvailablePercentage) / 100;
+        const newImmediatePayout = newAvailableAmount;
         
         const amountDiff = newCommissionAmount - oldAmount;
         const bankedDiff = newBankedAmount - oldBankedAmount;
