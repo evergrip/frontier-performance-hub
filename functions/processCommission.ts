@@ -168,12 +168,14 @@ Deno.serve(async (req) => {
     const bankedAmount = (commissionAmount * bankingPercentage) / 100;
     const immediatePayout = commissionAmount - bankedAmount;
 
-    // If this is an update, find and update existing transaction
-    if (is_update) {
-      const existingTransactions = await base44.asServiceRole.entities.CommissionTransaction.filter({ 
-        sale_id: sale.id 
-      });
-      
+    // Check if transaction already exists for this sale
+    const existingTransactions = await base44.asServiceRole.entities.CommissionTransaction.filter({ 
+      sale_id: sale.id,
+      transaction_type: 'sale_commission'
+    });
+    
+    // If this is an update OR if a transaction already exists, update instead of creating new
+    if (is_update || existingTransactions.length > 0) {
       if (existingTransactions.length > 0) {
         const existingTransaction = existingTransactions[0];
         const oldSaleAmount = existingTransaction.sale_amount || 0;
