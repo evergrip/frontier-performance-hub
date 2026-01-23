@@ -14,12 +14,19 @@ export default function Projects() {
   });
 
   const statusColors = {
-    planning: 'bg-blue-500',
-    design: 'bg-purple-500',
-    permitting: 'bg-yellow-500',
-    execution: 'bg-green-500',
-    completion: 'bg-emerald-500',
+    awaiting_to_be_scheduled: 'bg-slate-400',
+    mobilization: 'bg-blue-500',
+    active_construction: 'bg-green-500',
+    substantial_completion_closeout: 'bg-amber-500',
     closed: 'bg-slate-500'
+  };
+
+  const statusLabels = {
+    awaiting_to_be_scheduled: 'Awaiting to be Scheduled',
+    mobilization: 'Mobilization',
+    active_construction: 'Active Construction',
+    substantial_completion_closeout: 'Substantial Completion & Closeout',
+    closed: 'Closed'
   };
 
   return (
@@ -37,7 +44,7 @@ export default function Projects() {
                 <div className="flex-1">
                   <CardTitle className="text-lg mb-2">{project.title}</CardTitle>
                   <Badge className={statusColors[project.status]}>
-                    {project.status}
+                    {statusLabels[project.status] || project.status}
                   </Badge>
                 </div>
                 <Building2 className="w-5 h-5 text-slate-400" />

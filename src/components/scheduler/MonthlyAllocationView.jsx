@@ -186,7 +186,7 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
                         <div
                               key={project.id}
                               className="p-2 rounded text-white text-xs"
-                              style={{ backgroundColor: getProjectColor(projects.findIndex(p => p.id === project.id)) }}
+                              style={{ backgroundColor: getProjectColor(idx) }}
                             >
                           <div className="flex items-start justify-between gap-1">
                             <div>
