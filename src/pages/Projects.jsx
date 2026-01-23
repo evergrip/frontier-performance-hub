@@ -386,15 +386,11 @@ export default function Projects() {
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="text-xs text-slate-700 space-y-1">
                   <div className="flex justify-between">
-                    <span>Contract Value:</span>
+                    <span>Original Contract Value:</span>
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Actual Costs:</span>
-                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Gross Revenue:</span>
+                    <span>Actual Gross Revenue:</span>
                     <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
