@@ -203,6 +203,13 @@ export default function CommissionRules() {
     setFormData({ ...formData, tiers: newTiers });
   };
 
+  const handlePhaseAvailabilityChange = (type, index, field, value) => {
+    const key = type === 'precon' ? 'precon_phase_availability' : 'construction_phase_availability';
+    const newPhases = [...formData[key]];
+    newPhases[index] = { ...newPhases[index], [field]: value };
+    setFormData({ ...formData, [key]: newPhases });
+  };
+
   const handleDeleteRule = (id) => {
     if (confirm('Are you sure you want to delete this commission rule?')) {
       deleteRuleMutation.mutate(id);
