@@ -43,6 +43,15 @@ export default function Commissions() {
     enabled: !!user,
   });
 
+  const { data: commissionRule } = useQuery({
+    queryKey: ['commissionRule', commissionBank?.commission_rule_id],
+    queryFn: async () => {
+      if (!commissionBank?.commission_rule_id) return null;
+      return await base44.entities.CommissionRule.get(commissionBank.commission_rule_id);
+    },
+    enabled: !!commissionBank?.commission_rule_id,
+  });
+
   const { data: companySettings } = useQuery({
     queryKey: ['companySettings'],
     queryFn: async () => {
@@ -110,6 +119,43 @@ export default function Commissions() {
   };
 
   const filteredTransactions = getFilteredTransactions();
+
+  // Calculate YTD sales by type for current fiscal year
+  const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+  const fiscalYearStart = getFiscalYearStart(fiscalStartMonth);
+  
+  const ytdPreconSales = transactions
+    .filter(t => 
+      t.transaction_type === 'sale_commission' && 
+      t.sale_type === 'preconstruction' &&
+      new Date(t.created_date) >= fiscalYearStart
+    )
+    .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
+
+  const ytdConstructionSales = transactions
+    .filter(t => 
+      t.transaction_type === 'sale_commission' && 
+      t.sale_type === 'construction' &&
+      new Date(t.created_date) >= fiscalYearStart
+    )
+    .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
+
+  // Find next tier and calculate progress
+  const currentTier = commissionRule?.tiers?.find(tier => 
+    (commissionBank?.ytd_sales_volume || 0) >= tier.min_volume && 
+    (!tier.max_volume || (commissionBank?.ytd_sales_volume || 0) < tier.max_volume)
+  );
+
+  const sortedTiers = commissionRule?.tiers ? [...commissionRule.tiers].sort((a, b) => a.min_volume - b.min_volume) : [];
+  const currentTierIndex = sortedTiers.findIndex(t => t.tier_name === currentTier?.tier_name);
+  const nextTier = currentTierIndex >= 0 && currentTierIndex < sortedTiers.length - 1 
+    ? sortedTiers[currentTierIndex + 1] 
+    : null;
+
+  const progressToNextTier = nextTier 
+    ? ((commissionBank?.ytd_sales_volume || 0) - (currentTier?.min_volume || 0)) / 
+      (nextTier.min_volume - (currentTier?.min_volume || 0)) * 100
+    : 100;
 
   const { data: payouts = [] } = useQuery({
     queryKey: ['commissionPayouts', user?.id],
@@ -221,62 +267,120 @@ export default function Commissions() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold text-slate-900">{commissionBank.current_tier || 'Not Set'}</p>
-                <p className="text-sm text-slate-500 mt-1">
-                  YTD Sales Volume: ${(commissionBank.ytd_sales_volume || 0).toLocaleString()}
-                </p>
-              </div>
-              <Dialog open={balloonDialogOpen} onOpenChange={setBalloonDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700">
-                    Request Balloon Payment
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Request Balloon Payment</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label>Available Balance</Label>
-                      <p className="text-2xl font-bold text-emerald-600">
-                        ${(commissionBank?.available_balance || 0).toLocaleString()}
+            <div className="space-y-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-4 flex-1">
+                  <div>
+                    <p className="text-2xl font-bold text-slate-900">{commissionBank.current_tier || 'Not Set'}</p>
+                    {currentTier && (
+                      <p className="text-sm text-slate-500">
+                        Commission Rate: {currentTier.commission_rate}%
                       </p>
-                      <p className="text-xs text-slate-500">
-                        Banked (not yet available): ${(commissionBank?.current_bank_balance || 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Requested Amount</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder="0.00"
-                        value={requestedAmount}
-                        onChange={(e) => setRequestedAmount(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Reason (Optional)</Label>
-                      <Textarea
-                        id="notes"
-                        placeholder="Enter reason for balloon payment request..."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleBalloonRequest}
-                      disabled={requestBalloonMutation.isPending}
-                      className="w-full bg-amber-500 hover:bg-amber-600"
-                    >
-                      {requestBalloonMutation.isPending ? 'Submitting...' : 'Submit Request'}
-                    </Button>
+                    )}
                   </div>
-                </DialogContent>
-              </Dialog>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-slate-600 mb-1">YTD Pre-Construction</p>
+                      <p className="text-lg font-bold text-blue-600">
+                        ${ytdPreconSales.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-emerald-50 rounded-lg">
+                      <p className="text-xs text-slate-600 mb-1">YTD Construction</p>
+                      <p className="text-lg font-bold text-emerald-600">
+                        ${ytdConstructionSales.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-600 mb-1">Total YTD Sales Volume</p>
+                    <p className="text-xl font-bold text-slate-900">
+                      ${(commissionBank.ytd_sales_volume || 0).toLocaleString()}
+                    </p>
+                  </div>
+
+                  {nextTier && (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-xs font-medium text-slate-600">
+                          Progress to {nextTier.tier_name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          ${(commissionBank.ytd_sales_volume || 0).toLocaleString()} / ${nextTier.min_volume.toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-gradient-to-r from-amber-400 to-amber-600 h-2.5 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(progressToNextTier, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">
+                        ${(nextTier.min_volume - (commissionBank.ytd_sales_volume || 0)).toLocaleString()} until next tier ({nextTier.commission_rate}%)
+                      </p>
+                    </div>
+                  )}
+                  {!nextTier && currentTier && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-xs text-amber-800">
+                        🎉 You've reached the highest tier!
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <Dialog open={balloonDialogOpen} onOpenChange={setBalloonDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 ml-4">
+                      Request Balloon Payment
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Request Balloon Payment</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label>Available Balance</Label>
+                        <p className="text-2xl font-bold text-emerald-600">
+                          ${(commissionBank?.available_balance || 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Banked (not yet available): ${(commissionBank?.current_bank_balance || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">Requested Amount</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          placeholder="0.00"
+                          value={requestedAmount}
+                          onChange={(e) => setRequestedAmount(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Reason (Optional)</Label>
+                        <Textarea
+                          id="notes"
+                          placeholder="Enter reason for balloon payment request..."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleBalloonRequest}
+                        disabled={requestBalloonMutation.isPending}
+                        className="w-full bg-amber-500 hover:bg-amber-600"
+                      >
+                        {requestBalloonMutation.isPending ? 'Submitting...' : 'Submit Request'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardContent>
         </Card>
