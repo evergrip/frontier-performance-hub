@@ -113,6 +113,41 @@ export default function CommissionsAdmin() {
     },
   });
 
+  const legacySaleMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('addLegacySale', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCommissionBanks'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransactions'] });
+      toast.success('Legacy sale added successfully');
+      setLegacySaleDialogOpen(false);
+      setLegacySaleForm({
+        lead_name: '',
+        sale_date: '',
+        sale_amount: '',
+        commission_amount: '',
+        salesperson_id: ''
+      });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to add legacy sale');
+    },
+  });
+
+  const handleAddLegacySale = (e) => {
+    e.preventDefault();
+    if (!legacySaleForm.lead_name || !legacySaleForm.sale_date || !legacySaleForm.sale_amount || !legacySaleForm.commission_amount || !legacySaleForm.salesperson_id) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    legacySaleMutation.mutate({
+      lead_name: legacySaleForm.lead_name,
+      sale_date: legacySaleForm.sale_date,
+      sale_amount: parseFloat(legacySaleForm.sale_amount),
+      commission_amount: parseFloat(legacySaleForm.commission_amount),
+      salesperson_id: legacySaleForm.salesperson_id
+    });
+  };
+
   const getUserName = (userId) => {
     const user = users.find(u => u.id === userId);
     return user ? user.full_name : 'Unknown';
