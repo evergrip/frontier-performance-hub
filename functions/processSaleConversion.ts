@@ -132,8 +132,11 @@ Deno.serve(async (req) => {
             // Process commission if not already done
             if (!sale.commission_processed) {
                 try {
-                    await base44.functions.invoke('calculateCommission', { 
-                        sale_id: sale.id 
+                    await base44.functions.invoke('processCommission', {
+                        sale_id: sale.id,
+                        sale_type: sale.sale_type,
+                        final_amount: sale.contract_value,
+                        is_update: false
                     });
                 } catch (commError) {
                     console.error('Commission calculation error:', commError);
