@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { sale_id, sale_type } = await req.json();
+    const { sale_id, sale_type, final_amount, is_update } = await req.json();
 
     if (!sale_id || !sale_type) {
       return Response.json({ error: 'Missing sale_id or sale_type' }, { status: 400 });
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     }
 
     const commissionRate = applicableTier.commission_rate || 0;
-    const saleAmount = sale.contract_value || 0;
+    const saleAmount = final_amount || sale.contract_value || 0;
     const commissionAmount = (saleAmount * commissionRate) / 100;
 
     // Determine banking percentage based on sale type
@@ -80,6 +80,51 @@ Deno.serve(async (req) => {
 
     const bankedAmount = (commissionAmount * bankingPercentage) / 100;
     const immediatePayout = commissionAmount - bankedAmount;
+
+    // If this is an update, find and update existing transaction
+    if (is_update) {
+      const existingTransactions = await base44.asServiceRole.entities.CommissionTransaction.filter({ 
+        sale_id: sale.id 
+      });
+      
+      if (existingTransactions.length > 0) {
+        const existingTransaction = existingTransactions[0];
+        const oldAmount = existingTransaction.amount || 0;
+        const oldBankedAmount = existingTransaction.banked_amount || 0;
+        const amountDiff = commissionAmount - oldAmount;
+        const bankedDiff = bankedAmount - oldBankedAmount;
+
+        // Update the transaction
+        await base44.asServiceRole.entities.CommissionTransaction.update(existingTransaction.id, {
+          amount: commissionAmount,
+          commission_rate: commissionRate,
+          sale_amount: saleAmount,
+          tier_at_time: applicableTier.tier_name,
+          banked_amount: bankedAmount,
+          immediate_payout_amount: immediatePayout,
+          notes: `Updated with final amount: $${saleAmount.toLocaleString()}`
+        });
+
+        // Update commission bank with the difference
+        const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedDiff;
+        const newTotalEarned = (commissionBank.total_earned || 0) + amountDiff;
+
+        await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
+          current_bank_balance: newBankBalance,
+          total_earned: newTotalEarned
+        });
+
+        return Response.json({
+          success: true,
+          updated: true,
+          transaction: existingTransaction,
+          commission_amount: commissionAmount,
+          banked_amount: bankedAmount,
+          immediate_payout: immediatePayout,
+          new_bank_balance: newBankBalance
+        });
+      }
+    }
 
     // Create commission transaction
     const transaction = await base44.asServiceRole.entities.CommissionTransaction.create({
