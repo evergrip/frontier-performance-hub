@@ -81,18 +81,19 @@ Deno.serve(async (req) => {
     // Calculate commission across tiers
     for (let i = 0; i < sortedTiers.length; i++) {
       const tier = sortedTiers[i];
-      const nextTier = sortedTiers[i + 1];
       
-      // Skip if we haven't reached this tier yet
-      if (currentVolume >= (tier.max_volume || Infinity)) {
+      // Skip if we're already past this tier
+      if (currentVolume > (tier.max_volume || Infinity)) {
         continue;
       }
       
-      // Calculate how much of the sale falls in this tier
-      const tierStart = Math.max(tier.min_volume, currentVolume);
-      const tierEnd = nextTier ? nextTier.min_volume : Infinity;
-      const tierCap = tier.max_volume || Infinity;
-      const effectiveTierEnd = Math.min(tierEnd, tierCap);
+      // Skip if we haven't reached this tier's minimum yet
+      if (currentVolume < tier.min_volume) {
+        continue;
+      }
+      
+      // Calculate the effective end of this tier
+      const effectiveTierEnd = tier.max_volume || Infinity;
       
       // How much volume can fit in this tier
       const volumeInTier = Math.min(
@@ -114,7 +115,7 @@ Deno.serve(async (req) => {
         });
       }
       
-      if (remainingAmount <= 0 || currentVolume >= newTotalVolume) {
+      if (remainingAmount <= 0) {
         break;
       }
     }
@@ -176,18 +177,19 @@ Deno.serve(async (req) => {
         // Calculate commission across tiers from scratch
         for (let i = 0; i < sortedTiers.length; i++) {
           const tier = sortedTiers[i];
-          const nextTier = sortedTiers[i + 1];
           
-          // Skip if we haven't reached this tier yet
-          if (newCurrentVolume >= (tier.max_volume || Infinity)) {
+          // Skip if we're already past this tier
+          if (newCurrentVolume > (tier.max_volume || Infinity)) {
             continue;
           }
           
-          // Calculate how much of the sale falls in this tier
-          const tierStart = Math.max(tier.min_volume, newCurrentVolume);
-          const tierEnd = nextTier ? nextTier.min_volume : Infinity;
-          const tierCap = tier.max_volume || Infinity;
-          const effectiveTierEnd = Math.min(tierEnd, tierCap);
+          // Skip if we haven't reached this tier's minimum yet
+          if (newCurrentVolume < tier.min_volume) {
+            continue;
+          }
+          
+          // Calculate the effective end of this tier
+          const effectiveTierEnd = tier.max_volume || Infinity;
           
           // How much volume can fit in this tier
           const volumeInTier = Math.min(
