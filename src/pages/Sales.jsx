@@ -247,10 +247,24 @@ export default function Sales() {
     setInvoiceDialogOpen(true);
   };
 
-  const handleAdvancePhase = (e) => {
+  const handleAdvancePhase = async (e) => {
     e.preventDefault();
     const nextStatus = getNextStatus(selectedSale.status);
     if (!nextStatus) return;
+
+    // If moving from engineering_permits, update commission with actual precon cost
+    if (selectedSale.status === 'engineering_permits') {
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: selectedSale.id,
+          sale_type: 'preconstruction',
+          final_amount: selectedSale.contract_value,
+          is_update: true
+        });
+      } catch (error) {
+        console.error('Commission update failed:', error);
+      }
+    }
 
     updateSaleStatusMutation.mutate({
       saleId: selectedSale.id,

@@ -122,7 +122,7 @@ export default function Projects() {
     });
   };
 
-  const handleCloseoutProject = (e) => {
+  const handleCloseoutProject = async (e) => {
     e.preventDefault();
     
     const actualGrossRevenue = parseFloat(projectForm.actual_costs) || 0;
@@ -133,6 +133,20 @@ export default function Projects() {
     if (variancePercent > threshold && !projectForm.variance_explanation.trim()) {
       toast.error(`Variance exceeds ${threshold}%. Please explain the difference.`);
       return;
+    }
+    
+    // Update commission with actual construction cost
+    if (selectedProject.sale_id) {
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: selectedProject.sale_id,
+          sale_type: 'construction',
+          final_amount: actualGrossRevenue,
+          is_update: true
+        });
+      } catch (error) {
+        console.error('Commission update failed:', error);
+      }
     }
     
     updateProjectStatusMutation.mutate({

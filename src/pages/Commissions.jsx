@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History } from 'lucide-react';
+import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import StatCard from '@/components/common/StatCard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,6 +17,8 @@ import { format } from 'date-fns';
 export default function Commissions() {
   const [user, setUser] = useState(null);
   const [balloonDialogOpen, setBalloonDialogOpen] = useState(false);
+  const [transactionDetailOpen, setTransactionDetailOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [requestedAmount, setRequestedAmount] = useState('');
   const [notes, setNotes] = useState('');
   const queryClient = useQueryClient();
@@ -43,9 +45,15 @@ export default function Commissions() {
     queryKey: ['commissionTransactions', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      return await base44.entities.CommissionTransaction.filter({ user_id: user.id });
+      return await base44.entities.CommissionTransaction.filter({ user_id: user.id }, '-created_date');
     },
     enabled: !!user,
+  });
+
+  const { data: sales = [] } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => base44.entities.Sale.list(),
+    initialData: [],
   });
 
   const { data: payouts = [] } = useQuery({
@@ -88,6 +96,16 @@ export default function Commissions() {
 
   const pendingPayouts = payouts.filter(p => p.status === 'pending');
   const approvedPayouts = payouts.filter(p => p.status === 'approved' || p.status === 'paid');
+
+  const getSaleName = (saleId) => {
+    const sale = sales.find(s => s.id === saleId);
+    return sale ? `${sale.title} (${sale.sale_type})` : 'Unknown Sale';
+  };
+
+  const openTransactionDetail = (transaction) => {
+    setSelectedTransaction(transaction);
+    setTransactionDetailOpen(true);
+  };
 
   if (bankLoading) {
     return (
@@ -246,6 +264,7 @@ export default function Commissions() {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Sale/Project</TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
@@ -253,10 +272,17 @@ export default function Commissions() {
             </TableHeader>
             <TableBody>
               {transactions.slice(0, 10).map((transaction) => (
-                <TableRow key={transaction.id}>
+                <TableRow 
+                  key={transaction.id} 
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => openTransactionDetail(transaction)}
+                >
                   <TableCell>{format(new Date(transaction.created_date), 'MMM d, yyyy')}</TableCell>
                   <TableCell className="capitalize">{transaction.transaction_type.replace('_', ' ')}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-xs">
+                    {transaction.sale_id ? getSaleName(transaction.sale_id) : '-'}
+                  </TableCell>
+                  <TableCell className="text-xs">
                     {transaction.phase_name && `Phase: ${transaction.phase_name}`}
                     {transaction.tier_at_time && ` (${transaction.tier_at_time})`}
                   </TableCell>
@@ -270,7 +296,7 @@ export default function Commissions() {
               ))}
               {transactions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-slate-500 py-8">
+                  <TableCell colSpan={6} className="text-center text-slate-500 py-8">
                     No transactions yet
                   </TableCell>
                 </TableRow>
@@ -314,6 +340,127 @@ export default function Commissions() {
           </CardContent>
         </Card>
       )}
+
+      {/* Transaction Detail Dialog */}
+      <Dialog open={transactionDetailOpen} onOpenChange={setTransactionDetailOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Commission Transaction Details</DialogTitle>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500">Transaction Date</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {format(new Date(selectedTransaction.created_date), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Type</p>
+                    <p className="text-sm font-semibold text-slate-900 capitalize">
+                      {selectedTransaction.transaction_type.replace('_', ' ')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Amount</p>
+                    <p className="text-lg font-bold text-emerald-600">
+                      ${selectedTransaction.amount.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Status</p>
+                    <Badge variant={selectedTransaction.status === 'banked' ? 'default' : 'secondary'}>
+                      {selectedTransaction.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {selectedTransaction.sale_id && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Sale Information</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-xs text-slate-600">Sale:</span>
+                      <span className="text-sm font-medium text-slate-900">
+                        {getSaleName(selectedTransaction.sale_id)}
+                      </span>
+                    </div>
+                    {selectedTransaction.sale_amount && (
+                      <div className="flex justify-between">
+                        <span className="text-xs text-slate-600">Sale Amount:</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          ${selectedTransaction.sale_amount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedTransaction.commission_rate && (
+                      <div className="flex justify-between">
+                        <span className="text-xs text-slate-600">Commission Rate:</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {selectedTransaction.commission_rate}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {(selectedTransaction.banked_amount || selectedTransaction.immediate_payout_amount) && (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-2">Commission Breakdown</h4>
+                  <div className="space-y-2">
+                    {selectedTransaction.banked_amount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-xs text-slate-600">Banked:</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          ${selectedTransaction.banked_amount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedTransaction.immediate_payout_amount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-xs text-slate-600">Immediate Payout:</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          ${selectedTransaction.immediate_payout_amount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    {selectedTransaction.banking_percentage && (
+                      <div className="flex justify-between">
+                        <span className="text-xs text-slate-600">Banking Percentage:</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {selectedTransaction.banking_percentage}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedTransaction.notes && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 mb-1">Notes</h4>
+                      <p className="text-xs text-slate-700">{selectedTransaction.notes}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setTransactionDetailOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
