@@ -20,7 +20,8 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectForm, setProjectForm] = useState({
     actual_costs: '',
-    actual_margin: ''
+    actual_margin: '',
+    variance_explanation: ''
   });
 
   const { data: projects = [] } = useQuery({
@@ -33,6 +34,14 @@ export default function Projects() {
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list(),
     initialData: [],
+  });
+
+  const { data: companySettings } = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => {
+      const settings = await base44.entities.CompanySettings.list();
+      return settings[0];
+    }
   });
 
   const updateProjectStatusMutation = useMutation({
@@ -85,7 +94,8 @@ export default function Projects() {
     setSelectedProject(project);
     setProjectForm({
       actual_costs: project.actual_costs || project.contract_value || '',
-      actual_margin: project.actual_margin || 45
+      actual_margin: project.actual_margin || 45,
+      variance_explanation: ''
     });
     setCloseoutDialogOpen(true);
   };
@@ -115,11 +125,24 @@ export default function Projects() {
   const handleCloseoutProject = (e) => {
     e.preventDefault();
     
+    const actualGrossRevenue = parseFloat(projectForm.actual_costs) || 0;
+    const contractValue = selectedProject.contract_value || 0;
+    const variancePercent = Math.abs(((actualGrossRevenue - contractValue) / contractValue) * 100);
+    const threshold = companySettings?.project_closeout_variance_threshold || 3;
+    
+    if (variancePercent > threshold && !projectForm.variance_explanation.trim()) {
+      toast.error(`Variance exceeds ${threshold}%. Please explain the difference.`);
+      return;
+    }
+    
     updateProjectStatusMutation.mutate({
       projectId: selectedProject.id,
       status: 'closed',
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
-      actual_margin: parseFloat(projectForm.actual_margin) || 0
+      actual_margin: parseFloat(projectForm.actual_margin) || 0,
+      notes: projectForm.variance_explanation ? 
+        `${selectedProject.notes || ''}\n\nCloseout Variance Explanation: ${projectForm.variance_explanation}`.trim() :
+        selectedProject.notes
     });
   };
 
@@ -515,20 +538,36 @@ export default function Projects() {
               />
             </div>
 
+            {selectedProject && projectForm.actual_costs && (() => {
+              const variance = Math.abs(((parseFloat(projectForm.actual_costs) - selectedProject.contract_value) / selectedProject.contract_value) * 100);
+              const threshold = companySettings?.project_closeout_variance_threshold || 3;
+              return variance > threshold ? (
+                <div>
+                  <Label className="text-amber-700">Variance Explanation *</Label>
+                  <p className="text-xs text-amber-600 mb-2">
+                    Revenue variance of {variance.toFixed(2)}% exceeds the {threshold}% threshold. Please explain.
+                  </p>
+                  <Input
+                    type="text"
+                    value={projectForm.variance_explanation}
+                    onChange={(e) => setProjectForm({...projectForm, variance_explanation: e.target.value})}
+                    placeholder="Explain the difference between contract value and actual revenue"
+                    required
+                  />
+                </div>
+              ) : null;
+            })()}
+
             {selectedProject && projectForm.actual_costs && projectForm.actual_margin && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <h4 className="text-xs font-semibold text-slate-700 mb-2">Final Project Summary</h4>
                 <div className="text-xs text-slate-700 space-y-1">
                   <div className="flex justify-between">
-                    <span>Contract Value:</span>
+                    <span>Original Contract Value:</span>
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Final Costs:</span>
-                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Gross Revenue:</span>
+                    <span>Actual Gross Revenue:</span>
                     <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
@@ -541,6 +580,16 @@ export default function Projects() {
                     <span className="font-bold">Margin:</span>
                     <span className="font-bold text-emerald-700">{parseFloat(projectForm.actual_margin).toFixed(2)}%</span>
                   </div>
+                  {(() => {
+                    const variance = Math.abs(((parseFloat(projectForm.actual_costs) - selectedProject.contract_value) / selectedProject.contract_value) * 100);
+                    const threshold = companySettings?.project_closeout_variance_threshold || 3;
+                    return variance > threshold ? (
+                      <div className="flex justify-between text-amber-600 border-t border-amber-300 pt-1 mt-1">
+                        <span className="font-bold">Variance:</span>
+                        <span className="font-bold">{variance.toFixed(2)}% (exceeds {threshold}%)</span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             )}
