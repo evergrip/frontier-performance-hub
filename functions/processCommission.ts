@@ -152,16 +152,38 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Determine banking percentage based on sale type
-    let bankingPercentage = 0;
+    // Determine available/banked percentages based on phase
+    let availablePercentage = 0;
+    let bankedPercentage = 0;
+    let phaseApplied = 'N/A';
+    
     if (sale_type === 'preconstruction') {
-      bankingPercentage = commissionRule.precon_banking_rate || 25;
+      const phaseAvailability = commissionRule.precon_phase_availability || [];
+      const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
+      if (matchingPhase) {
+        availablePercentage = matchingPhase.available_percentage || 0;
+        bankedPercentage = matchingPhase.banked_percentage || 100;
+        phaseApplied = sale.status;
+      } else {
+        availablePercentage = 0;
+        bankedPercentage = 100;
+      }
     } else if (sale_type === 'construction') {
-      bankingPercentage = 100; // 100% banked for construction
+      const phaseAvailability = commissionRule.construction_phase_availability || [];
+      const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
+      if (matchingPhase) {
+        availablePercentage = matchingPhase.available_percentage || 0;
+        bankedPercentage = matchingPhase.banked_percentage || 100;
+        phaseApplied = sale.status;
+      } else {
+        availablePercentage = 0;
+        bankedPercentage = 100;
+      }
     }
 
-    const bankedAmount = (commissionAmount * bankingPercentage) / 100;
-    const immediatePayout = commissionAmount - bankedAmount;
+    const availableAmount = (commissionAmount * availablePercentage) / 100;
+    const bankedAmount = (commissionAmount * bankedPercentage) / 100;
+    const immediatePayout = availableAmount;
 
     // Check if transaction already exists for this sale
     const existingTransactions = await base44.asServiceRole.entities.CommissionTransaction.filter({ 
