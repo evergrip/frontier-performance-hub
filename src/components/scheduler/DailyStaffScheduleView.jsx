@@ -129,11 +129,11 @@ export default function DailyStaffScheduleView({
   };
 
   const generateScheduleText = () => {
-    let text = `Staff Schedule - ${format(weekStart, 'MMM d')} to ${format(weekEnd, 'MMM d, yyyy')}\n\n`;
+    let text = `Staff Schedule - ${format(startDate, 'MMM d')} to ${format(endDate, 'MMM d, yyyy')}\n\n`;
     
     activeEmployees.forEach(employee => {
       text += `${employee.full_name}\n`;
-      daysInWeek.forEach(day => {
+      allDays.forEach(day => {
         const assignment = getAssignmentForEmployeeOnDay(employee.id, day);
         const hours = getHoursForEmployeeOnDay(employee.id, day);
         const project = assignment ? projects.find(p => p.id === assignment.project_id) : null;
