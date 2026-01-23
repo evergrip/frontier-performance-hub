@@ -23,6 +23,7 @@ export default function Clients() {
   const [clientDialogOpen, setClientDialogOpen] = useState(false);
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
   
   const [clientForm, setClientForm] = useState({
     company_name: '',
