@@ -75,6 +75,8 @@ export default function Projects() {
   };
 
   const getProjectClientName = (project) => {
+    if (!project) return 'Unknown Client';
+    
     // First try direct client_id
     if (project.client_id) {
       const client = clients.find(c => c.id === project.client_id);
