@@ -178,17 +178,36 @@ Deno.serve(async (req) => {
         let availablePercentage = 0;
         let bankedPercentage = 0;
         let phaseApplied = 'N/A';
-        
+
         if (sale_type === 'preconstruction') {
-          const phaseAvailability = commissionRule.precon_phase_availability || [];
-          const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
-          if (matchingPhase) {
-            availablePercentage = matchingPhase.available_percentage || 0;
-            bankedPercentage = matchingPhase.banked_percentage || 100;
-            phaseApplied = sale.status;
+          // Check if this precon sale was converted to a project
+          const projects = await base44.asServiceRole.entities.Project.filter({ sale_id: sale.id });
+          const convertedProject = projects[0];
+
+          if (convertedProject) {
+            // Precon converted to construction - use construction phase availability
+            const phaseAvailability = commissionRule.construction_phase_availability || [];
+            const matchingPhase = phaseAvailability.find(p => p.phase === convertedProject.status);
+            if (matchingPhase) {
+              availablePercentage = matchingPhase.available_percentage || 0;
+              bankedPercentage = matchingPhase.banked_percentage || 100;
+              phaseApplied = convertedProject.status;
+            } else {
+              availablePercentage = 0;
+              bankedPercentage = 100;
+            }
           } else {
-            availablePercentage = 0;
-            bankedPercentage = 100;
+            // Still in precon phase
+            const phaseAvailability = commissionRule.precon_phase_availability || [];
+            const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
+            if (matchingPhase) {
+              availablePercentage = matchingPhase.available_percentage || 0;
+              bankedPercentage = matchingPhase.banked_percentage || 100;
+              phaseApplied = sale.status;
+            } else {
+              availablePercentage = 0;
+              bankedPercentage = 100;
+            }
           }
         } else if (sale_type === 'construction') {
           // Fetch the project associated with the sale to get its current status
