@@ -82,11 +82,22 @@ export default function Clients() {
     onError: () => toast.error('Failed to create lead')
   });
 
-  const filteredClients = clients.filter(client =>
-    client.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.contact_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const archiveClientMutation = useMutation({
+    mutationFn: (clientId) => base44.entities.Client.update(clientId, { status: 'archived' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clients']);
+      toast.success('Client archived');
+    },
+    onError: () => toast.error('Failed to archive client')
+  });
+
+  const filteredClients = clients
+    .filter(client => client.status !== 'archived' || showArchived)
+    .filter(client =>
+      client.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.contact_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   const handleCreateClient = (e) => {
     e.preventDefault();
