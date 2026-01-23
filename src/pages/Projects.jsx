@@ -341,7 +341,7 @@ export default function Projects() {
                                       <GripVertical className="w-4 h-4 text-slate-400" />
                                       <h4 className="font-semibold text-slate-900 flex-1">{project.title}</h4>
                                     </div>
-                                    <p className="text-xs text-slate-500 mb-2 ml-6">{getClientName(project.client_id)}</p>
+                                    <p className="text-xs text-slate-500 mb-2 ml-6">{getProjectClientName(project)}</p>
                           
                                     <div className="space-y-1 mb-3">
                                       <div className="flex items-center justify-between">
