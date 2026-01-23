@@ -110,38 +110,59 @@ export default function CommissionsAdmin() {
   });
 
   const legacySaleMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('addLegacySale', data),
+    mutationFn: async (data) => {
+      const results = [];
+      for (const sale of data) {
+        const result = await base44.functions.invoke('addLegacySale', sale);
+        results.push(result.data);
+      }
+      return results;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCommissionBanks'] });
       queryClient.invalidateQueries({ queryKey: ['allTransactions'] });
-      toast.success('Legacy sale added successfully');
-      setLegacySaleDialogOpen(false);
-      setLegacySaleForm({
-        lead_name: '',
-        sale_date: '',
-        sale_amount: '',
-        commission_amount: '',
-        salesperson_id: ''
-      });
+      toast.success('Legacy sales added successfully');
+      setLegacySales([{ id: 0, lead_name: '', sale_date: '', sale_amount: '', commission_amount: '', salesperson_id: '' }]);
+      setNextId(1);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to add legacy sale');
+      toast.error(error.response?.data?.error || 'Failed to add legacy sales');
     },
   });
 
-  const handleAddLegacySale = (e) => {
-    e.preventDefault();
-    if (!legacySaleForm.lead_name || !legacySaleForm.sale_date || !legacySaleForm.sale_amount || !legacySaleForm.commission_amount || !legacySaleForm.salesperson_id) {
-      toast.error('Please fill in all required fields');
+  const handleUpdateRow = (id, field, value) => {
+    setLegacySales(legacySales.map(row => 
+      row.id === id ? { ...row, [field]: value } : row
+    ));
+  };
+
+  const handleAddRow = () => {
+    setLegacySales([
+      ...legacySales,
+      { id: nextId, lead_name: '', sale_date: '', sale_amount: '', commission_amount: '', salesperson_id: '' }
+    ]);
+    setNextId(nextId + 1);
+  };
+
+  const handleRemoveRow = (id) => {
+    setLegacySales(legacySales.filter(row => row.id !== id));
+  };
+
+  const handleSubmitLegacySales = () => {
+    const validRows = legacySales.filter(row => 
+      row.lead_name && row.sale_date && row.sale_amount && row.commission_amount && row.salesperson_id
+    );
+    if (validRows.length === 0) {
+      toast.error('Please fill in at least one complete row');
       return;
     }
-    legacySaleMutation.mutate({
-      lead_name: legacySaleForm.lead_name,
-      sale_date: legacySaleForm.sale_date,
-      sale_amount: parseFloat(legacySaleForm.sale_amount),
-      commission_amount: parseFloat(legacySaleForm.commission_amount),
-      salesperson_id: legacySaleForm.salesperson_id
-    });
+    legacySaleMutation.mutate(validRows.map(row => ({
+      lead_name: row.lead_name,
+      sale_date: row.sale_date,
+      sale_amount: parseFloat(row.sale_amount),
+      commission_amount: parseFloat(row.commission_amount),
+      salesperson_id: row.salesperson_id
+    })));
   };
 
   const getUserName = (userId) => {
