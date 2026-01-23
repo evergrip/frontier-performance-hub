@@ -517,7 +517,22 @@ export default function Projects() {
           <form onSubmit={handleUpdateProject} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
-              <p className="text-xs text-slate-500">{getProjectClientName(selectedProject)}</p>
+            </div>
+
+            <div>
+              <Label>Client</Label>
+              <Select value={projectForm.client_id} onValueChange={(value) => setProjectForm({...projectForm, client_id: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.company_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
