@@ -109,10 +109,21 @@ export default function Projects() {
     setEditDialogOpen(true);
   };
 
-  const handleAdvanceStatus = (e) => {
+  const handleAdvanceStatus = async (e) => {
     e.preventDefault();
     const nextStatus = getNextStatus(selectedProject.status);
     if (!nextStatus) return;
+    
+    // Update phase-based commission availability
+    try {
+      await base44.functions.invoke('updatePhaseCommission', {
+        project_id: selectedProject.id,
+        phase: nextStatus,
+        type: 'construction'
+      });
+    } catch (error) {
+      console.error('Phase commission update failed:', error);
+    }
     
     updateProjectStatusMutation.mutate({
       projectId: selectedProject.id,

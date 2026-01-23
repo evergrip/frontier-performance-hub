@@ -252,6 +252,17 @@ export default function Sales() {
     const nextStatus = getNextStatus(selectedSale.status);
     if (!nextStatus) return;
 
+    // Update phase-based commission availability
+    try {
+      await base44.functions.invoke('updatePhaseCommission', {
+        sale_id: selectedSale.id,
+        phase: nextStatus,
+        type: 'preconstruction'
+      });
+    } catch (error) {
+      console.error('Phase commission update failed:', error);
+    }
+
     // If moving from engineering_permits, update commission with actual precon cost
     if (selectedSale.status === 'engineering_permits') {
       try {

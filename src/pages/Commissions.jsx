@@ -131,10 +131,16 @@ export default function Commissions() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Commission Bank"
+          title="Available for Payout"
+          value={`$${(commissionBank?.available_balance || 0).toLocaleString()}`}
+          icon={DollarSign}
+          subtitle="Ready to request"
+        />
+        <StatCard
+          title="Banked (Not Available)"
           value={`$${(commissionBank?.current_bank_balance || 0).toLocaleString()}`}
           icon={Wallet}
-          subtitle="Available balance"
+          subtitle="Awaiting phase completion"
         />
         <StatCard
           title="Total Earned"
@@ -143,15 +149,9 @@ export default function Commissions() {
           subtitle="Lifetime earnings"
         />
         <StatCard
-          title="Quarterly Payout"
-          value={`$${(commissionBank?.quarterly_payout_amount || 0).toLocaleString()}`}
-          icon={Clock}
-          subtitle="Per pay period"
-        />
-        <StatCard
           title="Total Paid Out"
           value={`$${(commissionBank?.total_paid_out || 0).toLocaleString()}`}
-          icon={DollarSign}
+          icon={Clock}
           subtitle="All time"
         />
       </div>
@@ -186,8 +186,11 @@ export default function Commissions() {
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label>Available Balance</Label>
-                      <p className="text-2xl font-bold text-slate-900">
-                        ${(commissionBank?.current_bank_balance || 0).toLocaleString()}
+                      <p className="text-2xl font-bold text-emerald-600">
+                        ${(commissionBank?.available_balance || 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Banked (not yet available): ${(commissionBank?.current_bank_balance || 0).toLocaleString()}
                       </p>
                     </div>
                     <div className="space-y-2">
