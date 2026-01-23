@@ -154,7 +154,14 @@ Deno.serve(async (req) => {
         const amountDiff = commissionAmount - oldAmount;
         const bankedDiff = bankedAmount - oldBankedAmount;
 
-        // Update the transaction
+        // Build tier breakdown note if applicable
+        const tierBreakdownNote = tierBreakdown.length > 1 
+          ? `\nTier breakdown: ${tierBreakdown.map(t => `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`).join(', ')}`
+          : '';
+
+        // Update the transaction with adjustment note
+        const adjustmentNote = `Updated with final ${sale_type} amount: $${saleAmount.toLocaleString()}. Original commission: $${oldAmount.toLocaleString()}, New: $${commissionAmount.toLocaleString()}, Adjustment: ${amountDiff >= 0 ? '+' : ''}$${amountDiff.toLocaleString()}${tierBreakdownNote}`;
+        
         await base44.asServiceRole.entities.CommissionTransaction.update(existingTransaction.id, {
           amount: commissionAmount,
           commission_rate: commissionRate,
@@ -162,18 +169,7 @@ Deno.serve(async (req) => {
           tier_at_time: applicableTier.tier_name,
           banked_amount: bankedAmount,
           immediate_payout_amount: immediatePayout,
-          notes: `Updated with final amount: $${saleAmount.toLocaleString()}`
-        });
-
-        // Create adjustment transaction to log the change
-        await base44.asServiceRole.entities.CommissionTransaction.create({
-          user_id: sale.assigned_to,
-          sale_id: sale.id,
-          transaction_type: 'adjustment',
-          amount: amountDiff,
-          sale_type: sale_type,
-          status: 'banked',
-          notes: `Commission adjustment due to final ${sale_type} value update. Original: $${oldAmount.toLocaleString()}, New: $${commissionAmount.toLocaleString()}, Difference: ${amountDiff >= 0 ? '+' : ''}$${amountDiff.toLocaleString()}`
+          notes: adjustmentNote
         });
 
         // Update commission bank with the difference
