@@ -93,7 +93,8 @@ export default function UsersAdmin() {
     setSelectedUser({ 
       ...user,
       departments: user.departments || [],
-      commission_rule_ids: user.commission_rule_ids || []
+      commission_rule_ids: user.commission_rule_ids || [],
+      next_year_commission_rule_ids: user.next_year_commission_rule_ids || []
     });
     setEditDialogOpen(true);
   };
@@ -114,6 +115,7 @@ export default function UsersAdmin() {
         role: selectedUser.role,
         departments: selectedUser.departments,
         commission_rule_ids: selectedUser.commission_rule_ids,
+        next_year_commission_rule_ids: selectedUser.next_year_commission_rule_ids,
         is_commission_eligible: selectedUser.departments?.includes('sales')
       },
     });
@@ -352,30 +354,57 @@ export default function UsersAdmin() {
                 </div>
               </div>
               {selectedUser.departments?.includes('sales') && (
-                <div>
-                  <Label>Commission Rules *</Label>
-                  <div className="space-y-2 mt-2 border rounded-md p-3 bg-amber-50">
-                    {commissionRules.map(rule => (
-                      <label key={rule.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedUser.commission_rule_ids?.includes(rule.id) || false}
-                          onChange={(e) => {
-                            const newRules = e.target.checked
-                              ? [...(selectedUser.commission_rule_ids || []), rule.id]
-                              : (selectedUser.commission_rule_ids || []).filter(r => r !== rule.id);
-                            setSelectedUser({ ...selectedUser, commission_rule_ids: newRules });
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">{rule.rule_name}</span>
-                      </label>
-                    ))}
-                    {commissionRules.length === 0 && (
-                      <p className="text-xs text-amber-600">No commission rules available. Create one first.</p>
-                    )}
+                <>
+                  <div>
+                    <Label>Current Fiscal Year Commission Rules *</Label>
+                    <div className="space-y-2 mt-2 border rounded-md p-3 bg-amber-50">
+                      {commissionRules.map(rule => (
+                        <label key={rule.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUser.commission_rule_ids?.includes(rule.id) || false}
+                            onChange={(e) => {
+                              const newRules = e.target.checked
+                                ? [...(selectedUser.commission_rule_ids || []), rule.id]
+                                : (selectedUser.commission_rule_ids || []).filter(r => r !== rule.id);
+                              setSelectedUser({ ...selectedUser, commission_rule_ids: newRules });
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{rule.rule_name}</span>
+                        </label>
+                      ))}
+                      {commissionRules.length === 0 && (
+                        <p className="text-xs text-amber-600">No commission rules available. Create one first.</p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                  <div>
+                    <Label>Next Fiscal Year Commission Rules</Label>
+                    <p className="text-xs text-slate-500 mb-2">Defaults to current rules if not set</p>
+                    <div className="space-y-2 mt-2 border rounded-md p-3 bg-blue-50">
+                      {commissionRules.map(rule => (
+                        <label key={rule.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={
+                              selectedUser.next_year_commission_rule_ids?.includes(rule.id) ||
+                              (!selectedUser.next_year_commission_rule_ids?.length && selectedUser.commission_rule_ids?.includes(rule.id))
+                            }
+                            onChange={(e) => {
+                              const newRules = e.target.checked
+                                ? [...(selectedUser.next_year_commission_rule_ids || selectedUser.commission_rule_ids || []).filter(r => r !== rule.id), rule.id]
+                                : (selectedUser.next_year_commission_rule_ids || selectedUser.commission_rule_ids || []).filter(r => r !== rule.id);
+                              setSelectedUser({ ...selectedUser, next_year_commission_rule_ids: newRules });
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{rule.rule_name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           )}
