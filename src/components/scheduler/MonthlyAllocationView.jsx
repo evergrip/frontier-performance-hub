@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, startOfMonth, addMonths, getMonth, getYear } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import AllocationDialog from './AllocationDialog';
 
 const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
@@ -21,6 +21,38 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [pendingAllocation, setPendingAllocation] = useState(null);
   const queryClient = useQueryClient();
+
+  const { data: sales = [] } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => base44.entities.Sale.list(),
+    initialData: [],
+  });
+
+  // Calculate precon pipeline forecast by month
+  const preconForecastByMonth = useMemo(() => {
+    const activePipeline = sales.filter(sale => 
+      sale.sale_type === 'preconstruction' && 
+      sale.status !== 'closed_won' && 
+      sale.status !== 'closed_lost'
+    );
+
+    const forecastByMonth = {};
+
+    activePipeline.forEach(sale => {
+      if (!sale.target_precon_completion_date || !sale.estimated_construction_budget) return;
+
+      const completionDate = new Date(sale.target_precon_completion_date);
+      const monthKey = format(completionDate, 'yyyy-MM');
+
+      if (!forecastByMonth[monthKey]) {
+        forecastByMonth[monthKey] = 0;
+      }
+
+      forecastByMonth[monthKey] += sale.estimated_construction_budget;
+    });
+
+    return forecastByMonth;
+  }, [sales]);
 
   const months = Array.from({ length: 12 }, (_, i) => addMonths(startMonth, i));
 
@@ -210,8 +242,15 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
                   </div>
 
                   {/* Monthly total */}
-                  <div className="pt-2 border-t border-slate-200 text-sm font-semibold text-slate-700">
-                    Total: ${getMonthlyTotal(month).toLocaleString()}
+                  <div className="pt-2 border-t border-slate-200 space-y-1">
+                    <div className="text-sm font-semibold text-slate-700">
+                      Total: ${getMonthlyTotal(month).toLocaleString()}
+                    </div>
+                    {preconForecastByMonth[format(month, 'yyyy-MM')] && (
+                      <div className="text-xs text-emerald-600 font-medium">
+                        Precon Pipeline: ${Math.round(preconForecastByMonth[format(month, 'yyyy-MM')]).toLocaleString()}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
