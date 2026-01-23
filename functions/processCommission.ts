@@ -36,12 +36,13 @@ Deno.serve(async (req) => {
       id: { $in: salesperson.commission_rule_ids }
     });
 
-    // Find the appropriate rule based on sale_type
-    let commissionRule = allRules.find(rule => 
-      rule.sale_type === sale_type || rule.sale_type === 'both'
-    );
+    // Find exact match first, then 'both', then fallback
+    let commissionRule = allRules.find(rule => rule.sale_type === sale_type);
 
-    // If no matching rule, fall back to first rule
+    if (!commissionRule) {
+      commissionRule = allRules.find(rule => rule.sale_type === 'both');
+    }
+
     if (!commissionRule) {
       commissionRule = allRules[0];
     }
