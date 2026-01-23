@@ -10,8 +10,8 @@ import DailyStaffScheduleView from '@/components/scheduler/DailyStaffScheduleVie
 
 export default function ScheduleView() {
   const [searchParams] = useSearchParams();
-  const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')) : null;
-  const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')) : null;
+  const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate').split('T')[0] + 'T00:00:00') : null;
+  const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate').split('T')[0] + 'T00:00:00') : null;
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
