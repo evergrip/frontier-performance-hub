@@ -83,7 +83,7 @@ export default function Projects() {
     // First try direct client_id
     if (project.client_id) {
       const client = clients.find(c => c.id === project.client_id);
-      if (client?.company_name) return client.company_name;
+      if (client) return client.company_name || client.contact_name;
     }
     
     // Fall back to linked sale's client_id
@@ -91,7 +91,7 @@ export default function Projects() {
       const sale = sales.find(s => s.id === project.sale_id);
       if (sale?.client_id) {
         const client = clients.find(c => c.id === sale.client_id);
-        if (client?.company_name) return client.company_name;
+        if (client) return client.company_name || client.contact_name;
       }
     }
     
