@@ -156,6 +156,13 @@ export default function Projects() {
       return;
     }
     
+    // Validate that monthly allocations sum to 100%
+    const totalPercent = monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0);
+    if (totalPercent !== 100) {
+      toast.error(`Monthly allocations must total 100% (currently ${totalPercent}%)`);
+      return;
+    }
+    
     // Update commission with actual construction cost
     if (selectedProject.sale_id) {
       try {
@@ -175,6 +182,7 @@ export default function Projects() {
       status: 'closed',
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0,
+      monthly_revenue_allocations: monthlyAllocations.filter(a => parseFloat(a.percentage) > 0),
       notes: projectForm.variance_explanation ? 
         `${selectedProject.notes || ''}\n\nCloseout Variance Explanation: ${projectForm.variance_explanation}`.trim() :
         selectedProject.notes
