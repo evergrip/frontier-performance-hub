@@ -13,6 +13,9 @@ const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'
 const getProjectColor = (index) => COLORS[index % COLORS.length];
 
 export default function MonthlyAllocationView({ projects, onSelectMonth, onMonthClick }) {
+  // Filter out projects that are still awaiting to be scheduled
+  const schedulableProjects = projects.filter(p => p.status !== 'awaiting_to_be_scheduled');
+  
   const [startMonth, setStartMonth] = useState(startOfMonth(new Date()));
   const [draggedProject, setDraggedProject] = useState(null);
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
@@ -123,7 +126,7 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
             <CardTitle className="text-lg">Projects</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {projects.map((project, index) => (
+            {schedulableProjects.map((project, index) => (
               <div
                 key={project.id}
                 draggable
@@ -180,14 +183,14 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
 
                   {/* Allocations for this month */}
                   <div className="space-y-2 mb-4">
-                    {projects
-                      .filter(project => getProjectAllocation(project.id, month) > 0)
-                      .map(project => (
-                        <div
-                              key={project.id}
-                              className="p-2 rounded text-white text-xs"
-                              style={{ backgroundColor: getProjectColor(idx) }}
-                            >
+                   {schedulableProjects
+                     .filter(project => getProjectAllocation(project.id, month) > 0)
+                     .map((project, idx) => (
+                       <div
+                             key={project.id}
+                             className="p-2 rounded text-white text-xs"
+                             style={{ backgroundColor: getProjectColor(idx) }}
+                           >
                           <div className="flex items-start justify-between gap-1">
                             <div>
                               <div className="font-medium">{project.title}</div>
