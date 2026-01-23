@@ -29,6 +29,14 @@ export default function CommissionsAdmin() {
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [legacySaleDialogOpen, setLegacySaleDialogOpen] = useState(false);
+  const [legacySaleForm, setLegacySaleForm] = useState({
+    lead_name: '',
+    sale_date: '',
+    sale_amount: '',
+    commission_amount: '',
+    salesperson_id: ''
+  });
   const queryClient = useQueryClient();
 
   useEffect(() => {
