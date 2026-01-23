@@ -47,11 +47,12 @@ export default function Projects() {
   });
 
   const updateProjectStatusMutation = useMutation({
-    mutationFn: ({ projectId, status, actual_costs, actual_margin }) => 
+    mutationFn: ({ projectId, status, actual_costs, actual_margin, color }) => 
       base44.entities.Project.update(projectId, { 
         status, 
         actual_costs: actual_costs !== undefined ? actual_costs : undefined,
-        actual_margin: actual_margin !== undefined ? actual_margin : undefined
+        actual_margin: actual_margin !== undefined ? actual_margin : undefined,
+        color: color !== undefined ? color : undefined
       }),
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
