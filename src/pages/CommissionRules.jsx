@@ -119,7 +119,19 @@ export default function CommissionRules() {
       rule_name: '',
       sale_type: 'both',
       tiers: [{ tier_name: '', min_volume: 0, max_volume: null, commission_rate: 0 }],
-      precon_banking_rate: 25,
+      precon_phase_availability: [
+        { phase: 'feasibility', available_percentage: 30, banked_percentage: 70 },
+        { phase: 'design_material_selections', available_percentage: 60, banked_percentage: 40 },
+        { phase: 'engineering_permits', available_percentage: 80, banked_percentage: 20 },
+        { phase: 'pending_construction_sale', available_percentage: 100, banked_percentage: 0 },
+      ],
+      construction_phase_availability: [
+        { phase: 'awaiting_to_be_scheduled', available_percentage: 0, banked_percentage: 100 },
+        { phase: 'mobilization', available_percentage: 20, banked_percentage: 80 },
+        { phase: 'active_construction', available_percentage: 50, banked_percentage: 50 },
+        { phase: 'substantial_completion_closeout', available_percentage: 80, banked_percentage: 20 },
+        { phase: 'closed', available_percentage: 100, banked_percentage: 0 },
+      ],
       is_active: true,
       notes: '',
     });
