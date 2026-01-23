@@ -22,7 +22,8 @@ export default function Projects() {
   const [projectForm, setProjectForm] = useState({
     actual_costs: '',
     actual_margin: '',
-    variance_explanation: ''
+    variance_explanation: '',
+    client_id: ''
   });
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [monthlyAllocations, setMonthlyAllocations] = useState([]);
