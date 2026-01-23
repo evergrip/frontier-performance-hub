@@ -53,6 +53,7 @@ export default function Leads() {
         });
       } catch (error) {
         console.error('Commission processing failed:', error);
+        toast.error('Commission processing failed: ' + error.message);
       }
       
       return sale;
