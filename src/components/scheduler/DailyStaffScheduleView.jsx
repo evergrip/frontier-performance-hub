@@ -153,24 +153,8 @@ export default function DailyStaffScheduleView({
   return (
     <Card className="w-full print:shadow-none print:border-0 print-schedule">
       <CardHeader className="flex flex-row items-center justify-between print:pb-4">
-        <CardTitle className="print:text-lg">Staff Schedule - {format(weekStart, 'MMM d')} to {format(weekEnd, 'MMM d, yyyy')}</CardTitle>
+        <CardTitle className="print:text-lg">Staff Schedule - {format(startDate, 'MMM d')} to {format(endDate, 'MMM d, yyyy')}</CardTitle>
         <div className="flex gap-2 print:hidden">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setWeekStart(addDays(weekStart, -7))}
-            disabled={startDate && weekStart <= startDate}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setWeekStart(addDays(weekStart, 7))}
-            disabled={endDate && addDays(weekStart, 7) > endDate}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
           <Button
             variant="outline"
             onClick={handlePrint}
@@ -194,57 +178,61 @@ export default function DailyStaffScheduleView({
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="border border-slate-300 px-4 py-2 text-left font-semibold w-32">Employee</th>
-                {daysInWeek.map(day => (
-                  <th
-                    key={format(day, 'yyyy-MM-dd')}
-                    className="border border-slate-300 px-4 py-2 text-center font-semibold min-w-40"
-                  >
-                    <div className="font-medium text-slate-900">{format(day, 'EEE')}</div>
-                    <div className="text-xs text-slate-600">{format(day, 'MMM d')}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {activeEmployees.map(employee => (
-                <tr key={employee.id} className="hover:bg-slate-50">
-                  <td className="border border-slate-300 px-4 py-2 font-medium text-slate-900">
-                    {employee.full_name}
-                  </td>
-                  {daysInWeek.map(day => {
-                    const assignment = getAssignmentForEmployeeOnDay(employee.id, day);
-                    const hours = getHoursForEmployeeOnDay(employee.id, day);
-                    const project = assignment ? projects.find(p => p.id === assignment.project_id) : null;
-                    const projectIndex = project ? projects.findIndex(p => p.id === project.id) : 0;
-
-                    return (
-                      <td
+        <div className="space-y-8">
+          {weeks.map((weekDays, weekIndex) => (
+            <div key={weekIndex} className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="border border-slate-300 px-4 py-2 text-left font-semibold w-32">Employee</th>
+                    {weekDays.map(day => (
+                      <th
                         key={format(day, 'yyyy-MM-dd')}
-                        className="border border-slate-300 px-4 py-2 text-center"
+                        className="border border-slate-300 px-4 py-2 text-center font-semibold min-w-40"
                       >
-                        {assignment && project ? (
-                          <div
-                            className="p-2 rounded text-white text-sm font-medium"
-                            style={{ backgroundColor: getProjectColor(projectIndex) }}
-                          >
-                            <div className="truncate">{project.title}</div>
-                            <div className="text-xs opacity-90">{hours}h</div>
-                          </div>
-                        ) : (
-                          <div className="text-slate-400 text-sm">-</div>
-                        )}
+                        <div className="font-medium text-slate-900">{format(day, 'EEE')}</div>
+                        <div className="text-xs text-slate-600">{format(day, 'MMM d')}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeEmployees.map(employee => (
+                    <tr key={employee.id} className="hover:bg-slate-50">
+                      <td className="border border-slate-300 px-4 py-2 font-medium text-slate-900">
+                        {employee.full_name}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      {weekDays.map(day => {
+                        const assignment = getAssignmentForEmployeeOnDay(employee.id, day);
+                        const hours = getHoursForEmployeeOnDay(employee.id, day);
+                        const project = assignment ? projects.find(p => p.id === assignment.project_id) : null;
+                        const projectIndex = project ? projects.findIndex(p => p.id === project.id) : 0;
+
+                        return (
+                          <td
+                            key={format(day, 'yyyy-MM-dd')}
+                            className="border border-slate-300 px-4 py-2 text-center"
+                          >
+                            {assignment && project ? (
+                              <div
+                                className="p-2 rounded text-white text-sm font-medium"
+                                style={{ backgroundColor: getProjectColor(projectIndex) }}
+                              >
+                                <div className="truncate">{project.title}</div>
+                                <div className="text-xs opacity-90">{hours}h</div>
+                              </div>
+                            ) : (
+                              <div className="text-slate-400 text-sm">-</div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
         </div>
 
         {activeEmployees.length === 0 && (
