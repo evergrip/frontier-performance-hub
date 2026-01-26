@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
     }
 
-    const { transaction_id, updates, note, created_date } = await req.json();
+    const { transaction_id, updates, note } = await req.json();
 
     if (!transaction_id || !updates || !note) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -89,17 +89,11 @@ Deno.serve(async (req) => {
     const existingAuditLog = originalTransaction.audit_log || [];
     const newAuditLog = [...existingAuditLog, auditEntry];
 
-    // Update the transaction (created_date handled separately if provided)
-    const updateData = {
+    // Update the transaction
+    await base44.asServiceRole.entities.CommissionTransaction.update(transaction_id, {
       ...updates,
       audit_log: newAuditLog,
-    };
-    
-    if (created_date) {
-      updateData.created_date = created_date;
-    }
-    
-    await base44.asServiceRole.entities.CommissionTransaction.update(transaction_id, updateData);
+    });
 
     return Response.json({
       success: true,

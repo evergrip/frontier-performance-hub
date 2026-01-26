@@ -319,7 +319,9 @@ export default function Commissions() {
     if (editFormData.user_id !== selectedTransaction.user_id) {
       updates.user_id = editFormData.user_id;
     }
-    // Don't include created_date in updates - it's handled separately
+    if (editFormData.created_date !== format(new Date(selectedTransaction.created_date), 'yyyy-MM-dd')) {
+      updates.created_date = new Date(editFormData.created_date).toISOString();
+    }
 
     if (Object.keys(updates).length === 0) {
       toast.error('No changes detected');
@@ -330,9 +332,6 @@ export default function Commissions() {
       transactionId: selectedTransaction.id,
       updates,
       note: editNote,
-      created_date: editFormData.created_date !== format(new Date(selectedTransaction.created_date), 'yyyy-MM-dd') 
-        ? new Date(editFormData.created_date).toISOString() 
-        : null,
     });
   };
 
