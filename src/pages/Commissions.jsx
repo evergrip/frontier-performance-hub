@@ -47,17 +47,33 @@ export default function Commissions() {
   });
 
   // Determine which user's data to display
-  const displayUserId = selectedUserId === 'current_user' ? user?.id : selectedUserId;
+  const displayUserId = selectedUserId === 'current_user' ? user?.id : (selectedUserId === 'all' ? null : selectedUserId);
   const displayUser = selectedUserId === 'current_user' ? user : allUsers.find(u => u.id === selectedUserId);
+  const isCompanyWide = selectedUserId === 'all';
 
   const { data: commissionBank, isLoading: bankLoading } = useQuery({
-    queryKey: ['commissionBank', displayUserId],
+    queryKey: ['commissionBank', displayUserId, isCompanyWide],
     queryFn: async () => {
+      if (isCompanyWide) {
+        // Fetch all commission banks for company-wide view
+        const allBanks = await base44.entities.CommissionBank.list();
+        // Aggregate totals
+        return {
+          total_earned: allBanks.reduce((sum, b) => sum + (b.total_earned || 0), 0),
+          current_bank_balance: allBanks.reduce((sum, b) => sum + (b.current_bank_balance || 0), 0),
+          available_balance: allBanks.reduce((sum, b) => sum + (b.available_balance || 0), 0),
+          total_paid_out: allBanks.reduce((sum, b) => sum + (b.total_paid_out || 0), 0),
+          ytd_sales_volume: allBanks.reduce((sum, b) => sum + (b.ytd_sales_volume || 0), 0),
+          ytd_construction_volume: allBanks.reduce((sum, b) => sum + (b.ytd_construction_volume || 0), 0),
+          ytd_preconstruction_volume: allBanks.reduce((sum, b) => sum + (b.ytd_preconstruction_volume || 0), 0),
+          isAggregate: true
+        };
+      }
       if (!displayUserId) return null;
       const banks = await base44.entities.CommissionBank.filter({ user_id: displayUserId });
       return banks && banks.length > 0 ? banks[0] : null;
     },
-    enabled: !!displayUserId,
+    enabled: isCompanyWide || !!displayUserId,
   });
 
   const { data: commissionRule } = useQuery({
@@ -78,12 +94,16 @@ export default function Commissions() {
   });
 
   const { data: transactions = [] } = useQuery({
-    queryKey: ['commissionTransactions', displayUserId],
+    queryKey: ['commissionTransactions', displayUserId, isCompanyWide],
     queryFn: async () => {
+      if (isCompanyWide) {
+        // Fetch all transactions for company-wide view
+        return await base44.entities.CommissionTransaction.list('-created_date');
+      }
       if (!displayUserId) return [];
       return await base44.entities.CommissionTransaction.filter({ user_id: displayUserId }, '-created_date');
     },
-    enabled: !!displayUserId,
+    enabled: isCompanyWide || !!displayUserId,
   });
 
   const { data: sales = [] } = useQuery({
@@ -194,12 +214,16 @@ export default function Commissions() {
     : 100;
 
   const { data: payouts = [] } = useQuery({
-    queryKey: ['commissionPayouts', displayUserId],
+    queryKey: ['commissionPayouts', displayUserId, isCompanyWide],
     queryFn: async () => {
+      if (isCompanyWide) {
+        // Fetch all payouts for company-wide view
+        return await base44.entities.CommissionPayout.list();
+      }
       if (!displayUserId) return [];
       return await base44.entities.CommissionPayout.filter({ user_id: displayUserId });
     },
-    enabled: !!displayUserId,
+    enabled: isCompanyWide || !!displayUserId,
   });
 
   const requestBalloonMutation = useMutation({
@@ -395,7 +419,7 @@ export default function Commissions() {
       </div>
 
       {/* Commission Tier Info */}
-      {commissionBank && (
+      {commissionBank && !commissionBank.isAggregate && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
