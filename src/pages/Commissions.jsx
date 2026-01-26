@@ -275,7 +275,7 @@ export default function Commissions() {
     setEditFormData({
       amount: transaction.amount,
       sale_amount: transaction.sale_amount || 0,
-      created_date: transaction.created_date ? format(new Date(transaction.created_date), 'yyyy-MM-dd') : '',
+      sale_date: transaction.sale_date ? format(new Date(transaction.sale_date), 'yyyy-MM-dd') : '',
       user_id: transaction.user_id,
     });
     setEditNote('');
@@ -319,8 +319,8 @@ export default function Commissions() {
     if (editFormData.user_id !== selectedTransaction.user_id) {
       updates.user_id = editFormData.user_id;
     }
-    if (editFormData.created_date !== format(new Date(selectedTransaction.created_date), 'yyyy-MM-dd')) {
-      updates.created_date = new Date(editFormData.created_date).toISOString();
+    if (editFormData.sale_date !== (selectedTransaction.sale_date ? format(new Date(selectedTransaction.sale_date), 'yyyy-MM-dd') : '')) {
+      updates.sale_date = editFormData.sale_date ? new Date(editFormData.sale_date).toISOString() : null;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -742,11 +742,11 @@ export default function Commissions() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Transaction Date</Label>
+                    <Label>Sale Date</Label>
                     <Input
                       type="date"
-                      value={editFormData.created_date}
-                      onChange={(e) => setEditFormData({ ...editFormData, created_date: e.target.value })}
+                      value={editFormData.sale_date}
+                      onChange={(e) => setEditFormData({ ...editFormData, sale_date: e.target.value })}
                     />
                   </div>
 
@@ -818,7 +818,13 @@ export default function Commissions() {
               <div className="p-4 bg-slate-50 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-slate-500">Transaction Date</p>
+                    <p className="text-xs text-slate-500">Sale Date</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {selectedTransaction.sale_date ? format(new Date(selectedTransaction.sale_date), 'MMM d, yyyy') : 'Not set'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Logged Date</p>
                     <p className="text-sm font-semibold text-slate-900">
                       {format(new Date(selectedTransaction.created_date), 'MMM d, yyyy')}
                     </p>
