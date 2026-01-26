@@ -128,11 +128,12 @@ export default function SalesReport({ dateRange, staffId }) {
       const proposalTotal = proposalLeads.length;
       const winRateAfterProposal = proposalTotal > 0 ? (convertedAfterProposal / proposalTotal) * 100 : 0;
 
-      // Calculate sales volume for this period
+      // Calculate sales volume for this period using sale_date from commission transactions
       const periodSales = sales.filter(sale => {
         if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
-        const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
-        return closeDate >= intervalStart && closeDate <= intervalEnd;
+        // Use close_date if available, otherwise fall back to created_date
+        const saleDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+        return saleDate >= intervalStart && saleDate <= intervalEnd;
       });
       
       const salesVolume = periodSales.reduce((sum, sale) => sum + (sale.contract_value || 0), 0);
@@ -163,8 +164,9 @@ export default function SalesReport({ dateRange, staffId }) {
       if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
       if (!dateRange.start || !dateRange.end) return true;
       
-      const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
-      return closeDate >= dateRange.start && closeDate <= dateRange.end;
+      // Use close_date if available, otherwise fall back to created_date for reporting
+      const saleDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+      return saleDate >= dateRange.start && saleDate <= dateRange.end;
     });
 
     const preconTotal = filteredSales
