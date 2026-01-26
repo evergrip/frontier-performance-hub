@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCircle } from 'lucide-react';
+import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCircle, Edit2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import StatCard from '@/components/common/StatCard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,9 +17,14 @@ import { format } from 'date-fns';
 
 export default function Commissions() {
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('current_user');
   const [balloonDialogOpen, setBalloonDialogOpen] = useState(false);
   const [transactionDetailOpen, setTransactionDetailOpen] = useState(false);
+  const [editTransactionOpen, setEditTransactionOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editNote, setEditNote] = useState('');
   const [requestedAmount, setRequestedAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [transactionPeriod, setTransactionPeriod] = useState('current_fiscal_year');
@@ -29,18 +34,30 @@ export default function Commissions() {
     const loadUser = async () => {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      setIsAdmin(currentUser?.role === 'admin');
     };
     loadUser();
   }, []);
 
+  // Fetch all users for admin view
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    enabled: isAdmin,
+  });
+
+  // Determine which user's data to display
+  const displayUserId = selectedUserId === 'current_user' ? user?.id : selectedUserId;
+  const displayUser = selectedUserId === 'current_user' ? user : allUsers.find(u => u.id === selectedUserId);
+
   const { data: commissionBank, isLoading: bankLoading } = useQuery({
-    queryKey: ['commissionBank', user?.id],
+    queryKey: ['commissionBank', displayUserId],
     queryFn: async () => {
-      if (!user) return null;
-      const banks = await base44.entities.CommissionBank.filter({ user_id: user.id });
+      if (!displayUserId) return null;
+      const banks = await base44.entities.CommissionBank.filter({ user_id: displayUserId });
       return banks && banks.length > 0 ? banks[0] : null;
     },
-    enabled: !!user,
+    enabled: !!displayUserId,
   });
 
   const { data: commissionRule } = useQuery({
@@ -61,12 +78,12 @@ export default function Commissions() {
   });
 
   const { data: transactions = [] } = useQuery({
-    queryKey: ['commissionTransactions', user?.id],
+    queryKey: ['commissionTransactions', displayUserId],
     queryFn: async () => {
-      if (!user) return [];
-      return await base44.entities.CommissionTransaction.filter({ user_id: user.id }, '-created_date');
+      if (!displayUserId) return [];
+      return await base44.entities.CommissionTransaction.filter({ user_id: displayUserId }, '-created_date');
     },
-    enabled: !!user,
+    enabled: !!displayUserId,
   });
 
   const { data: sales = [] } = useQuery({
@@ -142,16 +159,16 @@ export default function Commissions() {
 
   // Get construction-specific commission rule
   const { data: allRules = [] } = useQuery({
-    queryKey: ['allCommissionRules', user?.id],
+    queryKey: ['allCommissionRules', displayUserId],
     queryFn: async () => {
-      if (!user) return [];
-      const userDetails = await base44.entities.User.filter({ id: user.id });
+      if (!displayUserId) return [];
+      const userDetails = await base44.entities.User.filter({ id: displayUserId });
       if (!userDetails[0]?.commission_rule_ids) return [];
       return await base44.entities.CommissionRule.filter({ 
         id: { $in: userDetails[0].commission_rule_ids }
       });
     },
-    enabled: !!user,
+    enabled: !!displayUserId,
   });
 
   // Find the construction rule for tier calculation (ignore precon-only rules)
@@ -177,12 +194,12 @@ export default function Commissions() {
     : 100;
 
   const { data: payouts = [] } = useQuery({
-    queryKey: ['commissionPayouts', user?.id],
+    queryKey: ['commissionPayouts', displayUserId],
     queryFn: async () => {
-      if (!user) return [];
-      return await base44.entities.CommissionPayout.filter({ user_id: user.id });
+      if (!displayUserId) return [];
+      return await base44.entities.CommissionPayout.filter({ user_id: displayUserId });
     },
-    enabled: !!user,
+    enabled: !!displayUserId,
   });
 
   const requestBalloonMutation = useMutation({
@@ -227,6 +244,82 @@ export default function Commissions() {
     setTransactionDetailOpen(true);
   };
 
+  const openEditTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setEditFormData({
+      amount: transaction.amount,
+      sale_amount: transaction.sale_amount || 0,
+      created_date: transaction.created_date ? format(new Date(transaction.created_date), 'yyyy-MM-dd') : '',
+      user_id: transaction.user_id,
+    });
+    setEditNote('');
+    setEditTransactionOpen(true);
+  };
+
+  const editTransactionMutation = useMutation({
+    mutationFn: async ({ transactionId, updates, note }) => {
+      const transaction = transactions.find(t => t.id === transactionId);
+      const auditEntry = {
+        timestamp: new Date().toISOString(),
+        edited_by: user.email,
+        changes: Object.entries(updates)
+          .map(([key, value]) => `${key}: ${transaction[key]} → ${value}`)
+          .join(', '),
+        note: note || 'No note provided',
+      };
+
+      const existingAuditLog = transaction.audit_log || [];
+      const newAuditLog = [...existingAuditLog, auditEntry];
+
+      await base44.entities.CommissionTransaction.update(transactionId, {
+        ...updates,
+        audit_log: newAuditLog,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['commissionTransactions'] });
+      toast.success('Transaction updated successfully');
+      setEditTransactionOpen(false);
+      setEditNote('');
+    },
+    onError: (error) => {
+      toast.error('Failed to update transaction');
+    },
+  });
+
+  const handleEditTransaction = () => {
+    if (!editNote.trim()) {
+      toast.error('Please provide a note explaining the changes');
+      return;
+    }
+
+    const updates = {};
+    if (editFormData.amount !== selectedTransaction.amount) {
+      updates.amount = parseFloat(editFormData.amount);
+    }
+    if (editFormData.sale_amount !== selectedTransaction.sale_amount) {
+      updates.sale_amount = parseFloat(editFormData.sale_amount);
+    }
+    if (editFormData.user_id !== selectedTransaction.user_id) {
+      updates.user_id = editFormData.user_id;
+    }
+    const newDate = new Date(editFormData.created_date).toISOString();
+    if (newDate !== selectedTransaction.created_date) {
+      updates.created_date = newDate;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      toast.error('No changes detected');
+      return;
+    }
+
+    editTransactionMutation.mutate({
+      transactionId: selectedTransaction.id,
+      updates,
+      note: editNote,
+    });
+  };
+
   if (bankLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -242,10 +335,35 @@ export default function Commissions() {
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">My Commissions</h1>
-          <p className="text-slate-500 mt-1">Track your earnings and manage payouts</p>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-slate-900">
+            {isAdmin ? 'Commission Management' : 'My Commissions'}
+          </h1>
+          <p className="text-slate-500 mt-1">
+            {isAdmin ? 'View and manage all commission data' : 'Track your earnings and manage payouts'}
+          </p>
         </div>
+        {isAdmin && (
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-slate-400" />
+            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+              <SelectTrigger className="w-[250px]">
+                <SelectValue placeholder="Select salesperson" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="current_user">My Commissions</SelectItem>
+                <SelectItem value="all">Company-Wide</SelectItem>
+                {allUsers
+                  .filter(u => u.commission_rule_ids?.length > 0)
+                  .map(u => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.full_name || u.email}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -466,30 +584,68 @@ export default function Commissions() {
                 <TableHead>Details</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
+                {isAdmin && <TableHead>Edit</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTransactions.map((transaction) => (
                 <TableRow 
                   key={transaction.id} 
-                  className="cursor-pointer hover:bg-slate-50"
-                  onClick={() => openTransactionDetail(transaction)}
+                  className="hover:bg-slate-50"
                 >
-                  <TableCell>{format(new Date(transaction.created_date), 'MMM d, yyyy')}</TableCell>
-                  <TableCell className="capitalize">{transaction.transaction_type.replace('_', ' ')}</TableCell>
-                  <TableCell className="text-xs">
+                  <TableCell 
+                    className="cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
+                    {format(new Date(transaction.created_date), 'MMM d, yyyy')}
+                  </TableCell>
+                  <TableCell 
+                    className="capitalize cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
+                    {transaction.transaction_type.replace('_', ' ')}
+                  </TableCell>
+                  <TableCell 
+                    className="text-xs cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
                     {transaction.sale_id ? getSaleName(transaction.sale_id) : '-'}
                   </TableCell>
-                  <TableCell className="text-xs">
+                  <TableCell 
+                    className="text-xs cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
                     {transaction.phase_name && `Phase: ${transaction.phase_name}`}
                     {transaction.tier_at_time && ` (${transaction.tier_at_time})`}
                   </TableCell>
-                  <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
-                  <TableCell>
+                  <TableCell 
+                    className="font-medium cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
+                    ${transaction.amount.toLocaleString()}
+                  </TableCell>
+                  <TableCell 
+                    className="cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
                     <Badge variant={transaction.status === 'banked' ? 'default' : 'secondary'}>
                       {transaction.status}
                     </Badge>
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditTransaction(transaction);
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
               {filteredTransactions.length === 0 && (
@@ -537,6 +693,103 @@ export default function Commissions() {
             </Table>
           </CardContent>
         </Card>
+      )}
+
+      {/* Edit Transaction Dialog (Admin Only) */}
+      {isAdmin && (
+        <Dialog open={editTransactionOpen} onOpenChange={setEditTransactionOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Commission Transaction</DialogTitle>
+            </DialogHeader>
+            {selectedTransaction && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Salesperson</Label>
+                    <Select 
+                      value={editFormData.user_id} 
+                      onValueChange={(value) => setEditFormData({ ...editFormData, user_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allUsers
+                          .filter(u => u.commission_rule_ids?.length > 0)
+                          .map(u => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.full_name || u.email}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Transaction Date</Label>
+                    <Input
+                      type="date"
+                      value={editFormData.created_date}
+                      onChange={(e) => setEditFormData({ ...editFormData, created_date: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Commission Amount</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editFormData.amount}
+                      onChange={(e) => setEditFormData({ ...editFormData, amount: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Sale Amount</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editFormData.sale_amount}
+                      onChange={(e) => setEditFormData({ ...editFormData, sale_amount: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Required Note (Explanation of Changes) *</Label>
+                  <Textarea
+                    placeholder="Explain why this transaction is being edited..."
+                    value={editNote}
+                    onChange={(e) => setEditNote(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-800">
+                    ⚠️ All changes will be permanently logged with your name, timestamp, and this note.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setEditTransactionOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleEditTransaction}
+                    disabled={editTransactionMutation.isPending}
+                  >
+                    {editTransactionMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Transaction Detail Dialog */}
@@ -650,7 +903,36 @@ export default function Commissions() {
                 </div>
               )}
 
-              <div className="flex justify-end pt-2">
+              {selectedTransaction.audit_log && selectedTransaction.audit_log.length > 0 && (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <h4 className="text-sm font-semibold text-slate-900 mb-3">Audit Log</h4>
+                  <div className="space-y-3">
+                    {selectedTransaction.audit_log.map((entry, idx) => (
+                      <div key={idx} className="text-xs border-l-2 border-slate-300 pl-3 py-1">
+                        <p className="font-medium text-slate-900">
+                          {format(new Date(entry.timestamp), 'MMM d, yyyy h:mm a')} - {entry.edited_by}
+                        </p>
+                        <p className="text-slate-600 mt-1">Changes: {entry.changes}</p>
+                        <p className="text-slate-700 mt-1 italic">Note: {entry.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2 gap-2">
+                {isAdmin && (
+                  <Button 
+                    variant="default"
+                    onClick={() => {
+                      setTransactionDetailOpen(false);
+                      openEditTransaction(selectedTransaction);
+                    }}
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Transaction
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setTransactionDetailOpen(false)}>
                   Close
                 </Button>
