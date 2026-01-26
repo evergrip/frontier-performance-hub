@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { format } from 'date-fns';
 import {
   Table,
   TableBody,
@@ -94,7 +95,8 @@ export default function UsersAdmin() {
       ...user,
       departments: user.departments || [],
       commission_rule_ids: user.commission_rule_ids || [],
-      next_year_commission_rule_ids: user.next_year_commission_rule_ids || []
+      next_year_commission_rule_ids: user.next_year_commission_rule_ids || [],
+      commission_start_date: user.commission_start_date ? format(new Date(user.commission_start_date), 'yyyy-MM-dd') : ''
     });
     setEditDialogOpen(true);
   };
@@ -116,7 +118,8 @@ export default function UsersAdmin() {
         departments: selectedUser.departments,
         commission_rule_ids: selectedUser.commission_rule_ids,
         next_year_commission_rule_ids: selectedUser.next_year_commission_rule_ids,
-        is_commission_eligible: selectedUser.departments?.includes('sales')
+        is_commission_eligible: selectedUser.departments?.includes('sales'),
+        commission_start_date: selectedUser.commission_start_date || null
       },
     });
   };
@@ -355,6 +358,17 @@ export default function UsersAdmin() {
               </div>
               {selectedUser.departments?.includes('sales') && (
                 <>
+                  <div>
+                    <Label>Commission Start Date</Label>
+                    <Input
+                      type="date"
+                      value={selectedUser.commission_start_date || ''}
+                      onChange={(e) =>
+                        setSelectedUser({ ...selectedUser, commission_start_date: e.target.value })
+                      }
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Annual tier resets calculated from this date</p>
+                  </div>
                   <div>
                     <Label>Current Fiscal Year Commission Rules *</Label>
                     <div className="space-y-2 mt-2 border rounded-md p-3 bg-amber-50">
