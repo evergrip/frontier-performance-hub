@@ -118,7 +118,8 @@ export default function SalesReport({ dateRange, staffId }) {
       const periodLeads = leads.filter(lead => convertedLeadIds.includes(lead.id));
 
       const converted = periodLeads.length; // All leads in periodLeads are converted
-      const total = converted; // Only counting converted sales for win rate
+      const disqualified = 0; // Not tracking disqualified in this view
+      const total = converted;
       const winRate = total > 0 ? 100 : 0; // 100% since we're only looking at sales that closed
 
       // Calculate win rate after proposal (only leads that reached proposal stage)
