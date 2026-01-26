@@ -109,7 +109,16 @@ export default function SalesReport({ dateRange, staffId }) {
         // Only include leads that are in a closed state (converted or disqualified)
         if (lead.status !== 'converted' && lead.status !== 'disqualified') return false;
 
-        // Check if the lead was created in this period
+        // For converted leads, use the sale date; for disqualified, use created_date
+        if (lead.status === 'converted' && lead.converted_to_sale_id) {
+          const relatedSale = sales.find(s => s.id === lead.converted_to_sale_id);
+          if (relatedSale) {
+            const saleDate = relatedSale.close_date ? new Date(relatedSale.close_date) : new Date(relatedSale.created_date);
+            return saleDate >= intervalStart && saleDate <= intervalEnd;
+          }
+        }
+        
+        // For disqualified leads or converted leads without sale, use lead created date
         const createdDate = new Date(lead.created_date);
         return createdDate >= intervalStart && createdDate <= intervalEnd;
       });
