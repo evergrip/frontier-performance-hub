@@ -18,6 +18,7 @@ export default function Sales() {
   const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [closePreconDialogOpen, setClosePreconDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
@@ -138,6 +139,34 @@ export default function Sales() {
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
       toast.success('Invoice deleted');
+    }
+  });
+
+  const closePreconMutation = useMutation({
+    mutationFn: async (preconSale) => {
+      // Update preconstruction sale as closed won
+      await base44.entities.Sale.update(preconSale.id, {
+        status: 'closed_won'
+      });
+
+      // Update preconstruction commission with final value
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: preconSale.id,
+          sale_type: 'preconstruction',
+          final_amount: preconSale.contract_value,
+          is_update: true
+        });
+      } catch (error) {
+        console.error('Precon commission update failed:', error);
+      }
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      setClosePreconDialogOpen(false);
+      toast.success('Pre-construction finalized');
     }
   });
 
@@ -639,14 +668,27 @@ export default function Sales() {
                             )}
 
                             {sale.status === 'pending_construction_sale' && (
-                              <Button
-                                size="sm"
-                                className="w-full text-xs bg-amber-600 hover:bg-amber-700"
-                                onClick={() => openConstructionDialog(sale)}
-                              >
-                                <Building2 className="w-3 h-3 mr-1" />
-                                Convert to Construction
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  className="w-full text-xs bg-amber-600 hover:bg-amber-700"
+                                  onClick={() => openConstructionDialog(sale)}
+                                >
+                                  <Building2 className="w-3 h-3 mr-1" />
+                                  Convert to Construction
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full text-xs"
+                                  onClick={() => {
+                                    setSelectedSale(sale);
+                                    setClosePreconDialogOpen(true);
+                                  }}
+                                >
+                                  Finalize Pre-Con Only
+                                </Button>
+                              </>
                             )}
                           </div>
                                   </CardContent>
@@ -1045,6 +1087,50 @@ export default function Sales() {
               </form>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Close Pre-Con Only Dialog */}
+      <Dialog open={closePreconDialogOpen} onOpenChange={setClosePreconDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finalize Pre-Construction Only</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+            </div>
+            
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-slate-700">
+                This will mark the pre-construction work as complete and finalize the commission based on the current contract value.
+              </p>
+              <p className="text-sm text-slate-700 mt-2">
+                <strong>No construction project will be created.</strong>
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-100 rounded-lg">
+              <p className="text-xs text-slate-500">Final Pre-Construction Value</p>
+              <p className="text-lg font-bold text-slate-900">
+                ${(selectedSale?.contract_value || 0).toLocaleString()}
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button type="button" variant="outline" onClick={() => setClosePreconDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => closePreconMutation.mutate(selectedSale)}
+                disabled={closePreconMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Finalize Pre-Construction
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
