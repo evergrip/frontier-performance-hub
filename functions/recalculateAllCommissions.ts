@@ -42,29 +42,50 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Get salesperson
+        const users = await base44.asServiceRole.entities.User.filter({ id: sale.assigned_to });
+        const salesperson = users[0];
+
+        if (!salesperson || !salesperson.commission_rule_ids?.length) {
+          errors.push({ transaction_id: transaction.id, error: 'No commission rules assigned' });
+          continue;
+        }
+
+        // Get all commission rules
+        const allRules = await base44.asServiceRole.entities.CommissionRule.filter({ 
+          id: { $in: salesperson.commission_rule_ids }
+        });
+
+        // Find correct rule based on sale_type - prioritize exact match
+        const sale_type = transaction.sale_type || sale.sale_type;
+        let commissionRule = allRules.find(rule => rule.sale_type === sale_type);
+        
+        if (!commissionRule) {
+          commissionRule = allRules.find(rule => rule.sale_type === 'both');
+        }
+        
+        if (!commissionRule) {
+          commissionRule = allRules[0];
+        }
+
+        if (!commissionRule || !commissionRule.tiers?.length) {
+          errors.push({ transaction_id: transaction.id, error: 'No valid commission rule found' });
+          continue;
+        }
+
         // Get or create commission bank
         let banks = await base44.asServiceRole.entities.CommissionBank.filter({ user_id: sale.assigned_to });
         let commissionBank = banks[0];
 
         if (!commissionBank) {
-          errors.push({ transaction_id: transaction.id, error: 'No commission bank found' });
-          continue;
-        }
-
-        if (!commissionBank.commission_rule_id) {
-          errors.push({ transaction_id: transaction.id, error: 'Commission bank has no rule assigned' });
-          continue;
-        }
-
-        // Get the commission rule from the bank
-        const commissionRules = await base44.asServiceRole.entities.CommissionRule.filter({ 
-          id: commissionBank.commission_rule_id
-        });
-        const commissionRule = commissionRules[0];
-
-        if (!commissionRule || !commissionRule.tiers?.length) {
-          errors.push({ transaction_id: transaction.id, error: 'Commission rule not found or has no tiers' });
-          continue;
+          commissionBank = await base44.asServiceRole.entities.CommissionBank.create({
+            user_id: sale.assigned_to,
+            total_earned: 0,
+            current_bank_balance: 0,
+            total_paid_out: 0,
+            ytd_sales_volume: 0,
+            commission_rule_id: commissionRule.id
+          });
         }
 
         // Calculate commission with tier splitting

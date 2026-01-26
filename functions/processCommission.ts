@@ -23,26 +23,47 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Sale not found or no salesperson assigned' }, { status: 404 });
     }
 
+    // Get the salesperson's user record
+    const users = await base44.asServiceRole.entities.User.filter({ id: sale.assigned_to });
+    const salesperson = users[0];
+
+    if (!salesperson || !salesperson.commission_rule_ids?.length) {
+      return Response.json({ error: 'Salesperson has no commission rules assigned' }, { status: 400 });
+    }
+
+    // Get all commission rules for the salesperson
+    const allRules = await base44.asServiceRole.entities.CommissionRule.filter({ 
+      id: { $in: salesperson.commission_rule_ids }
+    });
+
+    // Find exact match first, then 'both', then fallback
+    let commissionRule = allRules.find(rule => rule.sale_type === sale_type);
+
+    if (!commissionRule) {
+      commissionRule = allRules.find(rule => rule.sale_type === 'both');
+    }
+
+    if (!commissionRule) {
+      commissionRule = allRules[0];
+    }
+
+    if (!commissionRule || !commissionRule.tiers?.length) {
+      return Response.json({ error: `No commission rule found for ${sale_type} sales` }, { status: 404 });
+    }
+
     // Get commission bank or create if doesn't exist
     let banks = await base44.asServiceRole.entities.CommissionBank.filter({ user_id: sale.assigned_to });
     let commissionBank = banks[0];
 
     if (!commissionBank) {
-      return Response.json({ error: 'Salesperson has no commission bank configured' }, { status: 400 });
-    }
-
-    if (!commissionBank.commission_rule_id) {
-      return Response.json({ error: 'Commission bank has no commission rule assigned' }, { status: 400 });
-    }
-
-    // Get the commission rule from the bank
-    const commissionRules = await base44.asServiceRole.entities.CommissionRule.filter({ 
-      id: commissionBank.commission_rule_id
-    });
-    const commissionRule = commissionRules[0];
-
-    if (!commissionRule || !commissionRule.tiers?.length) {
-      return Response.json({ error: 'Commission rule not found or has no tiers' }, { status: 404 });
+      commissionBank = await base44.asServiceRole.entities.CommissionBank.create({
+        user_id: sale.assigned_to,
+        total_earned: 0,
+        current_bank_balance: 0,
+        total_paid_out: 0,
+        ytd_sales_volume: 0,
+        commission_rule_id: commissionRule.id
+      });
     }
 
     // Calculate commission with tier splitting
