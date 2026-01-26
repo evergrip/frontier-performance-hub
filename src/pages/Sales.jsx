@@ -22,6 +22,7 @@ export default function Sales() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
+  const [finalPreconValue, setFinalPreconValue] = useState('');
   const [editTargetDate, setEditTargetDate] = useState('');
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
@@ -143,10 +144,11 @@ export default function Sales() {
   });
 
   const closePreconMutation = useMutation({
-    mutationFn: async (preconSale) => {
-      // Update preconstruction sale as closed won
+    mutationFn: async ({ preconSale, finalValue }) => {
+      // Update preconstruction sale as closed won with final value
       await base44.entities.Sale.update(preconSale.id, {
-        status: 'closed_won'
+        status: 'closed_won',
+        contract_value: parseFloat(finalValue)
       });
 
       // Update preconstruction commission with final value
@@ -154,7 +156,7 @@ export default function Sales() {
         await base44.functions.invoke('processCommission', {
           sale_id: preconSale.id,
           sale_type: 'preconstruction',
-          final_amount: preconSale.contract_value,
+          final_amount: parseFloat(finalValue),
           is_update: true
         });
       } catch (error) {
@@ -166,6 +168,7 @@ export default function Sales() {
     onSuccess: () => {
       queryClient.invalidateQueries(['sales']);
       setClosePreconDialogOpen(false);
+      setFinalPreconValue('');
       toast.success('Pre-construction finalized');
     }
   });
@@ -683,6 +686,7 @@ export default function Sales() {
                                   className="w-full text-xs"
                                   onClick={() => {
                                     setSelectedSale(sale);
+                                    setFinalPreconValue(sale.contract_value || '');
                                     setClosePreconDialogOpen(true);
                                   }}
                                 >
@@ -1096,7 +1100,14 @@ export default function Sales() {
           <DialogHeader>
             <DialogTitle>Finalize Pre-Construction Only</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (!finalPreconValue) {
+              toast.error('Please enter final pre-construction value');
+              return;
+            }
+            closePreconMutation.mutate({ preconSale: selectedSale, finalValue: finalPreconValue });
+          }} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
               <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
@@ -1104,18 +1115,25 @@ export default function Sales() {
             
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-slate-700">
-                This will mark the pre-construction work as complete and finalize the commission based on the current contract value.
+                This will mark the pre-construction work as complete and finalize the commission.
               </p>
               <p className="text-sm text-slate-700 mt-2">
                 <strong>No construction project will be created.</strong>
               </p>
             </div>
 
-            <div className="p-3 bg-slate-100 rounded-lg">
-              <p className="text-xs text-slate-500">Final Pre-Construction Value</p>
-              <p className="text-lg font-bold text-slate-900">
-                ${(selectedSale?.contract_value || 0).toLocaleString()}
+            <div>
+              <Label>Final Pre-Construction Value *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Confirm or adjust the final pre-construction revenue
               </p>
+              <Input
+                type="number"
+                value={finalPreconValue}
+                onChange={(e) => setFinalPreconValue(e.target.value)}
+                placeholder="125000"
+                required
+              />
             </div>
 
             <div className="flex gap-2 justify-end pt-4">
@@ -1123,14 +1141,14 @@ export default function Sales() {
                 Cancel
               </Button>
               <Button 
-                onClick={() => closePreconMutation.mutate(selectedSale)}
+                type="submit"
                 disabled={closePreconMutation.isPending}
                 className="bg-green-600 hover:bg-green-700"
               >
                 Finalize Pre-Construction
               </Button>
             </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
 
