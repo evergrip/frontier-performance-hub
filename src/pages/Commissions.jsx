@@ -284,32 +284,22 @@ export default function Commissions() {
 
   const editTransactionMutation = useMutation({
     mutationFn: async ({ transactionId, updates, note }) => {
-      const transaction = transactions.find(t => t.id === transactionId);
-      const auditEntry = {
-        timestamp: new Date().toISOString(),
-        edited_by: user.email,
-        changes: Object.entries(updates)
-          .map(([key, value]) => `${key}: ${transaction[key]} → ${value}`)
-          .join(', '),
-        note: note || 'No note provided',
-      };
-
-      const existingAuditLog = transaction.audit_log || [];
-      const newAuditLog = [...existingAuditLog, auditEntry];
-
-      await base44.entities.CommissionTransaction.update(transactionId, {
-        ...updates,
-        audit_log: newAuditLog,
+      const response = await base44.functions.invoke('editCommissionTransaction', {
+        transaction_id: transactionId,
+        updates,
+        note,
       });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commissionTransactions'] });
-      toast.success('Transaction updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['commissionBank'] });
+      toast.success('Transaction updated and commission banks recalculated');
       setEditTransactionOpen(false);
       setEditNote('');
     },
     onError: (error) => {
-      toast.error('Failed to update transaction');
+      toast.error(error.response?.data?.error || 'Failed to update transaction');
     },
   });
 
