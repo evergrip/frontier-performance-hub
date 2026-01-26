@@ -157,7 +157,7 @@ export default function Commissions() {
 
   const filteredTransactions = getFilteredTransactions();
 
-  // Calculate YTD sales by type for current fiscal year
+  // Calculate YTD sales by type for current fiscal year (filtered to the selected user)
   const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
   const fiscalYearStart = getFiscalYearStart(fiscalStartMonth);
   
@@ -165,7 +165,8 @@ export default function Commissions() {
     .filter(t => 
       t.transaction_type === 'sale_commission' && 
       t.sale_type === 'preconstruction' &&
-      new Date(t.created_date) >= fiscalYearStart
+      new Date(t.created_date) >= fiscalYearStart &&
+      (!displayUserId || t.user_id === displayUserId)
     )
     .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
 
@@ -173,7 +174,8 @@ export default function Commissions() {
     .filter(t => 
       t.transaction_type === 'sale_commission' && 
       t.sale_type === 'construction' &&
-      new Date(t.created_date) >= fiscalYearStart
+      new Date(t.created_date) >= fiscalYearStart &&
+      (!displayUserId || t.user_id === displayUserId)
     )
     .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
 
