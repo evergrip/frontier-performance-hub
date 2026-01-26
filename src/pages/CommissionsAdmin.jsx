@@ -33,6 +33,9 @@ export default function CommissionsAdmin() {
     { id: 0, lead_name: '', sale_date: '', sale_amount: '', commission_amount: '', salesperson_id: '' }
   ]);
   const [nextId, setNextId] = useState(1);
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
+  const [selectedBank, setSelectedBank] = useState(null);
+  const [releaseAmount, setReleaseAmount] = useState('');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -137,6 +140,50 @@ export default function CommissionsAdmin() {
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || 'Failed to add legacy sales');
+    },
+  });
+
+  const releaseCommissionMutation = useMutation({
+    mutationFn: async ({ user_id, amount }) => {
+      // Get the bank
+      const banks = await base44.entities.CommissionBank.filter({ user_id });
+      const bank = banks[0];
+      
+      if (!bank) throw new Error('Commission bank not found');
+      
+      const parsedAmount = parseFloat(amount);
+      if (parsedAmount <= 0 || parsedAmount > bank.current_bank_balance) {
+        throw new Error('Invalid amount');
+      }
+
+      // Create a transaction record
+      await base44.entities.CommissionTransaction.create({
+        user_id,
+        transaction_type: 'adjustment',
+        amount: 0,
+        amount_made_available: parsedAmount,
+        status: 'available',
+        notes: 'Manual commission release by admin'
+      });
+
+      // Update the bank
+      await base44.entities.CommissionBank.update(bank.id, {
+        current_bank_balance: bank.current_bank_balance - parsedAmount,
+        available_balance: (bank.available_balance || 0) + parsedAmount
+      });
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCommissionBanks'] });
+      queryClient.invalidateQueries({ queryKey: ['allTransactions'] });
+      toast.success('Commission released successfully');
+      setReleaseDialogOpen(false);
+      setSelectedBank(null);
+      setReleaseAmount('');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to release commission');
     },
   });
 
@@ -414,10 +461,12 @@ export default function CommissionsAdmin() {
                     <TableHead>Current Tier</TableHead>
                     <TableHead>YTD Volume</TableHead>
                     <TableHead>Bank Balance</TableHead>
+                    <TableHead>Available Balance</TableHead>
                     <TableHead>Quarterly Payout</TableHead>
                     <TableHead>Total Earned</TableHead>
                     <TableHead>Total Paid</TableHead>
                     <TableHead>Commission Rule</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -431,6 +480,9 @@ export default function CommissionsAdmin() {
                       <TableCell className="font-bold text-amber-600">
                         ${(bank.current_bank_balance || 0).toLocaleString()}
                       </TableCell>
+                      <TableCell className="font-bold text-green-600">
+                        ${(bank.available_balance || 0).toLocaleString()}
+                      </TableCell>
                       <TableCell>${(bank.quarterly_payout_amount || 0).toLocaleString()}</TableCell>
                       <TableCell>${(bank.total_earned || 0).toLocaleString()}</TableCell>
                       <TableCell>${(bank.total_paid_out || 0).toLocaleString()}</TableCell>
@@ -443,11 +495,27 @@ export default function CommissionsAdmin() {
                           <span className="text-slate-400 text-sm">Not assigned</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {(bank.current_bank_balance || 0) > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-amber-600 border-amber-500 hover:bg-amber-50"
+                            onClick={() => {
+                              setSelectedBank(bank);
+                              setReleaseAmount('');
+                              setReleaseDialogOpen(true);
+                            }}
+                          >
+                            Release
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {allBanks.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-slate-500">
+                      <TableCell colSpan={10} className="text-center py-8 text-slate-500">
                         No commission banks found
                       </TableCell>
                     </TableRow>
@@ -670,6 +738,60 @@ export default function CommissionsAdmin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Release Commission Dialog */}
+      <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Release Banked Commission</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Salesperson</Label>
+              <div className="text-lg font-semibold">{getUserName(selectedBank?.user_id)}</div>
+            </div>
+            <div className="space-y-2">
+              <Label>Current Bank Balance</Label>
+              <div className="text-2xl font-bold text-amber-600">
+                ${(selectedBank?.current_bank_balance || 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="release-amount">Amount to Release</Label>
+              <Input
+                id="release-amount"
+                type="number"
+                placeholder="0.00"
+                value={releaseAmount}
+                onChange={(e) => setReleaseAmount(e.target.value)}
+                max={selectedBank?.current_bank_balance || 0}
+              />
+              <p className="text-xs text-slate-500">
+                This will move the specified amount from banked to available balance
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setReleaseDialogOpen(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => releaseCommissionMutation.mutate({
+                user_id: selectedBank?.user_id,
+                amount: releaseAmount
+              })}
+              disabled={!releaseAmount || parseFloat(releaseAmount) <= 0 || releaseCommissionMutation.isPending}
+              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 flex-1"
+            >
+              {releaseCommissionMutation.isPending ? 'Releasing...' : 'Release Commission'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
