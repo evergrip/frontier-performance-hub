@@ -612,7 +612,7 @@ export default function Commissions() {
                     className="cursor-pointer"
                     onClick={() => openTransactionDetail(transaction)}
                   >
-                    {format(new Date(transaction.created_date), 'MMM d, yyyy')}
+                    {transaction.sale_date ? format(new Date(transaction.sale_date), 'MMM d, yyyy') : format(new Date(transaction.created_date), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell 
                     className="capitalize cursor-pointer"
