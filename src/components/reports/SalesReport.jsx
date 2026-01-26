@@ -103,30 +103,23 @@ export default function SalesReport({ dateRange, staffId }) {
         ? endOfMonth(intervalStart)
         : endOfQuarter(intervalStart);
 
-      const periodLeads = leads.filter(lead => {
-        if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
-
-        // Only include leads that are in a closed state (converted or disqualified)
-        if (lead.status !== 'converted' && lead.status !== 'disqualified') return false;
-
-        // For converted leads, use the sale date; for disqualified, use created_date
-        if (lead.status === 'converted' && lead.converted_to_sale_id) {
-          const relatedSale = sales.find(s => s.id === lead.converted_to_sale_id);
-          if (relatedSale) {
-            const saleDate = relatedSale.close_date ? new Date(relatedSale.close_date) : new Date(relatedSale.created_date);
-            return saleDate >= intervalStart && saleDate <= intervalEnd;
-          }
-        }
-        
-        // For disqualified leads or converted leads without sale, use lead created date
-        const createdDate = new Date(lead.created_date);
-        return createdDate >= intervalStart && createdDate <= intervalEnd;
+      // Filter sales that closed in this period
+      const periodSalesForLeads = sales.filter(sale => {
+        if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
+        const saleDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+        return saleDate >= intervalStart && saleDate <= intervalEnd;
       });
 
-      const converted = periodLeads.filter(l => l.status === 'converted').length;
-      const disqualified = periodLeads.filter(l => l.status === 'disqualified').length;
-      const total = converted + disqualified;
-      const winRate = total > 0 ? (converted / total) * 100 : 0;
+      // Get the leads that were converted to these sales
+      const convertedLeadIds = periodSalesForLeads
+        .map(sale => sale.lead_id)
+        .filter(Boolean);
+      
+      const periodLeads = leads.filter(lead => convertedLeadIds.includes(lead.id));
+
+      const converted = periodLeads.length; // All leads in periodLeads are converted
+      const total = converted; // Only counting converted sales for win rate
+      const winRate = total > 0 ? 100 : 0; // 100% since we're only looking at sales that closed
 
       // Calculate win rate after proposal (only leads that reached proposal stage)
       const proposalLeads = periodLeads.filter(l => {
