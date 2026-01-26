@@ -95,6 +95,13 @@ Deno.serve(async (req) => {
       audit_log: newAuditLog,
     });
 
+    // If sale_date was updated, also update the related sale's close_date
+    if (updates.sale_date && originalTransaction.sale_id) {
+      await base44.asServiceRole.entities.Sale.update(originalTransaction.sale_id, {
+        close_date: updates.sale_date,
+      });
+    }
+
     return Response.json({
       success: true,
       message: 'Transaction updated and commission banks recalculated',
