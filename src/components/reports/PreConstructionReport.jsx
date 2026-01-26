@@ -39,7 +39,7 @@ export default function PreConstructionReport({ dateRange, staffId }) {
     pending_construction_sale: 'Pending Construction Sale'
   };
 
-  // Filter preconstruction sales started in the date range
+  // Filter preconstruction sales active or closed in the date range
   const filteredSales = useMemo(() => {
     if (!dateRange.start || !dateRange.end) return [];
     
@@ -47,7 +47,11 @@ export default function PreConstructionReport({ dateRange, staffId }) {
       if (sale.sale_type !== 'preconstruction') return false;
       
       const saleStartDate = new Date(sale.created_date);
-      const inDateRange = saleStartDate >= dateRange.start && saleStartDate <= dateRange.end;
+      const saleCloseDate = sale.close_date ? new Date(sale.close_date) : null;
+      
+      // Include if sale started before/during range AND (still open OR closed during/after range)
+      const inDateRange = saleStartDate <= dateRange.end && 
+        (!saleCloseDate || saleCloseDate >= dateRange.start);
       
       const staffMatch = staffId === 'all' || sale.assigned_to === staffId;
       
