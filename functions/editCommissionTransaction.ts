@@ -89,17 +89,14 @@ Deno.serve(async (req) => {
     const existingAuditLog = originalTransaction.audit_log || [];
     const newAuditLog = [...existingAuditLog, auditEntry];
 
-    // Update the transaction
+    // Update the transaction (created_date handled separately if provided)
     const updateData = {
       ...updates,
       audit_log: newAuditLog,
     };
     
-    // If created_date is being changed, update the record metadata
     if (created_date) {
-      await base44.asServiceRole.entities.CommissionTransaction.updateRecordMetadata(transaction_id, {
-        created_date: created_date,
-      });
+      updateData.created_date = created_date;
     }
     
     await base44.asServiceRole.entities.CommissionTransaction.update(transaction_id, updateData);
