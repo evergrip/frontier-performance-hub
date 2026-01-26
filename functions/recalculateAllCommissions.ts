@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
           rule_used: commissionRule.rule_name,
           tier: applicableTier.tier_name,
           ytd_before: ytdVolume,
-          ytd_after: newYtdVolume,
+          ytd_after: newTotalVolume,
           sale_amount: saleAmount,
           tier_breakdown: tierBreakdown
         });
