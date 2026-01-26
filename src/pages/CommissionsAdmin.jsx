@@ -75,6 +75,16 @@ export default function CommissionsAdmin() {
     queryFn: () => base44.entities.CommissionRule.list(),
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
+  const { data: sales = [] } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => base44.entities.Sale.list(),
+  });
+
   const approveMutation = useMutation({
     mutationFn: async ({ payout_id, approve }) => {
       const response = await base44.functions.invoke('approveBalloonPayment', {
@@ -175,6 +185,37 @@ export default function CommissionsAdmin() {
   const totalEarned = allBanks.reduce((sum, bank) => sum + (bank.total_earned || 0), 0);
   const totalPaidOut = allBanks.reduce((sum, bank) => sum + (bank.total_paid_out || 0), 0);
 
+  // Calculate pending phase releases
+  const calculatePendingReleases = () => {
+    const pendingReleases = [];
+    
+    projects.forEach(project => {
+      if (!project.phases || project.phases.length === 0) return;
+      
+      project.phases.forEach(phase => {
+        // Check if phase is completed but commission not processed
+        if (phase.status === 'completed' && !phase.commission_processed) {
+          const relatedSale = sales.find(s => s.id === project.sale_id);
+          if (relatedSale && relatedSale.commission_transaction_ids) {
+            const salesperson = users.find(u => u.id === relatedSale.assigned_to);
+            pendingReleases.push({
+              project_title: project.title,
+              phase_name: phase.name,
+              salesperson_name: salesperson?.full_name || 'Unknown',
+              salesperson_id: relatedSale.assigned_to,
+              project_id: project.id,
+              sale_id: project.sale_id
+            });
+          }
+        }
+      });
+    });
+    
+    return pendingReleases;
+  };
+
+  const pendingReleases = calculatePendingReleases();
+
   if (banksLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -227,6 +268,52 @@ export default function CommissionsAdmin() {
           value={pendingPayouts.length}
           icon={AlertCircle}
         />
+      </div>
+
+      {/* Pending Phase Releases Alert */}
+      {pendingReleases.length > 0 && (
+        <Card className="border-amber-500 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-amber-900">
+              <AlertCircle className="w-5 h-5" />
+              Pending Commission Releases ({pendingReleases.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-amber-800 mb-4">
+              The following completed project phases have banked commissions ready to be moved to available:
+            </p>
+            <div className="bg-white rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Phase</TableHead>
+                    <TableHead>Salesperson</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingReleases.map((release, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{release.project_title}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{release.phase_name}</Badge>
+                      </TableCell>
+                      <TableCell>{release.salesperson_name}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <p className="text-xs text-amber-700 mt-3">
+              Process these releases by updating the project phases to trigger commission availability.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 hidden">
+        {/* Hidden duplicate stats - keeping for spacing */}
       </div>
 
       <Tabs defaultValue="pending" className="space-y-6">
