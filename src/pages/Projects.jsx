@@ -121,6 +121,31 @@ export default function Projects() {
       actual_costs: project.actual_costs || project.contract_value || '',
       actual_margin: project.actual_margin || 45
     });
+    
+    // Initialize monthly allocations if advancing TO mobilization
+    const nextStatus = getNextStatus(project.status);
+    if (nextStatus === 'mobilization') {
+      const now = new Date();
+      const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear : currentYear - 1;
+      setSelectedFiscalYear(currentFiscalYear);
+      
+      // Initialize allocations or use existing
+      if (project.monthly_revenue_allocations?.length > 0) {
+        setMonthlyAllocations(project.monthly_revenue_allocations);
+      } else {
+        const allocations = [];
+        for (let i = 0; i < 12; i++) {
+          const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
+          const year = month < fiscalStartMonth ? currentFiscalYear + 1 : currentFiscalYear;
+          allocations.push({ year, month, percentage: 0 });
+        }
+        setMonthlyAllocations(allocations);
+      }
+    }
+    
     setAdvanceDialogOpen(true);
   };
 
@@ -160,6 +185,30 @@ export default function Projects() {
       actual_margin: project.actual_margin || 45,
       client_id: project.client_id || ''
     });
+    
+    // Load allocations if project is in mobilization or later
+    if (['mobilization', 'active_construction', 'substantial_completion_closeout'].includes(project.status)) {
+      const now = new Date();
+      const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear : currentYear - 1;
+      setSelectedFiscalYear(currentFiscalYear);
+      
+      if (project.monthly_revenue_allocations?.length > 0) {
+        setMonthlyAllocations(project.monthly_revenue_allocations);
+      } else {
+        const allocations = [];
+        for (let i = 0; i < 12; i++) {
+          const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
+          const year = month < fiscalStartMonth ? currentFiscalYear + 1 : currentFiscalYear;
+          allocations.push({ year, month, percentage: 0 });
+        }
+        setMonthlyAllocations(allocations);
+      }
+      setAllocationDialogOpen(true);
+    }
+    
     setEditDialogOpen(true);
   };
 
@@ -179,12 +228,19 @@ export default function Projects() {
       console.error('Phase commission update failed:', error);
     }
     
-    updateProjectStatusMutation.mutate({
+    // Save allocations if advancing TO mobilization or later
+    const updateData = {
       projectId: selectedProject.id,
       status: nextStatus,
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0
-    });
+    };
+    
+    if (nextStatus === 'mobilization' && monthlyAllocations.length > 0) {
+      updateData.monthly_revenue_allocations = monthlyAllocations.filter(a => parseFloat(a.percentage) > 0);
+    }
+    
+    updateProjectStatusMutation.mutate(updateData);
   };
 
   const handleCloseoutProject = async (e) => {
@@ -236,14 +292,22 @@ export default function Projects() {
   const handleUpdateProject = (e) => {
     e.preventDefault();
     
-    updateProjectStatusMutation.mutate({
+    const updateData = {
       projectId: selectedProject.id,
       status: selectedProject.status,
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0,
       client_id: projectForm.client_id || selectedProject.client_id
-    });
+    };
+    
+    // Save allocations if they've been modified
+    if (monthlyAllocations.length > 0 && allocationDialogOpen) {
+      updateData.monthly_revenue_allocations = monthlyAllocations.filter(a => parseFloat(a.percentage) > 0);
+    }
+    
+    updateProjectStatusMutation.mutate(updateData);
     setEditDialogOpen(false);
+    setAllocationDialogOpen(false);
   };
 
   const generateRandomColor = () => {
@@ -595,8 +659,89 @@ export default function Projects() {
               </div>
             )}
 
+            {/* Show revenue allocation for projects in mobilization or later */}
+            {selectedProject && ['mobilization', 'active_construction', 'substantial_completion_closeout'].includes(selectedProject.status) && (
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Revenue Forecast</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAllocationDialogOpen(!allocationDialogOpen)}
+                  >
+                    {allocationDialogOpen ? 'Hide' : 'Edit'} Schedule
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-500 mb-3">
+                  Adjust monthly revenue forecast for ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()}. Flexible until project closeout.
+                </p>
+                
+                {allocationDialogOpen && (
+                  <>
+                    <div className="mb-3">
+                      <Label className="text-xs mb-1">Fiscal Year</Label>
+                      <Select 
+                        value={selectedFiscalYear?.toString()} 
+                        onValueChange={(value) => {
+                          const newFiscalYear = parseInt(value);
+                          setSelectedFiscalYear(newFiscalYear);
+                          const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+                          const allocations = [];
+                          for (let i = 0; i < 12; i++) {
+                            const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
+                            const year = month < fiscalStartMonth ? newFiscalYear + 1 : newFiscalYear;
+                            allocations.push({ year, month, percentage: 0 });
+                          }
+                          setMonthlyAllocations(allocations);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={(selectedFiscalYear - 1).toString()}>FY {selectedFiscalYear - 1}</SelectItem>
+                          <SelectItem value={selectedFiscalYear?.toString()}>FY {selectedFiscalYear} (Current)</SelectItem>
+                          <SelectItem value={(selectedFiscalYear + 1).toString()}>FY {selectedFiscalYear + 1}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2 max-h-[160px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
+                      {monthlyAllocations.map((alloc) => {
+                        const monthName = new Date(alloc.year, alloc.month - 1).toLocaleString('default', { month: 'short' });
+                        return (
+                          <div key={`${alloc.year}-${alloc.month}`}>
+                            <label className="text-xs text-slate-600">{monthName} {alloc.year}</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              value={alloc.percentage}
+                              onChange={(e) => setMonthlyAllocations(monthlyAllocations.map(a => 
+                                a.month === alloc.month && a.year === alloc.year 
+                                  ? { ...a, percentage: parseFloat(e.target.value) || 0 }
+                                  : a
+                              ))}
+                              className="w-full px-2 py-1 border rounded text-xs"
+                              placeholder="0"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="text-xs mt-2 p-2 bg-blue-50 rounded">
+                      Total: <span className="font-semibold">
+                        {monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0).toFixed(1)}%
+                      </span> (flexible until closeout)
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2 justify-end pt-4">
-              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => { setEditDialogOpen(false); setAllocationDialogOpen(false); }}>
                 Cancel
               </Button>
               <Button type="submit" disabled={updateProjectStatusMutation.isPending}>
