@@ -106,84 +106,36 @@ export default function Dashboard() {
 
   const dateRange = getDateRange();
 
-  // Helper to get months in date range
-  const getMonthsInRange = () => {
-    if (!dateRange.start || !dateRange.end) return [];
-    const months = [];
-    let current = new Date(dateRange.start);
-    const end = new Date(dateRange.end);
-    
-    while (current <= end) {
-      months.push({ year: current.getFullYear(), month: current.getMonth() + 1 });
-      current.setMonth(current.getMonth() + 1);
-    }
-    return months;
-  };
+  const filteredSales = sales.filter(sale => {
+    if (!dateRange.start || !dateRange.end) return true;
+    const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+    return closeDate >= dateRange.start && closeDate <= dateRange.end;
+  });
 
-  const monthsInRange = getMonthsInRange();
+  const filteredProjects = projects.filter(project => {
+    if (!dateRange.start || !dateRange.end) return true;
+    const projectDate = project.start_date ? new Date(project.start_date) : new Date(project.created_date);
+    return projectDate >= dateRange.start && projectDate <= dateRange.end;
+  });
 
-  // Calculate revenue from project allocations
-  const calculateProjectRevenue = (project) => {
-    if (!project.monthly_revenue_allocations || project.monthly_revenue_allocations.length === 0) {
-      // Fallback: if no allocations, use full contract value if project started in range
-      if (dateRange.start && dateRange.end) {
-        const projectDate = project.start_date ? new Date(project.start_date) : new Date(project.created_date);
-        if (projectDate >= dateRange.start && projectDate <= dateRange.end) {
-          return project.contract_value || 0;
-        }
-      }
-      return 0;
-    }
-
-    const allocationsInRange = project.monthly_revenue_allocations.filter(alloc =>
-      monthsInRange.some(m => m.year === alloc.year && m.month === alloc.month)
-    );
-
-    const totalPercentageInRange = allocationsInRange.reduce((sum, alloc) => sum + (alloc.percentage || 0), 0);
-    return (project.contract_value || 0) * (totalPercentageInRange / 100);
-  };
-
-  // Calculate metrics using project allocations
-  const totalRevenue = projects.reduce((sum, p) => sum + calculateProjectRevenue(p), 0);
-  const preconRevenue = projects
-    .filter(p => p.project_type === 'preconstruction')
-    .reduce((sum, p) => sum + calculateProjectRevenue(p), 0);
-  const constructionRevenue = projects
-    .filter(p => p.project_type === 'construction')
-    .reduce((sum, p) => sum + calculateProjectRevenue(p), 0);
-
-  const activeProjects = projects.filter(p => !['closed', 'completion'].includes(p.status)).length;
-  const activeSales = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
-  const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
-
-  // Calculate costs for projects with allocations in the date range
-  const totalCosts = projects.reduce((sum, p) => {
-    const revenueInRange = calculateProjectRevenue(p);
-    if (revenueInRange > 0) {
-      return sum + (p.actual_costs || 0);
-    }
-    return sum;
-  }, 0);
-  
-  const totalMargin = totalRevenue - totalCosts;
-  const marginPercent = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
-
-  // Filter leads for conversion metrics
   const filteredLeads = leads.filter(lead => {
     if (!dateRange.start || !dateRange.end) return true;
     const leadDate = new Date(lead.created_date);
     return leadDate >= dateRange.start && leadDate <= dateRange.end;
   });
 
-  // Count projects with revenue allocated in the date range
-  const filteredProjects = projects.filter(project => calculateProjectRevenue(project) > 0);
-
-  // Count sales based on close dates for display purposes
-  const salesInRange = sales.filter(sale => {
-    if (!dateRange.start || !dateRange.end) return true;
-    const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
-    return closeDate >= dateRange.start && closeDate <= dateRange.end;
-  }).length;
+  // Calculate metrics
+  const totalRevenue = filteredSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const preconRevenue = filteredSales.filter(s => s.sale_type === 'preconstruction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const constructionRevenue = filteredSales.filter(s => s.sale_type === 'construction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  
+  const activeProjects = projects.filter(p => !['closed', 'completion'].includes(p.status)).length;
+  const activeSales = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
+  const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
+  
+  const totalCosts = filteredProjects.reduce((sum, p) => sum + (p.actual_costs || 0), 0);
+  const totalMargin = totalRevenue - totalCosts;
+  const marginPercent = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
 
   const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
   const totalLeadsForConversion = filteredLeads.filter(l => ['converted', 'disqualified'].includes(l.status)).length;
@@ -255,29 +207,16 @@ export default function Dashboard() {
     };
   }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth]);
 
-  // Monthly trend data using project allocations
+  // Monthly trend data
   const monthlyTrendData = dateRange.start && dateRange.end ? eachMonthOfInterval({
     start: dateRange.start,
     end: dateRange.end
   }).map(month => {
-    const year = month.getFullYear();
-    const monthNum = month.getMonth() + 1;
-    
-    const revenue = projects.reduce((sum, project) => {
-      if (!project.monthly_revenue_allocations || project.monthly_revenue_allocations.length === 0) {
-        return sum;
-      }
-      
-      const allocation = project.monthly_revenue_allocations.find(
-        alloc => alloc.year === year && alloc.month === monthNum
-      );
-      
-      if (allocation) {
-        return sum + ((project.contract_value || 0) * (allocation.percentage || 0) / 100);
-      }
-      return sum;
-    }, 0);
-
+    const monthSales = sales.filter(s => {
+      const closeDate = s.close_date ? new Date(s.close_date) : new Date(s.created_date);
+      return closeDate >= startOfMonth(month) && closeDate <= endOfMonth(month);
+    });
+    const revenue = monthSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
     return {
       month: format(month, 'MMM yy'),
       revenue: revenue / 1000
@@ -423,7 +362,7 @@ export default function Dashboard() {
             title="Total Revenue"
             value={`$${(totalRevenue / 1000).toFixed(0)}K`}
             icon={DollarSign}
-            subtitle="Allocated revenue"
+            subtitle={`${filteredSales.length} sales`}
           />
         )}
         {visibleMetrics.preconRevenue && (
@@ -431,7 +370,7 @@ export default function Dashboard() {
             title="Pre-Construction Revenue"
             value={`$${(preconRevenue / 1000).toFixed(0)}K`}
             icon={Briefcase}
-            subtitle="Precon allocated"
+            subtitle={`${filteredSales.filter(s => s.sale_type === 'preconstruction').length} precon sales`}
           />
         )}
         {visibleMetrics.constructionRevenue && (
@@ -439,7 +378,7 @@ export default function Dashboard() {
             title="Construction Revenue"
             value={`$${(constructionRevenue / 1000).toFixed(0)}K`}
             icon={Building2}
-            subtitle="Construction allocated"
+            subtitle={`${filteredSales.filter(s => s.sale_type === 'construction').length} construction sales`}
           />
         )}
         {visibleMetrics.activeProjects && (
