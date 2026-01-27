@@ -612,9 +612,9 @@ export default function Projects() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={(selectedFiscalYear - 1).toString()}>FY {selectedFiscalYear - 1}</SelectItem>
-                          <SelectItem value={selectedFiscalYear?.toString()}>FY {selectedFiscalYear} (Current)</SelectItem>
-                          <SelectItem value={(selectedFiscalYear + 1).toString()}>FY {selectedFiscalYear + 1}</SelectItem>
+                          <SelectItem value={(selectedFiscalYear - 1).toString()}>{getFiscalYearLabel(selectedFiscalYear - 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
+                          <SelectItem value={selectedFiscalYear?.toString()}>{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10, true)}</SelectItem>
+                          <SelectItem value={(selectedFiscalYear + 1).toString()}>{getFiscalYearLabel(selectedFiscalYear + 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -782,9 +782,9 @@ export default function Projects() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={(selectedFiscalYear - 1).toString()}>FY {selectedFiscalYear - 1}</SelectItem>
-                          <SelectItem value={selectedFiscalYear?.toString()}>FY {selectedFiscalYear} (Current)</SelectItem>
-                          <SelectItem value={(selectedFiscalYear + 1).toString()}>FY {selectedFiscalYear + 1}</SelectItem>
+                          <SelectItem value={(selectedFiscalYear - 1).toString()}>{getFiscalYearLabel(selectedFiscalYear - 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
+                          <SelectItem value={selectedFiscalYear?.toString()}>{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10, true)}</SelectItem>
+                          <SelectItem value={(selectedFiscalYear + 1).toString()}>{getFiscalYearLabel(selectedFiscalYear + 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
