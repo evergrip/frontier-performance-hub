@@ -134,9 +134,11 @@ export default function Dashboard() {
   const activeSales = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
   const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
   
+  // Calculate margin from projects (contract value vs actual costs)
+  const projectRevenue = filteredProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
   const totalCosts = filteredProjects.reduce((sum, p) => sum + (p.actual_costs || 0), 0);
-  const totalMargin = totalRevenue - totalCosts;
-  const marginPercent = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
+  const totalMargin = projectRevenue - totalCosts;
+  const marginPercent = projectRevenue > 0 ? (totalMargin / projectRevenue) * 100 : 0;
 
   const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
   const totalLeadsForConversion = filteredLeads.filter(l => ['converted', 'disqualified'].includes(l.status)).length;
