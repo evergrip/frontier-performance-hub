@@ -31,6 +31,7 @@ export default function Dashboard() {
     activeLead: true,
     cashFlow: true,
     margins: true,
+    grossProfit: true,
     conversionRate: true,
     preconRevenue: true,
     constructionRevenue: true,
@@ -125,27 +126,29 @@ export default function Dashboard() {
     return leadDate >= dateRange.start && leadDate <= dateRange.end;
   });
 
-  // Calculate metrics
-  const totalRevenue = filteredSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
-  const preconRevenue = filteredSales.filter(s => s.sale_type === 'preconstruction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
-  const constructionRevenue = filteredSales.filter(s => s.sale_type === 'construction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  // Calculate metrics - closed jobs only
+  const closedSales = filteredSales.filter(s => s.status === 'closed_won');
+  const closedProjects = filteredProjects.filter(p => p.status === 'closed');
+  
+  const totalRevenue = closedSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const preconRevenue = closedSales.filter(s => s.sale_type === 'preconstruction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const constructionRevenue = closedSales.filter(s => s.sale_type === 'construction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
   
   const activeProjects = projects.filter(p => !['closed', 'completion'].includes(p.status)).length;
   const activeSales = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
   const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
   
-  // Calculate weighted average margin from projects
+  // Calculate weighted average margin from closed projects
   let totalProjectRevenue = 0;
   let totalGrossProfit = 0;
   
-  filteredProjects.forEach(p => {
+  closedProjects.forEach(p => {
     const revenue = p.contract_value || 0;
     const marginPct = p.actual_margin || 0;
     totalProjectRevenue += revenue;
     totalGrossProfit += revenue * (marginPct / 100);
   });
   
-  const totalMargin = totalGrossProfit;
   const marginPercent = totalProjectRevenue > 0 ? (totalGrossProfit / totalProjectRevenue) * 100 : 0;
 
   const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
@@ -373,10 +376,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {visibleMetrics.totalRevenue && (
           <StatCard
-            title="Total Revenue"
+            title="Total Revenue (Closed)"
             value={`$${(totalRevenue / 1000).toFixed(0)}K`}
             icon={DollarSign}
-            subtitle={`${filteredSales.length} sales`}
+            subtitle={`${closedSales.length} closed sales`}
           />
         )}
         {visibleMetrics.preconRevenue && (
@@ -419,12 +422,20 @@ export default function Dashboard() {
             subtitle={`${leads.length} total leads`}
           />
         )}
+        {visibleMetrics.grossProfit && (
+          <StatCard
+            title="Total Gross Profit"
+            value={`$${(totalGrossProfit / 1000).toFixed(0)}K`}
+            icon={DollarSign}
+            subtitle={`${closedProjects.length} closed projects`}
+          />
+        )}
         {visibleMetrics.margins && (
           <StatCard
-            title="Gross Margin"
+            title="Gross Margin %"
             value={`${marginPercent.toFixed(1)}%`}
             icon={TrendingUp}
-            subtitle={`$${(totalMargin / 1000).toFixed(0)}K margin`}
+            subtitle={`Weighted average`}
             trend={marginPercent > 20 ? 'Healthy' : 'Below target'}
             trendDirection={marginPercent > 20 ? 'up' : 'down'}
           />
@@ -656,11 +667,19 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
+                  id="grossProfit"
+                  checked={visibleMetrics.grossProfit}
+                  onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, grossProfit: checked})}
+                />
+                <Label htmlFor="grossProfit" className="cursor-pointer">Total Gross Profit</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
                   id="margins"
                   checked={visibleMetrics.margins}
                   onCheckedChange={(checked) => setVisibleMetrics({...visibleMetrics, margins: checked})}
                 />
-                <Label htmlFor="margins" className="cursor-pointer">Gross Margin</Label>
+                <Label htmlFor="margins" className="cursor-pointer">Gross Margin %</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
