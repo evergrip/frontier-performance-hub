@@ -27,6 +27,7 @@ export default function Projects() {
   });
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [monthlyAllocations, setMonthlyAllocations] = useState([]);
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -130,12 +131,23 @@ export default function Projects() {
       actual_margin: project.actual_margin || 45,
       variance_explanation: ''
     });
-    // Initialize monthly allocations from current year
+    
+    // Determine current fiscal year based on company settings
     const now = new Date();
+    const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1; // Default to January
+    const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+    
+    // If we're before the fiscal year start month, we're in the previous fiscal year
+    const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear : currentYear - 1;
+    setSelectedFiscalYear(currentFiscalYear);
+    
+    // Initialize monthly allocations for the current fiscal year
     const allocations = [];
-    for (let month = 1; month <= 12; month++) {
-      allocations.push({ year: currentYear, month, percentage: 0 });
+    for (let i = 0; i < 12; i++) {
+      const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
+      const year = month < fiscalStartMonth ? currentFiscalYear + 1 : currentFiscalYear;
+      allocations.push({ year, month, percentage: 0 });
     }
     setMonthlyAllocations(allocations);
     setCloseoutDialogOpen(true);
@@ -657,18 +669,54 @@ export default function Projects() {
               ) : null;
             })()}
 
+            {/* Fiscal Year Selector */}
+            <div>
+              <Label className="block mb-2">Fiscal Year for Revenue Allocation *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Select which fiscal year this project's revenue should be allocated to
+              </p>
+              <Select 
+                value={selectedFiscalYear?.toString()} 
+                onValueChange={(value) => {
+                  const newFiscalYear = parseInt(value);
+                  setSelectedFiscalYear(newFiscalYear);
+                  
+                  // Regenerate monthly allocations for the new fiscal year
+                  const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+                  const allocations = [];
+                  for (let i = 0; i < 12; i++) {
+                    const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
+                    const year = month < fiscalStartMonth ? newFiscalYear + 1 : newFiscalYear;
+                    allocations.push({ year, month, percentage: 0 });
+                  }
+                  setMonthlyAllocations(allocations);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select fiscal year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={(selectedFiscalYear - 2).toString()}>FY {selectedFiscalYear - 2}</SelectItem>
+                  <SelectItem value={(selectedFiscalYear - 1).toString()}>FY {selectedFiscalYear - 1}</SelectItem>
+                  <SelectItem value={selectedFiscalYear?.toString()}>FY {selectedFiscalYear} (Current)</SelectItem>
+                  <SelectItem value={(selectedFiscalYear + 1).toString()}>FY {selectedFiscalYear + 1}</SelectItem>
+                  <SelectItem value={(selectedFiscalYear + 2).toString()}>FY {selectedFiscalYear + 2}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Monthly Revenue Allocation */}
             <div>
               <Label className="block mb-2">Monthly Revenue Allocation *</Label>
               <p className="text-xs text-slate-500 mb-3">
-                Distribute the ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} gross revenue across months. Must total 100%.
+                Distribute the ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} gross revenue across FY {selectedFiscalYear} months. Must total 100%.
               </p>
               <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
                 {monthlyAllocations.map((alloc) => {
                   const monthName = new Date(alloc.year, alloc.month - 1).toLocaleString('default', { month: 'short' });
                   return (
                     <div key={`${alloc.year}-${alloc.month}`}>
-                      <label className="text-xs text-slate-600">{monthName}</label>
+                      <label className="text-xs text-slate-600">{monthName} {alloc.year}</label>
                       <input
                         type="number"
                         min="0"
