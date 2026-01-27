@@ -13,6 +13,8 @@ import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import UsersAdmin from './pages/UsersAdmin';
+import ProjectsAdmin from './pages/ProjectsAdmin';
+import CompanyAdmin from './pages/CompanyAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -32,6 +34,8 @@ export const PAGES = {
     "ScheduleView": ScheduleView,
     "Scheduler": Scheduler,
     "UsersAdmin": UsersAdmin,
+    "ProjectsAdmin": ProjectsAdmin,
+    "CompanyAdmin": CompanyAdmin,
 }
 
 export const pagesConfig = {
