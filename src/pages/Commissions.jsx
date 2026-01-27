@@ -273,7 +273,6 @@ export default function Commissions() {
     setEditFormData({
       amount: transaction.amount,
       sale_amount: transaction.sale_amount || 0,
-      sale_date: transaction.sale_date ? format(new Date(transaction.sale_date), 'yyyy-MM-dd') : '',
       user_id: transaction.user_id,
     });
     setEditNote('');
@@ -316,9 +315,6 @@ export default function Commissions() {
     }
     if (editFormData.user_id !== selectedTransaction.user_id) {
       updates.user_id = editFormData.user_id;
-    }
-    if (editFormData.sale_date !== (selectedTransaction.sale_date ? format(new Date(selectedTransaction.sale_date), 'yyyy-MM-dd') : '')) {
-      updates.sale_date = editFormData.sale_date ? new Date(editFormData.sale_date).toISOString() : null;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -610,7 +606,7 @@ export default function Commissions() {
                     className="cursor-pointer"
                     onClick={() => openTransactionDetail(transaction)}
                   >
-                    {transaction.sale_date ? format(new Date(transaction.sale_date), 'MMM d, yyyy') : format(new Date(transaction.created_date), 'MMM d, yyyy')}
+                    {format(new Date(transaction.created_date), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell 
                     className="capitalize cursor-pointer"
@@ -740,15 +736,6 @@ export default function Commissions() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Sale Date</Label>
-                    <Input
-                      type="date"
-                      value={editFormData.sale_date}
-                      onChange={(e) => setEditFormData({ ...editFormData, sale_date: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
                     <Label>Commission Amount</Label>
                     <Input
                       type="number"
@@ -816,13 +803,7 @@ export default function Commissions() {
               <div className="p-4 bg-slate-50 rounded-lg">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-slate-500">Sale Date</p>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {selectedTransaction.sale_date ? format(new Date(selectedTransaction.sale_date), 'MMM d, yyyy') : 'Not set'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500">Logged Date</p>
+                    <p className="text-xs text-slate-500">Transaction Date</p>
                     <p className="text-sm font-semibold text-slate-900">
                       {format(new Date(selectedTransaction.created_date), 'MMM d, yyyy')}
                     </p>

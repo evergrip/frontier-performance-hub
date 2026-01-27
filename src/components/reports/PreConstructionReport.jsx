@@ -45,13 +45,12 @@ export default function PreConstructionReport({ dateRange, staffId }) {
     
     return sales.filter(sale => {
       if (sale.sale_type !== 'preconstruction') return false;
+      if (!sale.close_date) return false;
       
-      const saleStartDate = new Date(sale.created_date);
-      const saleCloseDate = sale.close_date ? new Date(sale.close_date) : null;
+      const saleCloseDate = new Date(sale.close_date);
       
-      // Include if sale started before/during range AND (still open OR closed during/after range)
-      const inDateRange = saleStartDate <= dateRange.end && 
-        (!saleCloseDate || saleCloseDate >= dateRange.start);
+      // Include if sale closed within the date range
+      const inDateRange = saleCloseDate >= dateRange.start && saleCloseDate <= dateRange.end;
       
       const staffMatch = staffId === 'all' || sale.assigned_to === staffId;
       

@@ -106,7 +106,8 @@ export default function SalesReport({ dateRange, staffId }) {
       // Filter sales that closed in this period
       const periodSalesForLeads = sales.filter(sale => {
         if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
-        const saleDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+        if (!sale.close_date) return false;
+        const saleDate = new Date(sale.close_date);
         return saleDate >= intervalStart && saleDate <= intervalEnd;
       });
 
@@ -131,11 +132,11 @@ export default function SalesReport({ dateRange, staffId }) {
       const proposalTotal = proposalLeads.length;
       const winRateAfterProposal = proposalTotal > 0 ? (convertedAfterProposal / proposalTotal) * 100 : 0;
 
-      // Calculate sales volume for this period using sale_date from commission transactions
+      // Calculate sales volume for this period
       const periodSales = sales.filter(sale => {
         if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
-        // Use close_date if available, otherwise fall back to created_date
-        const saleDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+        if (!sale.close_date) return false;
+        const saleDate = new Date(sale.close_date);
         return saleDate >= intervalStart && saleDate <= intervalEnd;
       });
       
@@ -166,9 +167,9 @@ export default function SalesReport({ dateRange, staffId }) {
     const filteredSales = sales.filter(sale => {
       if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
       if (!dateRange.start || !dateRange.end) return true;
+      if (!sale.close_date) return false;
       
-      // Use close_date if available, otherwise fall back to created_date for reporting
-      const saleDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+      const saleDate = new Date(sale.close_date);
       return saleDate >= dateRange.start && saleDate <= dateRange.end;
     });
 

@@ -110,7 +110,8 @@ export default function Dashboard() {
 
   const filteredSales = sales.filter(sale => {
     if (!dateRange.start || !dateRange.end) return true;
-    const closeDate = sale.close_date ? new Date(sale.close_date) : new Date(sale.created_date);
+    if (!sale.close_date) return false;
+    const closeDate = new Date(sale.close_date);
     return closeDate >= dateRange.start && closeDate <= dateRange.end;
   });
 
@@ -227,7 +228,8 @@ export default function Dashboard() {
     end: dateRange.end
   }).map(month => {
     const monthSales = sales.filter(s => {
-      const closeDate = s.close_date ? new Date(s.close_date) : new Date(s.created_date);
+      if (!s.close_date) return false;
+      const closeDate = new Date(s.close_date);
       return closeDate >= startOfMonth(month) && closeDate <= endOfMonth(month);
     });
     const revenue = monthSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
