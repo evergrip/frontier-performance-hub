@@ -56,9 +56,9 @@ Deno.serve(async (req) => {
     // Get phase payout percentage
     let phasePayouts = [];
     if (type === 'preconstruction') {
-      phasePayouts = commissionRule.precon_phase_payouts || [];
+      phasePayouts = commissionRule.precon_phase_availability || [];
     } else if (type === 'construction') {
-      phasePayouts = commissionRule.construction_phase_payouts || [];
+      phasePayouts = commissionRule.construction_phase_availability || [];
     }
 
     const phasePayout = phasePayouts.find(p => p.phase === phase);

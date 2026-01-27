@@ -119,6 +119,10 @@ export default function Clients() {
 
   const handleCreateClient = (e) => {
     e.preventDefault();
+    if (!clientForm.contact_name) {
+      toast.error('Contact Name is required.');
+      return;
+    }
     createClientMutation.mutate(clientForm);
   };
 
@@ -157,6 +161,10 @@ export default function Clients() {
 
   const handleUpdateClient = (e) => {
     e.preventDefault();
+    if (!clientForm.contact_name) {
+      toast.error('Contact Name is required.');
+      return;
+    }
     updateClientMutation.mutate({
       id: selectedClient.id,
       data: clientForm
