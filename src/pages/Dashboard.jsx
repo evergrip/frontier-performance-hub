@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, LineChart as RechartsLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format, eachMonthOfInterval } from 'date-fns';
+import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -329,6 +330,9 @@ export default function Dashboard() {
                 value={fiscalYear}
                 onChange={(e) => setFiscalYear(parseInt(e.target.value))}
               />
+              <p className="text-xs text-slate-500 mt-1">
+                {getFiscalYearLabel(fiscalYear, fiscalYearStartMonth, true)}
+              </p>
             </div>
           )}
 
@@ -442,7 +446,7 @@ export default function Dashboard() {
               Build Capacity Forecast
             </CardTitle>
             <CardDescription>
-              Based on FY{fiscalYear} revenue target of ${(currentFiscalGoal.revenue_target / 1000000).toFixed(1)}M
+              Based on {getFiscalYearLabel(fiscalYear, fiscalYearStartMonth)} revenue target of ${(currentFiscalGoal.revenue_target / 1000000).toFixed(1)}M
               {capacityForecast.usingGrowthForecast && settings.next_year_revenue_target && (
                 <> · Next year: ${(settings.next_year_revenue_target / 1000000).toFixed(1)}M</>
               )}
@@ -505,7 +509,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5 text-emerald-600" />
-              Fiscal Year {fiscalYear} Goals
+              {getFiscalYearLabel(fiscalYear, fiscalYearStartMonth, true)} Goals
             </CardTitle>
           </CardHeader>
           <CardContent>

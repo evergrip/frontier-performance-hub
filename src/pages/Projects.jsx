@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
+import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 
 export default function Projects() {
   const queryClient = useQueryClient();
@@ -922,11 +923,11 @@ export default function Projects() {
                   <SelectValue placeholder="Select fiscal year" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={(selectedFiscalYear - 2).toString()}>FY {selectedFiscalYear - 2}</SelectItem>
-                  <SelectItem value={(selectedFiscalYear - 1).toString()}>FY {selectedFiscalYear - 1}</SelectItem>
-                  <SelectItem value={selectedFiscalYear?.toString()}>FY {selectedFiscalYear} (Current)</SelectItem>
-                  <SelectItem value={(selectedFiscalYear + 1).toString()}>FY {selectedFiscalYear + 1}</SelectItem>
-                  <SelectItem value={(selectedFiscalYear + 2).toString()}>FY {selectedFiscalYear + 2}</SelectItem>
+                  <SelectItem value={(selectedFiscalYear - 2).toString()}>{getFiscalYearLabel(selectedFiscalYear - 2, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
+                  <SelectItem value={(selectedFiscalYear - 1).toString()}>{getFiscalYearLabel(selectedFiscalYear - 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
+                  <SelectItem value={selectedFiscalYear?.toString()}>{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10, true)}</SelectItem>
+                  <SelectItem value={(selectedFiscalYear + 1).toString()}>{getFiscalYearLabel(selectedFiscalYear + 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
+                  <SelectItem value={(selectedFiscalYear + 2).toString()}>{getFiscalYearLabel(selectedFiscalYear + 2, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
