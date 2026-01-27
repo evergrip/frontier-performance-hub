@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BarChart3, Briefcase, Building2, FileText, TrendingUp, Calendar } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format } from 'date-fns';
+import { getFiscalYearDates } from '../components/utils/fiscalYear';
 import SalesReport from '../components/reports/SalesReport';
 import PreConstructionReport from '../components/reports/PreConstructionReport';
 
@@ -62,17 +63,14 @@ export default function Reports() {
         const fiscalStartMonth = settings?.fiscal_year_start_month;
         
         if (fiscalStartMonth) {
-          // fiscalStartMonth is 1-12, convert to 0-11 for Date constructor
-          const monthIndex = fiscalStartMonth - 1;
-          // If fiscal year starts after January, it begins in the previous calendar year
-          const startYear = fiscalStartMonth > 1 ? selectedFiscalYear - 1 : selectedFiscalYear;
-          const startDate = new Date(startYear, monthIndex, 1);
-          const endDate = new Date(startYear + 1, monthIndex, 0);
+          // Use centralized fiscal year calculation
+          const { startDate, endDate } = getFiscalYearDates(selectedFiscalYear, fiscalStartMonth);
           return {
             start: startDate,
             end: endDate
           };
         } else {
+          // Fallback to calendar year if no fiscal start month is set
           const date = new Date(selectedFiscalYear, 0, 1);
           return {
             start: startOfYear(date),
@@ -165,13 +163,10 @@ export default function Reports() {
                     {availableYears.map(year => {
                       const settings = companySettings[0];
                       const fiscalStartMonth = settings?.fiscal_year_start_month || 1;
-                      const startYear = fiscalStartMonth > 1 ? year - 1 : year;
-                      const endYear = fiscalStartMonth > 1 ? year : year + 1;
-                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                      const monthName = monthNames[fiscalStartMonth - 1];
+                      const { label } = getFiscalYearDates(year, fiscalStartMonth);
                       return (
                         <SelectItem key={year} value={year.toString()}>
-                          FY {year} ({monthName} {startYear} - {monthNames[(fiscalStartMonth + 11 - 1) % 12]} {endYear})
+                          {label}
                         </SelectItem>
                       );
                     })}

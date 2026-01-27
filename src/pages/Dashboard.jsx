@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, LineChart as RechartsLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format, eachMonthOfInterval } from 'date-fns';
-import { getFiscalYearLabel } from '../components/utils/fiscalYear';
+import { getFiscalYearLabel, getFiscalYearDates } from '../components/utils/fiscalYear';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -94,12 +94,9 @@ export default function Dashboard() {
         end: endOfQuarter(new Date(selectedYear, quarterStartMonth, 1))
       };
     } else if (selectedDateRangeType === 'fiscal_year') {
-      // FY starts in the selected year if start month <= current month, otherwise previous year
-      // For FY 2026: Oct 1, 2025 - Sep 30, 2026
-      const fyStartYear = fiscalYearStartMonth <= 6 ? fiscalYear : fiscalYear - 1;
-      const fyStart = new Date(fyStartYear, fiscalYearStartMonth - 1, 1);
-      const fyEnd = new Date(fyStartYear + 1, fiscalYearStartMonth - 1, 0);
-      return { start: fyStart, end: fyEnd };
+      // Use centralized fiscal year calculation
+      const { startDate, endDate } = getFiscalYearDates(fiscalYear, fiscalYearStartMonth);
+      return { start: startDate, end: endDate };
     } else if (selectedDateRangeType === 'custom') {
       return {
         start: customStartDate ? new Date(customStartDate) : null,

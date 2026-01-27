@@ -14,6 +14,7 @@ import StatCard from '@/components/common/StatCard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { getFiscalYearDates } from '../components/utils/fiscalYear';
 
 export default function Commissions() {
   const [user, setUser] = useState(null);
@@ -112,22 +113,15 @@ export default function Commissions() {
     initialData: [],
   });
 
-  const getFiscalYearStart = (fiscalStartMonth = 1) => {
+  const getFilteredTransactions = () => {
+    const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
     
-    if (currentMonth >= fiscalStartMonth) {
-      return new Date(currentYear, fiscalStartMonth - 1, 1);
-    } else {
-      return new Date(currentYear - 1, fiscalStartMonth - 1, 1);
-    }
-  };
-
-  const getFilteredTransactions = () => {
-    const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
-    const fiscalYearStart = getFiscalYearStart(fiscalStartMonth);
-    const today = new Date();
+    // Determine the current fiscal year (year in which it ends)
+    const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear;
+    const { startDate: fiscalYearStart } = getFiscalYearDates(currentFiscalYear, fiscalStartMonth);
     
     return transactions.filter(transaction => {
       const transactionDate = new Date(transaction.created_date);
@@ -159,7 +153,11 @@ export default function Commissions() {
 
   // Calculate YTD sales by type for current fiscal year (filtered to the selected user)
   const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
-  const fiscalYearStart = getFiscalYearStart(fiscalStartMonth);
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear;
+  const { startDate: fiscalYearStart } = getFiscalYearDates(currentFiscalYear, fiscalStartMonth);
   
   const ytdPreconSales = transactions
     .filter(t => 
