@@ -112,9 +112,9 @@ export default function Clients() {
   const filteredClients = clients
     .filter(client => client.status !== 'archived' || showArchived)
     .filter(client =>
-      client.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       client.contact_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      client.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.phone?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleCreateClient = (e) => {
@@ -222,10 +222,10 @@ export default function Clients() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead>Client Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Address</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -237,10 +237,10 @@ export default function Clients() {
                     className="cursor-pointer hover:bg-slate-50"
                     onClick={() => openClientDetail(client)}
                   >
-                    <TableCell className="font-medium">{client.company_name || '—'}</TableCell>
-                    <TableCell>{client.contact_name}</TableCell>
+                    <TableCell className="font-medium">{client.contact_name}</TableCell>
                     <TableCell className="text-sm text-slate-500">{client.email || '—'}</TableCell>
                     <TableCell className="text-sm text-slate-500">{client.phone || '—'}</TableCell>
+                    <TableCell className="text-sm text-slate-500">{client.address || '—'}</TableCell>
                     <TableCell>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         client.status === 'archived' ? 'bg-slate-100 text-slate-700' :
@@ -304,22 +304,14 @@ export default function Clients() {
             <DialogTitle>Add New Client</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateClient} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Company Name</Label>
-                <Input
-                  value={clientForm.company_name}
-                  onChange={(e) => setClientForm({...clientForm, company_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Contact Name *</Label>
-                <Input
-                  value={clientForm.contact_name}
-                  onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
-                  required
-                />
-              </div>
+            <div>
+              <Label>Client Name *</Label>
+              <Input
+                value={clientForm.contact_name}
+                onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
+                placeholder="John and Jane Smith"
+                required
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -372,22 +364,14 @@ export default function Clients() {
             <DialogTitle>Edit Client</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleUpdateClient} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Company Name</Label>
-                <Input
-                  value={clientForm.company_name}
-                  onChange={(e) => setClientForm({...clientForm, company_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Contact Name *</Label>
-                <Input
-                  value={clientForm.contact_name}
-                  onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
-                  required
-                />
-              </div>
+            <div>
+              <Label>Client Name *</Label>
+              <Input
+                value={clientForm.contact_name}
+                onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
+                placeholder="John and Jane Smith"
+                required
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -446,10 +430,7 @@ export default function Clients() {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-2xl font-bold text-slate-900">{selectedClient.company_name || selectedClient.contact_name}</h3>
-                      {selectedClient.company_name && (
-                        <p className="text-slate-600">{selectedClient.contact_name}</p>
-                      )}
+                      <h3 className="text-2xl font-bold text-slate-900">{selectedClient.contact_name}</h3>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-slate-600">Lifetime Value</p>
@@ -553,7 +534,7 @@ export default function Clients() {
       <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Lead for {selectedClient?.company_name}</DialogTitle>
+            <DialogTitle>Create Lead for {selectedClient?.contact_name}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateLead} className="space-y-4">
             <div>
