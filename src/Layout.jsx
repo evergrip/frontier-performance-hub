@@ -35,10 +35,7 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const adminNavigation = [
-    { name: 'User Management', icon: Users, page: 'UsersAdmin' },
-    { name: 'Commission Rules', icon: Settings, page: 'CommissionRules' },
-    { name: 'Commission Admin', icon: Settings, page: 'CommissionsAdmin' },
-    { name: 'Company Settings', icon: Building2, page: 'CompanySettings' },
+    { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
   ];
 
   const userNavigation = [
