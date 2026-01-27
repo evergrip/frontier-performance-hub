@@ -134,15 +134,19 @@ export default function Dashboard() {
   const activeSales = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
   const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
   
-  // Calculate margin from projects based on their actual margin percentages
-  const projectRevenue = filteredProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
-  const totalGrossProfit = filteredProjects.reduce((sum, p) => {
+  // Calculate weighted average margin from projects
+  let totalProjectRevenue = 0;
+  let totalGrossProfit = 0;
+  
+  filteredProjects.forEach(p => {
     const revenue = p.contract_value || 0;
     const marginPct = p.actual_margin || 0;
-    return sum + (revenue * (marginPct / 100));
-  }, 0);
+    totalProjectRevenue += revenue;
+    totalGrossProfit += revenue * (marginPct / 100);
+  });
+  
   const totalMargin = totalGrossProfit;
-  const marginPercent = projectRevenue > 0 ? (totalGrossProfit / projectRevenue) * 100 : 0;
+  const marginPercent = totalProjectRevenue > 0 ? (totalGrossProfit / totalProjectRevenue) * 100 : 0;
 
   const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
   const totalLeadsForConversion = filteredLeads.filter(l => ['converted', 'disqualified'].includes(l.status)).length;
