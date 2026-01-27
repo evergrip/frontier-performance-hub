@@ -38,6 +38,14 @@ export default function ProjectsAdmin() {
     initialData: [],
   });
 
+  const { data: companySettings } = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => {
+      const settings = await base44.entities.CompanySettings.list();
+      return settings[0];
+    }
+  });
+
   const updateProjectMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Project.update(id, data),
     onSuccess: () => {
@@ -66,6 +74,17 @@ export default function ProjectsAdmin() {
     if (edits.status !== undefined) updateData.status = edits.status;
     if (edits.crew_assignment !== undefined) updateData.crew_assignment = edits.crew_assignment;
     if (edits.client_id !== undefined) updateData.client_id = edits.client_id;
+    if (edits.fiscal_year !== undefined) {
+      // Regenerate monthly allocations for the new fiscal year
+      const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+      const allocations = [];
+      for (let i = 0; i < 12; i++) {
+        const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
+        const year = month < fiscalStartMonth ? parseInt(edits.fiscal_year) + 1 : parseInt(edits.fiscal_year);
+        allocations.push({ year, month, percentage: 0 });
+      }
+      updateData.monthly_revenue_allocations = allocations;
+    }
 
     await updateProjectMutation.mutateAsync({ id: projectId, data: updateData });
     
@@ -91,6 +110,20 @@ export default function ProjectsAdmin() {
   );
 
   const getDisplayValue = (project, field) => {
+    if (field === 'fiscal_year') {
+      // Extract fiscal year from monthly_revenue_allocations
+      if (editedProjects[project.id]?.[field]) {
+        return editedProjects[project.id][field];
+      }
+      const allocations = project.monthly_revenue_allocations;
+      if (allocations && allocations.length > 0) {
+        const firstAllocation = allocations[0];
+        const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+        // If the first month is before the fiscal start month, it's the previous year
+        return firstAllocation.month < fiscalStartMonth ? firstAllocation.year - 1 : firstAllocation.year;
+      }
+      return '';
+    }
     return editedProjects[project.id]?.[field] ?? project[field] ?? '';
   };
 
@@ -135,6 +168,7 @@ export default function ProjectsAdmin() {
                   <TableHead className="w-[150px]">Client</TableHead>
                   <TableHead className="w-[120px]">Status</TableHead>
                   <TableHead className="w-[120px]">Crew</TableHead>
+                  <TableHead className="w-[100px]">Fiscal Year</TableHead>
                   <TableHead className="w-[120px]">Contract Value</TableHead>
                   <TableHead className="w-[120px]">Actual Costs</TableHead>
                   <TableHead className="w-[100px]">Margin %</TableHead>
@@ -195,6 +229,24 @@ export default function ProjectsAdmin() {
                             <SelectItem value="crew_b">Crew B</SelectItem>
                             <SelectItem value="crew_c">Crew C</SelectItem>
                             <SelectItem value="crew_d">Crew D</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={getDisplayValue(project, 'fiscal_year')?.toString()}
+                          onValueChange={(value) => handleFieldChange(project.id, 'fiscal_year', value)}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="FY" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="2023">FY 2023</SelectItem>
+                            <SelectItem value="2024">FY 2024</SelectItem>
+                            <SelectItem value="2025">FY 2025</SelectItem>
+                            <SelectItem value="2026">FY 2026</SelectItem>
+                            <SelectItem value="2027">FY 2027</SelectItem>
+                            <SelectItem value="2028">FY 2028</SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
