@@ -175,6 +175,9 @@ export default function Dashboard() {
     return leadDate >= dateRange.start && leadDate <= dateRange.end;
   });
 
+  // Count projects with revenue allocated in the date range
+  const filteredProjects = projects.filter(project => calculateProjectRevenue(project) > 0);
+
   // Count sales based on close dates for display purposes
   const salesInRange = sales.filter(sale => {
     if (!dateRange.start || !dateRange.end) return true;
