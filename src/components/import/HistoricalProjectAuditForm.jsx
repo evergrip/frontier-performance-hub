@@ -299,17 +299,24 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
 
             // Update sale
             if (sale) {
-                await updateSaleMutation.mutateAsync({
-                    id: sale.id,
-                    sale_type: data.sale_type,
-                    title: data.sale_title,
-                    phase_history: saleStatusHistory.filter(h => h.entered_date),
-                    contract_value: data.contract_value ? parseFloat(data.contract_value) : sale.contract_value,
-                    estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
-                    close_date: data.close_date || sale.close_date,
-                    assigned_to: data.sale_assigned_to || sale.assigned_to,
-                    notes: data.sale_notes
-                });
+                console.log('Updating sale...');
+                try {
+                    await updateSaleMutation.mutateAsync({
+                        id: sale.id,
+                        sale_type: data.sale_type,
+                        title: data.sale_title,
+                        phase_history: saleStatusHistory.filter(h => h.entered_date),
+                        contract_value: data.contract_value ? parseFloat(data.contract_value) : sale.contract_value,
+                        estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
+                        close_date: data.close_date || sale.close_date,
+                        assigned_to: data.sale_assigned_to || sale.assigned_to,
+                        notes: data.sale_notes
+                    });
+                    console.log('Sale updated successfully');
+                } catch (err) {
+                    console.error('Sale update failed:', err);
+                    throw new Error(`Sale update failed: ${err.message}`);
+                }
             }
 
             // Update project
