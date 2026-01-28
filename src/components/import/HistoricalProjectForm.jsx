@@ -56,9 +56,8 @@ export default function HistoricalProjectForm() {
         { status: 'substantial_completion_closeout', entered_date: '' },
         { status: 'closed', entered_date: '' }
     ]);
-    const [commissionContributors, setCommissionContributors] = useState([
-        { user_id: '', role: 'Primary', commission_split: 100 }
-    ]);
+    const [preconCommission, setPreconCommission] = useState(0);
+    const [constructionCommission, setConstructionCommission] = useState(0);
 
     const { register, handleSubmit, setValue, watch, reset } = useForm({
         defaultValues: {
@@ -152,16 +151,6 @@ export default function HistoricalProjectForm() {
         setProjectStatusHistory(projectStatusHistory.filter((_, i) => i !== index));
     };
 
-    const addCommissionContributor = () => {
-        setCommissionContributors([...commissionContributors, { user_id: '', role: 'Secondary', commission_split: 0 }]);
-    };
-
-    const removeCommissionContributor = (index) => {
-        if (commissionContributors.length > 1) {
-            setCommissionContributors(commissionContributors.filter((_, i) => i !== index));
-        }
-    };
-
     const onSubmit = async (data) => {
         setSubmitting(true);
         setResult(null);
@@ -196,11 +185,8 @@ export default function HistoricalProjectForm() {
                     close_date: data.close_date,
                     assigned_to: data.sale_assigned_to,
                     commission_processed: data.commission_processed === 'true',
-                    sale_contributors: commissionContributors.filter(c => c.user_id).map(c => ({
-                        user_id: c.user_id,
-                        role: c.role,
-                        commission_split: parseFloat(c.commission_split)
-                    })),
+                    precon_commission_amount: preconCommission ? parseFloat(preconCommission) : undefined,
+                    construction_commission_amount: constructionCommission ? parseFloat(constructionCommission) : undefined,
                     notes: data.sale_notes
                 },
                 project: {
@@ -226,9 +212,8 @@ export default function HistoricalProjectForm() {
             // Reset form
             reset();
             setSelectedClientId('new');
-            setCommissionContributors([
-                { user_id: '', role: 'Primary', commission_split: 100 }
-            ]);
+            setPreconCommission(0);
+            setConstructionCommission(0);
             setLeadStatusHistory([
                 { status: 'new_project_lead', entered_date: '' },
                 { status: 'initial_video_consult', entered_date: '' },
@@ -539,7 +524,7 @@ export default function HistoricalProjectForm() {
             <Card>
                 <CardHeader>
                     <CardTitle>Commission Information</CardTitle>
-                    <CardDescription>Enter commission details for this historical sale</CardDescription>
+                    <CardDescription>Enter actual commission amounts paid for this historical sale</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div>
@@ -558,84 +543,35 @@ export default function HistoricalProjectForm() {
                         </p>
                     </div>
 
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <Label>Commission Contributors</Label>
-                            <Button type="button" variant="outline" size="sm" onClick={addCommissionContributor}>
-                                <Plus className="w-4 h-4 mr-1" /> Add Contributor
-                            </Button>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Preconstruction Commission ($)</Label>
+                            <Input 
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={preconCommission}
+                                onChange={(e) => setPreconCommission(e.target.value)}
+                                placeholder="0.00"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">
+                                Commission paid for preconstruction work
+                            </p>
                         </div>
-                        <div className="space-y-2">
-                            {commissionContributors.map((contributor, index) => (
-                                <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                                    <div className="col-span-5">
-                                        <Label className="text-xs">Salesperson</Label>
-                                        <Select 
-                                            value={contributor.user_id}
-                                            onValueChange={(value) => {
-                                                const updated = [...commissionContributors];
-                                                updated[index].user_id = value;
-                                                setCommissionContributors(updated);
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select salesperson" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {salesUsers.map(user => (
-                                                    <SelectItem key={user.id} value={user.id}>
-                                                        {user.full_name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="col-span-3">
-                                        <Label className="text-xs">Role</Label>
-                                        <Input 
-                                            value={contributor.role}
-                                            onChange={(e) => {
-                                                const updated = [...commissionContributors];
-                                                updated[index].role = e.target.value;
-                                                setCommissionContributors(updated);
-                                            }}
-                                            placeholder="e.g., Primary"
-                                        />
-                                    </div>
-                                    <div className="col-span-3">
-                                        <Label className="text-xs">Split (%)</Label>
-                                        <Input 
-                                            type="number"
-                                            min="0"
-                                            max="100"
-                                            step="0.01"
-                                            value={contributor.commission_split}
-                                            onChange={(e) => {
-                                                const updated = [...commissionContributors];
-                                                updated[index].commission_split = e.target.value;
-                                                setCommissionContributors(updated);
-                                            }}
-                                            placeholder="100"
-                                        />
-                                    </div>
-                                    <div className="col-span-1">
-                                        {commissionContributors.length > 1 && (
-                                            <Button 
-                                                type="button" 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                onClick={() => removeCommissionContributor(index)}
-                                            >
-                                                <Trash2 className="w-4 h-4 text-red-500" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                        <div>
+                            <Label>Construction Commission ($)</Label>
+                            <Input 
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={constructionCommission}
+                                onChange={(e) => setConstructionCommission(e.target.value)}
+                                placeholder="0.00"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">
+                                Commission paid for construction work
+                            </p>
                         </div>
-                        <p className="text-xs text-slate-500 mt-2">
-                            Total split: {commissionContributors.reduce((sum, c) => sum + (parseFloat(c.commission_split) || 0), 0).toFixed(2)}%
-                        </p>
                     </div>
                 </CardContent>
             </Card>
@@ -797,9 +733,8 @@ export default function HistoricalProjectForm() {
                         { status: 'closed', entered_date: '' }
                     ]);
                     setSelectedClientId('new');
-                    setCommissionContributors([
-                        { user_id: '', role: 'Primary', commission_split: 100 }
-                    ]);
+                    setPreconCommission(0);
+                    setConstructionCommission(0);
                 }}>
                     Clear Form
                 </Button>
