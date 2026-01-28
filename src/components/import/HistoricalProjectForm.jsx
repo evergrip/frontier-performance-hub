@@ -21,6 +21,9 @@ export default function HistoricalProjectForm() {
         queryKey: ['users'],
         queryFn: () => base44.entities.User.list()
     });
+
+    // Filter sales users
+    const salesUsers = users.filter(user => user.department === 'Sales' || user.departments?.includes('Sales'));
     const [leadStatusHistory, setLeadStatusHistory] = useState([
         { status: 'new_project_lead', entered_date: '' },
         { status: 'initial_video_consult', entered_date: '' },
@@ -278,7 +281,7 @@ export default function HistoricalProjectForm() {
                                     <SelectValue placeholder="Select salesperson" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {users.map(user => (
+                                    {salesUsers.map(user => (
                                         <SelectItem key={user.id} value={user.id}>
                                             {user.full_name} ({user.email})
                                         </SelectItem>
@@ -388,7 +391,7 @@ export default function HistoricalProjectForm() {
                                     <SelectValue placeholder="Select salesperson" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {users.map(user => (
+                                    {salesUsers.map(user => (
                                         <SelectItem key={user.id} value={user.id}>
                                             {user.full_name} ({user.email})
                                         </SelectItem>
