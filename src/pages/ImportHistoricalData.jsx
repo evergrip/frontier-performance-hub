@@ -3,7 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
-import { Upload, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, Download, AlertCircle, CheckCircle2, Loader2, FileText } from 'lucide-react';
+import HistoricalProjectForm from '../components/import/HistoricalProjectForm';
 
 export default function ImportHistoricalData() {
     const [file, setFile] = useState(null);
@@ -71,10 +73,27 @@ CLIENT003,Builder Group,Mike Johnson,mike@buildergroup.com,555-0300,789 Pine Rd,
             <div>
                 <h1 className="text-3xl font-bold text-slate-900 mb-2">Import Historical Data</h1>
                 <p className="text-slate-600">
-                    Upload a CSV file to import historical clients, leads, sales, projects, and commissions.
+                    Import historical data either by filling out a form or uploading a CSV file.
                 </p>
             </div>
 
+            <Tabs defaultValue="form" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="form" className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Manual Form Entry
+                    </TabsTrigger>
+                    <TabsTrigger value="csv" className="flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        CSV Upload
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="form" className="mt-6">
+                    <HistoricalProjectForm />
+                </TabsContent>
+
+                <TabsContent value="csv" className="mt-6 space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>CSV File Upload</CardTitle>
@@ -204,6 +223,8 @@ CLIENT003,Builder Group,Mike Johnson,mike@buildergroup.com,555-0300,789 Pine Rd,
                     </ul>
                 </CardContent>
             </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
