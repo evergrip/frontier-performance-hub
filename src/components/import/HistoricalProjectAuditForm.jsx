@@ -80,6 +80,13 @@ export default function HistoricalProjectAuditForm() {
             setValue('client_phone', client.phone || '');
             setValue('client_address', client.address || '');
             setValue('client_notes', client.notes || '');
+        } else {
+            setValue('client_company_name', '');
+            setValue('client_contact_name', '');
+            setValue('client_email', '');
+            setValue('client_phone', '');
+            setValue('client_address', '');
+            setValue('client_notes', '');
         }
 
         // Lead data
@@ -90,7 +97,18 @@ export default function HistoricalProjectAuditForm() {
         setValue('estimated_construction_value', lead.estimated_construction_value || '');
         setValue('lead_assigned_to', lead.assigned_to || '');
         setValue('lead_notes', lead.notes || '');
-        setLeadStatusHistory(lead.status_history || []);
+        
+        // Set lead status history with all default phases if empty
+        const leadHistory = lead.status_history && lead.status_history.length > 0 
+            ? lead.status_history 
+            : [
+                { status: 'new_project_lead', entered_date: '' },
+                { status: 'initial_video_consult', entered_date: '' },
+                { status: 'initial_inperson_consultation', entered_date: '' },
+                { status: 'preconstruction_proposal', entered_date: '' },
+                { status: 'converted', entered_date: '' }
+            ];
+        setLeadStatusHistory(leadHistory);
 
         // Sale data
         if (sale) {
@@ -101,7 +119,26 @@ export default function HistoricalProjectAuditForm() {
             setValue('close_date', sale.close_date || '');
             setValue('sale_assigned_to', sale.assigned_to || '');
             setValue('sale_notes', sale.notes || '');
-            setSaleStatusHistory(sale.phase_history || []);
+            
+            // Set sale status history with all default phases if empty
+            const saleHistory = sale.phase_history && sale.phase_history.length > 0 
+                ? sale.phase_history 
+                : [
+                    { status: 'feasibility', entered_date: '' },
+                    { status: 'design_material_selections', entered_date: '' },
+                    { status: 'engineering_permits', entered_date: '' },
+                    { status: 'pending_construction_sale', entered_date: '' },
+                    { status: 'closed_won', entered_date: '' }
+                ];
+            setSaleStatusHistory(saleHistory);
+        } else {
+            setSaleStatusHistory([
+                { status: 'feasibility', entered_date: '' },
+                { status: 'design_material_selections', entered_date: '' },
+                { status: 'engineering_permits', entered_date: '' },
+                { status: 'pending_construction_sale', entered_date: '' },
+                { status: 'closed_won', entered_date: '' }
+            ]);
         }
 
         // Project data
@@ -116,7 +153,12 @@ export default function HistoricalProjectAuditForm() {
             setValue('crew_assignment', project.crew_assignment || 'crew_a');
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
+            
+            // Note: Project phases structure is different - it's an array of phase objects with name, status, etc.
+            // For audit purposes, we'll keep it as is if it exists
             setProjectStatusHistory(project.phases || []);
+        } else {
+            setProjectStatusHistory([]);
         }
     }, [selectedLeadId, leads, clients, sales, projects, setValue]);
 
