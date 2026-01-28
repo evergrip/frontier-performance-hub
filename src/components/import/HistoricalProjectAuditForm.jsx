@@ -321,20 +321,27 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
 
             // Update project
             if (project) {
-                await updateProjectMutation.mutateAsync({
-                    id: project.id,
-                    project_type: data.project_type || project.project_type,
-                    title: data.project_title || project.title,
-                    contract_value: data.contract_value ? parseFloat(data.contract_value) : project.contract_value,
-                    actual_costs: data.actual_costs ? parseFloat(data.actual_costs) : project.actual_costs,
-                    actual_margin: data.actual_margin ? parseFloat(data.actual_margin) : project.actual_margin,
-                    start_date: data.start_date || project.start_date,
-                    actual_completion_date: data.actual_completion_date || project.actual_completion_date,
-                    project_manager_id: data.project_manager || project.project_manager_id,
-                    crew_assignment: data.crew_assignment || project.crew_assignment,
-                    color: data.color || project.color,
-                    notes: data.project_notes
-                });
+                console.log('Updating project...');
+                try {
+                    await updateProjectMutation.mutateAsync({
+                        id: project.id,
+                        project_type: data.project_type || project.project_type,
+                        title: data.project_title || project.title,
+                        contract_value: data.contract_value ? parseFloat(data.contract_value) : project.contract_value,
+                        actual_costs: data.actual_costs ? parseFloat(data.actual_costs) : project.actual_costs,
+                        actual_margin: data.actual_margin ? parseFloat(data.actual_margin) : project.actual_margin,
+                        start_date: data.start_date || project.start_date,
+                        actual_completion_date: data.actual_completion_date || project.actual_completion_date,
+                        project_manager_id: data.project_manager || project.project_manager_id,
+                        crew_assignment: data.crew_assignment || project.crew_assignment,
+                        color: data.color || project.color,
+                        notes: data.project_notes
+                    });
+                    console.log('Project updated successfully');
+                } catch (err) {
+                    console.error('Project update failed:', err);
+                    throw new Error(`Project update failed: ${err.message}`);
+                }
             }
 
             // Update commission transactions
