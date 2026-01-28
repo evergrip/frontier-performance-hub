@@ -375,6 +375,16 @@ export default function Projects() {
         </Card>
       </div>
 
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList>
+          <TabsTrigger value="active">Active Projects</TabsTrigger>
+          <TabsTrigger value="closed">
+            <Archive className="w-4 h-4 mr-2" />
+            Past Projects ({closedProjects.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="mt-6">
       {activeProjects.length > 0 ? (
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
