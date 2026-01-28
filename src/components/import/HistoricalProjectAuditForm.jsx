@@ -332,9 +332,24 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setResult({ success: true });
             toast.success('Historical data updated successfully!');
         } catch (error) {
-            const errorMessage = error.response?.data?.error || error.message || 'Unknown error occurred';
+            console.error('Update error:', error);
+            let errorMessage = 'Unknown error occurred';
+
+            if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            // If we have validation errors, show them
+            if (error.response?.data?.details) {
+                errorMessage += ': ' + JSON.stringify(error.response.data.details);
+            }
+
             setResult({ success: false, error: errorMessage });
-            toast.error('Failed to update data: ' + errorMessage);
+            toast.error('Update failed: ' + errorMessage);
         } finally {
             setSubmitting(false);
         }
