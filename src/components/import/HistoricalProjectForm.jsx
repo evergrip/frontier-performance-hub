@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,12 @@ import { toast } from 'sonner';
 export default function HistoricalProjectForm() {
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
+
+    // Fetch users for dropdowns
+    const { data: users = [] } = useQuery({
+        queryKey: ['users'],
+        queryFn: () => base44.entities.User.list()
+    });
     const [leadStatusHistory, setLeadStatusHistory] = useState([
         { status: 'new_project_lead', entered_date: '' },
         { status: 'initial_video_consult', entered_date: '' },
@@ -48,16 +55,18 @@ export default function HistoricalProjectForm() {
             // Lead
             lead_title: '',
             lead_source: 'referral',
+            lead_score: 50,
             estimated_precon_value: '',
             estimated_construction_value: '',
-            lead_assigned_to_email: '',
+            lead_assigned_to: '',
             lead_notes: '',
             // Sale
             sale_type: 'construction',
             sale_title: '',
             contract_value: '',
+            estimated_margin: '',
             close_date: '',
-            sale_assigned_to_email: '',
+            sale_assigned_to: '',
             sale_notes: '',
             // Project
             project_type: 'construction',
@@ -66,8 +75,9 @@ export default function HistoricalProjectForm() {
             actual_margin: '',
             start_date: '',
             actual_completion_date: '',
-            project_manager_email: '',
+            project_manager: '',
             crew_assignment: 'crew_a',
+            color: '#3B82F6',
             project_notes: ''
         }
     });
@@ -114,10 +124,11 @@ export default function HistoricalProjectForm() {
                 lead: {
                     title: data.lead_title,
                     source: data.lead_source,
+                    lead_score: data.lead_score ? parseFloat(data.lead_score) : 50,
                     status_history: leadStatusHistory.filter(h => h.entered_date),
                     estimated_precon_value: data.estimated_precon_value ? parseFloat(data.estimated_precon_value) : undefined,
                     estimated_construction_value: data.estimated_construction_value ? parseFloat(data.estimated_construction_value) : undefined,
-                    assigned_to_email: data.lead_assigned_to_email,
+                    assigned_to: data.lead_assigned_to,
                     notes: data.lead_notes
                 },
                 sale: {
@@ -125,8 +136,9 @@ export default function HistoricalProjectForm() {
                     title: data.sale_title,
                     status_history: saleStatusHistory.filter(h => h.entered_date),
                     contract_value: parseFloat(data.contract_value),
+                    estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
                     close_date: data.close_date,
-                    assigned_to_email: data.sale_assigned_to_email,
+                    assigned_to: data.sale_assigned_to,
                     commission_processed: true,
                     notes: data.sale_notes
                 },
@@ -139,8 +151,9 @@ export default function HistoricalProjectForm() {
                     actual_margin: parseFloat(data.actual_margin),
                     start_date: data.start_date,
                     actual_completion_date: data.actual_completion_date,
-                    project_manager_email: data.project_manager_email,
+                    project_manager: data.project_manager,
                     crew_assignment: data.crew_assignment,
+                    color: data.color,
                     notes: data.project_notes
                 }
             };
@@ -255,8 +268,23 @@ export default function HistoricalProjectForm() {
                             <Input {...register('estimated_construction_value')} type="number" placeholder="150000" />
                         </div>
                         <div>
-                            <Label>Assigned To (Email)</Label>
-                            <Input {...register('lead_assigned_to_email')} type="email" placeholder="salesperson@example.com" />
+                            <Label>Lead Score (0-100)</Label>
+                            <Input {...register('lead_score')} type="number" min="0" max="100" placeholder="50" />
+                        </div>
+                        <div>
+                            <Label>Assigned To</Label>
+                            <Select onValueChange={(value) => setValue('lead_assigned_to', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select salesperson" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {users.map(user => (
+                                        <SelectItem key={user.id} value={user.id}>
+                                            {user.full_name} ({user.email})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                     <div>
@@ -346,12 +374,27 @@ export default function HistoricalProjectForm() {
                             <Input {...register('contract_value')} type="number" placeholder="150000" required />
                         </div>
                         <div>
+                            <Label>Estimated Margin (%)</Label>
+                            <Input {...register('estimated_margin')} type="number" step="0.01" placeholder="45.00" />
+                        </div>
+                        <div>
                             <Label>Close Date *</Label>
                             <Input {...register('close_date')} type="date" required />
                         </div>
                         <div>
-                            <Label>Assigned To (Email)</Label>
-                            <Input {...register('sale_assigned_to_email')} type="email" placeholder="salesperson@example.com" />
+                            <Label>Assigned To</Label>
+                            <Select onValueChange={(value) => setValue('sale_assigned_to', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select salesperson" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {users.map(user => (
+                                        <SelectItem key={user.id} value={user.id}>
+                                            {user.full_name} ({user.email})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                     <div>
@@ -452,8 +495,19 @@ export default function HistoricalProjectForm() {
                             <Input {...register('actual_completion_date')} type="date" required />
                         </div>
                         <div>
-                            <Label>Project Manager (Email)</Label>
-                            <Input {...register('project_manager_email')} type="email" placeholder="pm@example.com" />
+                            <Label>Project Manager</Label>
+                            <Select onValueChange={(value) => setValue('project_manager', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select project manager" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {users.map(user => (
+                                        <SelectItem key={user.id} value={user.id}>
+                                            {user.full_name} ({user.email})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div>
                             <Label>Crew Assignment</Label>
@@ -469,6 +523,10 @@ export default function HistoricalProjectForm() {
                                     <SelectItem value="unassigned">Unassigned</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div>
+                            <Label>Project Color</Label>
+                            <Input {...register('color')} type="color" />
                         </div>
                     </div>
                     <div>
