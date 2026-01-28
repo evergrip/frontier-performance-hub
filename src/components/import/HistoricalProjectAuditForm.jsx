@@ -59,7 +59,7 @@ export default function HistoricalProjectAuditForm() {
     const [saleStatusHistory, setSaleStatusHistory] = useState([]);
     const [projectStatusHistory, setProjectStatusHistory] = useState([]);
 
-    const { register, handleSubmit, setValue, reset } = useForm();
+    const { register, handleSubmit, setValue, reset, watch } = useForm();
 
     // When a lead is selected, auto-fill all related data
     useEffect(() => {
@@ -367,7 +367,7 @@ export default function HistoricalProjectAuditForm() {
                                 </div>
                                 <div>
                                     <Label>Source</Label>
-                                    <Select onValueChange={(value) => setValue('lead_source', value)}>
+                                    <Select value={watch('lead_source')} onValueChange={(value) => setValue('lead_source', value)}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -395,7 +395,7 @@ export default function HistoricalProjectAuditForm() {
                                 </div>
                                 <div>
                                     <Label>Assigned To</Label>
-                                    <Select onValueChange={(value) => setValue('lead_assigned_to', value)}>
+                                    <Select value={watch('lead_assigned_to')} onValueChange={(value) => setValue('lead_assigned_to', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select salesperson" />
                                         </SelectTrigger>
@@ -477,7 +477,7 @@ export default function HistoricalProjectAuditForm() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label>Sale Type *</Label>
-                                    <Select onValueChange={(value) => setValue('sale_type', value)}>
+                                    <Select value={watch('sale_type')} onValueChange={(value) => setValue('sale_type', value)}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -505,7 +505,7 @@ export default function HistoricalProjectAuditForm() {
                                 </div>
                                 <div>
                                     <Label>Assigned To</Label>
-                                    <Select onValueChange={(value) => setValue('sale_assigned_to', value)}>
+                                    <Select value={watch('sale_assigned_to')} onValueChange={(value) => setValue('sale_assigned_to', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select salesperson" />
                                         </SelectTrigger>
@@ -586,7 +586,7 @@ export default function HistoricalProjectAuditForm() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label>Project Type *</Label>
-                                    <Select onValueChange={(value) => setValue('project_type', value)}>
+                                    <Select value={watch('project_type')} onValueChange={(value) => setValue('project_type', value)}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
@@ -618,7 +618,7 @@ export default function HistoricalProjectAuditForm() {
                                 </div>
                                 <div>
                                     <Label>Project Manager</Label>
-                                    <Select onValueChange={(value) => setValue('project_manager', value)}>
+                                    <Select value={watch('project_manager')} onValueChange={(value) => setValue('project_manager', value)}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select project manager" />
                                         </SelectTrigger>
@@ -633,7 +633,7 @@ export default function HistoricalProjectAuditForm() {
                                 </div>
                                 <div>
                                     <Label>Crew Assignment</Label>
-                                    <Select onValueChange={(value) => setValue('crew_assignment', value)}>
+                                    <Select value={watch('crew_assignment')} onValueChange={(value) => setValue('crew_assignment', value)}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
