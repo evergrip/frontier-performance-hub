@@ -193,6 +193,11 @@ export default function HistoricalProjectAuditForm() {
         onSuccess: () => queryClient.invalidateQueries(['projects'])
     });
 
+    const updateCommissionMutation = useMutation({
+        mutationFn: (data) => base44.entities.CommissionTransaction.update(data.id, data),
+        onSuccess: () => queryClient.invalidateQueries(['commissionTransactions'])
+    });
+
     const addLeadStatus = () => {
         setLeadStatusHistory([...leadStatusHistory, { status: 'initial_video_consult', entered_date: '' }]);
     };
@@ -288,6 +293,19 @@ export default function HistoricalProjectAuditForm() {
                     crew_assignment: data.crew_assignment,
                     color: data.color,
                     notes: data.project_notes
+                });
+            }
+
+            // Update commission transactions
+            for (const commission of relatedCommissions) {
+                await updateCommissionMutation.mutateAsync({
+                    id: commission.id,
+                    user_id: commission.user_id,
+                    amount: commission.amount,
+                    commission_rate: commission.commission_rate,
+                    sale_amount: commission.sale_amount,
+                    status: commission.status,
+                    notes: commission.notes
                 });
             }
 
@@ -666,6 +684,55 @@ export default function HistoricalProjectAuditForm() {
                                 <Label>Project Notes</Label>
                                 <Textarea {...register('project_notes')} placeholder="Any project-specific notes" rows={2} />
                             </div>
+
+                            <div>
+                                <div className="flex items-center justify-between mb-2">
+                                    <Label>Project Status History</Label>
+                                    <Button type="button" variant="outline" size="sm" onClick={addProjectStatus}>
+                                        <Plus className="w-4 h-4 mr-1" /> Add Status
+                                    </Button>
+                                </div>
+                                <div className="space-y-2">
+                                    {projectStatusHistory.map((item, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Select 
+                                                value={item.status}
+                                                onValueChange={(value) => {
+                                                    const updated = [...projectStatusHistory];
+                                                    updated[index].status = value;
+                                                    setProjectStatusHistory(updated);
+                                                }}
+                                            >
+                                                <SelectTrigger className="flex-1">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="awaiting_to_be_scheduled">Awaiting to be Scheduled</SelectItem>
+                                                    <SelectItem value="mobilization">Mobilization</SelectItem>
+                                                    <SelectItem value="active_construction">Active Construction</SelectItem>
+                                                    <SelectItem value="substantial_completion_closeout">Substantial Completion/Closeout</SelectItem>
+                                                    <SelectItem value="closed">Closed</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Input 
+                                                type="datetime-local"
+                                                value={item.entered_date}
+                                                onChange={(e) => {
+                                                    const updated = [...projectStatusHistory];
+                                                    updated[index].entered_date = e.target.value;
+                                                    setProjectStatusHistory(updated);
+                                                }}
+                                                className="flex-1"
+                                            />
+                                            {projectStatusHistory.length > 1 && (
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeProjectStatus(index)}>
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -673,35 +740,111 @@ export default function HistoricalProjectAuditForm() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Commission Records</CardTitle>
-                            <CardDescription>View commission transactions for this project</CardDescription>
+                            <CardDescription>Edit commission transactions for this project</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {relatedCommissions.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {relatedCommissions.map((commission, index) => (
-                                        <div key={commission.id} className="p-4 border rounded-lg space-y-2">
-                                            <div className="flex justify-between items-start">
+                                        <div key={commission.id} className="p-4 border rounded-lg space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <p className="font-semibold">{commission.sale_type === 'preconstruction' ? 'Preconstruction' : 'Construction'} Commission</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <p className="font-semibold">{commission.sale_type === 'preconstruction' ? 'Preconstruction' : 'Construction'} Commission</p>
-                                                    <p className="text-sm text-slate-600">
-                                                        {users.find(u => u.id === commission.user_id)?.full_name || 'Unknown User'}
-                                                    </p>
+                                                    <Label>Assigned To</Label>
+                                                    <Select 
+                                                        value={commission.user_id}
+                                                        onValueChange={(value) => {
+                                                            const updated = [...relatedCommissions];
+                                                            updated[index].user_id = value;
+                                                            setRelatedCommissions(updated);
+                                                        }}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {salesUsers.map(user => (
+                                                                <SelectItem key={user.id} value={user.id}>
+                                                                    {user.full_name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-lg font-bold">${commission.amount?.toLocaleString()}</p>
-                                                    <p className="text-xs text-slate-500 capitalize">{commission.status}</p>
+                                                <div>
+                                                    <Label>Status</Label>
+                                                    <Select 
+                                                        value={commission.status}
+                                                        onValueChange={(value) => {
+                                                            const updated = [...relatedCommissions];
+                                                            updated[index].status = value;
+                                                            setRelatedCommissions(updated);
+                                                        }}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="pending">Pending</SelectItem>
+                                                            <SelectItem value="banked">Banked</SelectItem>
+                                                            <SelectItem value="available">Available</SelectItem>
+                                                            <SelectItem value="paid">Paid</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <Label>Commission Amount ($)</Label>
+                                                    <Input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={commission.amount || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...relatedCommissions];
+                                                            updated[index].amount = parseFloat(e.target.value);
+                                                            setRelatedCommissions(updated);
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Commission Rate (%)</Label>
+                                                    <Input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={commission.commission_rate || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...relatedCommissions];
+                                                            updated[index].commission_rate = parseFloat(e.target.value);
+                                                            setRelatedCommissions(updated);
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Sale Amount ($)</Label>
+                                                    <Input 
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={commission.sale_amount || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...relatedCommissions];
+                                                            updated[index].sale_amount = parseFloat(e.target.value);
+                                                            setRelatedCommissions(updated);
+                                                        }}
+                                                    />
                                                 </div>
                                             </div>
-                                            {commission.notes && (
-                                                <p className="text-sm text-slate-600">{commission.notes}</p>
-                                            )}
-                                            <div className="grid grid-cols-2 gap-2 text-sm">
-                                                {commission.commission_rate && (
-                                                    <p className="text-slate-600">Rate: {commission.commission_rate}%</p>
-                                                )}
-                                                {commission.sale_amount && (
-                                                    <p className="text-slate-600">Sale: ${commission.sale_amount?.toLocaleString()}</p>
-                                                )}
+                                            <div>
+                                                <Label>Notes</Label>
+                                                <Textarea 
+                                                    value={commission.notes || ''}
+                                                    onChange={(e) => {
+                                                        const updated = [...relatedCommissions];
+                                                        updated[index].notes = e.target.value;
+                                                        setRelatedCommissions(updated);
+                                                    }}
+                                                    rows={2}
+                                                />
                                             </div>
                                         </div>
                                     ))}
