@@ -23,7 +23,11 @@ export default function HistoricalProjectForm() {
     });
 
     // Filter sales users
-    const salesUsers = users.filter(user => user.department === 'Sales' || user.departments?.includes('Sales'));
+    const salesUsers = users.filter(user => 
+        user.department === 'Sales' || 
+        user.departments?.includes('Sales') || 
+        user.departments?.includes('sales')
+    );
     const [leadStatusHistory, setLeadStatusHistory] = useState([
         { status: 'new_project_lead', entered_date: '' },
         { status: 'initial_video_consult', entered_date: '' },
