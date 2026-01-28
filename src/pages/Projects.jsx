@@ -247,7 +247,9 @@ export default function Projects() {
   const handleCloseoutProject = async (e) => {
     e.preventDefault();
     
-    const actualGrossRevenue = parseFloat(projectForm.actual_costs) || 0;
+    const actualCosts = parseFloat(projectForm.actual_costs) || 0;
+    const actualMargin = parseFloat(projectForm.actual_margin) || 0;
+    const actualGrossRevenue = actualCosts / (1 - (actualMargin / 100)); // Revenue = Cost / (1 - Margin%)
     const contractValue = selectedProject.contract_value || 0;
     const variancePercent = Math.abs(((actualGrossRevenue - contractValue) / contractValue) * 100);
     const threshold = companySettings?.project_closeout_variance_threshold || 3;
@@ -836,7 +838,7 @@ export default function Projects() {
 
       {/* Closeout Dialog */}
       <Dialog open={closeoutDialogOpen} onOpenChange={setCloseoutDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Close Out Project</DialogTitle>
           </DialogHeader>
@@ -876,8 +878,11 @@ export default function Projects() {
               />
             </div>
 
-            {selectedProject && projectForm.actual_costs && (() => {
-              const variance = Math.abs(((parseFloat(projectForm.actual_costs) - selectedProject.contract_value) / selectedProject.contract_value) * 100);
+            {selectedProject && projectForm.actual_costs && projectForm.actual_margin && (() => {
+              const actualCosts = parseFloat(projectForm.actual_costs) || 0;
+              const actualMargin = parseFloat(projectForm.actual_margin) || 0;
+              const actualGrossRevenue = actualCosts / (1 - (actualMargin / 100));
+              const variance = Math.abs(((actualGrossRevenue - selectedProject.contract_value) / selectedProject.contract_value) * 100);
               const threshold = companySettings?.project_closeout_variance_threshold || 3;
               return variance > threshold ? (
                 <div>
@@ -978,21 +983,28 @@ export default function Projects() {
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Actual Gross Revenue:</span>
-                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                   <span>Actual Project Costs:</span>
+                   <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
+                  </div>
+                  <div className="flex justify-between">
+                   <span>Actual Gross Revenue:</span>
+                   <span className="font-semibold">${((parseFloat(projectForm.actual_costs) / (1 - (parseFloat(projectForm.actual_margin) / 100))) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
-                    <span className="font-bold">Gross Profit:</span>
-                    <span className="font-bold text-emerald-700">
-                      ${((parseFloat(projectForm.actual_costs) * (parseFloat(projectForm.actual_margin) / 100)) / 1000).toFixed(0)}k
-                    </span>
+                   <span className="font-bold">Gross Profit:</span>
+                   <span className="font-bold text-emerald-700">
+                     ${(((parseFloat(projectForm.actual_costs) / (1 - (parseFloat(projectForm.actual_margin) / 100))) - parseFloat(projectForm.actual_costs)) / 1000).toFixed(0)}k
+                   </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-bold">Margin:</span>
                     <span className="font-bold text-emerald-700">{parseFloat(projectForm.actual_margin).toFixed(2)}%</span>
                   </div>
                   {(() => {
-                    const variance = Math.abs(((parseFloat(projectForm.actual_costs) - selectedProject.contract_value) / selectedProject.contract_value) * 100);
+                    const actualCosts = parseFloat(projectForm.actual_costs) || 0;
+                    const actualMargin = parseFloat(projectForm.actual_margin) || 0;
+                    const actualGrossRevenue = actualCosts / (1 - (actualMargin / 100));
+                    const variance = Math.abs(((actualGrossRevenue - selectedProject.contract_value) / selectedProject.contract_value) * 100);
                     const threshold = companySettings?.project_closeout_variance_threshold || 3;
                     return variance > threshold ? (
                       <div className="flex justify-between text-amber-600 border-t border-amber-300 pt-1 mt-1">
