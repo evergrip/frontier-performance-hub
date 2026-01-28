@@ -278,17 +278,24 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             }
 
             // Update lead
-            await updateLeadMutation.mutateAsync({
-                id: selectedLeadId,
-                title: data.lead_title,
-                source: data.lead_source,
-                lead_score: data.lead_score ? parseFloat(data.lead_score) : 50,
-                status_history: leadStatusHistory.filter(h => h.entered_date),
-                estimated_precon_value: data.estimated_precon_value ? parseFloat(data.estimated_precon_value) : undefined,
-                estimated_construction_value: data.estimated_construction_value ? parseFloat(data.estimated_construction_value) : undefined,
-                assigned_to: data.lead_assigned_to,
-                notes: data.lead_notes
-            });
+            console.log('Updating lead...');
+            try {
+                await updateLeadMutation.mutateAsync({
+                    id: selectedLeadId,
+                    title: data.lead_title,
+                    source: data.lead_source,
+                    lead_score: data.lead_score ? parseFloat(data.lead_score) : 50,
+                    status_history: leadStatusHistory.filter(h => h.entered_date),
+                    estimated_precon_value: data.estimated_precon_value ? parseFloat(data.estimated_precon_value) : undefined,
+                    estimated_construction_value: data.estimated_construction_value ? parseFloat(data.estimated_construction_value) : undefined,
+                    assigned_to: data.lead_assigned_to,
+                    notes: data.lead_notes
+                });
+                console.log('Lead updated successfully');
+            } catch (err) {
+                console.error('Lead update failed:', err);
+                throw new Error(`Lead update failed: ${err.message}`);
+            }
 
             // Update sale
             if (sale) {
