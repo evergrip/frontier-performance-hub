@@ -12,11 +12,18 @@ import { Alert } from '@/components/ui/alert';
 import { Loader2, CheckCircle2, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function HistoricalProjectAuditForm() {
-    const [selectedLeadId, setSelectedLeadId] = useState(null);
+export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
+    const [selectedLeadId, setSelectedLeadId] = useState(preselectedLeadId || null);
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
     const queryClient = useQueryClient();
+
+    // Update selected lead when preselected changes
+    useEffect(() => {
+        if (preselectedLeadId) {
+            setSelectedLeadId(preselectedLeadId);
+        }
+    }, [preselectedLeadId]);
 
     // Fetch all leads
     const { data: leads = [], isLoading: leadsLoading } = useQuery({
@@ -341,7 +348,7 @@ export default function HistoricalProjectAuditForm() {
                 </CardHeader>
                 <CardContent>
                     <Label>Lead</Label>
-                    <Select onValueChange={setSelectedLeadId} disabled={leadsLoading}>
+                    <Select value={selectedLeadId || undefined} onValueChange={setSelectedLeadId} disabled={leadsLoading}>
                         <SelectTrigger>
                             <SelectValue placeholder={leadsLoading ? "Loading leads..." : "Select a lead"} />
                         </SelectTrigger>
