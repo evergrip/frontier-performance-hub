@@ -42,6 +42,12 @@ export default function HistoricalProjectAuditForm() {
         queryFn: () => base44.entities.Project.list()
     });
 
+    // Fetch commission transactions
+    const { data: commissionTransactions = [] } = useQuery({
+        queryKey: ['commissionTransactions'],
+        queryFn: () => base44.entities.CommissionTransaction.list()
+    });
+
     // Fetch users for dropdowns
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
@@ -58,6 +64,7 @@ export default function HistoricalProjectAuditForm() {
     const [leadStatusHistory, setLeadStatusHistory] = useState([]);
     const [saleStatusHistory, setSaleStatusHistory] = useState([]);
     const [projectStatusHistory, setProjectStatusHistory] = useState([]);
+    const [relatedCommissions, setRelatedCommissions] = useState([]);
 
     const { register, handleSubmit, setValue, reset, watch } = useForm();
 
@@ -71,6 +78,10 @@ export default function HistoricalProjectAuditForm() {
         const client = clients.find(c => c.id === lead.client_id);
         const sale = sales.find(s => s.lead_id === lead.id);
         const project = sale ? projects.find(p => p.sale_id === sale.id) : null;
+
+        // Find related commission transactions
+        const saleCommissions = sale ? commissionTransactions.filter(t => t.sale_id === sale.id) : [];
+        setRelatedCommissions(saleCommissions);
 
         // Client data
         if (client) {
@@ -160,7 +171,7 @@ export default function HistoricalProjectAuditForm() {
         } else {
             setProjectStatusHistory([]);
         }
-    }, [selectedLeadId, leads, clients, sales, projects, setValue]);
+    }, [selectedLeadId, leads, clients, sales, projects, commissionTransactions, setValue]);
 
     const updateLeadMutation = useMutation({
         mutationFn: (data) => base44.entities.Lead.update(data.id, data),
@@ -655,6 +666,49 @@ export default function HistoricalProjectAuditForm() {
                                 <Label>Project Notes</Label>
                                 <Textarea {...register('project_notes')} placeholder="Any project-specific notes" rows={2} />
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Commission Records */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Commission Records</CardTitle>
+                            <CardDescription>View commission transactions for this project</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {relatedCommissions.length > 0 ? (
+                                <div className="space-y-3">
+                                    {relatedCommissions.map((commission, index) => (
+                                        <div key={commission.id} className="p-4 border rounded-lg space-y-2">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-semibold">{commission.sale_type === 'preconstruction' ? 'Preconstruction' : 'Construction'} Commission</p>
+                                                    <p className="text-sm text-slate-600">
+                                                        {users.find(u => u.id === commission.user_id)?.full_name || 'Unknown User'}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-lg font-bold">${commission.amount?.toLocaleString()}</p>
+                                                    <p className="text-xs text-slate-500 capitalize">{commission.status}</p>
+                                                </div>
+                                            </div>
+                                            {commission.notes && (
+                                                <p className="text-sm text-slate-600">{commission.notes}</p>
+                                            )}
+                                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                                {commission.commission_rate && (
+                                                    <p className="text-slate-600">Rate: {commission.commission_rate}%</p>
+                                                )}
+                                                {commission.sale_amount && (
+                                                    <p className="text-slate-600">Sale: ${commission.sale_amount?.toLocaleString()}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-slate-500 text-center py-4">No commission records found for this project</p>
+                            )}
                         </CardContent>
                     </Card>
 
