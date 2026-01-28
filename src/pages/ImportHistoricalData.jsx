@@ -6,6 +6,7 @@ import { Alert } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Download, AlertCircle, CheckCircle2, Loader2, FileText } from 'lucide-react';
 import HistoricalProjectForm from '../components/import/HistoricalProjectForm';
+import HistoricalProjectAuditForm from '../components/import/HistoricalProjectAuditForm';
 
 export default function ImportHistoricalData() {
     const [file, setFile] = useState(null);
@@ -78,10 +79,14 @@ CLIENT003,Builder Group,Mike Johnson,mike@buildergroup.com,555-0300,789 Pine Rd,
             </div>
 
             <Tabs defaultValue="form" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="form" className="flex items-center gap-2">
                         <FileText className="w-4 h-4" />
                         Manual Form Entry
+                    </TabsTrigger>
+                    <TabsTrigger value="audit" className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Audit Tool
                     </TabsTrigger>
                     <TabsTrigger value="csv" className="flex items-center gap-2">
                         <Upload className="w-4 h-4" />
@@ -91,6 +96,10 @@ CLIENT003,Builder Group,Mike Johnson,mike@buildergroup.com,555-0300,789 Pine Rd,
 
                 <TabsContent value="form" className="mt-6">
                     <HistoricalProjectForm />
+                </TabsContent>
+
+                <TabsContent value="audit" className="mt-6">
+                    <HistoricalProjectAuditForm />
                 </TabsContent>
 
                 <TabsContent value="csv" className="mt-6 space-y-6">
