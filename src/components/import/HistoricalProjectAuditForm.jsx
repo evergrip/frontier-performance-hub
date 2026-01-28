@@ -345,16 +345,25 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             }
 
             // Update commission transactions
-            for (const commission of relatedCommissions) {
-                await updateCommissionMutation.mutateAsync({
-                    id: commission.id,
-                    user_id: commission.user_id,
-                    amount: commission.amount,
-                    commission_rate: commission.commission_rate,
-                    sale_amount: commission.sale_amount,
-                    status: commission.status,
-                    notes: commission.notes
-                });
+            if (relatedCommissions.length > 0) {
+                console.log(`Updating ${relatedCommissions.length} commission transactions...`);
+                for (const commission of relatedCommissions) {
+                    try {
+                        await updateCommissionMutation.mutateAsync({
+                            id: commission.id,
+                            user_id: commission.user_id,
+                            amount: commission.amount,
+                            commission_rate: commission.commission_rate,
+                            sale_amount: commission.sale_amount,
+                            status: commission.status,
+                            notes: commission.notes
+                        });
+                    } catch (err) {
+                        console.error('Commission update failed:', err);
+                        throw new Error(`Commission update failed: ${err.message}`);
+                    }
+                }
+                console.log('All commissions updated successfully');
             }
 
             setResult({ success: true });
