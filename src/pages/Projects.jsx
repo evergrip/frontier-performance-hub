@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -15,8 +16,10 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
+import { createPageUrl } from '../utils';
 
 export default function Projects() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [closeoutDialogOpen, setCloseoutDialogOpen] = useState(false);
@@ -47,6 +50,12 @@ export default function Projects() {
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
     queryFn: () => base44.entities.Sale.list(),
+    initialData: [],
+  });
+
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: () => base44.entities.Lead.list(),
     initialData: [],
   });
 
@@ -182,6 +191,12 @@ export default function Projects() {
   };
 
   const openEditDialog = (project) => {
+    // If project is closed, navigate to audit tool instead
+    if (project.status === 'closed') {
+      handleAuditProject(project);
+      return;
+    }
+    
     setSelectedProject(project);
     setProjectForm({
       actual_costs: project.actual_costs || project.contract_value || '',
@@ -213,6 +228,18 @@ export default function Projects() {
     }
     
     setEditDialogOpen(true);
+  };
+
+  const handleAuditProject = (project) => {
+    // Find the lead associated with this project through its sale
+    const sale = sales.find(s => s.id === project.sale_id);
+    const lead = sale ? leads.find(l => l.id === sale.lead_id) : null;
+    
+    if (lead) {
+      navigate(createPageUrl('ImportHistoricalData') + `?tab=audit&lead_id=${lead.id}`);
+    } else {
+      toast.error('Could not find lead associated with this project');
+    }
   };
 
   const handleAdvanceStatus = async (e) => {
