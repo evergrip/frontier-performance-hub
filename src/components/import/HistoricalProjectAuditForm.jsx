@@ -331,8 +331,9 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setResult({ success: true });
             toast.success('Historical data updated successfully!');
         } catch (error) {
-            setResult({ success: false, error: error.message });
-            toast.error('Failed to update data: ' + error.message);
+            const errorMessage = error.response?.data?.error || error.message || 'Unknown error occurred';
+            setResult({ success: false, error: errorMessage });
+            toast.error('Failed to update data: ' + errorMessage);
         } finally {
             setSubmitting(false);
         }
