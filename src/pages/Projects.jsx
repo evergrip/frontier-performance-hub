@@ -449,7 +449,10 @@ export default function Projects() {
                                  <Card 
                                    ref={provided.innerRef}
                                    {...provided.draggableProps}
-                                   style={project.color ? { borderColor: project.color, borderWidth: '2px' } : {}}
+                                   style={{
+                                     ...provided.draggableProps.style,
+                                     ...(project.color ? { borderColor: project.color, borderWidth: '2px' } : {})
+                                   }}
                                    className={`border-2 ${!project.color ? column.color : ''} transition-all cursor-pointer ${
                                      snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
                                    }`}
