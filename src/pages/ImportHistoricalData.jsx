@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,21 @@ export default function ImportHistoricalData() {
     const [file, setFile] = useState(null);
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState(null);
+    const [activeTab, setActiveTab] = useState('form');
+    const [preselectedLeadId, setPreselectedLeadId] = useState(null);
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab');
+        const leadId = urlParams.get('lead_id');
+        
+        if (tab) {
+            setActiveTab(tab);
+        }
+        if (leadId) {
+            setPreselectedLeadId(leadId);
+        }
+    }, []);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -78,7 +93,7 @@ CLIENT003,Builder Group,Mike Johnson,mike@buildergroup.com,555-0300,789 Pine Rd,
                 </p>
             </div>
 
-            <Tabs defaultValue="form" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="form" className="flex items-center gap-2">
                         <FileText className="w-4 h-4" />
@@ -99,7 +114,7 @@ CLIENT003,Builder Group,Mike Johnson,mike@buildergroup.com,555-0300,789 Pine Rd,
                 </TabsContent>
 
                 <TabsContent value="audit" className="mt-6">
-                    <HistoricalProjectAuditForm />
+                    <HistoricalProjectAuditForm preselectedLeadId={preselectedLeadId} />
                 </TabsContent>
 
                 <TabsContent value="csv" className="mt-6 space-y-6">
