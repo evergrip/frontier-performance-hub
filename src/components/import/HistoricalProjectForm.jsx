@@ -15,11 +15,18 @@ import { toast } from 'sonner';
 export default function HistoricalProjectForm() {
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
+    const [selectedClientId, setSelectedClientId] = useState('new');
 
     // Fetch users for dropdowns
     const { data: users = [] } = useQuery({
         queryKey: ['users'],
         queryFn: () => base44.entities.User.list()
+    });
+
+    // Fetch clients for dropdown
+    const { data: clients = [] } = useQuery({
+        queryKey: ['clients'],
+        queryFn: () => base44.entities.Client.list()
     });
 
     // Filter sales users
@@ -59,6 +66,7 @@ export default function HistoricalProjectForm() {
             client_phone: '',
             client_address: '',
             client_notes: '',
+            client_id: '',
             // Lead
             lead_title: '',
             lead_source: 'referral',
@@ -88,6 +96,34 @@ export default function HistoricalProjectForm() {
             project_notes: ''
         }
     });
+
+    // Handle client selection
+    const handleClientSelection = (clientId) => {
+        setSelectedClientId(clientId);
+        
+        if (clientId === 'new') {
+            // Clear client fields for new client
+            setValue('client_id', '');
+            setValue('client_company_name', '');
+            setValue('client_contact_name', '');
+            setValue('client_email', '');
+            setValue('client_phone', '');
+            setValue('client_address', '');
+            setValue('client_notes', '');
+        } else {
+            // Auto-fill with existing client data
+            const client = clients.find(c => c.id === clientId);
+            if (client) {
+                setValue('client_id', client.id);
+                setValue('client_company_name', client.company_name || '');
+                setValue('client_contact_name', client.contact_name || '');
+                setValue('client_email', client.email || '');
+                setValue('client_phone', client.phone || '');
+                setValue('client_address', client.address || '');
+                setValue('client_notes', client.notes || '');
+            }
+        }
+    };
 
     const addLeadStatus = () => {
         setLeadStatusHistory([...leadStatusHistory, { status: 'initial_video_consult', entered_date: '' }]);
@@ -171,6 +207,7 @@ export default function HistoricalProjectForm() {
             
             // Reset form
             reset();
+            setSelectedClientId('new');
             setLeadStatusHistory([
                 { status: 'new_project_lead', entered_date: '' },
                 { status: 'initial_video_consult', entered_date: '' },
@@ -206,9 +243,25 @@ export default function HistoricalProjectForm() {
             <Card>
                 <CardHeader>
                     <CardTitle>Client Information</CardTitle>
-                    <CardDescription>Enter details about the client</CardDescription>
+                    <CardDescription>Select an existing client or create a new one</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    <div>
+                        <Label>Select Client</Label>
+                        <Select value={selectedClientId} onValueChange={handleClientSelection}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="new">+ Create New Client</SelectItem>
+                                {clients.map(client => (
+                                    <SelectItem key={client.id} value={client.id}>
+                                        {client.contact_name} {client.company_name ? `(${client.company_name})` : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <Label>Company Name</Label>
@@ -617,6 +670,7 @@ export default function HistoricalProjectForm() {
                         { status: 'substantial_completion_closeout', entered_date: '' },
                         { status: 'closed', entered_date: '' }
                     ]);
+                    setSelectedClientId('new');
                 }}>
                     Clear Form
                 </Button>
