@@ -521,6 +521,61 @@ export default function Projects() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="closed" className="mt-6">
+          <Card>
+            <CardContent className="p-6">
+              {closedProjects.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Contract Value</TableHead>
+                      <TableHead>Actual Costs</TableHead>
+                      <TableHead>Margin</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>Completion Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {closedProjects.map((project) => (
+                      <TableRow 
+                        key={project.id} 
+                        className="cursor-pointer hover:bg-slate-50"
+                        onClick={() => openEditDialog(project)}
+                      >
+                        <TableCell className="font-medium">{project.title}</TableCell>
+                        <TableCell>{getProjectClientName(project)}</TableCell>
+                        <TableCell>${((project.contract_value || 0) / 1000).toFixed(0)}k</TableCell>
+                        <TableCell>${((project.actual_costs || 0) / 1000).toFixed(0)}k</TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${(project.actual_margin || 0) >= 20 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {(project.actual_margin || 0).toFixed(1)}%
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {project.start_date ? format(new Date(project.start_date), 'MMM d, yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {project.actual_completion_date ? format(new Date(project.actual_completion_date), 'MMM d, yyyy') : '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <EmptyState
+                  icon={Archive}
+                  title="No closed projects"
+                  description="Closed projects will appear here once you complete project closeouts"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Advance Phase Dialog */}
       <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
