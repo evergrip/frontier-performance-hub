@@ -15,13 +15,25 @@ export default function HistoricalProjectForm() {
     const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
     const [leadStatusHistory, setLeadStatusHistory] = useState([
-        { status: 'new_project_lead', entered_date: '' }
+        { status: 'new_project_lead', entered_date: '' },
+        { status: 'initial_video_consult', entered_date: '' },
+        { status: 'initial_inperson_consultation', entered_date: '' },
+        { status: 'preconstruction_proposal', entered_date: '' },
+        { status: 'converted', entered_date: '' }
     ]);
     const [saleStatusHistory, setSaleStatusHistory] = useState([
-        { status: 'feasibility', entered_date: '' }
+        { status: 'feasibility', entered_date: '' },
+        { status: 'design_material_selections', entered_date: '' },
+        { status: 'engineering_permits', entered_date: '' },
+        { status: 'pending_construction_sale', entered_date: '' },
+        { status: 'closed_won', entered_date: '' }
     ]);
     const [projectStatusHistory, setProjectStatusHistory] = useState([
-        { status: 'awaiting_to_be_scheduled', entered_date: '' }
+        { status: 'awaiting_to_be_scheduled', entered_date: '' },
+        { status: 'mobilization', entered_date: '' },
+        { status: 'active_construction', entered_date: '' },
+        { status: 'substantial_completion_closeout', entered_date: '' },
+        { status: 'closed', entered_date: '' }
     ]);
 
     const { register, handleSubmit, setValue, watch, reset } = useForm({
@@ -139,9 +151,27 @@ export default function HistoricalProjectForm() {
             
             // Reset form
             reset();
-            setLeadStatusHistory([{ status: 'new_project_lead', entered_date: '' }]);
-            setSaleStatusHistory([{ status: 'feasibility', entered_date: '' }]);
-            setProjectStatusHistory([{ status: 'awaiting_to_be_scheduled', entered_date: '' }]);
+            setLeadStatusHistory([
+                { status: 'new_project_lead', entered_date: '' },
+                { status: 'initial_video_consult', entered_date: '' },
+                { status: 'initial_inperson_consultation', entered_date: '' },
+                { status: 'preconstruction_proposal', entered_date: '' },
+                { status: 'converted', entered_date: '' }
+            ]);
+            setSaleStatusHistory([
+                { status: 'feasibility', entered_date: '' },
+                { status: 'design_material_selections', entered_date: '' },
+                { status: 'engineering_permits', entered_date: '' },
+                { status: 'pending_construction_sale', entered_date: '' },
+                { status: 'closed_won', entered_date: '' }
+            ]);
+            setProjectStatusHistory([
+                { status: 'awaiting_to_be_scheduled', entered_date: '' },
+                { status: 'mobilization', entered_date: '' },
+                { status: 'active_construction', entered_date: '' },
+                { status: 'substantial_completion_closeout', entered_date: '' },
+                { status: 'closed', entered_date: '' }
+            ]);
         } catch (error) {
             setResult({ success: false, error: error.message });
             toast.error('Failed to import project: ' + error.message);
@@ -501,9 +531,27 @@ export default function HistoricalProjectForm() {
             <div className="flex justify-end gap-4">
                 <Button type="button" variant="outline" onClick={() => {
                     reset();
-                    setLeadStatusHistory([{ status: 'new_project_lead', entered_date: '' }]);
-                    setSaleStatusHistory([{ status: 'feasibility', entered_date: '' }]);
-                    setProjectStatusHistory([{ status: 'awaiting_to_be_scheduled', entered_date: '' }]);
+                    setLeadStatusHistory([
+                        { status: 'new_project_lead', entered_date: '' },
+                        { status: 'initial_video_consult', entered_date: '' },
+                        { status: 'initial_inperson_consultation', entered_date: '' },
+                        { status: 'preconstruction_proposal', entered_date: '' },
+                        { status: 'converted', entered_date: '' }
+                    ]);
+                    setSaleStatusHistory([
+                        { status: 'feasibility', entered_date: '' },
+                        { status: 'design_material_selections', entered_date: '' },
+                        { status: 'engineering_permits', entered_date: '' },
+                        { status: 'pending_construction_sale', entered_date: '' },
+                        { status: 'closed_won', entered_date: '' }
+                    ]);
+                    setProjectStatusHistory([
+                        { status: 'awaiting_to_be_scheduled', entered_date: '' },
+                        { status: 'mobilization', entered_date: '' },
+                        { status: 'active_construction', entered_date: '' },
+                        { status: 'substantial_completion_closeout', entered_date: '' },
+                        { status: 'closed', entered_date: '' }
+                    ]);
                 }}>
                     Clear Form
                 </Button>
