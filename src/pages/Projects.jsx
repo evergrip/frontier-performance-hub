@@ -248,10 +248,8 @@ export default function Projects() {
     e.preventDefault();
     
     const actualCosts = parseFloat(projectForm.actual_costs) || 0;
-    const actualMargin = parseFloat(projectForm.actual_margin) || 0;
-    const actualGrossRevenue = actualCosts / (1 - (actualMargin / 100)); // Revenue = Cost / (1 - Margin%)
     const contractValue = selectedProject.contract_value || 0;
-    const variancePercent = Math.abs(((actualGrossRevenue - contractValue) / contractValue) * 100);
+    const variancePercent = Math.abs(((actualCosts - contractValue) / contractValue) * 100);
     const threshold = companySettings?.project_closeout_variance_threshold || 3;
     
     if (variancePercent > threshold && !projectForm.variance_explanation.trim()) {
@@ -880,9 +878,7 @@ export default function Projects() {
 
             {selectedProject && projectForm.actual_costs && projectForm.actual_margin && (() => {
               const actualCosts = parseFloat(projectForm.actual_costs) || 0;
-              const actualMargin = parseFloat(projectForm.actual_margin) || 0;
-              const actualGrossRevenue = actualCosts / (1 - (actualMargin / 100));
-              const variance = Math.abs(((actualGrossRevenue - selectedProject.contract_value) / selectedProject.contract_value) * 100);
+              const variance = Math.abs(((actualCosts - selectedProject.contract_value) / selectedProject.contract_value) * 100);
               const threshold = companySettings?.project_closeout_variance_threshold || 3;
               return variance > threshold ? (
                 <div>
@@ -1002,9 +998,7 @@ export default function Projects() {
                   </div>
                   {(() => {
                     const actualCosts = parseFloat(projectForm.actual_costs) || 0;
-                    const actualMargin = parseFloat(projectForm.actual_margin) || 0;
-                    const actualGrossRevenue = actualCosts / (1 - (actualMargin / 100));
-                    const variance = Math.abs(((actualGrossRevenue - selectedProject.contract_value) / selectedProject.contract_value) * 100);
+                    const variance = Math.abs(((actualCosts - selectedProject.contract_value) / selectedProject.contract_value) * 100);
                     const threshold = companySettings?.project_closeout_variance_threshold || 3;
                     return variance > threshold ? (
                       <div className="flex justify-between text-amber-600 border-t border-amber-300 pt-1 mt-1">
