@@ -165,11 +165,23 @@ export default function HistoricalProjectAuditForm() {
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
             
-            // Note: Project phases structure is different - it's an array of phase objects with name, status, etc.
-            // For audit purposes, we'll keep it as is if it exists
-            setProjectStatusHistory(project.phases || []);
+            // Set project status history with all default phases if empty
+            const projectHistory = project.phases && project.phases.length > 0 
+                ? project.phases 
+                : [
+                    { status: 'awaiting_to_be_scheduled', entered_date: '' },
+                    { status: 'mobilization', entered_date: '' },
+                    { status: 'active_construction', entered_date: '' },
+                    { status: 'substantial_completion_closeout', entered_date: '' }
+                ];
+            setProjectStatusHistory(projectHistory);
         } else {
-            setProjectStatusHistory([]);
+            setProjectStatusHistory([
+                { status: 'awaiting_to_be_scheduled', entered_date: '' },
+                { status: 'mobilization', entered_date: '' },
+                { status: 'active_construction', entered_date: '' },
+                { status: 'substantial_completion_closeout', entered_date: '' }
+            ]);
         }
     }, [selectedLeadId, leads, clients, sales, projects, commissionTransactions, setValue]);
 
@@ -215,7 +227,7 @@ export default function HistoricalProjectAuditForm() {
     };
 
     const addProjectStatus = () => {
-        setProjectStatusHistory([...projectStatusHistory, { status: 'mobilization', entered_date: '' }]);
+        setProjectStatusHistory([...projectStatusHistory, { status: 'awaiting_to_be_scheduled', entered_date: '' }]);
     };
 
     const removeProjectStatus = (index) => {
