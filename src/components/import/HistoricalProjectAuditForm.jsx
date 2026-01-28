@@ -259,15 +259,22 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
 
             // Update client
             if (client) {
-                await updateClientMutation.mutateAsync({
-                    id: client.id,
-                    company_name: data.client_company_name,
-                    contact_name: data.client_contact_name,
-                    email: data.client_email,
-                    phone: data.client_phone,
-                    address: data.client_address,
-                    notes: data.client_notes
-                });
+                console.log('Updating client...');
+                try {
+                    await updateClientMutation.mutateAsync({
+                        id: client.id,
+                        company_name: data.client_company_name,
+                        contact_name: data.client_contact_name,
+                        email: data.client_email,
+                        phone: data.client_phone,
+                        address: data.client_address,
+                        notes: data.client_notes
+                    });
+                    console.log('Client updated successfully');
+                } catch (err) {
+                    console.error('Client update failed:', err);
+                    throw new Error(`Client update failed: ${err.message}`);
+                }
             }
 
             // Update lead
