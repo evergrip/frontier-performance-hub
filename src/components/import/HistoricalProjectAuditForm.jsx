@@ -812,8 +812,27 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                     {/* Commission Records */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Commission Records</CardTitle>
-                            <CardDescription>Edit commission transactions for this project</CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Commission Records</CardTitle>
+                                    <CardDescription>Edit commission transactions for this project</CardDescription>
+                                </div>
+                                <Button type="button" variant="outline" size="sm" onClick={() => {
+                                    setRelatedCommissions([...relatedCommissions, {
+                                        id: `new_${Date.now()}`,
+                                        user_id: '',
+                                        sale_type: 'construction',
+                                        amount: 0,
+                                        commission_rate: 0,
+                                        sale_amount: 0,
+                                        status: 'pending',
+                                        notes: '',
+                                        isNew: true
+                                    }]);
+                                }}>
+                                    <Plus className="w-4 h-4 mr-1" /> Add Commission
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {relatedCommissions.length > 0 ? (
