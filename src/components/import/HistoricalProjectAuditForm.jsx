@@ -346,24 +346,41 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
 
             // Update commission transactions
             if (relatedCommissions.length > 0) {
-                console.log(`Updating ${relatedCommissions.length} commission transactions...`);
+                console.log(`Processing ${relatedCommissions.length} commission transactions...`);
                 for (const commission of relatedCommissions) {
                     try {
-                        await updateCommissionMutation.mutateAsync({
-                            id: commission.id,
-                            user_id: commission.user_id,
-                            amount: commission.amount,
-                            commission_rate: commission.commission_rate,
-                            sale_amount: commission.sale_amount,
-                            status: commission.status,
-                            notes: commission.notes
-                        });
+                        if (commission.isNew) {
+                            // Create new commission
+                            await base44.entities.CommissionTransaction.create({
+                                user_id: commission.user_id,
+                                sale_id: sale.id,
+                                sale_type: commission.sale_type,
+                                project_id: project?.id || '',
+                                transaction_type: 'sale_commission',
+                                amount: parseFloat(commission.amount) || 0,
+                                commission_rate: parseFloat(commission.commission_rate) || 0,
+                                sale_amount: parseFloat(commission.sale_amount) || 0,
+                                status: commission.status,
+                                notes: commission.notes || ''
+                            });
+                        } else {
+                            // Update existing commission
+                            await updateCommissionMutation.mutateAsync({
+                                id: commission.id,
+                                user_id: commission.user_id,
+                                amount: parseFloat(commission.amount) || 0,
+                                commission_rate: parseFloat(commission.commission_rate) || 0,
+                                sale_amount: parseFloat(commission.sale_amount) || 0,
+                                status: commission.status,
+                                notes: commission.notes
+                            });
+                        }
                     } catch (err) {
-                        console.error('Commission update failed:', err);
-                        throw new Error(`Commission update failed: ${err.message}`);
+                        console.error('Commission save failed:', err);
+                        throw new Error(`Commission save failed: ${err.message}`);
                     }
                 }
-                console.log('All commissions updated successfully');
+                console.log('All commissions processed successfully');
             }
 
             setResult({ success: true });
