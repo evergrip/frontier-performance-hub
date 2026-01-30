@@ -98,11 +98,11 @@ Deno.serve(async (req) => {
                 project_manager_id: project.project_manager || '',
                 crew_assignment: project.crew_assignment || 'unassigned',
                 color: project.color || '#3B82F6',
-                phases: project.status_history?.map(h => ({
+                phases: project.status_history?.filter(h => h.entered_date).map(h => ({
                     name: h.status,
                     status: 'completed',
-                    start_date: h.entered_date ? h.entered_date.split('T')[0] : null,
-                    end_date: h.entered_date ? h.entered_date.split('T')[0] : null
+                    start_date: h.entered_date,
+                    end_date: h.entered_date
                 })) || [],
                 notes: project.notes || ''
             };
