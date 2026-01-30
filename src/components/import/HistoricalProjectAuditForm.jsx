@@ -841,6 +841,30 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                         <div key={commission.id} className="p-4 border rounded-lg space-y-3">
                                             <div className="flex justify-between items-center">
                                                 <p className="font-semibold">{commission.sale_type === 'preconstruction' ? 'Preconstruction' : 'Construction'} Commission</p>
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                                    setRelatedCommissions(relatedCommissions.filter((_, i) => i !== index));
+                                                }}>
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            </div>
+                                            <div>
+                                                <Label>Sale Type</Label>
+                                                <Select 
+                                                    value={commission.sale_type}
+                                                    onValueChange={(value) => {
+                                                        const updated = [...relatedCommissions];
+                                                        updated[index].sale_type = value;
+                                                        setRelatedCommissions(updated);
+                                                    }}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="preconstruction">Preconstruction</SelectItem>
+                                                        <SelectItem value="construction">Construction</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
