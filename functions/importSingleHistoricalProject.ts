@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
 
         // Step 5: Create Commission Transactions if specified
         const commissionTransactions = [];
-        if (sale.commission_processed && sale.assigned_to) {
+        if (sale.assigned_to && (sale.precon_commission_amount || sale.construction_commission_amount)) {
             // Preconstruction commission
             if (sale.precon_commission_amount && parseFloat(sale.precon_commission_amount) > 0) {
                 const preconCommission = {
