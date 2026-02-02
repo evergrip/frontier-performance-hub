@@ -71,6 +71,7 @@ export default function KPIDefinitions() {
       responsible_user_field: '',
       question: '',
       response_type: 'number',
+      scorecard_questions: [],
       target_value: 0,
       threshold_comparison: 'less_than',
       threshold_value: 0,
@@ -93,9 +94,21 @@ export default function KPIDefinitions() {
       delete submitData.aggregation_method;
       delete submitData.filter_conditions;
       delete submitData.responsible_user_field;
-    } else {
+      delete submitData.scorecard_questions;
+    } else if (formData.type === 'calculated') {
       delete submitData.question;
       delete submitData.response_type;
+      delete submitData.scorecard_questions;
+    } else if (formData.type === 'scorecard') {
+      delete submitData.source_entity;
+      delete submitData.metric_field;
+      delete submitData.date_field;
+      delete submitData.aggregation_method;
+      delete submitData.filter_conditions;
+      delete submitData.responsible_user_field;
+      delete submitData.question;
+      delete submitData.response_type;
+      submitData.measurement_unit = 'points';
     }
 
     if (editingKPI) {
@@ -289,6 +302,7 @@ export default function KPIDefinitions() {
                     <SelectContent>
                       <SelectItem value="calculated">Calculated</SelectItem>
                       <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="scorecard">Scorecard</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -327,6 +341,7 @@ export default function KPIDefinitions() {
                       <SelectItem value="days">Days</SelectItem>
                       <SelectItem value="USD">USD</SelectItem>
                       <SelectItem value="hours">Hours</SelectItem>
+                      <SelectItem value="points">Points</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -542,6 +557,185 @@ export default function KPIDefinitions() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            )}
+
+            {/* Scorecard KPI Fields */}
+            {formData.type === 'scorecard' && (
+              <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-purple-900">Scorecard Questions</h3>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        scorecard_questions: [
+                          ...(formData.scorecard_questions || []),
+                          {
+                            question: '',
+                            response_type: 'yes_no',
+                            point_value_if_yes: 1,
+                            point_value_if_no: 0,
+                            max_points: 1,
+                            requires_explanation_if_wrong: true
+                          }
+                        ]
+                      });
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Question
+                  </Button>
+                </div>
+
+                {formData.scorecard_questions?.length === 0 && (
+                  <p className="text-sm text-purple-600">Add questions that staff will answer</p>
+                )}
+
+                {formData.scorecard_questions?.map((q, idx) => (
+                  <Card key={idx} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <Label>Question {idx + 1}</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newQuestions = [...formData.scorecard_questions];
+                            newQuestions.splice(idx, 1);
+                            setFormData({ ...formData, scorecard_questions: newQuestions });
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+
+                      <Input
+                        value={q.question}
+                        onChange={(e) => {
+                          const newQuestions = [...formData.scorecard_questions];
+                          newQuestions[idx].question = e.target.value;
+                          setFormData({ ...formData, scorecard_questions: newQuestions });
+                        }}
+                        placeholder="e.g., Are your uniforms free of holes?"
+                      />
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Response Type</Label>
+                          <Select
+                            value={q.response_type}
+                            onValueChange={(value) => {
+                              const newQuestions = [...formData.scorecard_questions];
+                              newQuestions[idx].response_type = value;
+                              setFormData({ ...formData, scorecard_questions: newQuestions });
+                            }}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="yes_no">Yes/No</SelectItem>
+                              <SelectItem value="number">Number</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {q.response_type === 'yes_no' && (
+                          <>
+                            <div>
+                              <Label className="text-xs">Points if Yes</Label>
+                              <Input
+                                type="number"
+                                className="h-8"
+                                value={q.point_value_if_yes}
+                                onChange={(e) => {
+                                  const newQuestions = [...formData.scorecard_questions];
+                                  newQuestions[idx].point_value_if_yes = parseFloat(e.target.value);
+                                  newQuestions[idx].max_points = Math.max(parseFloat(e.target.value), q.point_value_if_no || 0);
+                                  setFormData({ ...formData, scorecard_questions: newQuestions });
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Points if No</Label>
+                              <Input
+                                type="number"
+                                className="h-8"
+                                value={q.point_value_if_no}
+                                onChange={(e) => {
+                                  const newQuestions = [...formData.scorecard_questions];
+                                  newQuestions[idx].point_value_if_no = parseFloat(e.target.value);
+                                  setFormData({ ...formData, scorecard_questions: newQuestions });
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {q.response_type === 'number' && (
+                          <>
+                            <div>
+                              <Label className="text-xs">Expected Value</Label>
+                              <Input
+                                type="number"
+                                className="h-8"
+                                value={q.expected_number_value || 0}
+                                onChange={(e) => {
+                                  const newQuestions = [...formData.scorecard_questions];
+                                  newQuestions[idx].expected_number_value = parseFloat(e.target.value);
+                                  setFormData({ ...formData, scorecard_questions: newQuestions });
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Points per Unit</Label>
+                              <Input
+                                type="number"
+                                className="h-8"
+                                value={q.points_per_unit || 1}
+                                onChange={(e) => {
+                                  const newQuestions = [...formData.scorecard_questions];
+                                  newQuestions[idx].points_per_unit = parseFloat(e.target.value);
+                                  setFormData({ ...formData, scorecard_questions: newQuestions });
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Max Points</Label>
+                              <Input
+                                type="number"
+                                className="h-8"
+                                value={q.max_points || 1}
+                                onChange={(e) => {
+                                  const newQuestions = [...formData.scorecard_questions];
+                                  newQuestions[idx].max_points = parseFloat(e.target.value);
+                                  setFormData({ ...formData, scorecard_questions: newQuestions });
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={q.requires_explanation_if_wrong}
+                          onCheckedChange={(checked) => {
+                            const newQuestions = [...formData.scorecard_questions];
+                            newQuestions[idx].requires_explanation_if_wrong = checked;
+                            setFormData({ ...formData, scorecard_questions: newQuestions });
+                          }}
+                        />
+                        <Label className="text-xs">Require explanation if wrong answer</Label>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             )}
 
