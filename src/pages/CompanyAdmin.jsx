@@ -7,6 +7,7 @@ import CommissionsAdminTab from '@/components/admin/CommissionsAdminTab';
 import ProjectsAdminTab from '@/components/admin/ProjectsAdminTab';
 import UsersAdminTab from '@/components/admin/UsersAdminTab';
 import CompanySettingsTab from '@/components/admin/CompanySettingsTab';
+import ReportingRelationshipsTab from '@/components/admin/ReportingRelationshipsTab';
 
 export default function CompanyAdmin() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -67,6 +68,9 @@ export default function CompanyAdmin() {
           </div>
           <div className="border-t pt-8" id="users-admin">
             <UsersAdminTab />
+          </div>
+          <div className="border-t pt-8" id="reporting-relationships">
+            <ReportingRelationshipsTab />
           </div>
         </TabsContent>
 
