@@ -32,6 +32,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Projects', icon: Building2, page: 'Projects' },
     { name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' },
     { name: 'Reports', icon: Settings, page: 'Reports' },
+    { name: 'My KPIs', icon: Target, page: 'MyKPIs' },
   ];
 
   const adminNavigation = [

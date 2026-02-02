@@ -67,6 +67,8 @@ import Scheduler from './pages/Scheduler';
 import UsersAdmin from './pages/UsersAdmin';
 import KPIDefinitions from './pages/KPIDefinitions';
 import MyKPIs from './pages/MyKPIs';
+import KPIReview from './pages/KPIReview';
+import KPIDashboard from './pages/KPIDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -91,6 +93,8 @@ export const PAGES = {
     "UsersAdmin": UsersAdmin,
     "KPIDefinitions": KPIDefinitions,
     "MyKPIs": MyKPIs,
+    "KPIReview": KPIReview,
+    "KPIDashboard": KPIDashboard,
 }
 
 export const pagesConfig = {
