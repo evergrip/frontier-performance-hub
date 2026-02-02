@@ -1,182 +1,224 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-    try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
-
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const { user_id, time_period } = await req.json();
-
-        // Determine date range based on time_period
-        const now = new Date();
-        let startDate;
-        
-        switch (time_period) {
-            case 'mtd': // Month to date
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                break;
-            case 'qtd': // Quarter to date
-                startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-                break;
-            case 'ytd': // Year to date
-                startDate = new Date(now.getFullYear(), 0, 1);
-                break;
-            case 'last_month':
-                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                break;
-            case 'last_quarter':
-                startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3 - 3, 1);
-                break;
-            default: // Default to YTD
-                startDate = new Date(now.getFullYear(), 0, 1);
-        }
-
-        const startDateStr = startDate.toISOString().split('T')[0];
-
-        // Fetch all relevant data
-        const [leads, sales, projects, commissionBanks] = await Promise.all([
-            base44.asServiceRole.entities.Lead.filter({}),
-            base44.asServiceRole.entities.Sale.filter({}),
-            base44.asServiceRole.entities.Project.filter({}),
-            base44.asServiceRole.entities.CommissionBank.filter({})
-        ]);
-
-        // Filter by user if specified
-        const filterByUser = (items, userField) => {
-            if (!user_id) return items;
-            return items.filter(item => item[userField] === user_id);
-        };
-
-        const userLeads = filterByUser(leads, 'assigned_to');
-        const userSales = filterByUser(sales, 'assigned_to');
-        const userProjects = filterByUser(projects, 'project_manager_id');
-
-        // Filter by date range
-        const filterByDate = (items, dateField) => {
-            return items.filter(item => {
-                const itemDate = new Date(item[dateField]);
-                return itemDate >= startDate;
-            });
-        };
-
-        const periodLeads = filterByDate(userLeads, 'created_date');
-        const periodSales = filterByDate(userSales, 'created_date');
-        const periodProjects = filterByDate(userProjects, 'created_date');
-
-        // Calculate Lead KPIs
-        const leadKPIs = {
-            total_leads: periodLeads.length,
-            qualified_leads: periodLeads.filter(l => l.status === 'qualified').length,
-            converted_leads: periodLeads.filter(l => l.status === 'converted').length,
-            lost_leads: periodLeads.filter(l => l.status === 'lost').length,
-            conversion_rate: periodLeads.length > 0 
-                ? (periodLeads.filter(l => l.status === 'converted').length / periodLeads.length * 100).toFixed(2)
-                : 0,
-            avg_lead_score: periodLeads.length > 0
-                ? (periodLeads.reduce((sum, l) => sum + (l.lead_score || 0), 0) / periodLeads.length).toFixed(2)
-                : 0,
-            total_estimated_value: periodLeads.reduce((sum, l) => sum + (l.estimated_value || 0), 0)
-        };
-
-        // Calculate Sales KPIs
-        const closedWonSales = periodSales.filter(s => s.status === 'closed_won');
-        const salesKPIs = {
-            total_sales: periodSales.length,
-            prospect_sales: periodSales.filter(s => s.status === 'prospect').length,
-            proposal_sent: periodSales.filter(s => s.status === 'proposal_sent').length,
-            negotiation: periodSales.filter(s => s.status === 'negotiation').length,
-            closed_won: closedWonSales.length,
-            closed_lost: periodSales.filter(s => s.status === 'closed_lost').length,
-            win_rate: periodSales.filter(s => ['closed_won', 'closed_lost'].includes(s.status)).length > 0
-                ? (closedWonSales.length / periodSales.filter(s => ['closed_won', 'closed_lost'].includes(s.status)).length * 100).toFixed(2)
-                : 0,
-            total_contract_value: closedWonSales.reduce((sum, s) => sum + (s.contract_value || 0), 0),
-            avg_deal_size: closedWonSales.length > 0
-                ? (closedWonSales.reduce((sum, s) => sum + (s.contract_value || 0), 0) / closedWonSales.length).toFixed(2)
-                : 0,
-            precon_sales: closedWonSales.filter(s => s.sale_type === 'preconstruction').length,
-            construction_sales: closedWonSales.filter(s => s.sale_type === 'construction').length
-        };
-
-        // Calculate Project KPIs
-        const activeProjects = periodProjects.filter(p => !['closed', 'cancelled'].includes(p.status));
-        const completedProjects = periodProjects.filter(p => p.status === 'completion' || p.status === 'closed');
-        
-        const projectKPIs = {
-            total_projects: periodProjects.length,
-            active_projects: activeProjects.length,
-            completed_projects: completedProjects.length,
-            planning_stage: periodProjects.filter(p => p.status === 'planning').length,
-            execution_stage: periodProjects.filter(p => p.status === 'execution').length,
-            total_contract_value: periodProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0),
-            total_actual_costs: periodProjects.reduce((sum, p) => sum + (p.actual_costs || 0), 0),
-            total_margin: periodProjects.reduce((sum, p) => {
-                const margin = (p.contract_value || 0) - (p.actual_costs || 0);
-                return sum + margin;
-            }, 0),
-            avg_margin_percentage: periodProjects.length > 0
-                ? (periodProjects.reduce((sum, p) => {
-                    if (!p.contract_value || p.contract_value === 0) return sum;
-                    const margin = ((p.contract_value - (p.actual_costs || 0)) / p.contract_value) * 100;
-                    return sum + margin;
-                }, 0) / periodProjects.length).toFixed(2)
-                : 0,
-            precon_projects: periodProjects.filter(p => p.project_type === 'preconstruction').length,
-            construction_projects: periodProjects.filter(p => p.project_type === 'construction').length
-        };
-
-        // Calculate Commission KPIs
-        const userCommissionBank = user_id 
-            ? commissionBanks.find(b => b.user_id === user_id)
-            : null;
-
-        const commissionKPIs = user_id && userCommissionBank ? {
-            current_bank_balance: userCommissionBank.current_bank_balance || 0,
-            total_earned: userCommissionBank.total_earned || 0,
-            total_paid_out: userCommissionBank.total_paid_out || 0,
-            quarterly_payout: userCommissionBank.quarterly_payout_amount || 0,
-            ytd_sales_volume: userCommissionBank.ytd_sales_volume || 0,
-            current_tier: userCommissionBank.current_tier || 'N/A'
-        } : {
-            total_banked: commissionBanks.reduce((sum, b) => sum + (b.current_bank_balance || 0), 0),
-            total_earned_all: commissionBanks.reduce((sum, b) => sum + (b.total_earned || 0), 0),
-            total_paid_out_all: commissionBanks.reduce((sum, b) => sum + (b.total_paid_out || 0), 0)
-        };
-
-        // Overall Pipeline Health
-        const pipelineHealth = {
-            pipeline_value: sales.filter(s => ['prospect', 'proposal_sent', 'negotiation'].includes(s.status))
-                .reduce((sum, s) => sum + (s.contract_value || 0), 0),
-            weighted_pipeline: sales.filter(s => ['prospect', 'proposal_sent', 'negotiation'].includes(s.status))
-                .reduce((sum, s) => {
-                    const weights = { prospect: 0.2, proposal_sent: 0.5, negotiation: 0.75 };
-                    return sum + ((s.contract_value || 0) * (weights[s.status] || 0));
-                }, 0),
-            avg_sales_cycle: 0 // Could be calculated based on date differences
-        };
-
-        return Response.json({
-            success: true,
-            time_period,
-            start_date: startDateStr,
-            user_id: user_id || 'all',
-            kpis: {
-                leads: leadKPIs,
-                sales: salesKPIs,
-                projects: projectKPIs,
-                commissions: commissionKPIs,
-                pipeline: pipelineHealth
-            }
-        });
-
-    } catch (error) {
-        console.error('Error in calculateKPIAggregates:', error);
-        return Response.json({ 
-            error: error.message || 'Internal server error' 
-        }, { status: 500 });
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Authenticate user (should be admin or system)
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized - admin access required' }, { status: 403 });
     }
+
+    const results = {
+      processed: 0,
+      created: 0,
+      updated: 0,
+      errors: []
+    };
+
+    // Fetch all active calculated KPIs
+    const kpis = await base44.asServiceRole.entities.KPI.filter({ 
+      is_active: true, 
+      type: "calculated" 
+    });
+
+    for (const kpi of kpis) {
+      try {
+        await processKPI(base44, kpi, results);
+        results.processed++;
+      } catch (error) {
+        results.errors.push({
+          kpi_id: kpi.id,
+          kpi_name: kpi.name,
+          error: error.message
+        });
+      }
+    }
+
+    return Response.json({ 
+      success: true, 
+      message: `Processed ${results.processed} KPIs`,
+      results 
+    });
+
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 });
+
+async function processKPI(base44, kpi, results) {
+  const { 
+    source_entity, 
+    metric_field, 
+    date_field, 
+    aggregation_method,
+    filter_conditions,
+    responsible_user_field,
+    reporting_period_type,
+    threshold_comparison,
+    threshold_value,
+    target_value
+  } = kpi;
+
+  // Calculate reporting period dates
+  const periodDates = getReportingPeriod(reporting_period_type);
+  
+  // Fetch source data with filters
+  const queryFilters = { ...filter_conditions };
+  
+  // Add date range filter if date_field is specified
+  if (date_field) {
+    queryFilters[date_field] = {
+      $gte: periodDates.start.toISOString(),
+      $lte: periodDates.end.toISOString()
+    };
+  }
+
+  const sourceData = await base44.asServiceRole.entities[source_entity].filter(queryFilters);
+
+  // Group by responsible user
+  const userGroups = {};
+  
+  for (const record of sourceData) {
+    const userId = record[responsible_user_field];
+    if (!userId) continue;
+    
+    if (!userGroups[userId]) {
+      userGroups[userId] = [];
+    }
+    userGroups[userId].push(record);
+  }
+
+  // Calculate KPI for each user
+  for (const [userId, records] of Object.entries(userGroups)) {
+    const actualValue = calculateAggregation(records, metric_field, aggregation_method);
+    
+    // Get target for this user/period
+    const targets = await base44.asServiceRole.entities.KPITarget.filter({
+      kpi_id: kpi.id,
+      user_id: userId,
+      reporting_period_start_date: { $lte: periodDates.end.toISOString() },
+      reporting_period_end_date: { $gte: periodDates.start.toISOString() }
+    });
+    
+    const targetValueAtEntry = targets.length > 0 ? targets[0].target_value : target_value;
+    
+    // Check if flagged
+    const isFlagged = checkThreshold(actualValue, threshold_value, threshold_comparison);
+    
+    // Check if entry already exists
+    const existingEntries = await base44.asServiceRole.entities.KPIEntry.filter({
+      kpi_id: kpi.id,
+      user_id: userId,
+      reporting_period_start_date: periodDates.start.toISOString(),
+      reporting_period_end_date: periodDates.end.toISOString()
+    });
+
+    const entryData = {
+      kpi_id: kpi.id,
+      user_id: userId,
+      reporting_period_start_date: periodDates.start.toISOString(),
+      reporting_period_end_date: periodDates.end.toISOString(),
+      actual_value: actualValue,
+      target_value_at_entry: targetValueAtEntry,
+      is_flagged: isFlagged,
+      source_data_ids: records.map(r => r.id),
+      manual_entry: false
+    };
+
+    if (existingEntries.length > 0) {
+      // Update existing entry (preserve explanation if exists)
+      const existing = existingEntries[0];
+      await base44.asServiceRole.entities.KPIEntry.update(existing.id, {
+        ...entryData,
+        explanation_provided: existing.explanation_provided // Preserve existing explanation
+      });
+      results.updated++;
+    } else {
+      // Create new entry
+      await base44.asServiceRole.entities.KPIEntry.create(entryData);
+      results.created++;
+    }
+  }
+}
+
+function getReportingPeriod(periodType) {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  switch (periodType) {
+    case 'daily':
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case 'weekly':
+      const dayOfWeek = start.getDay();
+      start.setDate(start.getDate() - dayOfWeek);
+      start.setHours(0, 0, 0, 0);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case 'monthly':
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      end.setMonth(end.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case 'quarterly':
+      const quarter = Math.floor(now.getMonth() / 3);
+      start.setMonth(quarter * 3, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setMonth(quarter * 3 + 3, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case 'yearly':
+      start.setMonth(0, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setMonth(11, 31);
+      end.setHours(23, 59, 59, 999);
+      break;
+  }
+
+  return { start, end };
+}
+
+function calculateAggregation(records, metricField, method) {
+  const values = records.map(r => {
+    const val = r[metricField];
+    return typeof val === 'number' ? val : (val ? 1 : 0);
+  });
+
+  switch (method) {
+    case 'count':
+      return records.length;
+    case 'sum':
+      return values.reduce((sum, val) => sum + val, 0);
+    case 'average':
+      return values.length > 0 ? values.reduce((sum, val) => sum + val, 0) / values.length : 0;
+    case 'min':
+      return values.length > 0 ? Math.min(...values) : 0;
+    case 'max':
+      return values.length > 0 ? Math.max(...values) : 0;
+    default:
+      return 0;
+  }
+}
+
+function checkThreshold(actualValue, thresholdValue, comparison) {
+  if (!thresholdValue || !comparison) return false;
+
+  switch (comparison) {
+    case 'less_than':
+      return actualValue < thresholdValue;
+    case 'greater_than':
+      return actualValue > thresholdValue;
+    case 'equal_to':
+      return actualValue === thresholdValue;
+    case 'not_equal_to':
+      return actualValue !== thresholdValue;
+    default:
+      return false;
+  }
+}
