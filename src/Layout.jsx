@@ -38,6 +38,9 @@ export default function Layout({ children, currentPageName }) {
   const adminNavigation = [
     { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
     { name: 'Import Historical Data', icon: Upload, page: 'ImportHistoricalData' },
+    { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
+    { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
+    { name: 'Team KPI Review', icon: Users, page: 'KPIReview' },
   ];
 
   const userNavigation = [
