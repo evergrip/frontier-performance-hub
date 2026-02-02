@@ -346,7 +346,7 @@ export default function KPIDefinitions() {
                     </div>
                     <Select
                       value={formData.source_entity}
-                      onValueChange={(value) => setFormData({ ...formData, source_entity: value })}
+                      onValueChange={(value) => setFormData({ ...formData, source_entity: value, metric_field: '', date_field: '', responsible_user_field: '' })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select entity" />
@@ -363,25 +363,82 @@ export default function KPIDefinitions() {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Label>Metric Field *</Label>
-                      <Tooltip content="The field to measure (e.g., status, contract_value)" />
+                      <Tooltip content="The field to measure" />
                     </div>
-                    <Input
+                    <Select
                       value={formData.metric_field}
-                      onChange={(e) => setFormData({ ...formData, metric_field: e.target.value })}
-                      placeholder="e.g., status"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, metric_field: value })}
+                      disabled={!formData.source_entity}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={formData.source_entity ? "Select field" : "Select entity first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.source_entity === 'Lead' && (
+                          <>
+                            <SelectItem value="status">status</SelectItem>
+                            <SelectItem value="lead_score">lead_score</SelectItem>
+                            <SelectItem value="estimated_precon_value">estimated_precon_value</SelectItem>
+                            <SelectItem value="estimated_construction_value">estimated_construction_value</SelectItem>
+                          </>
+                        )}
+                        {formData.source_entity === 'Sale' && (
+                          <>
+                            <SelectItem value="status">status</SelectItem>
+                            <SelectItem value="contract_value">contract_value</SelectItem>
+                            <SelectItem value="estimated_construction_budget">estimated_construction_budget</SelectItem>
+                            <SelectItem value="estimated_margin">estimated_margin</SelectItem>
+                          </>
+                        )}
+                        {formData.source_entity === 'Project' && (
+                          <>
+                            <SelectItem value="status">status</SelectItem>
+                            <SelectItem value="contract_value">contract_value</SelectItem>
+                            <SelectItem value="actual_costs">actual_costs</SelectItem>
+                            <SelectItem value="actual_margin">actual_margin</SelectItem>
+                          </>
+                        )}
+                        {formData.source_entity === 'Client' && (
+                          <>
+                            <SelectItem value="status">status</SelectItem>
+                            <SelectItem value="total_project_value">total_project_value</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Label>Date Field</Label>
-                      <Tooltip content="Field used to filter by period (e.g., created_date)" />
+                      <Tooltip content="Field used to filter by period" />
                     </div>
-                    <Input
+                    <Select
                       value={formData.date_field}
-                      onChange={(e) => setFormData({ ...formData, date_field: e.target.value })}
-                      placeholder="e.g., created_date"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, date_field: value })}
+                      disabled={!formData.source_entity}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={formData.source_entity ? "Select field" : "Select entity first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_date">created_date</SelectItem>
+                        <SelectItem value="updated_date">updated_date</SelectItem>
+                        {formData.source_entity === 'Sale' && (
+                          <>
+                            <SelectItem value="close_date">close_date</SelectItem>
+                            <SelectItem value="target_precon_completion_date">target_precon_completion_date</SelectItem>
+                          </>
+                        )}
+                        {formData.source_entity === 'Project' && (
+                          <>
+                            <SelectItem value="start_date">start_date</SelectItem>
+                            <SelectItem value="target_completion_date">target_completion_date</SelectItem>
+                            <SelectItem value="actual_completion_date">actual_completion_date</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
@@ -409,13 +466,31 @@ export default function KPIDefinitions() {
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Label>Responsible User Field *</Label>
-                      <Tooltip content="Field that links to the responsible user (e.g., assigned_to)" />
+                      <Tooltip content="Field that links to the responsible user" />
                     </div>
-                    <Input
+                    <Select
                       value={formData.responsible_user_field}
-                      onChange={(e) => setFormData({ ...formData, responsible_user_field: e.target.value })}
-                      placeholder="e.g., assigned_to"
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, responsible_user_field: value })}
+                      disabled={!formData.source_entity}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={formData.source_entity ? "Select field" : "Select entity first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {formData.source_entity === 'Lead' && (
+                          <SelectItem value="assigned_to">assigned_to</SelectItem>
+                        )}
+                        {formData.source_entity === 'Sale' && (
+                          <SelectItem value="assigned_to">assigned_to</SelectItem>
+                        )}
+                        {formData.source_entity === 'Project' && (
+                          <SelectItem value="project_manager_id">project_manager_id</SelectItem>
+                        )}
+                        {formData.source_entity === 'Client' && (
+                          <SelectItem value="created_by">created_by</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
