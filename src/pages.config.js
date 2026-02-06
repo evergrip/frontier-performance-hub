@@ -55,8 +55,13 @@ import CompanyAdmin from './pages/CompanyAdmin';
 import CompanySettings from './pages/CompanySettings';
 import Dashboard from './pages/Dashboard';
 import ImportHistoricalData from './pages/ImportHistoricalData';
+import KPIDashboard from './pages/KPIDashboard';
+import KPIDefinitions from './pages/KPIDefinitions';
 import KPIManagement from './pages/KPIManagement';
+import KPIReview from './pages/KPIReview';
 import Leads from './pages/Leads';
+import MyKPIScorecard from './pages/MyKPIScorecard';
+import MyKPIs from './pages/MyKPIs';
 import Projects from './pages/Projects';
 import ProjectsAdmin from './pages/ProjectsAdmin';
 import Relationships from './pages/Relationships';
@@ -65,11 +70,6 @@ import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import UsersAdmin from './pages/UsersAdmin';
-import KPIDefinitions from './pages/KPIDefinitions';
-import MyKPIs from './pages/MyKPIs';
-import KPIReview from './pages/KPIReview';
-import KPIDashboard from './pages/KPIDashboard';
-import MyKPIScorecard from './pages/MyKPIScorecard';
 import __Layout from './Layout.jsx';
 
 
@@ -82,8 +82,13 @@ export const PAGES = {
     "CompanySettings": CompanySettings,
     "Dashboard": Dashboard,
     "ImportHistoricalData": ImportHistoricalData,
+    "KPIDashboard": KPIDashboard,
+    "KPIDefinitions": KPIDefinitions,
     "KPIManagement": KPIManagement,
+    "KPIReview": KPIReview,
     "Leads": Leads,
+    "MyKPIScorecard": MyKPIScorecard,
+    "MyKPIs": MyKPIs,
     "Projects": Projects,
     "ProjectsAdmin": ProjectsAdmin,
     "Relationships": Relationships,
@@ -92,11 +97,6 @@ export const PAGES = {
     "ScheduleView": ScheduleView,
     "Scheduler": Scheduler,
     "UsersAdmin": UsersAdmin,
-    "KPIDefinitions": KPIDefinitions,
-    "MyKPIs": MyKPIs,
-    "KPIReview": KPIReview,
-    "KPIDashboard": KPIDashboard,
-    "MyKPIScorecard": MyKPIScorecard,
 }
 
 export const pagesConfig = {

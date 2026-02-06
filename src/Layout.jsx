@@ -58,11 +58,17 @@ export default function Layout({ children, currentPageName }) {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <style>{`
         :root {
-          --navy: #0F172A;
-          --gold: #F59E0B;
-          --slate-dark: #64748B;
+          --navy: #333645;
+          --orange: #ea7924;
+          --slate-dark: #333333;
           --slate-light: #CBD5E1;
           --slate-bg: #F1F5F9;
+        }
+        
+        @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap');
+        
+        body {
+          font-family: 'Work Sans', Helvetica, Arial, Lucida, sans-serif;
         }
       `}</style>
 
@@ -85,12 +91,12 @@ export default function Layout({ children, currentPageName }) {
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ea7924] to-[#d66a1f] flex items-center justify-center shadow-lg shadow-[#ea7924]/20">
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-slate-900">Frontier</h1>
-                  <p className="text-xs text-slate-500">Performance Hub</p>
+                  <h1 className="text-lg font-bold text-[#333645]">Frontier Building Group</h1>
+                  <p className="text-xs text-[#333333]">Performance Hub</p>
                 </div>
               </div>
               <Button
@@ -117,8 +123,8 @@ export default function Layout({ children, currentPageName }) {
                     flex items-center gap-3 px-4 py-3 rounded-xl
                     transition-all duration-200 group
                     ${active 
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30' 
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                      : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                     }
                   `}
                   onClick={() => setSidebarOpen(false)}
@@ -164,7 +170,7 @@ export default function Layout({ children, currentPageName }) {
             {user?.role === 'admin' && (
               <>
                 <div className="h-px bg-slate-200 my-4" />
-                <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <p className="px-4 py-2 text-xs font-semibold text-[#333333] uppercase tracking-wider">
                   Admin
                 </p>
                 {adminNavigation.map((item) => {
@@ -198,14 +204,14 @@ export default function Layout({ children, currentPageName }) {
           {user && (
             <div className="p-4 border-t border-slate-200">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#333645] to-[#2a2d3a] flex items-center justify-center">
                   <span className="text-sm font-bold text-white">
                     {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{user.full_name}</p>
-                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  <p className="text-sm font-medium text-[#333645] truncate">{user.full_name}</p>
+                  <p className="text-xs text-[#333333] truncate">{user.email}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -234,8 +240,8 @@ export default function Layout({ children, currentPageName }) {
               <Menu className="w-6 h-6" />
             </Button>
             <div className="flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-amber-500" />
-              <span className="font-bold text-slate-900">Frontier</span>
+              <Building2 className="w-6 h-6 text-[#ea7924]" />
+              <span className="font-bold text-[#333645]">Frontier</span>
             </div>
             <div className="w-10" />
           </div>
