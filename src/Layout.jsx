@@ -129,7 +129,7 @@ export default function Layout({ children, currentPageName }) {
                   `}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-amber-500'}`} />
+                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
                   <span className="font-medium">{item.name}</span>
                   {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                 </Link>
