@@ -151,13 +151,13 @@ export default function Layout({ children, currentPageName }) {
                         flex items-center gap-3 px-4 py-3 rounded-xl
                         transition-all duration-200 group
                         ${active 
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30' 
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                          : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                         }
                       `}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-amber-500'}`} />
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
                       <span className="font-medium">{item.name}</span>
                       {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                     </Link>
@@ -184,13 +184,13 @@ export default function Layout({ children, currentPageName }) {
                         flex items-center gap-3 px-4 py-3 rounded-xl
                         transition-all duration-200 group
                         ${active 
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30' 
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                          : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                         }
                       `}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-amber-500'}`} />
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
                       <span className="font-medium">{item.name}</span>
                       {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                     </Link>
