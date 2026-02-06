@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Play, Pause, BookOpen, Target, Calculator, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Play, Pause, BookOpen, Target, Calculator, Users, Sparkles } from 'lucide-react';
 import Tooltip from '../components/kpi/Tooltip';
 import KPITutorial from '../components/kpi/KPITutorial';
 import { toast } from 'sonner';
@@ -19,6 +19,9 @@ export default function KPIDefinitions() {
   const [showForm, setShowForm] = useState(false);
   const [editingKPI, setEditingKPI] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showAICreator, setShowAICreator] = useState(false);
+  const [aiDescription, setAiDescription] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState(getEmptyForm());
   const queryClient = useQueryClient();
 
@@ -137,6 +140,90 @@ export default function KPIDefinitions() {
     });
   };
 
+  const handleAICreate = async () => {
+    if (!aiDescription.trim()) {
+      toast.error('Please describe the KPI you want to create');
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const { data } = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a KPI configuration expert. Based on this description, create a complete KPI configuration.
+
+User's KPI description: "${aiDescription}"
+
+Analyze this and determine:
+1. The best KPI type (calculated, manual, or scorecard)
+2. All configuration details needed
+
+For SCORECARD type: Create multiple questions with point values. Each question should have:
+- question: the question text
+- response_type: "yes_no" or "number"
+- For yes_no: point_value_if_yes, point_value_if_no, max_points
+- For number: expected_number_value, points_per_unit, max_points
+- requires_explanation_if_wrong: true/false
+
+For CALCULATED type: Specify source_entity, metric_field, aggregation_method, etc.
+
+For MANUAL type: Specify the question and response_type.
+
+Return a complete KPI configuration object.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string" },
+            type: { type: "string", enum: ["calculated", "manual", "scorecard"] },
+            category: { type: "string", enum: ["sales", "operations", "finance", "precon", "projects"] },
+            measurement_unit: { type: "string" },
+            source_entity: { type: "string" },
+            metric_field: { type: "string" },
+            date_field: { type: "string" },
+            aggregation_method: { type: "string" },
+            responsible_user_field: { type: "string" },
+            filter_conditions: { type: "object" },
+            question: { type: "string" },
+            response_type: { type: "string" },
+            scorecard_questions: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  question: { type: "string" },
+                  response_type: { type: "string" },
+                  point_value_if_yes: { type: "number" },
+                  point_value_if_no: { type: "number" },
+                  expected_number_value: { type: "number" },
+                  points_per_unit: { type: "number" },
+                  max_points: { type: "number" },
+                  requires_explanation_if_wrong: { type: "boolean" }
+                }
+              }
+            },
+            target_value: { type: "number" },
+            reporting_period_type: { type: "string" },
+            explanation: { type: "string" }
+          }
+        }
+      });
+
+      setFormData({
+        ...getEmptyForm(),
+        ...data,
+        filter_conditions: data.filter_conditions || {}
+      });
+      setShowAICreator(false);
+      setShowForm(true);
+      toast.success('AI configured your KPI! Review and adjust as needed.');
+    } catch (error) {
+      toast.error('Failed to generate KPI configuration');
+      console.error(error);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const categoryIcons = {
     sales: Target,
     operations: Users,
@@ -158,7 +245,11 @@ export default function KPIDefinitions() {
             <BookOpen className="w-4 h-4 mr-2" />
             Tutorial
           </Button>
-          <Button onClick={() => setShowForm(true)} className="bg-amber-500 hover:bg-amber-600">
+          <Button variant="outline" onClick={() => setShowAICreator(true)} className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:bg-purple-100">
+            <Sparkles className="w-4 h-4 mr-2" />
+            AI Creator
+          </Button>
+          <Button onClick={() => setShowForm(true)} className="bg-[#ea7924] hover:bg-[#d66a1f]">
             <Plus className="w-4 h-4 mr-2" />
             New KPI
           </Button>
@@ -835,11 +926,73 @@ export default function KPIDefinitions() {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-amber-500 hover:bg-amber-600">
+              <Button type="submit" className="bg-[#ea7924] hover:bg-[#d66a1f]">
                 {editingKPI ? 'Update KPI' : 'Create KPI'}
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Creator Dialog */}
+      <Dialog open={showAICreator} onOpenChange={setShowAICreator}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              AI KPI Creator
+            </DialogTitle>
+            <DialogDescription>
+              Describe the KPI you want to track, and AI will configure it for you
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label className="mb-2 block">Describe your KPI</Label>
+              <Textarea
+                value={aiDescription}
+                onChange={(e) => setAiDescription(e.target.value)}
+                placeholder="Example: Track Karen's prospecting activities - she should do 2 tradeshows, 10 calls, and 20 door knocks per month. Each activity has different point values."
+                rows={4}
+              />
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-900">
+                <strong>💡 Tips:</strong> Be specific about:
+              </p>
+              <ul className="text-sm text-blue-800 mt-2 space-y-1 ml-4 list-disc">
+                <li>Who this KPI is for and what department</li>
+                <li>What should be measured (counts, yes/no, calculated from data)</li>
+                <li>Target values or expectations</li>
+                <li>How often it should be tracked</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowAICreator(false)} disabled={aiLoading}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAICreate} 
+                disabled={aiLoading}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {aiLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate KPI
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
