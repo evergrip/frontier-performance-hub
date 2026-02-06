@@ -28,8 +28,17 @@ export default function MyKPIScorecard() {
   }, []);
 
   const { data: scorecardKPIs = [] } = useQuery({
-    queryKey: ['scorecard-kpis'],
-    queryFn: () => base44.entities.KPI.filter({ type: 'scorecard', is_active: true })
+    queryKey: ['scorecard-kpis', user?.id],
+    queryFn: async () => {
+      const allKPIs = await base44.entities.KPI.filter({ type: 'scorecard', is_active: true });
+      // Filter to show only KPIs assigned to this user or with no specific assignment
+      return allKPIs.filter(kpi => 
+        !kpi.assigned_user_ids || 
+        kpi.assigned_user_ids.length === 0 || 
+        kpi.assigned_user_ids.includes(user.id)
+      );
+    },
+    enabled: !!user
   });
 
   const { data: myEntries = [] } = useQuery({
