@@ -211,14 +211,23 @@ Return a complete KPI configuration object.`,
       });
 
       console.log('AI response:', response);
-      const data = response.data || response;
-      console.log('Parsed data:', data);
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response));
+      
+      // InvokeLLM returns the data directly when using response_json_schema
+      const data = response;
+      console.log('Parsed data:', JSON.stringify(data, null, 2));
 
-      setFormData({
+      const newFormData = {
         ...getEmptyForm(),
         ...data,
-        filter_conditions: data.filter_conditions || {}
-      });
+        filter_conditions: data.filter_conditions || {},
+        scorecard_questions: data.scorecard_questions || []
+      };
+      
+      console.log('New form data:', JSON.stringify(newFormData, null, 2));
+      
+      setFormData(newFormData);
       setAiDescription('');
       setShowAICreator(false);
       setShowForm(true);
