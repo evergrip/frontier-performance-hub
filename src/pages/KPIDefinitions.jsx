@@ -30,6 +30,11 @@ export default function KPIDefinitions() {
     queryFn: () => base44.entities.KPI.list('-created_date')
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.KPI.create(data),
     onSuccess: () => {
@@ -66,6 +71,7 @@ export default function KPIDefinitions() {
       type: 'calculated',
       category: 'sales',
       measurement_unit: 'count',
+      assigned_user_ids: [],
       source_entity: '',
       metric_field: '',
       date_field: '',
@@ -446,6 +452,36 @@ Return a complete KPI configuration object.`,
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label>Assign to Specific Users (optional)</Label>
+                  <Tooltip content="Leave empty for all users in the category, or select specific users" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {users.map(user => (
+                    <label key={user.id} className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border cursor-pointer hover:bg-slate-100">
+                      <input
+                        type="checkbox"
+                        checked={(formData.assigned_user_ids || []).includes(user.id)}
+                        onChange={(e) => {
+                          const currentIds = formData.assigned_user_ids || [];
+                          const newIds = e.target.checked
+                            ? [...currentIds, user.id]
+                            : currentIds.filter(id => id !== user.id);
+                          setFormData({ ...formData, assigned_user_ids: newIds });
+                        }}
+                      />
+                      <span className="text-sm">{user.full_name}</span>
+                    </label>
+                  ))}
+                </div>
+                {formData.assigned_user_ids?.length > 0 && (
+                  <p className="text-xs text-slate-600 mt-2">
+                    Assigned to {formData.assigned_user_ids.length} user(s)
+                  </p>
+                )}
               </div>
             </div>
 
