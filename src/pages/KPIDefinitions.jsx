@@ -147,8 +147,10 @@ export default function KPIDefinitions() {
     }
 
     setAiLoading(true);
+    console.log('Starting AI KPI creation...');
     try {
-      const { data } = await base44.integrations.Core.InvokeLLM({
+      console.log('Calling InvokeLLM...');
+      const response = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a KPI configuration expert. Based on this description, create a complete KPI configuration.
 
 User's KPI description: "${aiDescription}"
@@ -208,17 +210,22 @@ Return a complete KPI configuration object.`,
         }
       });
 
+      console.log('AI response:', response);
+      const data = response.data || response;
+      console.log('Parsed data:', data);
+
       setFormData({
         ...getEmptyForm(),
         ...data,
         filter_conditions: data.filter_conditions || {}
       });
+      setAiDescription('');
       setShowAICreator(false);
       setShowForm(true);
       toast.success('AI configured your KPI! Review and adjust as needed.');
     } catch (error) {
-      toast.error('Failed to generate KPI configuration');
-      console.error(error);
+      console.error('AI KPI Creation Error:', error);
+      toast.error(error.message || 'Failed to generate KPI configuration');
     } finally {
       setAiLoading(false);
     }
