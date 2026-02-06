@@ -210,13 +210,9 @@ Return a complete KPI configuration object.`,
         }
       });
 
-      console.log('AI response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Response keys:', Object.keys(response));
-      
-      // InvokeLLM returns the data directly when using response_json_schema
-      const data = response;
-      console.log('Parsed data:', JSON.stringify(data, null, 2));
+      // The AI wraps the response in a JSON schema structure - extract the actual data
+      const data = response.properties || response;
+      console.log('Extracted KPI data:', data);
 
       const newFormData = {
         ...getEmptyForm(),
@@ -224,8 +220,6 @@ Return a complete KPI configuration object.`,
         filter_conditions: data.filter_conditions || {},
         scorecard_questions: data.scorecard_questions || []
       };
-      
-      console.log('New form data:', JSON.stringify(newFormData, null, 2));
       
       setFormData(newFormData);
       setAiDescription('');
