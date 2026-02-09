@@ -261,6 +261,10 @@ Return a complete KPI configuration object.`,
             <BookOpen className="w-4 h-4 mr-2" />
             Tutorial
           </Button>
+          <Button variant="outline" onClick={() => window.open(base44.agents.getWhatsAppConnectURL('kpi_assistant'), '_blank')} className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:bg-green-100">
+            <Users className="w-4 h-4 mr-2" />
+            Ask AI Assistant
+          </Button>
           <Button variant="outline" onClick={() => setShowAICreator(true)} className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:bg-purple-100">
             <Sparkles className="w-4 h-4 mr-2" />
             AI Creator
