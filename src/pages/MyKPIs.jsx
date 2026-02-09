@@ -8,8 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Target, TrendingUp, AlertTriangle, CheckCircle, Calendar, Edit2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Target, TrendingUp, AlertTriangle, CheckCircle, Calendar, Edit2, ClipboardCheck, Save, CheckCircle2, XCircle } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function MyKPIs() {
@@ -17,6 +18,9 @@ export default function MyKPIs() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [explanation, setExplanation] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const [selectedScorecard, setSelectedScorecard] = useState(null);
+  const [scorecardAnswers, setScorecardAnswers] = useState({});
+  const [scorecardExplanations, setScorecardExplanations] = useState({});
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -34,8 +38,16 @@ export default function MyKPIs() {
   });
 
   const { data: kpis = [] } = useQuery({
-    queryKey: ['active-kpis'],
-    queryFn: () => base44.entities.KPI.filter({ is_active: true })
+    queryKey: ['active-kpis', user?.id],
+    queryFn: async () => {
+      const allKPIs = await base44.entities.KPI.filter({ is_active: true });
+      return allKPIs.filter(kpi => 
+        !kpi.assigned_user_ids || 
+        kpi.assigned_user_ids.length === 0 || 
+        kpi.assigned_user_ids.includes(user.id)
+      );
+    },
+    enabled: !!user
   });
 
   const updateEntryMutation = useMutation({
@@ -85,30 +97,124 @@ export default function MyKPIs() {
 
   const displayEntries = selectedPeriod === 'current' ? currentPeriodEntries : entries;
 
+  const scorecardKPIs = kpis.filter(kpi => kpi.type === 'scorecard');
+  const regularKPIs = kpis.filter(kpi => kpi.type !== 'scorecard');
+
+  const getPeriodDates = (kpi) => {
+    const now = new Date();
+    switch (kpi.reporting_period_type) {
+      case 'daily':
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case 'weekly':
+        return { start: startOfWeek(now), end: endOfWeek(now) };
+      case 'monthly':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      default:
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+    }
+  };
+
+  const hasSubmittedScorecard = (kpi) => {
+    const { start, end } = getPeriodDates(kpi);
+    return entries.some(entry => 
+      entry.kpi_id === kpi.id &&
+      new Date(entry.reporting_period_start_date) >= start &&
+      new Date(entry.reporting_period_end_date) <= end
+    );
+  };
+
+  const submitScorecardMutation = useMutation({
+    mutationFn: (data) => base44.entities.KPIEntry.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['my-kpi-entries']);
+      setSelectedScorecard(null);
+      setScorecardAnswers({});
+      setScorecardExplanations({});
+      toast.success('Scorecard submitted successfully');
+    }
+  });
+
+  const handleScorecardSubmit = () => {
+    if (!selectedScorecard || !user) return;
+
+    const scorecardAnswersData = selectedScorecard.scorecard_questions.map((q, idx) => {
+      const answer = scorecardAnswers[idx];
+      let pointsEarned = 0;
+      let isFlagged = false;
+
+      if (q.response_type === 'yes_no') {
+        pointsEarned = answer === 'yes' ? q.point_value_if_yes : q.point_value_if_no;
+        isFlagged = pointsEarned < q.max_points;
+      } else if (q.response_type === 'number') {
+        const numValue = parseFloat(answer) || 0;
+        pointsEarned = Math.min(numValue * (q.points_per_unit || 1), q.max_points || 1);
+        isFlagged = pointsEarned < q.max_points;
+      }
+
+      return {
+        question_index: idx,
+        question_text: q.question,
+        answer: answer?.toString() || '',
+        points_earned: pointsEarned,
+        max_points: q.max_points,
+        is_flagged: isFlagged,
+        explanation: scorecardExplanations[idx] || ''
+      };
+    });
+
+    const totalPoints = scorecardAnswersData.reduce((sum, a) => sum + a.points_earned, 0);
+    const maxPoints = scorecardAnswersData.reduce((sum, a) => sum + a.max_points, 0);
+    const { start, end } = getPeriodDates(selectedScorecard);
+
+    submitScorecardMutation.mutate({
+      kpi_id: selectedScorecard.id,
+      user_id: user.id,
+      reporting_period_start_date: start.toISOString(),
+      reporting_period_end_date: end.toISOString(),
+      actual_value: totalPoints,
+      target_value_at_entry: selectedScorecard.target_value || maxPoints,
+      scorecard_answers: scorecardAnswersData,
+      is_flagged: totalPoints < (selectedScorecard.target_value || maxPoints),
+      manual_entry: true
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">My KPIs</h1>
-          <p className="text-slate-600 mt-1">Track your performance metrics</p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant={selectedPeriod === 'current' ? 'default' : 'outline'}
-            onClick={() => setSelectedPeriod('current')}
-          >
-            <Calendar className="w-4 h-4 mr-2" />
-            Current Period
-          </Button>
-          <Button
-            variant={selectedPeriod === 'all' ? 'default' : 'outline'}
-            onClick={() => setSelectedPeriod('all')}
-          >
-            All History
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">My KPIs</h1>
+        <p className="text-slate-600 mt-1">Track your performance metrics and complete scorecards</p>
       </div>
+
+      <Tabs defaultValue="kpis" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="kpis" className="gap-2">
+            <Target className="w-4 h-4" />
+            KPI Entries
+          </TabsTrigger>
+          <TabsTrigger value="scorecards" className="gap-2">
+            <ClipboardCheck className="w-4 h-4" />
+            Scorecards
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="kpis" className="space-y-6">
+          <div className="flex justify-end gap-2">
+            <Button
+              variant={selectedPeriod === 'current' ? 'default' : 'outline'}
+              onClick={() => setSelectedPeriod('current')}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Current Period
+            </Button>
+            <Button
+              variant={selectedPeriod === 'all' ? 'default' : 'outline'}
+              onClick={() => setSelectedPeriod('all')}
+            >
+              All History
+            </Button>
+          </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -299,6 +405,155 @@ export default function MyKPIs() {
           </Card>
         )}
       </div>
+        </TabsContent>
+
+        <TabsContent value="scorecards" className="space-y-6">
+          {!selectedScorecard ? (
+            <div className="grid gap-4">
+              {scorecardKPIs.map((kpi) => {
+                const submitted = hasSubmittedScorecard(kpi);
+                return (
+                  <Card key={kpi.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+                            <ClipboardCheck className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-lg">{kpi.name}</CardTitle>
+                              {submitted && <Badge className="bg-green-500">Completed</Badge>}
+                            </div>
+                            <CardDescription className="mt-1">{kpi.description}</CardDescription>
+                            <div className="mt-2 text-sm text-slate-600">
+                              {kpi.scorecard_questions?.length || 0} questions • {kpi.reporting_period_type}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setSelectedScorecard(kpi);
+                            setScorecardAnswers({});
+                            setScorecardExplanations({});
+                          }}
+                          disabled={submitted}
+                        >
+                          {submitted ? 'Already Completed' : 'Fill Out'}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+
+              {scorecardKPIs.length === 0 && (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <ClipboardCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">No scorecard KPIs assigned to you</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl">{selectedScorecard.name}</CardTitle>
+                    <CardDescription className="mt-1">{selectedScorecard.description}</CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={() => setSelectedScorecard(null)}>
+                    Back
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {selectedScorecard.scorecard_questions?.map((question, idx) => {
+                  const answer = scorecardAnswers[idx];
+                  const needsExplanation = question.requires_explanation_if_wrong && (
+                    (question.response_type === 'yes_no' && answer === 'no') ||
+                    (question.response_type === 'number' && parseFloat(answer || 0) < (question.expected_number_value || 0))
+                  );
+
+                  return (
+                    <div key={idx} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-start justify-between">
+                        <Label className="text-base font-medium">
+                          {idx + 1}. {question.question}
+                        </Label>
+                        <Badge variant="outline" className="text-xs">
+                          Max: {question.max_points} pts
+                        </Badge>
+                      </div>
+
+                      {question.response_type === 'yes_no' ? (
+                        <div className="flex gap-3">
+                          <Button
+                            variant={answer === 'yes' ? 'default' : 'outline'}
+                            onClick={() => setScorecardAnswers({ ...scorecardAnswers, [idx]: 'yes' })}
+                            className="flex-1"
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Yes ({question.point_value_if_yes} pts)
+                          </Button>
+                          <Button
+                            variant={answer === 'no' ? 'default' : 'outline'}
+                            onClick={() => setScorecardAnswers({ ...scorecardAnswers, [idx]: 'no' })}
+                            className="flex-1"
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            No ({question.point_value_if_no} pts)
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <Input
+                            type="number"
+                            placeholder="Enter number"
+                            value={answer || ''}
+                            onChange={(e) => setScorecardAnswers({ ...scorecardAnswers, [idx]: e.target.value })}
+                          />
+                          <p className="text-xs text-slate-500 mt-1">
+                            Target: {question.expected_number_value} • {question.points_per_unit} pts per unit (max {question.max_points})
+                          </p>
+                        </div>
+                      )}
+
+                      {needsExplanation && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center gap-2 text-amber-900">
+                            <AlertTriangle className="w-4 h-4" />
+                            <Label className="text-sm font-medium">Explanation Required</Label>
+                          </div>
+                          <Textarea
+                            placeholder="Please explain what you'll do to meet this KPI..."
+                            value={scorecardExplanations[idx] || ''}
+                            onChange={(e) => setScorecardExplanations({ ...scorecardExplanations, [idx]: e.target.value })}
+                            rows={3}
+                            required
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setSelectedScorecard(null)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleScorecardSubmit} className="bg-purple-600 hover:bg-purple-700">
+                    <Save className="w-4 h-4 mr-2" />
+                    Submit Scorecard
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Explanation Dialog */}
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
