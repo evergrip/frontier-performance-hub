@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Play, Pause, BookOpen, Target, Calculator, Users, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../utils';
 import Tooltip from '../components/kpi/Tooltip';
 import KPITutorial from '../components/kpi/KPITutorial';
 import { toast } from 'sonner';
@@ -261,11 +263,13 @@ Return a complete KPI configuration object.`,
             <BookOpen className="w-4 h-4 mr-2" />
             Tutorial
           </Button>
-          <Button variant="outline" onClick={() => window.open(base44.agents.getWhatsAppConnectURL('kpi_assistant'), '_blank')} className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:bg-green-100">
-            <Users className="w-4 h-4 mr-2" />
-            Ask AI Assistant
-          </Button>
-          <Button variant="outline" onClick={() => setShowAICreator(true)} className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:bg-purple-100">
+          <Link to={createPageUrl('KPIAgentChat')}>
+            <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:bg-purple-100">
+              <Users className="w-4 h-4 mr-2" />
+              Ask AI Assistant
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={() => setShowAICreator(true)} className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700 hover:bg-amber-100">
             <Sparkles className="w-4 h-4 mr-2" />
             AI Creator
           </Button>
