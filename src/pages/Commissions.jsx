@@ -486,21 +486,28 @@ export default function Commissions() {
                   )}
 
                   {(() => {
-                   const fsm = companySettings?.fiscal_year_start_month || 1;
-                   const now = new Date();
-                   const yr = now.getMonth() + 1 >= fsm ? now.getFullYear() + 1 : now.getFullYear();
-                   const resetDate = new Date(yr, fsm - 1, 1);
-                   const daysLeft = Math.ceil((resetDate - now) / (1000 * 60 * 60 * 24));
-                   return (
-                     <div className="p-3 bg-slate-100 rounded-lg text-center">
-                       <p className="text-sm text-slate-700 font-medium">
-                         ⏱ <span className="font-bold text-slate-900">{daysLeft}</span> days until tier reset
-                       </p>
-                       <p className="text-xs text-slate-500 mt-0.5">
-                         Tiers reset {resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                       </p>
-                     </div>
-                   );
+                    const startDateStr = selectedUserData?.commission_start_date;
+                    if (!startDateStr) return (
+                      <div className="p-3 bg-slate-100 rounded-lg text-center">
+                        <p className="text-xs text-slate-500">Commission start date not set</p>
+                      </div>
+                    );
+                    const start = new Date(startDateStr);
+                    const now = new Date();
+                    // Next anniversary of commission_start_date
+                    const resetDate = new Date(now.getFullYear(), start.getMonth(), start.getDate());
+                    if (resetDate <= now) resetDate.setFullYear(resetDate.getFullYear() + 1);
+                    const daysLeft = Math.ceil((resetDate - now) / (1000 * 60 * 60 * 24));
+                    return (
+                      <div className="p-3 bg-slate-100 rounded-lg text-center">
+                        <p className="text-sm text-slate-700 font-medium">
+                          ⏱ <span className="font-bold text-slate-900">{daysLeft}</span> days until tier reset
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Tiers reset {resetDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    );
                   })()}
                 </div>
                 
