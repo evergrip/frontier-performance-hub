@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
                 sale_id: createdSale.id,
                 project_type: project.project_type || 'construction',
                 title: project.title,
-                status: 'closed',
+                status: project.project_status || 'closed',
                 contract_value: parseFloat(sale.contract_value),
                 actual_costs: parseFloat(project.actual_costs),
                 actual_margin: parseFloat(project.actual_margin),

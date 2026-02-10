@@ -61,6 +61,30 @@ export default function HistoricalProjectForm() {
     const [includeProject, setIncludeProject] = useState(true);
     const [saleStatus, setSaleStatus] = useState('closed_won');
 
+    // Pipeline ordering helpers
+    const saleStageOrder = ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale', 'closed_won'];
+    const projectStageOrder = ['awaiting_to_be_scheduled', 'mobilization', 'active_construction', 'substantial_completion_closeout', 'closed'];
+
+    const isConstructionPhase = projectStageOrder.includes(saleStatus);
+    const effectiveSaleStatus = isConstructionPhase ? 'closed_won' : saleStatus;
+    const effectiveProjectStatus = isConstructionPhase ? saleStatus : null;
+
+    const isSaleHistoryRequired = (status) => {
+        if (saleStatus === 'closed_lost') return false;
+        const currentIdx = saleStageOrder.indexOf(effectiveSaleStatus);
+        const statusIdx = saleStageOrder.indexOf(status);
+        if (currentIdx < 0 || statusIdx < 0) return false;
+        return statusIdx <= currentIdx;
+    };
+
+    const isProjectHistoryRequired = (status) => {
+        if (!effectiveProjectStatus) return false;
+        const currentIdx = projectStageOrder.indexOf(effectiveProjectStatus);
+        const statusIdx = projectStageOrder.indexOf(status);
+        if (currentIdx < 0 || statusIdx < 0) return false;
+        return statusIdx <= currentIdx;
+    };
+
     const { register, handleSubmit, setValue, watch, reset } = useForm({
         defaultValues: {
             // Client
@@ -181,7 +205,7 @@ export default function HistoricalProjectForm() {
                 sale: {
                     sale_type: data.sale_type,
                     title: data.sale_title,
-                    sale_status: saleStatus,
+                    sale_status: effectiveSaleStatus,
                     status_history: saleStatusHistory.filter(h => h.entered_date),
                     contract_value: parseFloat(data.contract_value),
                     estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
@@ -192,15 +216,16 @@ export default function HistoricalProjectForm() {
                     construction_commission_amount: constructionCommission ? parseFloat(constructionCommission) : undefined,
                     notes: data.sale_notes
                 },
-                project: includeProject ? {
+                project: (includeProject || isConstructionPhase) ? {
                     project_type: data.project_type,
                     title: data.project_title,
+                    project_status: effectiveProjectStatus || (saleStatus === 'closed_won' ? 'closed' : null),
                     status_history: projectStatusHistory.filter(h => h.entered_date),
                     contract_value: parseFloat(data.contract_value),
-                    actual_costs: parseFloat(data.actual_costs),
-                    actual_margin: parseFloat(data.actual_margin),
-                    start_date: data.start_date,
-                    actual_completion_date: data.actual_completion_date,
+                    actual_costs: data.actual_costs ? parseFloat(data.actual_costs) : 0,
+                    actual_margin: data.actual_margin ? parseFloat(data.actual_margin) : 0,
+                    start_date: data.start_date || null,
+                    actual_completion_date: data.actual_completion_date || null,
                     project_manager: data.project_manager,
                     crew_assignment: data.crew_assignment,
                     color: data.color,
@@ -449,10 +474,15 @@ export default function HistoricalProjectForm() {
                             <Input {...register('estimated_margin')} type="number" step="0.01" placeholder="45.00" />
                         </div>
                         <div>
-                            <Label>Current Sale Status *</Label>
+                            <Label>Current Pipeline Position *</Label>
                             <Select value={saleStatus} onValueChange={(value) => {
                                 setSaleStatus(value);
-                                if (!['closed_won', 'closed_lost'].includes(value)) {
+                                const isConst = projectStageOrder.includes(value);
+                                if (isConst) {
+                                    setIncludeProject(true);
+                                } else if (value === 'closed_won') {
+                                    // User can optionally include project
+                                } else {
                                     setIncludeProject(false);
                                 }
                             }}>
@@ -460,12 +490,19 @@ export default function HistoricalProjectForm() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="feasibility">Feasibility (Active)</SelectItem>
-                                    <SelectItem value="design_material_selections">Design & Materials (Active)</SelectItem>
-                                    <SelectItem value="engineering_permits">Engineering & Permits (Active)</SelectItem>
-                                    <SelectItem value="pending_construction_sale">Pending Construction Sale (Active)</SelectItem>
-                                    <SelectItem value="closed_won">Closed Won (Completed)</SelectItem>
+                                    <SelectItem disabled className="text-xs font-semibold text-slate-500 uppercase">Pre-Construction</SelectItem>
+                                    <SelectItem value="feasibility">Feasibility (Active Pre-Con)</SelectItem>
+                                    <SelectItem value="design_material_selections">Design & Materials (Active Pre-Con)</SelectItem>
+                                    <SelectItem value="engineering_permits">Engineering & Permits (Active Pre-Con)</SelectItem>
+                                    <SelectItem value="pending_construction_sale">Pending Construction Sale (Active Pre-Con)</SelectItem>
+                                    <SelectItem value="closed_won">Pre-Con Closed (No Construction Yet)</SelectItem>
                                     <SelectItem value="closed_lost">Closed Lost</SelectItem>
+                                    <SelectItem disabled className="text-xs font-semibold text-slate-500 uppercase">Construction</SelectItem>
+                                    <SelectItem value="awaiting_to_be_scheduled">Awaiting Scheduling (In Construction)</SelectItem>
+                                    <SelectItem value="mobilization">Mobilization (In Construction)</SelectItem>
+                                    <SelectItem value="active_construction">Active Construction</SelectItem>
+                                    <SelectItem value="substantial_completion_closeout">Substantial Completion / Closeout</SelectItem>
+                                    <SelectItem value="closed">Construction Complete</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -502,45 +539,49 @@ export default function HistoricalProjectForm() {
                             </Button>
                         </div>
                         <div className="space-y-2">
-                            {saleStatusHistory.map((item, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Select 
-                                        value={item.status}
-                                        onValueChange={(value) => {
-                                            const updated = [...saleStatusHistory];
-                                            updated[index].status = value;
-                                            setSaleStatusHistory(updated);
-                                        }}
-                                    >
-                                        <SelectTrigger className="flex-1">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="feasibility">Feasibility</SelectItem>
-                                            <SelectItem value="design_material_selections">Design & Material Selections</SelectItem>
-                                            <SelectItem value="engineering_permits">Engineering & Permits</SelectItem>
-                                            <SelectItem value="pending_construction_sale">Pending Construction Sale</SelectItem>
-                                            <SelectItem value="closed_won">Closed Won</SelectItem>
-                                            <SelectItem value="closed_lost">Closed Lost</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Input 
-                                        type="datetime-local"
-                                        value={item.entered_date}
-                                        onChange={(e) => {
-                                            const updated = [...saleStatusHistory];
-                                            updated[index].entered_date = e.target.value;
-                                            setSaleStatusHistory(updated);
-                                        }}
-                                        className="flex-1"
-                                    />
-                                    {saleStatusHistory.length > 1 && (
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeSaleStatus(index)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
+                            {saleStatusHistory.map((item, index) => {
+                                const required = isSaleHistoryRequired(item.status);
+                                return (
+                                    <div key={index} className={`flex gap-2 items-center ${!required ? 'opacity-40' : ''}`}>
+                                        <Select 
+                                            value={item.status}
+                                            onValueChange={(value) => {
+                                                const updated = [...saleStatusHistory];
+                                                updated[index].status = value;
+                                                setSaleStatusHistory(updated);
+                                            }}
+                                        >
+                                            <SelectTrigger className="flex-1">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="feasibility">Feasibility</SelectItem>
+                                                <SelectItem value="design_material_selections">Design & Material Selections</SelectItem>
+                                                <SelectItem value="engineering_permits">Engineering & Permits</SelectItem>
+                                                <SelectItem value="pending_construction_sale">Pending Construction Sale</SelectItem>
+                                                <SelectItem value="closed_won">Closed Won</SelectItem>
+                                                <SelectItem value="closed_lost">Closed Lost</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Input 
+                                            type="datetime-local"
+                                            value={item.entered_date}
+                                            onChange={(e) => {
+                                                const updated = [...saleStatusHistory];
+                                                updated[index].entered_date = e.target.value;
+                                                setSaleStatusHistory(updated);
+                                            }}
+                                            className="flex-1"
+                                        />
+                                        {!required && <span className="text-xs text-slate-400 whitespace-nowrap">optional</span>}
+                                        {saleStatusHistory.length > 1 && (
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeSaleStatus(index)}>
+                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </CardContent>
@@ -603,38 +644,47 @@ export default function HistoricalProjectForm() {
             </Card>
 
             {/* Project Information */}
-            <Card className={!includeProject ? 'opacity-60' : ''}>
+            <Card className={(!includeProject && !isConstructionPhase) ? 'opacity-60' : ''}>
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle>Project Information</CardTitle>
                             <CardDescription>
-                                {includeProject 
-                                    ? 'Enter details about the completed project' 
-                                    : 'Project section is skipped — sale is still in pre-construction'}
+                                {isConstructionPhase 
+                                    ? `Project is in construction (${saleStatus.replace(/_/g, ' ')})`
+                                    : includeProject 
+                                        ? 'Enter details about the completed project' 
+                                        : 'Project section is skipped — sale is still in pre-construction'}
                             </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Label className="text-sm">Include Project</Label>
-                            <input
-                                type="checkbox"
-                                checked={includeProject}
-                                onChange={(e) => setIncludeProject(e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300"
-                            />
-                        </div>
+                        {!isConstructionPhase && (
+                            <div className="flex items-center gap-2">
+                                <Label className="text-sm">Include Project</Label>
+                                <input
+                                    type="checkbox"
+                                    checked={includeProject}
+                                    onChange={(e) => setIncludeProject(e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                />
+                            </div>
+                        )}
                     </div>
                 </CardHeader>
-                <CardContent className={`space-y-4 ${!includeProject ? 'pointer-events-none' : ''}`}>
-                    {!includeProject && (
+                <CardContent className={`space-y-4 ${(!includeProject && !isConstructionPhase) ? 'pointer-events-none' : ''}`}>
+                    {(!includeProject && !isConstructionPhase) && (
                         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
                             This sale is still in the pre-construction pipeline. No project will be created. You can import the project later when it's ready.
                         </div>
                     )}
+                    {isConstructionPhase && (
+                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+                            This project is in construction. Only fill in dates for phases that have already occurred. Future phases are greyed out.
+                        </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Project Type {includeProject ? '*' : ''}</Label>
-                            <Select onValueChange={(value) => setValue('project_type', value)} defaultValue="construction" disabled={!includeProject}>
+                            <Label>Project Type {(includeProject || isConstructionPhase) ? '*' : ''}</Label>
+                            <Select onValueChange={(value) => setValue('project_type', value)} defaultValue="construction" disabled={!includeProject && !isConstructionPhase}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -645,24 +695,24 @@ export default function HistoricalProjectForm() {
                             </Select>
                         </div>
                         <div>
-                            <Label>Project Title {includeProject ? '*' : ''}</Label>
-                            <Input {...register('project_title')} placeholder="e.g., Main Project - Basement Renovation" required={includeProject} disabled={!includeProject} />
+                            <Label>Project Title {(includeProject || isConstructionPhase) ? '*' : ''}</Label>
+                            <Input {...register('project_title')} placeholder="e.g., Main Project - Basement Renovation" required={includeProject || isConstructionPhase} disabled={!includeProject && !isConstructionPhase} />
                         </div>
                         <div>
-                            <Label>Actual Costs {includeProject ? '*' : ''}</Label>
-                            <Input {...register('actual_costs')} type="number" placeholder="130000" required={includeProject} disabled={!includeProject} />
+                            <Label>Actual Costs {effectiveProjectStatus === 'closed' ? '*' : '(optional if in progress)'}</Label>
+                            <Input {...register('actual_costs')} type="number" placeholder="130000" required={effectiveProjectStatus === 'closed'} disabled={!includeProject && !isConstructionPhase} />
                         </div>
                         <div>
-                            <Label>Actual Margin (%) {includeProject ? '*' : ''}</Label>
-                            <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required={includeProject} disabled={!includeProject} />
+                            <Label>Actual Margin (%) {effectiveProjectStatus === 'closed' ? '*' : '(optional if in progress)'}</Label>
+                            <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required={effectiveProjectStatus === 'closed'} disabled={!includeProject && !isConstructionPhase} />
                         </div>
                         <div>
-                            <Label>Start Date {includeProject ? '*' : ''}</Label>
-                            <Input {...register('start_date')} type="date" required={includeProject} disabled={!includeProject} />
+                            <Label>Start Date {(includeProject || isConstructionPhase) ? '*' : ''}</Label>
+                            <Input {...register('start_date')} type="date" required={includeProject || isConstructionPhase} disabled={!includeProject && !isConstructionPhase} />
                         </div>
                         <div>
-                            <Label>Completion Date {includeProject ? '*' : ''}</Label>
-                            <Input {...register('actual_completion_date')} type="date" required={includeProject} disabled={!includeProject} />
+                            <Label>Completion Date {effectiveProjectStatus === 'closed' ? '*' : '(optional if in progress)'}</Label>
+                            <Input {...register('actual_completion_date')} type="date" required={effectiveProjectStatus === 'closed'} disabled={!includeProject && !isConstructionPhase} />
                         </div>
                         <div>
                             <Label>Project Manager</Label>
@@ -712,44 +762,48 @@ export default function HistoricalProjectForm() {
                             </Button>
                         </div>
                         <div className="space-y-2">
-                            {projectStatusHistory.map((item, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Select 
-                                        value={item.status}
-                                        onValueChange={(value) => {
-                                            const updated = [...projectStatusHistory];
-                                            updated[index].status = value;
-                                            setProjectStatusHistory(updated);
-                                        }}
-                                    >
-                                        <SelectTrigger className="flex-1">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="awaiting_to_be_scheduled">Awaiting to be Scheduled</SelectItem>
-                                            <SelectItem value="mobilization">Mobilization</SelectItem>
-                                            <SelectItem value="active_construction">Active Construction</SelectItem>
-                                            <SelectItem value="substantial_completion_closeout">Substantial Completion/Closeout</SelectItem>
-                                            <SelectItem value="closed">Closed</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Input 
-                                        type="datetime-local"
-                                        value={item.entered_date}
-                                        onChange={(e) => {
-                                            const updated = [...projectStatusHistory];
-                                            updated[index].entered_date = e.target.value;
-                                            setProjectStatusHistory(updated);
-                                        }}
-                                        className="flex-1"
-                                    />
-                                    {projectStatusHistory.length > 1 && (
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeProjectStatus(index)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
+                            {projectStatusHistory.map((item, index) => {
+                                const required = isProjectHistoryRequired(item.status);
+                                return (
+                                    <div key={index} className={`flex gap-2 items-center ${!required ? 'opacity-40' : ''}`}>
+                                        <Select 
+                                            value={item.status}
+                                            onValueChange={(value) => {
+                                                const updated = [...projectStatusHistory];
+                                                updated[index].status = value;
+                                                setProjectStatusHistory(updated);
+                                            }}
+                                        >
+                                            <SelectTrigger className="flex-1">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="awaiting_to_be_scheduled">Awaiting to be Scheduled</SelectItem>
+                                                <SelectItem value="mobilization">Mobilization</SelectItem>
+                                                <SelectItem value="active_construction">Active Construction</SelectItem>
+                                                <SelectItem value="substantial_completion_closeout">Substantial Completion/Closeout</SelectItem>
+                                                <SelectItem value="closed">Closed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Input 
+                                            type="datetime-local"
+                                            value={item.entered_date}
+                                            onChange={(e) => {
+                                                const updated = [...projectStatusHistory];
+                                                updated[index].entered_date = e.target.value;
+                                                setProjectStatusHistory(updated);
+                                            }}
+                                            className="flex-1"
+                                        />
+                                        {!required && <span className="text-xs text-slate-400 whitespace-nowrap">optional</span>}
+                                        {projectStatusHistory.length > 1 && (
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeProjectStatus(index)}>
+                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </CardContent>
