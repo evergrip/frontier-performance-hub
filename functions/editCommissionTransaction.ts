@@ -27,51 +27,58 @@ Deno.serve(async (req) => {
     const newAmount = updates.amount !== undefined ? updates.amount : oldAmount;
     const amountDiff = newAmount - oldAmount;
     const userChanged = oldUserId !== newUserId;
+    const oldStatus = originalTransaction.status;
+    const newStatus = updates.status || oldStatus;
+    const statusChanged = oldStatus !== newStatus;
 
-    // Update the old user's bank (subtract old values)
+    // Helper: map a status to which bank bucket it affects
+    function getBankAdjustments(status, amount) {
+      switch (status) {
+        case 'banked':
+          return { total_earned: amount, current_bank_balance: amount, available_balance: 0, total_paid_out: 0 };
+        case 'available':
+          return { total_earned: amount, current_bank_balance: 0, available_balance: amount, total_paid_out: 0 };
+        case 'paid':
+          return { total_earned: amount, current_bank_balance: 0, available_balance: 0, total_paid_out: amount };
+        case 'pending':
+        default:
+          return { total_earned: amount, current_bank_balance: 0, available_balance: 0, total_paid_out: 0 };
+      }
+    }
+
+    // Reverse old transaction's effect on old user's bank
+    const oldAdj = getBankAdjustments(oldStatus, oldAmount);
     const [oldUserBank] = await base44.asServiceRole.entities.CommissionBank.filter({ user_id: oldUserId });
     if (oldUserBank) {
       await base44.asServiceRole.entities.CommissionBank.update(oldUserBank.id, {
-        total_earned: (oldUserBank.total_earned || 0) - oldAmount,
-        available_balance: (oldUserBank.available_balance || 0) - (originalTransaction.immediate_payout_amount || 0),
-        current_bank_balance: (oldUserBank.current_bank_balance || 0) - (originalTransaction.banked_amount || 0),
+        total_earned: (oldUserBank.total_earned || 0) - oldAdj.total_earned,
+        current_bank_balance: (oldUserBank.current_bank_balance || 0) - oldAdj.current_bank_balance,
+        available_balance: (oldUserBank.available_balance || 0) - oldAdj.available_balance,
+        total_paid_out: (oldUserBank.total_paid_out || 0) - oldAdj.total_paid_out,
       });
     }
 
-    // Update the new user's bank (add new values)
+    // Apply new transaction's effect on (possibly different) user's bank
+    const newAdj = getBankAdjustments(newStatus, newAmount);
     if (userChanged) {
       const [newUserBank] = await base44.asServiceRole.entities.CommissionBank.filter({ user_id: newUserId });
       if (newUserBank) {
-        // Calculate new immediate and banked amounts based on the new amount
-        const ratio = newAmount / oldAmount;
-        const newImmediateAmount = (originalTransaction.immediate_payout_amount || 0) * ratio;
-        const newBankedAmount = (originalTransaction.banked_amount || 0) * ratio;
-
         await base44.asServiceRole.entities.CommissionBank.update(newUserBank.id, {
-          total_earned: (newUserBank.total_earned || 0) + newAmount,
-          available_balance: (newUserBank.available_balance || 0) + newImmediateAmount,
-          current_bank_balance: (newUserBank.current_bank_balance || 0) + newBankedAmount,
+          total_earned: (newUserBank.total_earned || 0) + newAdj.total_earned,
+          current_bank_balance: (newUserBank.current_bank_balance || 0) + newAdj.current_bank_balance,
+          available_balance: (newUserBank.available_balance || 0) + newAdj.available_balance,
+          total_paid_out: (newUserBank.total_paid_out || 0) + newAdj.total_paid_out,
         });
-
-        // Update transaction with recalculated amounts
-        updates.immediate_payout_amount = newImmediateAmount;
-        updates.banked_amount = newBankedAmount;
       }
     } else {
-      // Same user, just update amounts
-      const immediateAmountDiff = userChanged ? 0 : (updates.immediate_payout_amount !== undefined 
-        ? updates.immediate_payout_amount - (originalTransaction.immediate_payout_amount || 0)
-        : amountDiff * ((originalTransaction.immediate_payout_amount || 0) / oldAmount));
-      
-      const bankedAmountDiff = userChanged ? 0 : (updates.banked_amount !== undefined
-        ? updates.banked_amount - (originalTransaction.banked_amount || 0)
-        : amountDiff * ((originalTransaction.banked_amount || 0) / oldAmount));
-
-      if (oldUserBank) {
-        await base44.asServiceRole.entities.CommissionBank.update(oldUserBank.id, {
-          total_earned: (oldUserBank.total_earned || 0) + amountDiff,
-          available_balance: (oldUserBank.available_balance || 0) + immediateAmountDiff,
-          current_bank_balance: (oldUserBank.current_bank_balance || 0) + bankedAmountDiff,
+      // Re-read in case the subtract already updated it
+      const [refreshedBank] = await base44.asServiceRole.entities.CommissionBank.filter({ user_id: oldUserId });
+      if (refreshedBank) {
+        await base44.asServiceRole.entities.CommissionBank.update(refreshedBank.id, {
+          total_earned: (refreshedBank.total_earned || 0) + newAdj.total_earned,
+          current_bank_balance: (refreshedBank.current_bank_balance || 0) + newAdj.current_bank_balance,
+          available_balance: (refreshedBank.available_balance || 0) + newAdj.available_balance,
+          total_paid_out: (refreshedBank.total_paid_out || 0) + newAdj.total_paid_out,
         });
       }
     }
