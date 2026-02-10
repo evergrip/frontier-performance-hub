@@ -276,6 +276,7 @@ export default function Commissions() {
       amount: transaction.amount,
       sale_amount: transaction.sale_amount || 0,
       user_id: transaction.user_id,
+      status: transaction.status,
     });
     setEditNote('');
     setEditTransactionOpen(true);
@@ -317,6 +318,9 @@ export default function Commissions() {
     }
     if (editFormData.user_id !== selectedTransaction.user_id) {
       updates.user_id = editFormData.user_id;
+    }
+    if (editFormData.status !== selectedTransaction.status) {
+      updates.status = editFormData.status;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -755,6 +759,24 @@ export default function Commissions() {
                       value={editFormData.sale_amount}
                       onChange={(e) => setEditFormData({ ...editFormData, sale_amount: e.target.value })}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={editFormData.status}
+                      onValueChange={(value) => setEditFormData({ ...editFormData, status: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="banked">Banked</SelectItem>
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
