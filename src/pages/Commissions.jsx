@@ -486,7 +486,7 @@ export default function Commissions() {
                   )}
 
                   {(() => {
-                    const startDateStr = selectedUserData?.commission_start_date;
+                    const startDateStr = displayUser?.commission_start_date;
                     if (!startDateStr) return (
                       <div className="p-3 bg-slate-100 rounded-lg text-center">
                         <p className="text-xs text-slate-500">Commission start date not set</p>
