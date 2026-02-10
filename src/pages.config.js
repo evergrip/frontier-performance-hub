@@ -55,6 +55,7 @@ import CompanyAdmin from './pages/CompanyAdmin';
 import CompanySettings from './pages/CompanySettings';
 import Dashboard from './pages/Dashboard';
 import ImportHistoricalData from './pages/ImportHistoricalData';
+import KPIAgentChat from './pages/KPIAgentChat';
 import KPIDashboard from './pages/KPIDashboard';
 import KPIDefinitions from './pages/KPIDefinitions';
 import KPIManagement from './pages/KPIManagement';
@@ -70,7 +71,6 @@ import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import UsersAdmin from './pages/UsersAdmin';
-import KPIAgentChat from './pages/KPIAgentChat';
 import __Layout from './Layout.jsx';
 
 
@@ -83,6 +83,7 @@ export const PAGES = {
     "CompanySettings": CompanySettings,
     "Dashboard": Dashboard,
     "ImportHistoricalData": ImportHistoricalData,
+    "KPIAgentChat": KPIAgentChat,
     "KPIDashboard": KPIDashboard,
     "KPIDefinitions": KPIDefinitions,
     "KPIManagement": KPIManagement,
@@ -98,7 +99,6 @@ export const PAGES = {
     "ScheduleView": ScheduleView,
     "Scheduler": Scheduler,
     "UsersAdmin": UsersAdmin,
-    "KPIAgentChat": KPIAgentChat,
 }
 
 export const pagesConfig = {

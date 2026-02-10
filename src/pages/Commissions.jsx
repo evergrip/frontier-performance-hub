@@ -258,9 +258,11 @@ export default function Commissions() {
   const pendingPayouts = payouts.filter(p => p.status === 'pending');
   const approvedPayouts = payouts.filter(p => p.status === 'approved' || p.status === 'paid');
 
-  const getSaleName = (saleId) => {
+  const getSaleName = (saleId, transactionSaleType) => {
     const sale = sales.find(s => s.id === saleId);
-    return sale ? `${sale.title} (${sale.sale_type})` : 'Unknown Sale';
+    if (!sale) return 'Unknown Sale';
+    const displayType = transactionSaleType || sale.sale_type;
+    return `${sale.title} (${displayType})`;
   };
 
   const openTransactionDetail = (transaction) => {
@@ -618,7 +620,7 @@ export default function Commissions() {
                     className="text-xs cursor-pointer"
                     onClick={() => openTransactionDetail(transaction)}
                   >
-                    {transaction.sale_id ? getSaleName(transaction.sale_id) : '-'}
+                    {transaction.sale_id ? getSaleName(transaction.sale_id, transaction.sale_type) : '-'}
                   </TableCell>
                   <TableCell 
                     className="text-xs cursor-pointer"
@@ -836,7 +838,7 @@ export default function Commissions() {
                     <div className="flex justify-between">
                       <span className="text-xs text-slate-600">Sale:</span>
                       <span className="text-sm font-medium text-slate-900">
-                        {getSaleName(selectedTransaction.sale_id)}
+                        {getSaleName(selectedTransaction.sale_id, selectedTransaction.sale_type)}
                       </span>
                     </div>
                     {selectedTransaction.sale_amount && (
