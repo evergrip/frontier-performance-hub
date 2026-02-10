@@ -423,7 +423,7 @@ export default function Commissions() {
               <div className="flex items-start justify-between">
                 <div className="space-y-4 flex-1">
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">{commissionBank.current_tier || 'Not Set'}</p>
+                    <p className="text-2xl font-bold text-slate-900">{currentTier?.tier_name || commissionBank.current_tier || 'Not Set'}</p>
                     {currentTier && (
                       <p className="text-sm text-slate-500">
                         Commission Rate: {currentTier.commission_rate}%
