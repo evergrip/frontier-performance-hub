@@ -58,6 +58,8 @@ export default function HistoricalProjectForm() {
     ]);
     const [preconCommission, setPreconCommission] = useState(0);
     const [constructionCommission, setConstructionCommission] = useState(0);
+    const [includeProject, setIncludeProject] = useState(true);
+    const [saleStatus, setSaleStatus] = useState('closed_won');
 
     const { register, handleSubmit, setValue, watch, reset } = useForm({
         defaultValues: {
@@ -179,17 +181,18 @@ export default function HistoricalProjectForm() {
                 sale: {
                     sale_type: data.sale_type,
                     title: data.sale_title,
+                    sale_status: saleStatus,
                     status_history: saleStatusHistory.filter(h => h.entered_date),
                     contract_value: parseFloat(data.contract_value),
                     estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
-                    close_date: data.close_date,
+                    close_date: data.close_date || null,
                     assigned_to: data.sale_assigned_to,
                     commission_processed: data.commission_processed === 'true',
                     precon_commission_amount: preconCommission ? parseFloat(preconCommission) : undefined,
                     construction_commission_amount: constructionCommission ? parseFloat(constructionCommission) : undefined,
                     notes: data.sale_notes
                 },
-                project: {
+                project: includeProject ? {
                     project_type: data.project_type,
                     title: data.project_title,
                     status_history: projectStatusHistory.filter(h => h.entered_date),
@@ -202,7 +205,7 @@ export default function HistoricalProjectForm() {
                     crew_assignment: data.crew_assignment,
                     color: data.color,
                     notes: data.project_notes
-                }
+                } : null
             };
 
             const response = await base44.functions.invoke('importSingleHistoricalProject', payload);
@@ -214,6 +217,8 @@ export default function HistoricalProjectForm() {
             setSelectedClientId('new');
             setPreconCommission(0);
             setConstructionCommission(0);
+            setIncludeProject(true);
+            setSaleStatus('closed_won');
             setLeadStatusHistory([
                 { status: 'new_project_lead', entered_date: '' },
                 { status: 'initial_video_consult', entered_date: '' },
@@ -444,8 +449,29 @@ export default function HistoricalProjectForm() {
                             <Input {...register('estimated_margin')} type="number" step="0.01" placeholder="45.00" />
                         </div>
                         <div>
-                            <Label>Close Date *</Label>
-                            <Input {...register('close_date')} type="date" required />
+                            <Label>Current Sale Status *</Label>
+                            <Select value={saleStatus} onValueChange={(value) => {
+                                setSaleStatus(value);
+                                if (!['closed_won', 'closed_lost'].includes(value)) {
+                                    setIncludeProject(false);
+                                }
+                            }}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="feasibility">Feasibility (Active)</SelectItem>
+                                    <SelectItem value="design_material_selections">Design & Materials (Active)</SelectItem>
+                                    <SelectItem value="engineering_permits">Engineering & Permits (Active)</SelectItem>
+                                    <SelectItem value="pending_construction_sale">Pending Construction Sale (Active)</SelectItem>
+                                    <SelectItem value="closed_won">Closed Won (Completed)</SelectItem>
+                                    <SelectItem value="closed_lost">Closed Lost</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Close Date {saleStatus === 'closed_won' ? '*' : '(optional)'}</Label>
+                            <Input {...register('close_date')} type="date" required={saleStatus === 'closed_won'} />
                         </div>
                         <div>
                             <Label>Assigned To</Label>
@@ -577,16 +603,38 @@ export default function HistoricalProjectForm() {
             </Card>
 
             {/* Project Information */}
-            <Card>
+            <Card className={!includeProject ? 'opacity-60' : ''}>
                 <CardHeader>
-                    <CardTitle>Project Information</CardTitle>
-                    <CardDescription>Enter details about the completed project</CardDescription>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Project Information</CardTitle>
+                            <CardDescription>
+                                {includeProject 
+                                    ? 'Enter details about the completed project' 
+                                    : 'Project section is skipped — sale is still in pre-construction'}
+                            </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label className="text-sm">Include Project</Label>
+                            <input
+                                type="checkbox"
+                                checked={includeProject}
+                                onChange={(e) => setIncludeProject(e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300"
+                            />
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className={`space-y-4 ${!includeProject ? 'pointer-events-none' : ''}`}>
+                    {!includeProject && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                            This sale is still in the pre-construction pipeline. No project will be created. You can import the project later when it's ready.
+                        </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label>Project Type *</Label>
-                            <Select onValueChange={(value) => setValue('project_type', value)} defaultValue="construction">
+                            <Label>Project Type {includeProject ? '*' : ''}</Label>
+                            <Select onValueChange={(value) => setValue('project_type', value)} defaultValue="construction" disabled={!includeProject}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -597,24 +645,24 @@ export default function HistoricalProjectForm() {
                             </Select>
                         </div>
                         <div>
-                            <Label>Project Title *</Label>
-                            <Input {...register('project_title')} placeholder="e.g., Main Project - Basement Renovation" required />
+                            <Label>Project Title {includeProject ? '*' : ''}</Label>
+                            <Input {...register('project_title')} placeholder="e.g., Main Project - Basement Renovation" required={includeProject} disabled={!includeProject} />
                         </div>
                         <div>
-                            <Label>Actual Costs *</Label>
-                            <Input {...register('actual_costs')} type="number" placeholder="130000" required />
+                            <Label>Actual Costs {includeProject ? '*' : ''}</Label>
+                            <Input {...register('actual_costs')} type="number" placeholder="130000" required={includeProject} disabled={!includeProject} />
                         </div>
                         <div>
-                            <Label>Actual Margin (%) *</Label>
-                            <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required />
+                            <Label>Actual Margin (%) {includeProject ? '*' : ''}</Label>
+                            <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required={includeProject} disabled={!includeProject} />
                         </div>
                         <div>
-                            <Label>Start Date *</Label>
-                            <Input {...register('start_date')} type="date" required />
+                            <Label>Start Date {includeProject ? '*' : ''}</Label>
+                            <Input {...register('start_date')} type="date" required={includeProject} disabled={!includeProject} />
                         </div>
                         <div>
-                            <Label>Completion Date *</Label>
-                            <Input {...register('actual_completion_date')} type="date" required />
+                            <Label>Completion Date {includeProject ? '*' : ''}</Label>
+                            <Input {...register('actual_completion_date')} type="date" required={includeProject} disabled={!includeProject} />
                         </div>
                         <div>
                             <Label>Project Manager</Label>
