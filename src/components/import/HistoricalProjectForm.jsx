@@ -783,6 +783,8 @@ export default function HistoricalProjectForm() {
                     setSelectedClientId('new');
                     setPreconCommission(0);
                     setConstructionCommission(0);
+                    setIncludeProject(true);
+                    setSaleStatus('closed_won');
                 }}>
                     Clear Form
                 </Button>

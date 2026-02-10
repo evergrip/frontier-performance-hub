@@ -16,11 +16,12 @@ Deno.serve(async (req) => {
         if (!client?.contact_name) {
             return Response.json({ error: 'Client contact name is required' }, { status: 400 });
         }
-        if (!sale?.title || !sale?.contract_value || !sale?.close_date) {
-            return Response.json({ error: 'Sale title, contract value, and close date are required' }, { status: 400 });
+        if (!sale?.title || !sale?.contract_value) {
+            return Response.json({ error: 'Sale title and contract value are required' }, { status: 400 });
         }
-        if (!project?.title || !project?.actual_costs || !project?.actual_margin) {
-            return Response.json({ error: 'Project title, actual costs, and actual margin are required' }, { status: 400 });
+        // Only validate project fields if project data is provided
+        if (project && project.title && (!project.actual_costs && project.actual_costs !== 0)) {
+            return Response.json({ error: 'Project actual costs are required when including a project' }, { status: 400 });
         }
 
         // Step 1: Create or use existing Client
@@ -57,32 +58,39 @@ Deno.serve(async (req) => {
         }
 
         // Step 3: Create Sale
+        // Use the provided sale_status, defaulting to closed_won for backward compatibility
+        const resolvedSaleStatus = sale.sale_status || 'closed_won';
         const saleData = {
             client_id: clientId,
             lead_id: leadId,
             sale_type: sale.sale_type || 'construction',
             title: sale.title,
-            status: 'closed_won',
+            status: resolvedSaleStatus,
             phase_history: sale.status_history || [],
             contract_value: parseFloat(sale.contract_value),
             estimated_margin: sale.estimated_margin ? parseFloat(sale.estimated_margin) : undefined,
-            close_date: sale.close_date,
+            close_date: sale.close_date || null,
             assigned_to: sale.assigned_to || '',
             commission_processed: sale.commission_processed || false,
             notes: sale.notes || ''
         };
         const createdSale = await base44.asServiceRole.entities.Sale.create(saleData);
 
-        // Update lead with converted sale ID
-        if (leadId) {
+        // Update lead with converted sale ID (only if sale is closed/converted)
+        if (leadId && ['closed_won', 'converted'].includes(resolvedSaleStatus)) {
+            await base44.asServiceRole.entities.Lead.update(leadId, {
+                converted_to_sale_id: createdSale.id
+            });
+        } else if (leadId) {
+            // For active precon sales, mark lead as converted since it became a sale
             await base44.asServiceRole.entities.Lead.update(leadId, {
                 converted_to_sale_id: createdSale.id
             });
         }
 
-        // Step 4: Create Project
+        // Step 4: Create Project (only if project data is provided and not null)
         let projectId = null;
-        if (project?.title) {
+        if (project && project.title) {
             const projectData = {
                 client_id: clientId,
                 sale_id: createdSale.id,
