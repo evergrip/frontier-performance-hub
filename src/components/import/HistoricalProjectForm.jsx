@@ -511,19 +511,22 @@ export default function HistoricalProjectForm() {
                             <Input {...register('close_date')} type="date" required={saleStatus === 'closed_won'} />
                         </div>
                         <div>
-                            <Label>Assigned To</Label>
-                            <Select onValueChange={(value) => setValue('sale_assigned_to', value)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select salesperson" />
+                            <Label>Assigned Salesperson *</Label>
+                            <Select onValueChange={(value) => setValue('sale_assigned_to', value)} value={watch('sale_assigned_to')}>
+                                <SelectTrigger className={!watch('sale_assigned_to') ? 'border-red-300' : ''}>
+                                    <SelectValue placeholder="Select salesperson (required)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {salesUsers.map(user => (
+                                    {users.filter(u => u.is_commission_eligible || u.commission_rule_ids?.length > 0 || u.department === 'Sales' || u.departments?.includes('Sales')).map(user => (
                                         <SelectItem key={user.id} value={user.id}>
                                             {user.full_name} ({user.email})
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {!watch('sale_assigned_to') && (
+                                <p className="text-xs text-red-500 mt-1">Required — salesperson must be assigned to credit the sale</p>
+                            )}
                         </div>
                     </div>
                     <div>
