@@ -189,6 +189,12 @@ Deno.serve(async (req) => {
             }
         }
 
+        // Step 5b: Even if no commission amounts, still update YTD sales volume for the assigned salesperson
+        if (sale.assigned_to && !sale.precon_commission_amount && !sale.construction_commission_amount) {
+            const saleType = sale.sale_type || 'construction';
+            await updateCommissionBank(base44, sale.assigned_to, 0, 'pending', parseFloat(sale.contract_value), saleType, sale.close_date);
+        }
+
         return Response.json({
             success: true,
             client_id: clientId,
