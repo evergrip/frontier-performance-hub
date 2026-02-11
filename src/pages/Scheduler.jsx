@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
 import { createPageUrl } from '../utils';
-import MonthlyAllocationView from '@/components/scheduler/MonthlyAllocationView';
+import EditableMonthlyAllocationView from '@/components/scheduler/EditableMonthlyAllocationView';
 import DayJobAssignmentModal from '@/components/scheduler/DayJobAssignmentModal';
 
 export default function Scheduler() {
@@ -25,16 +25,12 @@ export default function Scheduler() {
     queryFn: () => base44.entities.Project.list(),
   });
 
-  // Filter out closed projects from scheduler
   const projects = allProjects.filter(p => p.status !== 'closed');
-
   const queryClient = useQueryClient();
 
   const { data: assignments = [], refetch: refetchAssignments } = useQuery({
     queryKey: ['employeeAssignments'],
-    queryFn: async () => {
-      return await base44.entities.EmployeeAssignment.list();
-    },
+    queryFn: () => base44.entities.EmployeeAssignment.list(),
   });
 
   const createAssignmentMutation = useMutation({
@@ -65,18 +61,15 @@ export default function Scheduler() {
     const projectIndex = projects.findIndex(p => p.id === data.project_id);
     const color = COLORS[projectIndex % COLORS.length];
 
-    // Check if job already exists for this day/project
     const existingAssignment = assignments.find(
       a => a.assignment_date === data.date && a.project_id === data.project_id
     );
 
     if (existingAssignment) {
-      // Update existing job with new employee assignments
       base44.entities.EmployeeAssignment.update(existingAssignment.id, {
         employee_assignments: data.employee_assignments || existingAssignment.employee_assignments
       }).then(() => refetchAssignments());
     } else {
-      // Create new job assignment
       createAssignmentMutation.mutate({
         assignment_date: data.date,
         project_id: data.project_id,
@@ -87,28 +80,25 @@ export default function Scheduler() {
     }
   };
 
-  const updateRefetch = async () => {
-    await refetchAssignments();
-  };
-
   return (
     <div className="space-y-6">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
-          <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
-        </div>
+      <div>
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Staff Scheduler</h1>
+        <p className="text-lg text-slate-500">Allocate work to months, then assign jobs to specific days</p>
+      </div>
 
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
           <div className="flex gap-2">
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
-              <strong>Layer 1: Allocations</strong> - Drag projects to months to allocate work. Click a month to assign jobs to specific days.
+              <strong>Layer 1: Allocations</strong> - Drag projects to months to allocate work. Click an allocation to edit it. Click a month to assign jobs to specific days.
             </div>
           </div>
         </CardContent>
       </Card>
-      <MonthlyAllocationView
+
+      <EditableMonthlyAllocationView
         projects={projects}
         onMonthClick={handleMonthClick}
       />
@@ -129,6 +119,6 @@ export default function Scheduler() {
           navigate(`${createPageUrl('ScheduleView')}?startDate=${start}&endDate=${end}`);
         }}
       />
-      </div>
-      );
-      }
+    </div>
+  );
+}
