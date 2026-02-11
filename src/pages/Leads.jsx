@@ -10,10 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Target, Briefcase, ArrowRight, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
+import EditableTimeline from '../components/common/EditableTimeline';
 
 export default function Leads() {
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [disqualifyDialogOpen, setDisqualifyDialogOpen] = useState(false);
+  const [timelineDialogOpen, setTimelineDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
@@ -86,6 +88,15 @@ export default function Leads() {
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
       toast.success('Lead status updated');
+    }
+  });
+
+  const updateLeadHistoryMutation = useMutation({
+    mutationFn: ({ leadId, status_history }) =>
+      base44.entities.Lead.update(leadId, { status_history }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['leads']);
+      toast.success('Timeline dates updated');
     }
   });
 
@@ -251,6 +262,16 @@ export default function Leads() {
                           )}
                           
                           <div className="space-y-1.5">
+                            {lead.status_history?.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="w-full text-xs text-slate-500"
+                                onClick={() => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
+                              >
+                                View/Edit Timeline
+                              </Button>
+                            )}
                             {nextStatus && (
                               <Button
                                 size="sm"
@@ -367,6 +388,31 @@ export default function Leads() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Timeline Edit Dialog */}
+      <Dialog open={timelineDialogOpen} onOpenChange={setTimelineDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Lead Timeline</DialogTitle>
+          </DialogHeader>
+          {selectedLead && (
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-sm font-medium text-slate-900">{selectedLead.title}</p>
+                <p className="text-xs text-slate-500">{getClientName(selectedLead.client_id)}</p>
+              </div>
+              <EditableTimeline
+                history={selectedLead.status_history || []}
+                onSave={(updated) => updateLeadHistoryMutation.mutate({ leadId: selectedLead.id, status_history: updated })}
+                isSaving={updateLeadHistoryMutation.isPending}
+              />
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setTimelineDialogOpen(false)}>Close</Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

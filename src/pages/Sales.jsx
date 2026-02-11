@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
+import EditableTimeline from '../components/common/EditableTimeline';
 
 export default function Sales() {
   const queryClient = useQueryClient();
@@ -456,6 +457,15 @@ export default function Sales() {
     setEditTargetDate(sale.target_precon_completion_date || '');
     setDetailDialogOpen(true);
   };
+
+  const updateSaleHistoryMutation = useMutation({
+    mutationFn: ({ saleId, phase_history }) =>
+      base44.entities.Sale.update(saleId, { phase_history }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      toast.success('Timeline dates updated');
+    }
+  });
 
   const updateTargetDateMutation = useMutation({
     mutationFn: ({ saleId, target_precon_completion_date }) => 
@@ -1200,38 +1210,11 @@ export default function Sales() {
 
               <div>
                 <h4 className="text-sm font-semibold text-slate-900 mb-3">Phase History</h4>
-                <div className="space-y-3">
-                  {getPhaseTimeline(selectedSale).map((phase, idx) => {
-                    const phaseConfig = statusColumns.find(c => c.status === phase.status) || {
-                      label: phase.status,
-                      color: 'bg-slate-100'
-                    };
-                    
-                    return (
-                      <div key={idx} className={`p-4 rounded-lg border-2 ${phaseConfig.color} ${phase.isCurrent ? 'ring-2 ring-amber-400' : ''}`}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h5 className="font-semibold text-slate-900">{phaseConfig.label}</h5>
-                              {phase.isCurrent && (
-                                <span className="text-xs px-2 py-0.5 bg-amber-500 text-white rounded-full">
-                                  Current
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-slate-500">
-                              Entered: {new Date(phase.entered_date).toLocaleDateString()} at {new Date(phase.entered_date).toLocaleTimeString()}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-slate-500">Duration</p>
-                            <p className="text-sm font-bold text-slate-900">{phase.duration}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <EditableTimeline
+                  history={selectedSale.phase_history || []}
+                  onSave={(updated) => updateSaleHistoryMutation.mutate({ saleId: selectedSale.id, phase_history: updated })}
+                  isSaving={updateSaleHistoryMutation.isPending}
+                />
               </div>
 
               <div className="flex justify-end pt-2">
