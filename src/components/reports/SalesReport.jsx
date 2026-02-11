@@ -227,8 +227,10 @@ export default function SalesReport({ dateRange, staffId }) {
   };
 
   const metricsData = calculateMetrics();
+  const constructionMetrics = calculateConstructionMetrics();
   const trendData = calculateTrendData();
   const salespeopleWithData = Object.keys(metricsData);
+  const constructionSalespeopleWithData = Object.keys(constructionMetrics);
 
   // Calculate contract values summary
   const calculateContractValues = () => {
