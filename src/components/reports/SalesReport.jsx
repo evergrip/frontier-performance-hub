@@ -407,6 +407,117 @@ export default function SalesReport({ dateRange, staffId }) {
         </Card>
       </div>
 
+      {/* Construction Win Rate & Volume */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              Construction Win Rate
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {constructionSalespeopleWithData.length === 0 ? (
+              <p className="text-sm text-slate-500">No construction sales data available</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Salesperson</TableHead>
+                    <TableHead className="text-right">Win Rate</TableHead>
+                    <TableHead className="text-right">Won</TableHead>
+                    <TableHead className="text-right">Lost</TableHead>
+                    <TableHead className="text-right">Pending</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {constructionSalespeopleWithData.map(salesPersonId => {
+                    const user = users.find(u => u.id === salesPersonId);
+                    const data = constructionMetrics[salesPersonId];
+                    
+                    const TrendIcon = data.winRate >= 50 ? TrendingUp : data.winRate >= 30 ? Minus : TrendingDown;
+                    const trendColor = data.winRate >= 50 ? 'text-emerald-600' : data.winRate >= 30 ? 'text-amber-600' : 'text-red-600';
+                    
+                    return (
+                      <TableRow key={salesPersonId}>
+                        <TableCell className="font-medium">
+                          {user?.full_name || 'Unknown'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <TrendIcon className={`w-4 h-4 ${trendColor}`} />
+                            <span className={`font-bold text-lg ${trendColor}`}>
+                              {data.winRate.toFixed(1)}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge className="bg-emerald-100 text-emerald-800">{data.closedWon}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="destructive">{data.closedLost}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="outline">{data.pending}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-amber-500" />
+              Construction Volume by Salesperson
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {constructionSalespeopleWithData.length === 0 ? (
+              <p className="text-sm text-slate-500">No construction volume data available</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Salesperson</TableHead>
+                    <TableHead className="text-right">Won Volume</TableHead>
+                    <TableHead className="text-right">Total Pipeline</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {constructionSalespeopleWithData.map(salesPersonId => {
+                    const user = users.find(u => u.id === salesPersonId);
+                    const data = constructionMetrics[salesPersonId];
+                    
+                    return (
+                      <TableRow key={salesPersonId}>
+                        <TableCell className="font-medium">
+                          {user?.full_name || 'Unknown'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-bold text-emerald-600">
+                            ${Math.round(data.wonVolume).toLocaleString()}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-medium text-slate-700">
+                            ${Math.round(data.totalVolume).toLocaleString()}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
