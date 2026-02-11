@@ -273,7 +273,14 @@ export default function SalesReport({ dateRange, staffId }) {
     
     const constructionTotal = filteredSales
       .filter(s => s.sale_type === 'construction')
-      .reduce((sum, s) => sum + (s.contract_value || 0), 0);
+      .reduce((sum, s) => {
+        // Use actual costs from closed project if available
+        const linkedProject = projects.find(p => p.sale_id === s.id);
+        if (linkedProject && linkedProject.status === 'closed' && linkedProject.actual_costs) {
+          return sum + linkedProject.actual_costs;
+        }
+        return sum + (s.contract_value || 0);
+      }, 0);
 
     return {
       preconTotal,
