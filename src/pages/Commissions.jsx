@@ -621,6 +621,7 @@ export default function Commissions() {
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Sale/Project</TableHead>
+                <TableHead>Sale Value</TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
@@ -650,6 +651,12 @@ export default function Commissions() {
                     onClick={() => openTransactionDetail(transaction)}
                   >
                     {transaction.sale_id ? getSaleName(transaction.sale_id, transaction.sale_type) : '-'}
+                  </TableCell>
+                  <TableCell 
+                    className="cursor-pointer"
+                    onClick={() => openTransactionDetail(transaction)}
+                  >
+                    {transaction.sale_amount ? `$${transaction.sale_amount.toLocaleString()}` : '-'}
                   </TableCell>
                   <TableCell 
                     className="text-xs cursor-pointer"
@@ -690,7 +697,7 @@ export default function Commissions() {
               ))}
               {filteredTransactions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 py-8">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-slate-500 py-8">
                     No transactions in this period
                   </TableCell>
                 </TableRow>
