@@ -658,7 +658,7 @@ export default function Commissions() {
                     className="cursor-pointer"
                     onClick={() => openTransactionDetail(transaction)}
                   >
-                    {transaction.sale_amount ? `$${transaction.sale_amount.toLocaleString()}` : '-'}
+                    {transaction.sale_amount ? `$${Math.round(transaction.sale_amount).toLocaleString()}` : '-'}
                   </TableCell>
                   <TableCell 
                     className="text-xs cursor-pointer"
