@@ -59,10 +59,12 @@ export default function AddCommissionTransactionForm({ allUsers }) {
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const cleanData = {};
+      const roundFields = ['amount', 'sale_amount', 'banked_amount', 'immediate_payout_amount'];
       Object.entries(data).forEach(([key, value]) => {
         if (value !== '' && value !== null && value !== undefined) {
           if (['amount', 'commission_rate', 'sale_amount', 'banking_percentage', 'banked_amount', 'immediate_payout_amount'].includes(key)) {
-            cleanData[key] = parseFloat(value);
+            const num = parseFloat(value);
+            cleanData[key] = roundFields.includes(key) ? Math.round(num) : num;
           } else {
             cleanData[key] = value;
           }
