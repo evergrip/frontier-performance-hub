@@ -257,24 +257,45 @@ export default function SalesReport({ dateRange, staffId }) {
       const conDecided = conWon + conLost;
       const constructionWinRate = conDecided > 0 ? (conWon / conDecided) * 100 : 0;
 
-      // --- Volume using phase_history dates ---
-      const periodAllSales = sales.filter(sale => {
+      // --- Volume ---
+      // Precon volume: precon sales that closed in this period
+      const periodPreconForVolume = sales.filter(sale => {
+        if (sale.sale_type !== 'preconstruction') return false;
         if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
+        if (sale.status !== 'closed_won' && sale.status !== 'converted') return false;
         const effectiveDate = getSaleEffectiveDate(sale);
         return effectiveDate >= intervalStart && effectiveDate <= intervalEnd;
       });
-      
-      const preconVolume = periodAllSales
-        .filter(s => s.sale_type === 'preconstruction')
+      const preconVolume = periodPreconForVolume
         .reduce((sum, sale) => sum + (sale.contract_value || 0), 0);
-      const constructionVolume = periodAllSales
-        .filter(s => s.sale_type === 'construction')
-        .reduce((sum, sale) => {
-          const linkedProject = projects.find(p => p.sale_id === sale.id);
-          if (linkedProject && linkedProject.status === 'closed' && linkedProject.actual_costs) {
-            return sum + linkedProject.actual_costs;
+
+      // Construction volume: projects whose construction started in this period
+      // Use the project's status_history or the precon sale's conversion date
+      const periodConstructionProjects = projects.filter(p => {
+        if (p.project_type !== 'construction') return false;
+        // Find the associated sale to check staff filter
+        const sale = sales.find(s => s.id === p.sale_id);
+        if (staffId && staffId !== 'all') {
+          if (sale && sale.assigned_to !== staffId) return false;
+        }
+        // Use the project's first status_history entry date (when it was created)
+        const projectHistory = p.status_history || [];
+        let projectDate;
+        if (projectHistory.length > 0) {
+          projectDate = new Date(projectHistory[0].entered_date);
+        } else if (p.start_date) {
+          projectDate = new Date(p.start_date);
+        } else {
+          projectDate = new Date(p.created_date);
+        }
+        return projectDate >= intervalStart && projectDate <= intervalEnd;
+      });
+      const constructionVolume = periodConstructionProjects
+        .reduce((sum, proj) => {
+          if (proj.status === 'closed' && proj.actual_costs) {
+            return sum + proj.actual_costs;
           }
-          return sum + (sale.contract_value || 0);
+          return sum + (proj.contract_value || 0);
         }, 0);
       const salesVolume = preconVolume + constructionVolume;
 
