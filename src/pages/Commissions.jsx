@@ -933,7 +933,7 @@ export default function Commissions() {
                       <div className="flex justify-between">
                         <span className="text-xs text-slate-600">Immediate Payout:</span>
                         <span className="text-sm font-medium text-slate-900">
-                          ${selectedTransaction.immediate_payout_amount.toLocaleString()}
+                          ${Math.round(selectedTransaction.immediate_payout_amount).toLocaleString()}
                         </span>
                       </div>
                     )}
