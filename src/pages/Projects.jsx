@@ -93,8 +93,12 @@ export default function Projects() {
   const updateProjectHistoryMutation = useMutation({
     mutationFn: ({ projectId, status_history }) =>
       base44.entities.Project.update(projectId, { status_history }),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['projects']);
+      // Update selectedProject so the timeline reflects the saved changes immediately
+      if (selectedProject && selectedProject.id === variables.projectId) {
+        setSelectedProject(prev => ({ ...prev, status_history: variables.status_history }));
+      }
       toast.success('Timeline dates updated');
     }
   });
