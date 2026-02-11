@@ -399,7 +399,7 @@ export default function Commissions() {
         />
         <StatCard
           title="Total Earned"
-          value={`$${(commissionBank?.total_earned || 0).toLocaleString()}`}
+          value={`$${Math.round(commissionBank?.total_earned || 0).toLocaleString()}`}
           icon={TrendingUp}
           subtitle="Lifetime earnings"
         />
