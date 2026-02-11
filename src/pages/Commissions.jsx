@@ -875,7 +875,7 @@ export default function Commissions() {
                   <div>
                     <p className="text-xs text-slate-500">Amount</p>
                     <p className="text-lg font-bold text-emerald-600">
-                      ${selectedTransaction.amount.toLocaleString()}
+                      ${Math.round(selectedTransaction.amount).toLocaleString()}
                     </p>
                   </div>
                   <div>
