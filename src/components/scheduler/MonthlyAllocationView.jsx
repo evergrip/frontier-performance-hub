@@ -103,7 +103,15 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
 
   const handleDrop = (month) => {
     if (!draggedProject) return;
-    setPendingAllocation({ project: draggedProject, month });
+    const existingPct = getProjectAllocation(draggedProject.id, month);
+    setPendingAllocation({ project: draggedProject, month, existingPercentage: existingPct || null });
+    setAllocationDialogOpen(true);
+  };
+
+  const handleEditAllocation = (e, project, month) => {
+    e.stopPropagation();
+    const existingPct = getProjectAllocation(project.id, month);
+    setPendingAllocation({ project, month, existingPercentage: existingPct });
     setAllocationDialogOpen(true);
   };
 
@@ -224,14 +232,18 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
                              style={{ backgroundColor: getProjectColor(project, idx) }}
                            >
                           <div className="flex items-start justify-between gap-1">
-                            <div>
+                            <div
+                              className="cursor-pointer hover:opacity-80 flex-1"
+                              onClick={(e) => handleEditAllocation(e, project, month)}
+                              title="Click to edit allocation"
+                            >
                               <div className="font-medium">{project.title}</div>
                               <div className="opacity-80">
                                 {getProjectAllocation(project.id, month)}% = ${getAllocationAmount(project.id, month).toLocaleString()}
                               </div>
                             </div>
                             <button
-                              onClick={() => handleRemoveAllocation(project.id, month)}
+                              onClick={(e) => { e.stopPropagation(); handleRemoveAllocation(project.id, month); }}
                               className="p-1 hover:bg-white/20 rounded transition-colors flex-shrink-0"
                             >
                               <X className="w-3 h-3" />
@@ -265,6 +277,7 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
         onConfirm={handleAllocationConfirm}
         project={pendingAllocation?.project}
         month={pendingAllocation?.month ? format(pendingAllocation.month, 'MMM yyyy') : ''}
+        existingPercentage={pendingAllocation?.existingPercentage}
       />
     </>
   );

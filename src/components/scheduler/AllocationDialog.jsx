@@ -4,8 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function AllocationDialog({ isOpen, onClose, onConfirm, project, month }) {
+export default function AllocationDialog({ isOpen, onClose, onConfirm, project, month, existingPercentage }) {
   const [percentage, setPercentage] = useState('');
+
+  React.useEffect(() => {
+    if (isOpen && existingPercentage != null) {
+      setPercentage(String(existingPercentage));
+    } else if (isOpen) {
+      setPercentage('');
+    }
+  }, [isOpen, existingPercentage]);
 
   const handleConfirm = () => {
     if (percentage === '' || parseFloat(percentage) < 0 || parseFloat(percentage) > 100) {
@@ -25,7 +33,7 @@ export default function AllocationDialog({ isOpen, onClose, onConfirm, project, 
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Allocate {project?.title}</DialogTitle>
+          <DialogTitle>{existingPercentage ? 'Edit' : 'Allocate'} {project?.title}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
