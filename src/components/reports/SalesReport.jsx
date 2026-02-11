@@ -165,6 +165,33 @@ export default function SalesReport({ dateRange, staffId }) {
     return bySalesperson;
   };
 
+  // Helper: get the most relevant date for a sale using phase_history / status_history
+  const getSaleEffectiveDate = (sale) => {
+    // For precon sales: use the date they entered closed_won or the last phase_history date
+    const history = sale.phase_history || [];
+    if (sale.status === 'closed_won' || sale.status === 'closed_lost') {
+      const closedEntry = [...history].reverse().find(h => h.status === sale.status);
+      if (closedEntry?.entered_date) return new Date(closedEntry.entered_date);
+    }
+    // Fall back to close_date, then the last phase_history entry, then updated_date
+    if (sale.close_date) return new Date(sale.close_date);
+    if (history.length > 0) return new Date(history[history.length - 1].entered_date);
+    return new Date(sale.updated_date || sale.created_date);
+  };
+
+  // Helper: get the date a precon sale reached pending_construction_sale or closed_won (for construction trend)
+  const getConstructionConversionDate = (preconSale) => {
+    const history = preconSale.phase_history || [];
+    // Prefer closed_won date
+    const closedWonEntry = [...history].reverse().find(h => h.status === 'closed_won');
+    if (closedWonEntry?.entered_date) return new Date(closedWonEntry.entered_date);
+    // Fall back to pending_construction_sale date
+    const pendingEntry = [...history].reverse().find(h => h.status === 'pending_construction_sale');
+    if (pendingEntry?.entered_date) return new Date(pendingEntry.entered_date);
+    if (preconSale.close_date) return new Date(preconSale.close_date);
+    return new Date(preconSale.updated_date || preconSale.created_date);
+  };
+
   const calculateTrendData = () => {
     if (!dateRange.start || !dateRange.end) return [];
 
@@ -175,32 +202,43 @@ export default function SalesReport({ dateRange, staffId }) {
       intervals = eachQuarterOfInterval({ start: dateRange.start, end: dateRange.end });
     }
 
+    // Pre-filter construction-related data
+    const constructionSalesAll = sales.filter(s => s.sale_type === 'construction');
+    const preconSalesForConstruction = sales.filter(s => {
+      if (s.sale_type !== 'preconstruction') return false;
+      if (staffId && staffId !== 'all' && s.assigned_to !== staffId) return false;
+      const history = s.phase_history || [];
+      return history.some(h => h.status === 'pending_construction_sale') || s.status === 'pending_construction_sale' || s.status === 'closed_won' || s.status === 'closed_lost';
+    });
+
     return intervals.map(intervalStart => {
       const intervalEnd = trendPeriod === 'monthly' 
         ? endOfMonth(intervalStart)
         : endOfQuarter(intervalStart);
 
-      // Filter sales that closed in this period
-      const periodSalesForLeads = sales.filter(sale => {
+      // --- Precon Win Rate ---
+      // Use phase_history dates to determine when precon sales were won/lost
+      const periodPreconSales = sales.filter(sale => {
+        if (sale.sale_type !== 'preconstruction') return false;
         if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
-        if (!sale.close_date) return false;
-        const saleDate = new Date(sale.close_date);
-        return saleDate >= intervalStart && saleDate <= intervalEnd;
+        if (sale.status !== 'closed_won' && sale.status !== 'closed_lost' && sale.status !== 'converted') return false;
+        const effectiveDate = getSaleEffectiveDate(sale);
+        return effectiveDate >= intervalStart && effectiveDate <= intervalEnd;
       });
 
       // Get the leads that were converted to these sales
-      const convertedLeadIds = periodSalesForLeads
+      const convertedLeadIds = periodPreconSales
+        .filter(s => s.status === 'closed_won' || s.status === 'converted')
         .map(sale => sale.lead_id)
         .filter(Boolean);
       
       const periodLeads = leads.filter(lead => convertedLeadIds.includes(lead.id));
 
-      const converted = periodLeads.length; // All leads in periodLeads are converted
-      const disqualified = 0; // Not tracking disqualified in this view
-      const total = converted;
-      const winRate = total > 0 ? 100 : 0; // 100% since we're only looking at sales that closed
+      const converted = periodPreconSales.filter(s => s.status === 'closed_won' || s.status === 'converted').length;
+      const totalPreconDecided = periodPreconSales.length;
+      const preconWinRate = totalPreconDecided > 0 ? (converted / totalPreconDecided) * 100 : 0;
 
-      // Calculate win rate after proposal (only leads that reached proposal stage)
+      // Win rate after proposal
       const proposalLeads = periodLeads.filter(l => {
         const statusHistory = l.status_history || [];
         return statusHistory.some(h => h.status === 'preconstruction_proposal');
@@ -209,21 +247,29 @@ export default function SalesReport({ dateRange, staffId }) {
       const proposalTotal = proposalLeads.length;
       const winRateAfterProposal = proposalTotal > 0 ? (convertedAfterProposal / proposalTotal) * 100 : 0;
 
-      // Calculate sales volume for this period
-      const periodSales = sales.filter(sale => {
+      // --- Construction Win Rate ---
+      const periodConstructionPrecon = preconSalesForConstruction.filter(sale => {
+        const effectiveDate = getConstructionConversionDate(sale);
+        return effectiveDate >= intervalStart && effectiveDate <= intervalEnd;
+      });
+      const conWon = periodConstructionPrecon.filter(s => s.status === 'closed_won' || s.converted_to_project_id || constructionSalesAll.some(cs => cs.linked_precon_sale_id === s.id)).length;
+      const conLost = periodConstructionPrecon.filter(s => s.status === 'closed_lost').length;
+      const conDecided = conWon + conLost;
+      const constructionWinRate = conDecided > 0 ? (conWon / conDecided) * 100 : 0;
+
+      // --- Volume using phase_history dates ---
+      const periodAllSales = sales.filter(sale => {
         if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
-        if (!sale.close_date) return false;
-        const saleDate = new Date(sale.close_date);
-        return saleDate >= intervalStart && saleDate <= intervalEnd;
+        const effectiveDate = getSaleEffectiveDate(sale);
+        return effectiveDate >= intervalStart && effectiveDate <= intervalEnd;
       });
       
-      const preconVolume = periodSales
+      const preconVolume = periodAllSales
         .filter(s => s.sale_type === 'preconstruction')
         .reduce((sum, sale) => sum + (sale.contract_value || 0), 0);
-      const constructionVolume = periodSales
+      const constructionVolume = periodAllSales
         .filter(s => s.sale_type === 'construction')
         .reduce((sum, sale) => {
-          // Use actual costs from closed project if available
           const linkedProject = projects.find(p => p.sale_id === sale.id);
           if (linkedProject && linkedProject.status === 'closed' && linkedProject.actual_costs) {
             return sum + linkedProject.actual_costs;
@@ -236,16 +282,18 @@ export default function SalesReport({ dateRange, staffId }) {
         period: trendPeriod === 'monthly' 
           ? format(intervalStart, 'MMM yyyy')
           : `Q${Math.floor(intervalStart.getMonth() / 3) + 1} ${format(intervalStart, 'yyyy')}`,
-        winRate: parseFloat(winRate.toFixed(1)),
+        preconWinRate: parseFloat(preconWinRate.toFixed(1)),
         winRateAfterProposal: parseFloat(winRateAfterProposal.toFixed(1)),
+        constructionWinRate: parseFloat(constructionWinRate.toFixed(1)),
         salesVolume,
         preconVolume,
         constructionVolume,
         converted,
-        disqualified,
-        total,
+        totalPreconDecided,
         convertedAfterProposal,
-        proposalTotal
+        proposalTotal,
+        conWon,
+        conDecided
       };
     });
   };
