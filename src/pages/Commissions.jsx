@@ -579,7 +579,7 @@ export default function Commissions() {
               {pendingPayouts.map((payout) => (
                 <div key={payout.id} className="flex items-center justify-between p-4 border rounded-lg bg-amber-50">
                   <div>
-                    <p className="font-medium text-slate-900">${payout.amount.toLocaleString()}</p>
+                    <p className="font-medium text-slate-900">${Math.round(payout.amount).toLocaleString()}</p>
                     <p className="text-sm text-slate-500">
                       Requested {format(new Date(payout.request_date), 'MMM d, yyyy')}
                     </p>
