@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Target, Briefcase, ArrowRight, ChevronRight } from 'lucide-react';
+import { Target, Briefcase, ArrowRight, ChevronRight, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
@@ -197,6 +198,18 @@ export default function Leads() {
     return currentIndex < statuses.length - 1 ? statuses[currentIndex + 1] : null;
   };
 
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    const { source, destination, draggableId } = result;
+    if (source.droppableId === destination.droppableId) return;
+
+    const newStatus = destination.droppableId;
+    const lead = leads.find(l => l.id === draggableId);
+    if (!lead) return;
+
+    updateLeadStatusMutation.mutate({ leadId: lead.id, status: newStatus, currentLead: lead });
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
@@ -227,86 +240,115 @@ export default function Leads() {
       </div>
 
       {activeLeads.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {statusColumns.map(column => {
-            const columnLeads = activeLeads.filter(l => l.status === column.status);
-            return (
-              <div key={column.status}>
-                <div className="mb-3">
-                  <h3 className="font-bold text-slate-900 text-sm">{column.label}</h3>
-                  <p className="text-xs text-slate-500">{columnLeads.length} leads</p>
-                </div>
-                <div className="space-y-2">
-                  {columnLeads.map(lead => {
-                    const nextStatus = getNextStatus(lead.status);
-                    return (
-                      <Card key={lead.id} className={`border-2 ${column.color} hover:shadow-lg transition-shadow`}>
-                        <CardContent className="p-3">
-                          <h4 className="font-semibold text-slate-900 text-sm mb-1">{lead.title}</h4>
-                          <p className="text-xs text-slate-500 mb-2">{getClientName(lead.client_id)}</p>
-                          {(lead.estimated_precon_value || lead.estimated_construction_value) && (
-                            <div className="text-xs text-slate-600 mb-2 space-y-0.5">
-                              {lead.estimated_precon_value > 0 && (
-                                <div className="flex justify-between">
-                                  <span>Precon:</span>
-                                  <span className="font-semibold">${lead.estimated_precon_value.toLocaleString()}</span>
-                                </div>
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {statusColumns.map(column => {
+              const columnLeads = activeLeads.filter(l => l.status === column.status);
+              return (
+                <div key={column.status}>
+                  <div className="mb-3">
+                    <h3 className="font-bold text-slate-900 text-sm">{column.label}</h3>
+                    <p className="text-xs text-slate-500">{columnLeads.length} leads</p>
+                  </div>
+                  <Droppable droppableId={column.status}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`space-y-2 min-h-[100px] p-1 rounded-lg transition-colors ${
+                          snapshot.isDraggingOver ? 'bg-slate-100' : ''
+                        }`}
+                      >
+                        {columnLeads.map((lead, index) => {
+                          const nextStatus = getNextStatus(lead.status);
+                          return (
+                            <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                              {(provided, snapshot) => (
+                                <Card
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`border-2 ${column.color} transition-all ${
+                                    snapshot.isDragging ? 'shadow-2xl rotate-1' : 'hover:shadow-lg'
+                                  }`}
+                                >
+                                  <CardContent className="p-3">
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="flex items-center gap-1.5 mb-1 cursor-grab active:cursor-grabbing"
+                                    >
+                                      <GripVertical className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                      <h4 className="font-semibold text-slate-900 text-sm">{lead.title}</h4>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mb-2 ml-5">{getClientName(lead.client_id)}</p>
+                                    {(lead.estimated_precon_value || lead.estimated_construction_value) && (
+                                      <div className="text-xs text-slate-600 mb-2 space-y-0.5">
+                                        {lead.estimated_precon_value > 0 && (
+                                          <div className="flex justify-between">
+                                            <span>Precon:</span>
+                                            <span className="font-semibold">${lead.estimated_precon_value.toLocaleString()}</span>
+                                          </div>
+                                        )}
+                                        {lead.estimated_construction_value > 0 && (
+                                          <div className="flex justify-between">
+                                            <span>Construction:</span>
+                                            <span className="font-semibold">${lead.estimated_construction_value.toLocaleString()}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    <div className="space-y-1.5">
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="w-full text-xs text-slate-500"
+                                        onClick={() => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
+                                      >
+                                        View/Edit Timeline
+                                      </Button>
+                                      {nextStatus && (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="w-full text-xs"
+                                          onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: nextStatus, currentLead: lead })}
+                                        >
+                                          <ChevronRight className="w-3 h-3 mr-1" />
+                                          Advance
+                                        </Button>
+                                      )}
+                                      <Button
+                                        size="sm"
+                                        className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
+                                        onClick={() => openSaleDialog(lead)}
+                                      >
+                                        <Briefcase className="w-3 h-3 mr-1" />
+                                        Convert to Sale
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50"
+                                        onClick={() => openDisqualifyDialog(lead)}
+                                      >
+                                        Disqualify
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
                               )}
-                              {lead.estimated_construction_value > 0 && (
-                                <div className="flex justify-between">
-                                  <span>Construction:</span>
-                                  <span className="font-semibold">${lead.estimated_construction_value.toLocaleString()}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          <div className="space-y-1.5">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="w-full text-xs text-slate-500"
-                              onClick={() => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
-                            >
-                              View/Edit Timeline
-                            </Button>
-                            {nextStatus && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-xs"
-                                onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: nextStatus, currentLead: lead })}
-                              >
-                                <ChevronRight className="w-3 h-3 mr-1" />
-                                Advance
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
-                              onClick={() => openSaleDialog(lead)}
-                            >
-                              <Briefcase className="w-3 h-3 mr-1" />
-                              Convert to Sale
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50"
-                              onClick={() => openDisqualifyDialog(lead)}
-                            >
-                              Disqualify
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
       ) : (
         <Card>
           <CardContent className="p-0">
