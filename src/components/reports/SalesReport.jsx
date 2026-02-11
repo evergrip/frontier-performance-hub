@@ -95,21 +95,19 @@ export default function SalesReport({ dateRange, staffId }) {
   };
 
   const calculateConstructionMetrics = () => {
-    // Construction sales that reached "pending_construction_sale" in precon
-    // Win = sale status is closed_won or has converted_to_project_id
-    // Loss = sale status is closed_lost
+    // Construction sales represent converted precon -> construction deals
     const constructionSales = sales.filter(s => {
       if (s.sale_type !== 'construction') return false;
       if (staffId && staffId !== 'all' && s.assigned_to !== staffId) return false;
       return true;
     });
 
-    // Also look at precon sales that reached pending_construction_sale stage
+    // Precon sales that reached pending_construction_sale (the construction sales opportunity pool)
     const preconSalesAtPendingOrBeyond = sales.filter(s => {
       if (s.sale_type !== 'preconstruction') return false;
       if (staffId && staffId !== 'all' && s.assigned_to !== staffId) return false;
       const history = s.phase_history || [];
-      return history.some(h => h.status === 'pending_construction_sale') || s.status === 'pending_construction_sale';
+      return history.some(h => h.status === 'pending_construction_sale') || s.status === 'pending_construction_sale' || s.status === 'closed_won' || s.status === 'closed_lost';
     });
 
     const bySalesperson = {};
@@ -132,12 +130,23 @@ export default function SalesReport({ dateRange, staffId }) {
 
       bySalesperson[salesPersonId].totalOpportunities++;
 
-      if (sale.status === 'closed_won' || sale.converted_to_project_id) {
+      // Find linked construction sale for this precon
+      const conSale = constructionSales.find(cs => cs.linked_precon_sale_id === sale.id);
+      // Find linked project for the construction sale
+      const linkedProject = conSale ? projects.find(p => p.sale_id === conSale.id) : null;
+
+      if (sale.status === 'closed_won' || sale.converted_to_project_id || conSale) {
         bySalesperson[salesPersonId].closedWon++;
-        // Find the construction sale linked to this precon sale
-        const conSale = constructionSales.find(cs => cs.linked_precon_sale_id === sale.id);
-        bySalesperson[salesPersonId].wonVolume += conSale?.contract_value || sale.estimated_construction_budget || 0;
-        bySalesperson[salesPersonId].totalVolume += conSale?.contract_value || sale.estimated_construction_budget || 0;
+        // Use actual costs from closed project, otherwise construction sale contract_value, otherwise precon estimated budget
+        let volume = sale.estimated_construction_budget || 0;
+        if (conSale) {
+          volume = conSale.contract_value || volume;
+        }
+        if (linkedProject && linkedProject.status === 'closed' && linkedProject.actual_costs) {
+          volume = linkedProject.actual_costs;
+        }
+        bySalesperson[salesPersonId].wonVolume += volume;
+        bySalesperson[salesPersonId].totalVolume += volume;
       } else if (sale.status === 'closed_lost') {
         bySalesperson[salesPersonId].closedLost++;
         bySalesperson[salesPersonId].totalVolume += sale.estimated_construction_budget || 0;
