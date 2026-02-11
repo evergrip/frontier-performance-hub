@@ -692,13 +692,13 @@ export default function SalesReport({ dateRange, staffId }) {
                       return (
                         <div className="bg-white p-3 border rounded-lg shadow-lg">
                           <p className="font-semibold">{data.period}</p>
-                          <p className="text-emerald-600">Overall Win Rate: {data.winRate}%</p>
-                          <p className="text-blue-600">Win Rate After Proposal: {data.winRateAfterProposal}%</p>
+                          <p className="text-emerald-600">Precon Win Rate: {data.preconWinRate}% ({data.converted}/{data.totalPreconDecided})</p>
+                          <p className="text-blue-600">Win Rate After Proposal: {data.winRateAfterProposal}% ({data.convertedAfterProposal}/{data.proposalTotal})</p>
+                          <p className="text-orange-600">Construction Win Rate: {data.constructionWinRate}% ({data.conWon}/{data.conDecided})</p>
+                          <hr className="my-1" />
                           <p className="text-amber-600">Total Volume: ${Math.round(data.salesVolume).toLocaleString()}</p>
                           <p className="text-indigo-600">Precon Volume: ${Math.round(data.preconVolume).toLocaleString()}</p>
-                          <p className="text-emerald-600">Construction Volume: ${Math.round(data.constructionVolume).toLocaleString()}</p>
-                          <p className="text-sm text-slate-600 mt-2">Overall: {data.converted}/{data.total}</p>
-                          <p className="text-sm text-slate-600">After Proposal: {data.convertedAfterProposal}/{data.proposalTotal}</p>
+                          <p className="text-emerald-700">Construction Volume: ${Math.round(data.constructionVolume).toLocaleString()}</p>
                         </div>
                       );
                     }
@@ -708,18 +708,27 @@ export default function SalesReport({ dateRange, staffId }) {
                 <Legend />
                 <Bar 
                   yAxisId="right"
-                  dataKey="salesVolume" 
-                  fill="#f59e0b" 
+                  dataKey="preconVolume" 
+                  fill="#6366f1" 
                   opacity={0.3}
-                  name="Sales Volume ($)"
+                  name="Precon Volume ($)"
+                  stackId="volume"
+                />
+                <Bar 
+                  yAxisId="right"
+                  dataKey="constructionVolume" 
+                  fill="#10b981" 
+                  opacity={0.3}
+                  name="Construction Volume ($)"
+                  stackId="volume"
                 />
                 <Line 
                   yAxisId="left"
                   type="monotone" 
-                  dataKey="winRate" 
+                  dataKey="preconWinRate" 
                   stroke="#10b981" 
                   strokeWidth={2}
-                  name="Overall Win Rate (%)"
+                  name="Precon Win Rate (%)"
                   dot={{ fill: '#10b981', r: 4 }}
                 />
                 <Line 
@@ -730,6 +739,15 @@ export default function SalesReport({ dateRange, staffId }) {
                   strokeWidth={2}
                   name="Win Rate After Proposal (%)"
                   dot={{ fill: '#3b82f6', r: 4 }}
+                />
+                <Line 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="constructionWinRate" 
+                  stroke="#f97316" 
+                  strokeWidth={2}
+                  name="Construction Win Rate (%)"
+                  dot={{ fill: '#f97316', r: 4 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
