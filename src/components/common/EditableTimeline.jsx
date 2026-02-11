@@ -28,6 +28,12 @@ const STATUS_LABELS = {
   closed: 'Closed',
 };
 
+const SOURCE_STYLES = {
+  lead: { label: 'Lead', bg: 'bg-blue-100 text-blue-700' },
+  sale: { label: 'Pre-Con', bg: 'bg-purple-100 text-purple-700' },
+  project: { label: 'Construction', bg: 'bg-green-100 text-green-700' },
+};
+
 export default function EditableTimeline({ history, onSave, isSaving }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editDate, setEditDate] = useState('');
@@ -88,8 +94,13 @@ export default function EditableTimeline({ history, onSave, isSaving }) {
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-slate-900">{label}</span>
+                  {entry.source && SOURCE_STYLES[entry.source] && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${SOURCE_STYLES[entry.source].bg}`}>
+                      {SOURCE_STYLES[entry.source].label}
+                    </span>
+                  )}
                   {isCurrent && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-amber-500 text-white rounded-full">Current</span>
                   )}
