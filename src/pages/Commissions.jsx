@@ -730,7 +730,7 @@ export default function Commissions() {
                   <TableRow key={payout.id}>
                     <TableCell>{format(new Date(payout.payout_date), 'MMM d, yyyy')}</TableCell>
                     <TableCell className="capitalize">{payout.payout_type.replace('_', ' ')}</TableCell>
-                    <TableCell className="font-medium">${payout.amount.toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">${Math.round(payout.amount).toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant={payout.status === 'paid' ? 'default' : 'secondary'}>
                         {payout.status}
