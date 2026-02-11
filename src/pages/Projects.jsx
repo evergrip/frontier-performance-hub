@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
+import EditableTimeline from '../components/common/EditableTimeline';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
@@ -68,20 +69,31 @@ export default function Projects() {
   });
 
   const updateProjectStatusMutation = useMutation({
-    mutationFn: ({ projectId, status, actual_costs, actual_margin, color, client_id }) => 
-      base44.entities.Project.update(projectId, { 
-        status, 
-        actual_costs: actual_costs !== undefined ? actual_costs : undefined,
-        actual_margin: actual_margin !== undefined ? actual_margin : undefined,
-        color: color !== undefined ? color : undefined,
-        client_id: client_id !== undefined ? client_id : undefined
-      }),
+    mutationFn: ({ projectId, status, actual_costs, actual_margin, color, client_id, status_history }) => {
+      const updateData = {};
+      if (status !== undefined) updateData.status = status;
+      if (actual_costs !== undefined) updateData.actual_costs = actual_costs;
+      if (actual_margin !== undefined) updateData.actual_margin = actual_margin;
+      if (color !== undefined) updateData.color = color;
+      if (client_id !== undefined) updateData.client_id = client_id;
+      if (status_history !== undefined) updateData.status_history = status_history;
+      return base44.entities.Project.update(projectId, updateData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
       setAdvanceDialogOpen(false);
       setCloseoutDialogOpen(false);
       setProjectForm({ actual_costs: '', actual_margin: '' });
       toast.success('Project updated');
+    }
+  });
+
+  const updateProjectHistoryMutation = useMutation({
+    mutationFn: ({ projectId, status_history }) =>
+      base44.entities.Project.update(projectId, { status_history }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      toast.success('Timeline dates updated');
     }
   });
 
@@ -258,10 +270,15 @@ export default function Projects() {
       console.error('Phase commission update failed:', error);
     }
     
+    // Build status history
+    const currentHistory = selectedProject.status_history || [];
+    const newHistory = [...currentHistory, { status: nextStatus, entered_date: new Date().toISOString() }];
+
     // Save allocations if advancing TO mobilization or later
     const updateData = {
       projectId: selectedProject.id,
       status: nextStatus,
+      status_history: newHistory,
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0
     };
@@ -359,8 +376,12 @@ export default function Projects() {
     const projectId = draggableId;
     const project = projects.find(p => p.id === projectId);
     
+    // Build status history
+    const currentHistory = project?.status_history || [];
+    const newHistory = [...currentHistory, { status: newStatus, entered_date: new Date().toISOString() }];
+
     // Generate random color when moving away from awaiting_to_be_scheduled
-    const updates = { status: newStatus };
+    const updates = { status: newStatus, status_history: newHistory };
     if (project?.status === 'awaiting_to_be_scheduled' && newStatus !== 'awaiting_to_be_scheduled') {
       updates.color = generateRandomColor();
     }
