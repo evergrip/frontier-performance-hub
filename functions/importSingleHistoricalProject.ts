@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
         if (!client?.contact_name) {
             return Response.json({ error: 'Client contact name is required' }, { status: 400 });
         }
-        if (!sale?.title || !sale?.contract_value) {
-            return Response.json({ error: 'Sale title and contract value are required' }, { status: 400 });
+        if (!sale?.title) {
+            return Response.json({ error: 'Sale title is required' }, { status: 400 });
         }
         // Only validate project fields if project data is provided
         if (project && project.title && (!project.actual_costs && project.actual_costs !== 0)) {
@@ -60,6 +60,11 @@ Deno.serve(async (req) => {
         // Step 3: Create Sale
         // Use the provided sale_status, defaulting to closed_won for backward compatibility
         const resolvedSaleStatus = sale.sale_status || 'closed_won';
+        // Precon value = actual precon fees earned (revenue for precon sale)
+        // Construction contract value = the construction contract amount (revenue for construction sale/project)
+        const preconValue = sale.precon_value ? parseFloat(sale.precon_value) : 0;
+        const constructionContractValue = sale.construction_contract_value ? parseFloat(sale.construction_contract_value) : 0;
+
         const saleData = {
             client_id: clientId,
             lead_id: leadId,
@@ -67,7 +72,8 @@ Deno.serve(async (req) => {
             title: sale.title,
             status: resolvedSaleStatus,
             phase_history: sale.status_history || [],
-            contract_value: parseFloat(sale.contract_value),
+            contract_value: preconValue,
+            estimated_construction_budget: constructionContractValue,
             estimated_margin: sale.estimated_margin ? parseFloat(sale.estimated_margin) : undefined,
             close_date: sale.close_date || null,
             assigned_to: sale.assigned_to || '',
@@ -91,13 +97,14 @@ Deno.serve(async (req) => {
         // Step 4: Create Project (only if project data is provided and not null)
         let projectId = null;
         if (project && project.title) {
+            const projectContractValue = project.construction_contract_value ? parseFloat(project.construction_contract_value) : constructionContractValue;
             const projectData = {
                 client_id: clientId,
                 sale_id: createdSale.id,
                 project_type: project.project_type || 'construction',
                 title: project.title,
                 status: project.project_status || 'closed',
-                contract_value: parseFloat(sale.contract_value),
+                contract_value: projectContractValue,
                 actual_costs: parseFloat(project.actual_costs),
                 actual_margin: parseFloat(project.actual_margin),
                 start_date: project.start_date || null,
@@ -136,7 +143,7 @@ Deno.serve(async (req) => {
                     transaction_type: 'sale_commission',
                     amount: parseFloat(sale.precon_commission_amount),
                     commission_rate: 0,
-                    sale_amount: parseFloat(sale.contract_value),
+                    sale_amount: preconValue,
                     status: 'paid',
                     notes: 'Historical preconstruction commission import',
                     audit_log: [{
@@ -150,7 +157,7 @@ Deno.serve(async (req) => {
                 commissionTransactions.push(preconTrans.id);
 
                 // Update commission bank for preconstruction
-                await updateCommissionBank(base44, sale.assigned_to, parseFloat(sale.precon_commission_amount), 'paid', parseFloat(sale.contract_value), 'preconstruction', sale.close_date);
+                await updateCommissionBank(base44, sale.assigned_to, parseFloat(sale.precon_commission_amount), 'paid', preconValue, 'preconstruction', sale.close_date);
             }
 
             // Construction commission
@@ -163,7 +170,7 @@ Deno.serve(async (req) => {
                     transaction_type: 'sale_commission',
                     amount: parseFloat(sale.construction_commission_amount),
                     commission_rate: 0,
-                    sale_amount: parseFloat(sale.contract_value),
+                    sale_amount: constructionContractValue,
                     status: 'paid',
                     notes: 'Historical construction commission import',
                     audit_log: [{
@@ -177,7 +184,7 @@ Deno.serve(async (req) => {
                 commissionTransactions.push(constructionTrans.id);
 
                 // Update commission bank for construction
-                await updateCommissionBank(base44, sale.assigned_to, parseFloat(sale.construction_commission_amount), 'paid', parseFloat(sale.contract_value), 'construction', sale.close_date);
+                await updateCommissionBank(base44, sale.assigned_to, parseFloat(sale.construction_commission_amount), 'paid', constructionContractValue, 'construction', sale.close_date);
             }
 
             // Update sale with commission transaction IDs
@@ -191,8 +198,13 @@ Deno.serve(async (req) => {
 
         // Step 5b: Even if no commission amounts, still update YTD sales volume for the assigned salesperson
         if (sale.assigned_to && !sale.precon_commission_amount && !sale.construction_commission_amount) {
-            const saleType = sale.sale_type || 'construction';
-            await updateCommissionBank(base44, sale.assigned_to, 0, 'pending', parseFloat(sale.contract_value), saleType, sale.close_date);
+            // Update YTD volumes: precon volume uses precon value, construction uses construction contract
+            if (preconValue > 0) {
+                await updateCommissionBank(base44, sale.assigned_to, 0, 'pending', preconValue, 'preconstruction', sale.close_date);
+            }
+            if (constructionContractValue > 0) {
+                await updateCommissionBank(base44, sale.assigned_to, 0, 'pending', constructionContractValue, 'construction', sale.close_date);
+            }
         }
 
         return Response.json({
