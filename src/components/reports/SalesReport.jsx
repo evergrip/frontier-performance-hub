@@ -31,6 +31,12 @@ export default function SalesReport({ dateRange, staffId }) {
     initialData: [],
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    initialData: [],
+  });
+
   const calculateMetrics = () => {
     const filteredLeads = leads.filter(lead => {
       if (staffId && staffId !== 'all' && lead.assigned_to !== staffId) return false;
@@ -83,6 +89,68 @@ export default function SalesReport({ dateRange, staffId }) {
       const data = bySalesperson[id];
       data.conversionRate = data.totalLeads > 0 ? (data.convertedTotal / data.totalLeads) * 100 : 0;
       data.winRate = data.proposalReached > 0 ? (data.convertedAfterProposal / data.proposalReached) * 100 : 0;
+    });
+
+    return bySalesperson;
+  };
+
+  const calculateConstructionMetrics = () => {
+    // Construction sales that reached "pending_construction_sale" in precon
+    // Win = sale status is closed_won or has converted_to_project_id
+    // Loss = sale status is closed_lost
+    const constructionSales = sales.filter(s => {
+      if (s.sale_type !== 'construction') return false;
+      if (staffId && staffId !== 'all' && s.assigned_to !== staffId) return false;
+      return true;
+    });
+
+    // Also look at precon sales that reached pending_construction_sale stage
+    const preconSalesAtPendingOrBeyond = sales.filter(s => {
+      if (s.sale_type !== 'preconstruction') return false;
+      if (staffId && staffId !== 'all' && s.assigned_to !== staffId) return false;
+      const history = s.phase_history || [];
+      return history.some(h => h.status === 'pending_construction_sale') || s.status === 'pending_construction_sale';
+    });
+
+    const bySalesperson = {};
+
+    preconSalesAtPendingOrBeyond.forEach(sale => {
+      const salesPersonId = sale.assigned_to;
+      if (!salesPersonId) return;
+
+      if (!bySalesperson[salesPersonId]) {
+        bySalesperson[salesPersonId] = {
+          totalOpportunities: 0,
+          closedWon: 0,
+          closedLost: 0,
+          pending: 0,
+          winRate: 0,
+          totalVolume: 0,
+          wonVolume: 0
+        };
+      }
+
+      bySalesperson[salesPersonId].totalOpportunities++;
+
+      if (sale.status === 'closed_won' || sale.converted_to_project_id) {
+        bySalesperson[salesPersonId].closedWon++;
+        // Find the construction sale linked to this precon sale
+        const conSale = constructionSales.find(cs => cs.linked_precon_sale_id === sale.id);
+        bySalesperson[salesPersonId].wonVolume += conSale?.contract_value || sale.estimated_construction_budget || 0;
+        bySalesperson[salesPersonId].totalVolume += conSale?.contract_value || sale.estimated_construction_budget || 0;
+      } else if (sale.status === 'closed_lost') {
+        bySalesperson[salesPersonId].closedLost++;
+        bySalesperson[salesPersonId].totalVolume += sale.estimated_construction_budget || 0;
+      } else {
+        bySalesperson[salesPersonId].pending++;
+        bySalesperson[salesPersonId].totalVolume += sale.estimated_construction_budget || 0;
+      }
+    });
+
+    Object.keys(bySalesperson).forEach(id => {
+      const data = bySalesperson[id];
+      const decided = data.closedWon + data.closedLost;
+      data.winRate = decided > 0 ? (data.closedWon / decided) * 100 : 0;
     });
 
     return bySalesperson;
