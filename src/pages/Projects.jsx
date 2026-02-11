@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Building2, ChevronRight, GripVertical, CheckCircle, Archive } from 'lucide-react';
+import { Building2, ChevronRight, ChevronLeft, GripVertical, CheckCircle, Archive } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -35,6 +35,8 @@ export default function Projects() {
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [monthlyAllocations, setMonthlyAllocations] = useState([]);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(null);
+  const [sendBackDialogOpen, setSendBackDialogOpen] = useState(false);
+  const [sendBackPhase, setSendBackPhase] = useState('');
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -399,6 +401,51 @@ export default function Projects() {
     });
   };
 
+  const preconPhases = [
+    { value: 'feasibility', label: 'Feasibility' },
+    { value: 'design_material_selections', label: 'Design & Materials' },
+    { value: 'engineering_permits', label: 'Engineering & Permits' },
+    { value: 'pending_construction_sale', label: 'Pending Construction' },
+  ];
+
+  const sendBackToPreconMutation = useMutation({
+    mutationFn: async ({ project, targetPhase }) => {
+      // Find the linked construction sale
+      const constructionSale = sales.find(s => s.id === project.sale_id);
+      if (!constructionSale) throw new Error('No linked construction sale found');
+      
+      // Find the linked precon sale
+      const preconSale = sales.find(s => s.id === constructionSale.linked_precon_sale_id);
+      if (!preconSale) throw new Error('No linked pre-construction sale found');
+
+      // Reopen the precon sale at the target phase
+      const preconHistory = [...(preconSale.phase_history || []), {
+        status: targetPhase,
+        entered_date: new Date().toISOString(),
+        source: 'sale'
+      }];
+      await base44.entities.Sale.update(preconSale.id, {
+        status: targetPhase,
+        phase_history: preconHistory
+      });
+
+      // Delete the construction sale
+      await base44.entities.Sale.delete(constructionSale.id);
+
+      // Delete the project
+      await base44.entities.Project.delete(project.id);
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['sales']);
+      setSendBackDialogOpen(false);
+      setSendBackPhase('');
+      toast.success('Sent back to pre-construction');
+    }
+  });
+
   const totalValue = activeProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
 
   return (
@@ -552,6 +599,19 @@ export default function Projects() {
                                           Close Out Project
                                         </Button>
                                       )}
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
+                                        onClick={() => {
+                                          setSelectedProject(project);
+                                          setSendBackPhase('feasibility');
+                                          setSendBackDialogOpen(true);
+                                        }}
+                                      >
+                                        <ChevronLeft className="w-3 h-3 mr-1" />
+                                        Send Back to Pre-Con
+                                      </Button>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -1160,6 +1220,48 @@ export default function Projects() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+      {/* Send Back to Pre-Con Dialog */}
+      <Dialog open={sendBackDialogOpen} onOpenChange={setSendBackDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Back to Pre-Construction</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
+              <p className="text-xs text-amber-700 mt-1">
+                This will delete the construction project and sale, and reopen the pre-construction sale at the selected phase.
+              </p>
+            </div>
+
+            <div>
+              <Label>Send back to which phase?</Label>
+              <Select value={sendBackPhase} onValueChange={setSendBackPhase}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select phase" />
+                </SelectTrigger>
+                <SelectContent>
+                  {preconPhases.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={() => setSendBackDialogOpen(false)}>Cancel</Button>
+              <Button
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={!sendBackPhase || sendBackToPreconMutation.isPending}
+                onClick={() => sendBackToPreconMutation.mutate({ project: selectedProject, targetPhase: sendBackPhase })}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Send Back
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
