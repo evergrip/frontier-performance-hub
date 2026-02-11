@@ -387,7 +387,7 @@ export default function Commissions() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Available for Payout"
-          value={`$${(commissionBank?.available_balance || 0).toLocaleString()}`}
+          value={`$${Math.round(commissionBank?.available_balance || 0).toLocaleString()}`}
           icon={DollarSign}
           subtitle="Ready to request"
         />
