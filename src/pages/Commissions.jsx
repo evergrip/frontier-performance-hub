@@ -901,7 +901,7 @@ export default function Commissions() {
                       <div className="flex justify-between">
                         <span className="text-xs text-slate-600">Sale Amount:</span>
                         <span className="text-sm font-medium text-slate-900">
-                          ${selectedTransaction.sale_amount.toLocaleString()}
+                          ${Math.round(selectedTransaction.sale_amount).toLocaleString()}
                         </span>
                       </div>
                     )}
