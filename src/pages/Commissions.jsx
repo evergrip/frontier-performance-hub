@@ -393,7 +393,7 @@ export default function Commissions() {
         />
         <StatCard
           title="Banked (Not Available)"
-          value={`$${(commissionBank?.current_bank_balance || 0).toLocaleString()}`}
+          value={`$${Math.round(commissionBank?.current_bank_balance || 0).toLocaleString()}`}
           icon={Wallet}
           subtitle="Awaiting phase completion"
         />
