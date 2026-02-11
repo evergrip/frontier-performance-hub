@@ -118,7 +118,9 @@ export default function MonthlyAllocationView({ projects, onSelectMonth, onMonth
   const handleAllocationConfirm = (percentage) => {
     if (!pendingAllocation) return;
 
-    const { project, month } = pendingAllocation;
+    const { project: pendingProject, month } = pendingAllocation;
+    // Always get the fresh project from props to avoid stale data
+    const project = projects.find(p => p.id === pendingProject.id) || pendingProject;
     const allocations = [...(project.monthly_work_allocations || [])];
 
     const existingIndex = allocations.findIndex(
