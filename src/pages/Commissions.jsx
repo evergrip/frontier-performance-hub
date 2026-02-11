@@ -405,7 +405,7 @@ export default function Commissions() {
         />
         <StatCard
           title="Total Paid Out"
-          value={`$${(commissionBank?.total_paid_out || 0).toLocaleString()}`}
+          value={`$${Math.round(commissionBank?.total_paid_out || 0).toLocaleString()}`}
           icon={Clock}
           subtitle="All time"
         />
