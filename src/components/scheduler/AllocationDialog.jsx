@@ -15,12 +15,21 @@ export default function AllocationDialog({ isOpen, onClose, onConfirm, project, 
     }
   }, [isOpen, existingPercentage]);
 
+  const totalAllocated = project?.monthly_work_allocations?.reduce((sum, a) => sum + (a.percentage || 0), 0) || 0;
+  const currentSlot = existingPercentage || 0;
+  const maxAllowed = 100 - totalAllocated + currentSlot;
+
   const handleConfirm = () => {
-    if (percentage === '' || parseFloat(percentage) < 0 || parseFloat(percentage) > 100) {
+    const val = parseFloat(percentage);
+    if (percentage === '' || val < 0 || val > 100) {
       alert('Please enter a percentage between 0 and 100');
       return;
     }
-    onConfirm(parseFloat(percentage));
+    if (val > maxAllowed) {
+      alert(`This project already has ${totalAllocated - currentSlot}% allocated elsewhere. Maximum for this month is ${maxAllowed}%.`);
+      return;
+    }
+    onConfirm(val);
     setPercentage('');
   };
 
@@ -56,6 +65,9 @@ export default function AllocationDialog({ isOpen, onClose, onConfirm, project, 
                 ≈ ${(project.contract_value * (parseFloat(percentage) / 100)).toLocaleString()} of ${project.contract_value.toLocaleString()}
               </p>
             )}
+            <p className="text-xs text-slate-500 mt-1">
+              {totalAllocated - currentSlot}% allocated elsewhere · {maxAllowed}% max for this month
+            </p>
           </div>
         </div>
         <DialogFooter>
