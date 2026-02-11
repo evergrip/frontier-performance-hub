@@ -217,7 +217,20 @@ export default function SalesReport({ dateRange, staffId }) {
         return saleDate >= intervalStart && saleDate <= intervalEnd;
       });
       
-      const salesVolume = periodSales.reduce((sum, sale) => sum + (sale.contract_value || 0), 0);
+      const preconVolume = periodSales
+        .filter(s => s.sale_type === 'preconstruction')
+        .reduce((sum, sale) => sum + (sale.contract_value || 0), 0);
+      const constructionVolume = periodSales
+        .filter(s => s.sale_type === 'construction')
+        .reduce((sum, sale) => {
+          // Use actual costs from closed project if available
+          const linkedProject = projects.find(p => p.sale_id === sale.id);
+          if (linkedProject && linkedProject.status === 'closed' && linkedProject.actual_costs) {
+            return sum + linkedProject.actual_costs;
+          }
+          return sum + (sale.contract_value || 0);
+        }, 0);
+      const salesVolume = preconVolume + constructionVolume;
 
       return {
         period: trendPeriod === 'monthly' 
@@ -225,7 +238,9 @@ export default function SalesReport({ dateRange, staffId }) {
           : `Q${Math.floor(intervalStart.getMonth() / 3) + 1} ${format(intervalStart, 'yyyy')}`,
         winRate: parseFloat(winRate.toFixed(1)),
         winRateAfterProposal: parseFloat(winRateAfterProposal.toFixed(1)),
-        salesVolume: salesVolume,
+        salesVolume,
+        preconVolume,
+        constructionVolume,
         converted,
         disqualified,
         total,
