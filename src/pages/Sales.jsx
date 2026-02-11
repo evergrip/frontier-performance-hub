@@ -1211,7 +1211,9 @@ export default function Sales() {
               <div>
                 <h4 className="text-sm font-semibold text-slate-900 mb-3">Phase History</h4>
                 <EditableTimeline
-                  history={selectedSale.phase_history || []}
+                  history={selectedSale.phase_history?.length > 0
+                    ? selectedSale.phase_history
+                    : [{ status: selectedSale.status, entered_date: selectedSale.created_date }]}
                   onSave={(updated) => updateSaleHistoryMutation.mutate({ saleId: selectedSale.id, phase_history: updated })}
                   isSaving={updateSaleHistoryMutation.isPending}
                 />

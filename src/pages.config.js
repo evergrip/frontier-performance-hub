@@ -69,8 +69,8 @@ import Relationships from './pages/Relationships';
 import Reports from './pages/Reports';
 import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
-import UsersAdmin from './pages/UsersAdmin';
 import Scheduler from './pages/Scheduler';
+import UsersAdmin from './pages/UsersAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -97,8 +97,8 @@ export const PAGES = {
     "Reports": Reports,
     "Sales": Sales,
     "ScheduleView": ScheduleView,
-    "UsersAdmin": UsersAdmin,
     "Scheduler": Scheduler,
+    "UsersAdmin": UsersAdmin,
 }
 
 export const pagesConfig = {

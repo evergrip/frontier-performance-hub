@@ -262,16 +262,14 @@ export default function Leads() {
                           )}
                           
                           <div className="space-y-1.5">
-                            {lead.status_history?.length > 0 && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="w-full text-xs text-slate-500"
-                                onClick={() => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
-                              >
-                                View/Edit Timeline
-                              </Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="w-full text-xs text-slate-500"
+                              onClick={() => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
+                            >
+                              View/Edit Timeline
+                            </Button>
                             {nextStatus && (
                               <Button
                                 size="sm"
@@ -397,22 +395,27 @@ export default function Leads() {
           <DialogHeader>
             <DialogTitle>Edit Lead Timeline</DialogTitle>
           </DialogHeader>
-          {selectedLead && (
-            <div className="space-y-4">
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <p className="text-sm font-medium text-slate-900">{selectedLead.title}</p>
-                <p className="text-xs text-slate-500">{getClientName(selectedLead.client_id)}</p>
+          {selectedLead && (() => {
+            const history = selectedLead.status_history?.length > 0
+              ? selectedLead.status_history
+              : [{ status: selectedLead.status, entered_date: selectedLead.created_date }];
+            return (
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-sm font-medium text-slate-900">{selectedLead.title}</p>
+                  <p className="text-xs text-slate-500">{getClientName(selectedLead.client_id)}</p>
+                </div>
+                <EditableTimeline
+                  history={history}
+                  onSave={(updated) => updateLeadHistoryMutation.mutate({ leadId: selectedLead.id, status_history: updated })}
+                  isSaving={updateLeadHistoryMutation.isPending}
+                />
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => setTimelineDialogOpen(false)}>Close</Button>
+                </div>
               </div>
-              <EditableTimeline
-                history={selectedLead.status_history || []}
-                onSave={(updated) => updateLeadHistoryMutation.mutate({ leadId: selectedLead.id, status_history: updated })}
-                isSaving={updateLeadHistoryMutation.isPending}
-              />
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setTimelineDialogOpen(false)}>Close</Button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

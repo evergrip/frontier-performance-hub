@@ -860,11 +860,13 @@ export default function Projects() {
             )}
 
             {/* Phase Timeline */}
-            {selectedProject?.status_history?.length > 0 && (
+            {selectedProject && (
               <div className="border-t pt-4 mt-4">
                 <Label className="block mb-2">Phase Timeline</Label>
                 <EditableTimeline
-                  history={selectedProject.status_history}
+                  history={selectedProject.status_history?.length > 0
+                    ? selectedProject.status_history
+                    : [{ status: selectedProject.status, entered_date: selectedProject.created_date }]}
                   onSave={(updated) => updateProjectHistoryMutation.mutate({ projectId: selectedProject.id, status_history: updated })}
                   isSaving={updateProjectHistoryMutation.isPending}
                 />
