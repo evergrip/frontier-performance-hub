@@ -671,7 +671,7 @@ export default function Commissions() {
                     className="font-medium cursor-pointer"
                     onClick={() => openTransactionDetail(transaction)}
                   >
-                    ${transaction.amount.toLocaleString()}
+                    ${Math.round(transaction.amount).toLocaleString()}
                   </TableCell>
                   <TableCell 
                     className="cursor-pointer"
