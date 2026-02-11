@@ -530,7 +530,7 @@ export default function Commissions() {
                           ${Math.round(commissionBank?.available_balance || 0).toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500">
-                          Banked (not yet available): ${(commissionBank?.current_bank_balance || 0).toLocaleString()}
+                          Banked (not yet available): ${Math.round(commissionBank?.current_bank_balance || 0).toLocaleString()}
                         </p>
                       </div>
                       <div className="space-y-2">
