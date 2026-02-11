@@ -106,7 +106,8 @@ export default function HistoricalProjectForm() {
             // Sale
             sale_type: 'construction',
             sale_title: '',
-            contract_value: '',
+            precon_value: '',
+            construction_contract_value: '',
             estimated_margin: '',
             close_date: '',
             sale_assigned_to: '',
@@ -207,7 +208,8 @@ export default function HistoricalProjectForm() {
                     title: data.sale_title,
                     sale_status: effectiveSaleStatus,
                     status_history: saleStatusHistory.filter(h => h.entered_date),
-                    contract_value: parseFloat(data.contract_value),
+                    precon_value: data.precon_value ? parseFloat(data.precon_value) : 0,
+                    construction_contract_value: data.construction_contract_value ? parseFloat(data.construction_contract_value) : 0,
                     estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
                     close_date: data.close_date || null,
                     assigned_to: data.sale_assigned_to,
@@ -221,7 +223,7 @@ export default function HistoricalProjectForm() {
                     title: data.project_title,
                     project_status: effectiveProjectStatus || (saleStatus === 'closed_won' ? 'closed' : null),
                     status_history: projectStatusHistory.filter(h => h.entered_date),
-                    contract_value: parseFloat(data.contract_value),
+                    construction_contract_value: data.construction_contract_value ? parseFloat(data.construction_contract_value) : 0,
                     actual_costs: data.actual_costs ? parseFloat(data.actual_costs) : 0,
                     actual_margin: data.actual_margin ? parseFloat(data.actual_margin) : 0,
                     start_date: data.start_date || null,
@@ -466,8 +468,18 @@ export default function HistoricalProjectForm() {
                             <Input {...register('sale_title')} placeholder="e.g., Construction Project - Basement Renovation" required />
                         </div>
                         <div>
-                            <Label>Contract Value *</Label>
-                            <Input {...register('contract_value')} type="number" placeholder="150000" required />
+                            <Label>Pre-Construction Value (Fees Earned) *</Label>
+                            <Input {...register('precon_value')} type="number" placeholder="15000" required />
+                            <p className="text-xs text-slate-500 mt-1">
+                                The actual precon fees/revenue — this is what commissions are calculated on
+                            </p>
+                        </div>
+                        <div>
+                            <Label>Construction Contract Value</Label>
+                            <Input {...register('construction_contract_value')} type="number" placeholder="500000" />
+                            <p className="text-xs text-slate-500 mt-1">
+                                The construction contract amount (separate from precon fees)
+                            </p>
                         </div>
                         <div>
                             <Label>Estimated Margin (%)</Label>
