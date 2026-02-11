@@ -467,6 +467,16 @@ export default function Sales() {
       const lead = leads.find(l => l.id === sale.lead_id);
       if (!lead) throw new Error('No linked lead found');
 
+      // Add note to precon commission transactions
+      const preconTransactions = await base44.entities.CommissionTransaction.filter({ sale_id: sale.id });
+      const sendBackNote = `SENT BACK: Pre-construction sale "${sale.title}" sent back from pre-construction to leads stage "${targetPhase}" on ${new Date().toLocaleDateString()}. Sale deleted.`;
+      for (const txn of preconTransactions) {
+        const existingNotes = txn.notes || '';
+        await base44.entities.CommissionTransaction.update(txn.id, {
+          notes: existingNotes ? `${existingNotes}\n\n${sendBackNote}` : sendBackNote
+        });
+      }
+
       // Reopen the lead at the target phase
       const leadHistory = [...(lead.status_history || []), {
         status: targetPhase,

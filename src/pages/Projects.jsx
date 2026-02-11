@@ -418,6 +418,26 @@ export default function Projects() {
       const preconSale = sales.find(s => s.id === constructionSale.linked_precon_sale_id);
       if (!preconSale) throw new Error('No linked pre-construction sale found');
 
+      // Add note to construction commission transactions
+      const constructionTransactions = await base44.entities.CommissionTransaction.filter({ sale_id: constructionSale.id });
+      const sendBackNote = `SENT BACK: Project "${project.title}" sent back from construction to pre-construction phase "${targetPhase}" on ${new Date().toLocaleDateString()}. Construction sale deleted.`;
+      for (const txn of constructionTransactions) {
+        const existingNotes = txn.notes || '';
+        await base44.entities.CommissionTransaction.update(txn.id, {
+          notes: existingNotes ? `${existingNotes}\n\n${sendBackNote}` : sendBackNote
+        });
+      }
+
+      // Add note to precon commission transactions
+      const preconTransactions = await base44.entities.CommissionTransaction.filter({ sale_id: preconSale.id });
+      const preconNote = `SENT BACK: Associated construction project "${project.title}" sent back to pre-construction phase "${targetPhase}" on ${new Date().toLocaleDateString()}. Pre-con sale reopened.`;
+      for (const txn of preconTransactions) {
+        const existingNotes = txn.notes || '';
+        await base44.entities.CommissionTransaction.update(txn.id, {
+          notes: existingNotes ? `${existingNotes}\n\n${preconNote}` : preconNote
+        });
+      }
+
       // Reopen the precon sale at the target phase
       const preconHistory = [...(preconSale.phase_history || []), {
         status: targetPhase,
@@ -426,7 +446,8 @@ export default function Projects() {
       }];
       await base44.entities.Sale.update(preconSale.id, {
         status: targetPhase,
-        phase_history: preconHistory
+        phase_history: preconHistory,
+        commission_processed: false
       });
 
       // Delete the construction sale
