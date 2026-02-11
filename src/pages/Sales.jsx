@@ -206,6 +206,17 @@ export default function Sales() {
         status: 'closed_won'
       });
 
+      // Carry sale phase history (which includes lead history) into the project
+      const saleHistory = (preconSale.phase_history?.length > 0
+        ? preconSale.phase_history
+        : [{ status: preconSale.status, entered_date: preconSale.created_date, source: 'sale' }]
+      ).map(entry => ({ ...entry, source: entry.source || 'sale' }));
+
+      const projectStatusHistory = [
+        ...saleHistory,
+        { status: 'awaiting_to_be_scheduled', entered_date: new Date().toISOString(), source: 'project' }
+      ];
+
       // Create construction project
       const project = await base44.entities.Project.create({
         title: preconSale.title,
@@ -213,7 +224,8 @@ export default function Sales() {
         sale_id: constructionSale.id,
         project_type: 'construction',
         status: 'awaiting_to_be_scheduled',
-        contract_value: parseFloat(construction_budget)
+        contract_value: parseFloat(construction_budget),
+        status_history: projectStatusHistory
       });
 
       // Link construction sale to project

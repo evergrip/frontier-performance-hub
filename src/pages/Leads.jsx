@@ -150,6 +150,17 @@ export default function Leads() {
   const handleConvertToSale = (e) => {
     e.preventDefault();
     
+    // Carry lead timeline into the sale's phase_history
+    const leadHistory = (selectedLead.status_history?.length > 0
+      ? selectedLead.status_history
+      : [{ status: selectedLead.status, entered_date: selectedLead.created_date }]
+    ).map(entry => ({ ...entry, source: 'lead' }));
+
+    const salePhaseHistory = [
+      ...leadHistory,
+      { status: 'feasibility', entered_date: new Date().toISOString(), source: 'sale' }
+    ];
+
     convertToSaleMutation.mutate({
       leadId: selectedLead.id,
       saleData: {
@@ -162,7 +173,8 @@ export default function Leads() {
         estimated_margin: parseFloat(saleForm.estimated_margin) || 0,
         target_precon_completion_date: saleForm.target_precon_completion_date,
         status: 'feasibility',
-        assigned_to: selectedLead.assigned_to
+        assigned_to: selectedLead.assigned_to,
+        phase_history: salePhaseHistory
       }
     });
   };
