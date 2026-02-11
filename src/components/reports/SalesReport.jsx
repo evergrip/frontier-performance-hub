@@ -309,10 +309,9 @@ export default function SalesReport({ dateRange, staffId }) {
     const filteredSales = sales.filter(sale => {
       if (staffId && staffId !== 'all' && sale.assigned_to !== staffId) return false;
       if (!dateRange.start || !dateRange.end) return true;
-      if (!sale.close_date) return false;
       
-      const saleDate = new Date(sale.close_date);
-      return saleDate >= dateRange.start && saleDate <= dateRange.end;
+      const effectiveDate = getSaleEffectiveDate(sale);
+      return effectiveDate >= dateRange.start && effectiveDate <= dateRange.end;
     });
 
     const preconTotal = filteredSales
