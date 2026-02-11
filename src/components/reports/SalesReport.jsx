@@ -646,7 +646,9 @@ export default function SalesReport({ dateRange, staffId }) {
                           <p className="font-semibold">{data.period}</p>
                           <p className="text-emerald-600">Overall Win Rate: {data.winRate}%</p>
                           <p className="text-blue-600">Win Rate After Proposal: {data.winRateAfterProposal}%</p>
-                          <p className="text-amber-600">Sales Volume: ${Math.round(data.salesVolume).toLocaleString()}</p>
+                          <p className="text-amber-600">Total Volume: ${Math.round(data.salesVolume).toLocaleString()}</p>
+                          <p className="text-indigo-600">Precon Volume: ${Math.round(data.preconVolume).toLocaleString()}</p>
+                          <p className="text-emerald-600">Construction Volume: ${Math.round(data.constructionVolume).toLocaleString()}</p>
                           <p className="text-sm text-slate-600 mt-2">Overall: {data.converted}/{data.total}</p>
                           <p className="text-sm text-slate-600">After Proposal: {data.convertedAfterProposal}/{data.proposalTotal}</p>
                         </div>
