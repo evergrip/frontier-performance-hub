@@ -361,6 +361,7 @@ export default function Commissions() {
         </div>
         {isAdmin && (
           <div className="flex items-center gap-3">
+            <AddCommissionTransactionForm allUsers={allUsers} />
             <Users className="w-5 h-5 text-slate-400" />
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
               <SelectTrigger className="w-[250px]">
