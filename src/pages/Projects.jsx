@@ -859,6 +859,18 @@ export default function Projects() {
               </div>
             )}
 
+            {/* Phase Timeline */}
+            {selectedProject?.status_history?.length > 0 && (
+              <div className="border-t pt-4 mt-4">
+                <Label className="block mb-2">Phase Timeline</Label>
+                <EditableTimeline
+                  history={selectedProject.status_history}
+                  onSave={(updated) => updateProjectHistoryMutation.mutate({ projectId: selectedProject.id, status_history: updated })}
+                  isSaving={updateProjectHistoryMutation.isPending}
+                />
+              </div>
+            )}
+
             {/* Show revenue allocation for projects in mobilization or later */}
             {selectedProject && ['mobilization', 'active_construction', 'substantial_completion_closeout'].includes(selectedProject.status) && (
               <div className="border-t pt-4 mt-4">
