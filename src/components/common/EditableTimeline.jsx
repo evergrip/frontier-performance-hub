@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Pencil, Check, X } from 'lucide-react';
+import { Pencil, Check, X, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const STATUS_LABELS = {
@@ -53,6 +53,12 @@ export default function EditableTimeline({ history, onSave, isSaving }) {
   const handleCancel = () => {
     setEditingIndex(null);
     setEditDate('');
+  };
+
+  const handleDelete = (index) => {
+    if (history.length <= 1) return; // Don't allow deleting the last entry
+    const updated = history.filter((_, i) => i !== index);
+    onSave(updated);
   };
 
   if (!history || history.length === 0) {
@@ -117,6 +123,15 @@ export default function EditableTimeline({ history, onSave, isSaving }) {
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
+                    {history.length > 1 && (
+                      <button
+                        onClick={() => handleDelete(idx)}
+                        className="p-0.5 text-slate-400 hover:text-red-600 transition-colors"
+                        title="Delete entry"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
