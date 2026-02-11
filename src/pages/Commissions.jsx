@@ -527,7 +527,7 @@ export default function Commissions() {
                       <div className="space-y-2">
                         <Label>Available Balance</Label>
                         <p className="text-2xl font-bold text-emerald-600">
-                          ${(commissionBank?.available_balance || 0).toLocaleString()}
+                          ${Math.round(commissionBank?.available_balance || 0).toLocaleString()}
                         </p>
                         <p className="text-xs text-slate-500">
                           Banked (not yet available): ${(commissionBank?.current_bank_balance || 0).toLocaleString()}
