@@ -389,7 +389,7 @@ export default function Dashboard() {
             title="Pre-Construction Revenue"
             value={`$${(preconRevenue / 1000).toFixed(0)}K`}
             icon={Briefcase}
-            subtitle={`${filteredSales.filter(s => s.sale_type === 'preconstruction').length} precon sales`}
+            subtitle={`${closedSales.filter(s => s.sale_type === 'preconstruction').length} closed precon sales`}
           />
         )}
         {visibleMetrics.constructionRevenue && (
@@ -397,7 +397,7 @@ export default function Dashboard() {
             title="Construction Revenue"
             value={`$${(constructionRevenue / 1000).toFixed(0)}K`}
             icon={Building2}
-            subtitle={`${filteredSales.filter(s => s.sale_type === 'construction').length} construction sales`}
+            subtitle={`${closedSales.filter(s => s.sale_type === 'construction').length} closed construction sales`}
           />
         )}
         {visibleMetrics.activeProjects && (
