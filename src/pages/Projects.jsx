@@ -386,6 +386,13 @@ export default function Projects() {
       updates.color = generateRandomColor();
     }
     
+    // Wipe allocations when moving back to awaiting_to_be_scheduled
+    if (newStatus === 'awaiting_to_be_scheduled') {
+      updates.monthly_revenue_allocations = [];
+      updates.monthly_work_allocations = [];
+      updates.color = null;
+    }
+    
     updateProjectStatusMutation.mutate({
       projectId,
       ...updates
