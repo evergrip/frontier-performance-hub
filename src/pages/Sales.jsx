@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Briefcase, Building2, ChevronRight, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Briefcase, Building2, ChevronRight, ChevronLeft, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
@@ -20,6 +21,8 @@ export default function Sales() {
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [closePreconDialogOpen, setClosePreconDialogOpen] = useState(false);
+  const [sendBackToLeadsDialogOpen, setSendBackToLeadsDialogOpen] = useState(false);
+  const [sendBackLeadPhase, setSendBackLeadPhase] = useState('');
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
@@ -444,6 +447,51 @@ export default function Sales() {
     }
   };
 
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: () => base44.entities.Lead.list(),
+    initialData: [],
+  });
+
+  const leadPhases = [
+    { value: 'new_project_lead', label: 'New Project Lead' },
+    { value: 'initial_video_consult', label: 'Video Consult' },
+    { value: 'initial_inperson_consultation', label: 'In-Person Consult' },
+    { value: 'preconstruction_proposal', label: 'Proposal' },
+    { value: 'followup', label: 'Follow-up' },
+  ];
+
+  const sendBackToLeadsMutation = useMutation({
+    mutationFn: async ({ sale, targetPhase }) => {
+      // Find the linked lead
+      const lead = leads.find(l => l.id === sale.lead_id);
+      if (!lead) throw new Error('No linked lead found');
+
+      // Reopen the lead at the target phase
+      const leadHistory = [...(lead.status_history || []), {
+        status: targetPhase,
+        entered_date: new Date().toISOString()
+      }];
+      await base44.entities.Lead.update(lead.id, {
+        status: targetPhase,
+        status_history: leadHistory,
+        converted_to_sale_id: null
+      });
+
+      // Delete the sale
+      await base44.entities.Sale.delete(sale.id);
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      queryClient.invalidateQueries(['leads']);
+      setSendBackToLeadsDialogOpen(false);
+      setSendBackLeadPhase('');
+      toast.success('Sent back to leads');
+    }
+  });
+
   const totalValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
 
   const handleDragEnd = (result) => {
@@ -715,6 +763,21 @@ export default function Sales() {
                                   Finalize Pre-Con Only
                                 </Button>
                               </>
+                            )}
+                            {sale.lead_id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
+                                onClick={() => {
+                                  setSelectedSale(sale);
+                                  setSendBackLeadPhase('new_project_lead');
+                                  setSendBackToLeadsDialogOpen(true);
+                                }}
+                              >
+                                <ChevronLeft className="w-3 h-3 mr-1" />
+                                Send Back to Leads
+                              </Button>
                             )}
                           </div>
                                   </CardContent>
@@ -1171,6 +1234,49 @@ export default function Sales() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Back to Leads Dialog */}
+      <Dialog open={sendBackToLeadsDialogOpen} onOpenChange={setSendBackToLeadsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Back to Leads</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <p className="text-xs text-amber-700 mt-1">
+                This will delete the pre-construction sale and reopen the lead at the selected stage.
+              </p>
+            </div>
+
+            <div>
+              <Label>Send back to which stage?</Label>
+              <Select value={sendBackLeadPhase} onValueChange={setSendBackLeadPhase}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stage" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leadPhases.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4">
+              <Button variant="outline" onClick={() => setSendBackToLeadsDialogOpen(false)}>Cancel</Button>
+              <Button
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={!sendBackLeadPhase || sendBackToLeadsMutation.isPending}
+                onClick={() => sendBackToLeadsMutation.mutate({ sale: selectedSale, targetPhase: sendBackLeadPhase })}
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Send Back
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
