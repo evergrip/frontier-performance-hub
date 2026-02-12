@@ -124,18 +124,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         setValue('estimated_construction_value', lead.estimated_construction_value || '');
         setValue('lead_assigned_to', lead.assigned_to || '');
         setValue('lead_notes', lead.notes || '');
-        
-        // Set lead status history with all default phases if empty
-        const leadHistory = lead.status_history && lead.status_history.length > 0 
-            ? lead.status_history.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
-            : [
-                { status: 'new_project_lead', entered_date: '' },
-                { status: 'initial_video_consult', entered_date: '' },
-                { status: 'initial_inperson_consultation', entered_date: '' },
-                { status: 'preconstruction_proposal', entered_date: '' },
-                { status: 'converted', entered_date: '' }
-            ];
-        setLeadStatusHistory(leadHistory);
 
         // Sale data
         if (sale) {
@@ -146,26 +134,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('close_date', sale.close_date || '');
             setValue('sale_assigned_to', sale.assigned_to || '');
             setValue('sale_notes', sale.notes || '');
-            
-            // Set sale status history with all default phases if empty
-            const saleHistory = sale.phase_history && sale.phase_history.length > 0 
-                ? sale.phase_history.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
-                : [
-                    { status: 'feasibility', entered_date: '' },
-                    { status: 'design_material_selections', entered_date: '' },
-                    { status: 'engineering_permits', entered_date: '' },
-                    { status: 'pending_construction_sale', entered_date: '' },
-                    { status: 'closed_won', entered_date: '' }
-                ];
-            setSaleStatusHistory(saleHistory);
-        } else {
-            setSaleStatusHistory([
-                { status: 'feasibility', entered_date: '' },
-                { status: 'design_material_selections', entered_date: '' },
-                { status: 'engineering_permits', entered_date: '' },
-                { status: 'pending_construction_sale', entered_date: '' },
-                { status: 'closed_won', entered_date: '' }
-            ]);
         }
 
         // Project data
@@ -180,29 +148,56 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('crew_assignment', project.crew_assignment || 'crew_a');
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
-            
-            // Set project status history — filter to only project-source entries (exclude carried-over lead/sale entries)
-            const fullProjectHistory = project.status_history || [];
-            const projectOnlyHistory = fullProjectHistory.filter(h => 
-                !h.source || h.source === 'project'
-            );
-            const projectHistory = projectOnlyHistory.length > 0 
-                ? projectOnlyHistory.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
-                : [
-                    { status: 'awaiting_to_be_scheduled', entered_date: '' },
-                    { status: 'mobilization', entered_date: '' },
-                    { status: 'active_construction', entered_date: '' },
-                    { status: 'substantial_completion_closeout', entered_date: '' }
-                ];
-            setProjectStatusHistory(projectHistory);
-        } else {
-            setProjectStatusHistory([
-                { status: 'awaiting_to_be_scheduled', entered_date: '' },
-                { status: 'mobilization', entered_date: '' },
-                { status: 'active_construction', entered_date: '' },
-                { status: 'substantial_completion_closeout', entered_date: '' }
-            ]);
         }
+
+        // Build unified timeline from all sources
+        // Priority: project.status_history is the master (it carries lead+sale+project entries)
+        // Fall back to assembling from individual entities
+        let timeline = [];
+
+        if (project && project.status_history && project.status_history.length > 0) {
+            // Project's status_history is the master timeline
+            timeline = project.status_history.map(h => ({
+                ...h,
+                source: h.source || 'project',
+                entered_date: toDatetimeLocal(h.entered_date)
+            }));
+        } else {
+            // Assemble from individual entities
+            const leadEntries = (lead.status_history || []).map(h => ({
+                ...h,
+                source: h.source || 'lead',
+                entered_date: toDatetimeLocal(h.entered_date)
+            }));
+            const saleEntries = sale ? (sale.phase_history || []).map(h => ({
+                ...h,
+                source: h.source || 'sale',
+                entered_date: toDatetimeLocal(h.entered_date)
+            })) : [];
+            timeline = [...leadEntries, ...saleEntries];
+        }
+
+        // If timeline is empty, create default scaffold
+        if (timeline.length === 0) {
+            timeline = [
+                { status: 'new_project_lead', entered_date: '', source: 'lead' },
+                { status: 'initial_video_consult', entered_date: '', source: 'lead' },
+                { status: 'initial_inperson_consultation', entered_date: '', source: 'lead' },
+                { status: 'preconstruction_proposal', entered_date: '', source: 'lead' },
+                { status: 'converted', entered_date: '', source: 'lead' },
+                { status: 'feasibility', entered_date: '', source: 'sale' },
+                { status: 'design_material_selections', entered_date: '', source: 'sale' },
+                { status: 'engineering_permits', entered_date: '', source: 'sale' },
+                { status: 'pending_construction_sale', entered_date: '', source: 'sale' },
+                { status: 'closed_won', entered_date: '', source: 'sale' },
+                { status: 'awaiting_to_be_scheduled', entered_date: '', source: 'project' },
+                { status: 'mobilization', entered_date: '', source: 'project' },
+                { status: 'active_construction', entered_date: '', source: 'project' },
+                { status: 'substantial_completion_closeout', entered_date: '', source: 'project' },
+            ];
+        }
+
+        setUnifiedTimeline(timeline);
     }, [selectedLeadId, leads, clients, sales, projects, commissionTransactions, setValue]);
 
     const updateLeadMutation = useMutation({
