@@ -183,9 +183,9 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
             
-            // Set project status history with all default phases if empty
-            const projectHistory = project.phases && project.phases.length > 0 
-                ? project.phases 
+            // Set project status history with all default phases if empty — use status_history, not phases
+            const projectHistory = project.status_history && project.status_history.length > 0 
+                ? project.status_history.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
                 : [
                     { status: 'awaiting_to_be_scheduled', entered_date: '' },
                     { status: 'mobilization', entered_date: '' },
