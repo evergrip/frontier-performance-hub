@@ -66,7 +66,8 @@ export default function Sales() {
       const sale = sales.find(s => s.id === saleId);
       const phase_history = [...(sale.phase_history || []), {
         status,
-        entered_date: new Date().toISOString()
+        entered_date: new Date().toISOString(),
+        source: 'sale'
       }];
       return base44.entities.Sale.update(saleId, { 
         status, 
