@@ -75,6 +75,17 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
 
     const { register, handleSubmit, setValue, reset, watch } = useForm();
 
+    // Convert ISO date string to datetime-local input format (YYYY-MM-DDTHH:mm)
+    const toDatetimeLocal = (dateStr) => {
+        if (!dateStr) return '';
+        // Already in datetime-local format
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateStr)) return dateStr;
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
     // When a lead is selected, auto-fill all related data
     useEffect(() => {
         if (!selectedLeadId) return;
