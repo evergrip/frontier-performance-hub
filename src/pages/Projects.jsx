@@ -367,8 +367,8 @@ export default function Projects() {
       client_id: projectForm.client_id || selectedProject.client_id
     };
     
-    // Save allocations if they've been modified
-    if (monthlyAllocations.length > 0 && allocationDialogOpen) {
+    // Always save allocations if they exist (even if schedule panel is hidden)
+    if (monthlyAllocations.length > 0) {
       updateData.monthly_revenue_allocations = monthlyAllocations.filter(a => parseFloat(a.percentage) > 0);
     }
     
