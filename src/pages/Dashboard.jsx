@@ -424,6 +424,7 @@ export default function Dashboard() {
             value={`$${(totalRevenue / 1000).toFixed(0)}K`}
             icon={DollarSign}
             subtitle={`${closedSales.length} closed sales`}
+            onClick={() => setDrilldownMetric('totalRevenue')}
           />
         )}
         {visibleMetrics.preconRevenue && (
@@ -432,6 +433,7 @@ export default function Dashboard() {
             value={`$${(preconRevenue / 1000).toFixed(0)}K`}
             icon={Briefcase}
             subtitle={`${closedSales.filter(s => s.sale_type === 'preconstruction').length} closed precon sales`}
+            onClick={() => setDrilldownMetric('preconRevenue')}
           />
         )}
         {visibleMetrics.constructionRevenue && (
@@ -440,6 +442,7 @@ export default function Dashboard() {
             value={`$${(constructionRevenue / 1000).toFixed(0)}K`}
             icon={Building2}
             subtitle={`${closedProjects.filter(p => p.project_type === 'construction').length} closed construction projects`}
+            onClick={() => setDrilldownMetric('constructionRevenue')}
           />
         )}
         {visibleMetrics.activeProjects && (
@@ -448,6 +451,7 @@ export default function Dashboard() {
             value={activeProjects}
             icon={Activity}
             subtitle={`${projects.length} total projects`}
+            onClick={() => setDrilldownMetric('activeProjects')}
           />
         )}
         {visibleMetrics.activeSales && (
@@ -456,6 +460,7 @@ export default function Dashboard() {
             value={activeSales}
             icon={Briefcase}
             subtitle="In pipeline"
+            onClick={() => setDrilldownMetric('activeSales')}
           />
         )}
         {visibleMetrics.activeLeads && (
@@ -464,6 +469,7 @@ export default function Dashboard() {
             value={activeLeads}
             icon={Target}
             subtitle={`${leads.length} total leads`}
+            onClick={() => setDrilldownMetric('activeLeads')}
           />
         )}
         {visibleMetrics.grossProfit && (
@@ -472,6 +478,7 @@ export default function Dashboard() {
             value={`$${(totalGrossProfit / 1000).toFixed(0)}K`}
             icon={DollarSign}
             subtitle={`${closedProjects.length} closed projects`}
+            onClick={() => setDrilldownMetric('grossProfit')}
           />
         )}
         {visibleMetrics.margins && (
@@ -482,6 +489,7 @@ export default function Dashboard() {
             subtitle={`Weighted average`}
             trend={marginPercent > 20 ? 'Healthy' : 'Below target'}
             trendDirection={marginPercent > 20 ? 'up' : 'down'}
+            onClick={() => setDrilldownMetric('margins')}
           />
         )}
         {visibleMetrics.conversionRate && (
@@ -490,6 +498,7 @@ export default function Dashboard() {
             value={`${conversionRate.toFixed(1)}%`}
             icon={Target}
             subtitle={`${convertedLeads}/${totalLeadsForConversion} converted`}
+            onClick={() => setDrilldownMetric('conversionRate')}
           />
         )}
         {visibleMetrics.winRate && (
@@ -498,6 +507,7 @@ export default function Dashboard() {
             value={`${winRate.toFixed(1)}%`}
             icon={CheckCircle2}
             subtitle={`${convertedAfterProposal}/${proposalLeads.length} won`}
+            onClick={() => setDrilldownMetric('winRate')}
           />
         )}
       </div>
