@@ -629,56 +629,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 <Label>Sale Notes</Label>
                                 <Textarea {...register('sale_notes')} placeholder="Any sale-specific notes" rows={2} />
                             </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <Label>Sale Status History</Label>
-                                    <Button type="button" variant="outline" size="sm" onClick={addSaleStatus}>
-                                        <Plus className="w-4 h-4 mr-1" /> Add Status
-                                    </Button>
-                                </div>
-                                <div className="space-y-2">
-                                    {saleStatusHistory.map((item, index) => (
-                                        <div key={index} className="flex gap-2">
-                                            <Select 
-                                                value={item.status}
-                                                onValueChange={(value) => {
-                                                    const updated = [...saleStatusHistory];
-                                                    updated[index].status = value;
-                                                    setSaleStatusHistory(updated);
-                                                }}
-                                            >
-                                                <SelectTrigger className="flex-1">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="feasibility">Feasibility</SelectItem>
-                                                    <SelectItem value="design_material_selections">Design & Material Selections</SelectItem>
-                                                    <SelectItem value="engineering_permits">Engineering & Permits</SelectItem>
-                                                    <SelectItem value="pending_construction_sale">Pending Construction Sale</SelectItem>
-                                                    <SelectItem value="closed_won">Closed Won</SelectItem>
-                                                    <SelectItem value="closed_lost">Closed Lost</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Input 
-                                                type="datetime-local"
-                                                value={item.entered_date}
-                                                onChange={(e) => {
-                                                    const updated = [...saleStatusHistory];
-                                                    updated[index].entered_date = e.target.value;
-                                                    setSaleStatusHistory(updated);
-                                                }}
-                                                className="flex-1"
-                                            />
-                                            {saleStatusHistory.length > 1 && (
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeSaleStatus(index)}>
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
 
