@@ -99,17 +99,20 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
     }).filter(Boolean);
     const avgDuration = durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
 
-    // Budget variance using margin-aware costs
-    const varianceProjects = closedInRange.filter(p => p.contract_value);
+    // Avg margin variance = actual margin - estimated margin (only for projects with estimated margin)
+    const varianceProjects = closedInRange.filter(p => {
+      const linkedSale = sales.find(s => s.id === p.sale_id);
+      return linkedSale?.estimated_margin != null;
+    });
     const avgVariance = varianceProjects.length > 0
       ? varianceProjects.reduce((sum, p) => {
-          const trueCost = (p.actual_margin != null && p.actual_margin > 0)
-            ? p.contract_value * (1 - p.actual_margin / 100)
-            : (p.actual_costs || 0);
-          const variance = ((trueCost - p.contract_value) / p.contract_value) * 100;
-          return sum + variance;
+          const actualMargin = (p.actual_margin != null && p.actual_margin > 0) ? p.actual_margin
+            : (p.contract_value && p.actual_costs && p.actual_costs !== p.contract_value)
+              ? ((p.contract_value - p.actual_costs) / p.contract_value) * 100 : 0;
+          const linkedSale = sales.find(s => s.id === p.sale_id);
+          return sum + (actualMargin - (linkedSale?.estimated_margin || 0));
         }, 0) / varianceProjects.length
-      : 0;
+      : null;
 
     const activeContractValue = activeProjects.reduce((s, p) => s + (p.contract_value || 0), 0);
 
