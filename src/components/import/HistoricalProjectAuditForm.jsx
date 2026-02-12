@@ -183,9 +183,13 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
             
-            // Set project status history with all default phases if empty — use status_history, not phases
-            const projectHistory = project.status_history && project.status_history.length > 0 
-                ? project.status_history.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
+            // Set project status history — filter to only project-source entries (exclude carried-over lead/sale entries)
+            const fullProjectHistory = project.status_history || [];
+            const projectOnlyHistory = fullProjectHistory.filter(h => 
+                !h.source || h.source === 'project'
+            );
+            const projectHistory = projectOnlyHistory.length > 0 
+                ? projectOnlyHistory.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
                 : [
                     { status: 'awaiting_to_be_scheduled', entered_date: '' },
                     { status: 'mobilization', entered_date: '' },
