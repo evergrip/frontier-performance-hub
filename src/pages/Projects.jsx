@@ -818,14 +818,14 @@ export default function Projects() {
                       <Select 
                         value={selectedFiscalYear?.toString()} 
                         onValueChange={(value) => {
-                          const newFiscalYear = parseInt(value);
-                          setSelectedFiscalYear(newFiscalYear);
-                          const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+                          const newFY = parseInt(value);
+                          setSelectedFiscalYear(newFY);
+                          const fsm = companySettings?.fiscal_year_start_month || 1;
                           const allocations = [];
                           for (let i = 0; i < 12; i++) {
-                            const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
-                            const year = month < fiscalStartMonth ? newFiscalYear + 1 : newFiscalYear;
-                            allocations.push({ year, month, percentage: 0 });
+                            const month = ((fsm - 1 + i) % 12) + 1;
+                            const yr = fsm === 1 ? newFY : (month >= fsm ? newFY - 1 : newFY);
+                            allocations.push({ year: yr, month, percentage: 0 });
                           }
                           setMonthlyAllocations(allocations);
                         }}
