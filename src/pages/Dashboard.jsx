@@ -152,11 +152,15 @@ export default function Dashboard() {
   const closedSales = filteredSales.filter(s => s.status === 'closed_won');
   const closedProjects = filteredProjects.filter(p => p.status === 'closed');
   
-  // Precon revenue = the actual precon fees earned (contract_value on closed precon sales = Final Pre-Construction Value)
+  // Precon revenue = the actual precon fees earned (contract_value on closed precon sales)
   const preconRevenue = closedSales.filter(s => s.sale_type === 'preconstruction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
-  // Construction revenue = construction contract values (separate from precon fees)
-  const constructionRevenue = closedSales.filter(s => s.sale_type === 'construction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
-  // Total revenue = precon fees + construction contracts
+  
+  // Construction revenue = from closed PROJECT records (actual_costs if available, else contract_value)
+  const constructionRevenue = closedProjects
+    .filter(p => p.project_type === 'construction')
+    .reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+  
+  // Total revenue = precon fees + construction revenue
   const totalRevenue = preconRevenue + constructionRevenue;
   
   const activeProjects = projects.filter(p => !['closed', 'completion'].includes(p.status)).length;
