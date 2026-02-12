@@ -139,13 +139,17 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
         margin = 0;
       }
       
-      // Calculate true cost and variance using margin
+      // Calculate true cost using margin
       const trueCost = p.contract_value ? p.contract_value * (1 - margin / 100) : 0;
-      const variance = p.contract_value ? ((trueCost - p.contract_value) / p.contract_value) * 100 : 0;
       
-      return { ...p, variance, margin, trueCost };
+      // Variance = actual margin - estimated margin from linked sale
+      const linkedSale = sales.find(s => s.id === p.sale_id);
+      const estimatedMargin = linkedSale?.estimated_margin;
+      const variance = (estimatedMargin != null) ? (margin - estimatedMargin) : null;
+      
+      return { ...p, variance, margin, trueCost, estimatedMargin };
     }).sort((a, b) => (b.contract_value || 0) - (a.contract_value || 0));
-  }, [closedInRange]);
+  }, [closedInRange, sales]);
 
   // Monthly revenue recognition from allocations
   const monthlyRevenue = useMemo(() => {
