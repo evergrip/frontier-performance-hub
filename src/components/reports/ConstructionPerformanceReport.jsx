@@ -358,10 +358,15 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                           {p.margin.toFixed(1)}%
                         </span>
                       </TableCell>
+                      <TableCell className="text-right text-slate-600">
+                        {p.estimatedMargin != null ? `${p.estimatedMargin.toFixed(1)}%` : '—'}
+                      </TableCell>
                       <TableCell className="text-right">
-                        <Badge className={p.variance <= 0 ? 'bg-emerald-100 text-emerald-800' : p.variance <= 5 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}>
-                          {p.variance > 0 ? '+' : ''}{p.variance.toFixed(1)}%
-                        </Badge>
+                        {p.variance != null ? (
+                          <Badge className={p.variance >= 0 ? 'bg-emerald-100 text-emerald-800' : Math.abs(p.variance) <= 5 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}>
+                            {p.variance > 0 ? '+' : ''}{p.variance.toFixed(1)}%
+                          </Badge>
+                        ) : '—'}
                       </TableCell>
                     </TableRow>
                   ))}
