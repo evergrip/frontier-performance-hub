@@ -61,6 +61,12 @@ export default function Dashboard() {
     initialData: [],
   });
 
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list(),
+    initialData: [],
+  });
+
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
     queryFn: () => base44.entities.Lead.list(),
