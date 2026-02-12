@@ -575,7 +575,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 </div>
                                 <div>
                                     <Label>Estimated Precon Value</Label>
-                                    <Input {...register('estimated_precon_value')} type="number" placeholder="5000" />
+                                    <Input {...register('estimated_precon_value')} type="number" step="0.01" placeholder="5000" />
                                 </div>
                                 <div>
                                     <Label>Estimated Construction Value</Label>
