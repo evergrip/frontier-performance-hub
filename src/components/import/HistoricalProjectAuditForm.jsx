@@ -579,7 +579,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 </div>
                                 <div>
                                     <Label>Estimated Construction Value</Label>
-                                    <Input {...register('estimated_construction_value')} type="number" placeholder="150000" />
+                                    <Input {...register('estimated_construction_value')} type="number" step="0.01" placeholder="150000" />
                                 </div>
                                 <div>
                                     <Label>Lead Score (0-100)</Label>
