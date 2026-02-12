@@ -241,16 +241,51 @@ export default function Projects() {
       const currentFiscalYear = fiscalStartMonth === 1 ? currentYear : (currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear);
       setSelectedFiscalYear(currentFiscalYear);
       
-      if (project.monthly_revenue_allocations?.length > 0) {
-        setMonthlyAllocations(project.monthly_revenue_allocations);
-      } else {
-        const allocations = [];
+      // Build a clean set of month slots for the current fiscal year
+      const buildFYSlots = (fy) => {
+        const slots = [];
         for (let i = 0; i < 12; i++) {
           const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
-          const yr = fiscalStartMonth === 1 ? currentFiscalYear : (month >= fiscalStartMonth ? currentFiscalYear - 1 : currentFiscalYear);
-          allocations.push({ year: yr, month, percentage: 0 });
+          const yr = fiscalStartMonth === 1 ? fy : (month >= fiscalStartMonth ? fy - 1 : fy);
+          slots.push({ year: yr, month, percentage: 0 });
         }
-        setMonthlyAllocations(allocations);
+        return slots;
+      };
+      
+      const existingAllocs = project.monthly_revenue_allocations || [];
+      // Check if existing allocations have proper year/month fields
+      const hasProperFields = existingAllocs.length > 0 && existingAllocs.every(a => a.year && a.month);
+      
+      if (hasProperFields) {
+        // Merge existing allocations into fiscal year slots
+        // Determine which fiscal years are covered
+        const fySet = new Set();
+        existingAllocs.forEach(a => {
+          const afy = fiscalStartMonth === 1 ? a.year : (a.month >= fiscalStartMonth ? a.year + 1 : a.year);
+          fySet.add(afy);
+        });
+        fySet.add(currentFiscalYear);
+        
+        let allSlots = [];
+        fySet.forEach(fy => {
+          const slots = buildFYSlots(fy);
+          slots.forEach(slot => {
+            if (!allSlots.find(s => s.year === slot.year && s.month === slot.month)) {
+              allSlots.push(slot);
+            }
+          });
+        });
+        
+        // Apply existing percentages
+        existingAllocs.forEach(a => {
+          const slot = allSlots.find(s => s.year === a.year && s.month === a.month);
+          if (slot) slot.percentage = a.percentage || 0;
+        });
+        
+        setMonthlyAllocations(allSlots);
+      } else {
+        // No valid allocations — start fresh
+        setMonthlyAllocations(buildFYSlots(currentFiscalYear));
       }
       setAllocationDialogOpen(true);
     }
