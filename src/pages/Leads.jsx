@@ -43,6 +43,12 @@ export default function Leads() {
     initialData: [],
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
   const convertToSaleMutation = useMutation({
     mutationFn: async ({ leadId, saleData }) => {
       const sale = await base44.entities.Sale.create(saleData);
