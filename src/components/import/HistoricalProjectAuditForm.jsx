@@ -346,6 +346,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         project_manager_id: data.project_manager || project.project_manager_id,
                         crew_assignment: data.crew_assignment || project.crew_assignment,
                         color: data.color || project.color,
+                        status_history: projectStatusHistory.filter(h => h.entered_date),
                         notes: data.project_notes
                     });
                     console.log('Project updated successfully');
