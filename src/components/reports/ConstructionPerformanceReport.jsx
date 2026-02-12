@@ -127,7 +127,7 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
       avgVariance,
       activeContractValue,
     };
-  }, [closedInRange, activeProjects]);
+  }, [closedInRange, activeProjects, sales]);
 
   // Project-level detail table for closed projects
   const closedProjectDetails = useMemo(() => {
