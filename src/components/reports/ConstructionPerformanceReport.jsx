@@ -117,7 +117,7 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
       closedCount: closedInRange.length,
       activeCount: activeProjects.length,
       totalContractValue,
-      totalActualCosts,
+      totalActualCosts: totalTrueCosts,
       totalGrossProfit,
       avgMargin,
       avgDuration,
