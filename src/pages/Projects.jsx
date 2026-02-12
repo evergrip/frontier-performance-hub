@@ -1177,15 +1177,23 @@ export default function Projects() {
                   const newFiscalYear = parseInt(value);
                   setSelectedFiscalYear(newFiscalYear);
                   
-                  // Regenerate monthly allocations for the new fiscal year
+                  // Merge new fiscal year months without wiping existing allocations
                   const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
-                  const allocations = [];
+                  const newMonths = [];
                   for (let i = 0; i < 12; i++) {
                     const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
                     const yr = fiscalStartMonth === 1 ? newFiscalYear : (month >= fiscalStartMonth ? newFiscalYear - 1 : newFiscalYear);
-                    allocations.push({ year: yr, month, percentage: 0 });
+                    newMonths.push({ year: yr, month, percentage: 0 });
                   }
-                  setMonthlyAllocations(allocations);
+                  setMonthlyAllocations(prev => {
+                    const merged = [...prev];
+                    newMonths.forEach(nm => {
+                      if (!merged.find(a => a.year === nm.year && a.month === nm.month)) {
+                        merged.push(nm);
+                      }
+                    });
+                    return merged;
+                  });
                 }}
               >
                 <SelectTrigger>
@@ -1205,34 +1213,42 @@ export default function Projects() {
             <div>
               <Label className="block mb-2">Monthly Revenue Allocation *</Label>
               <p className="text-xs text-slate-500 mb-3">
-                Distribute the ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} gross revenue across FY {selectedFiscalYear} months. Must total 100%.
+                Distribute the ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} gross revenue across months. Must total 100%. Switch fiscal years to allocate across multiple years.
               </p>
               <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
-                {monthlyAllocations.map((alloc) => {
-                  const monthName = new Date(alloc.year, alloc.month - 1).toLocaleString('default', { month: 'short' });
-                  return (
-                    <div key={`${alloc.year}-${alloc.month}`}>
-                      <label className="text-xs text-slate-600">{monthName} {alloc.year}</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={alloc.percentage}
-                        onChange={(e) => setMonthlyAllocations(monthlyAllocations.map(a => 
-                          a.month === alloc.month && a.year === alloc.year 
-                            ? { ...a, percentage: parseFloat(e.target.value) || 0 }
-                            : a
-                        ))}
-                        className="w-full px-2 py-1 border rounded text-xs"
-                        placeholder="0"
-                      />
-                    </div>
-                  );
-                })}
+                {monthlyAllocations
+                  .filter(alloc => {
+                    const fsm = companySettings?.fiscal_year_start_month || 1;
+                    if (fsm === 1) return alloc.year === selectedFiscalYear;
+                    return (alloc.month >= fsm && alloc.year === selectedFiscalYear - 1) ||
+                           (alloc.month < fsm && alloc.year === selectedFiscalYear);
+                  })
+                  .sort((a, b) => a.year === b.year ? a.month - b.month : a.year - b.year)
+                  .map((alloc) => {
+                    const monthName = new Date(alloc.year, alloc.month - 1).toLocaleString('default', { month: 'short' });
+                    return (
+                      <div key={`${alloc.year}-${alloc.month}`}>
+                        <label className="text-xs text-slate-600">{monthName} {alloc.year}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={alloc.percentage}
+                          onChange={(e) => setMonthlyAllocations(monthlyAllocations.map(a => 
+                            a.month === alloc.month && a.year === alloc.year 
+                              ? { ...a, percentage: parseFloat(e.target.value) || 0 }
+                              : a
+                          ))}
+                          className="w-full px-2 py-1 border rounded text-xs"
+                          placeholder="0"
+                        />
+                      </div>
+                    );
+                  })}
               </div>
               <div className="text-xs mt-2 p-2 bg-blue-50 rounded">
-                Total: <span className={`font-semibold ${monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0) === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                Total (all years): <span className={`font-semibold ${monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0) === 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
                   {monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0).toFixed(1)}%
                 </span>
               </div>
