@@ -375,6 +375,18 @@ export default function MetricDrilldownDialog({
             <p className="text-sm text-slate-600">Total</p>
             <p className="text-3xl font-bold text-slate-900">${(config.total / 1000).toFixed(0)}K</p>
             <p className="text-xs text-slate-500">{config.items.length} items</p>
+            {config._closedTotal != null && (
+              <div className="flex gap-4 mt-2 text-xs text-slate-600">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  Closed: ${(config._closedTotal / 1000).toFixed(0)}K ({config._closedCount} projects)
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                  Active recognized: ${(config._activeTotal / 1000).toFixed(0)}K ({config._activeCount} projects)
+                </span>
+              </div>
+            )}
           </div>
         )}
 
