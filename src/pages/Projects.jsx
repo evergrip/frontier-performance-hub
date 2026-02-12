@@ -233,7 +233,7 @@ export default function Projects() {
       const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear : currentYear - 1;
+      const currentFiscalYear = fiscalStartMonth === 1 ? currentYear : (currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear);
       setSelectedFiscalYear(currentFiscalYear);
       
       if (project.monthly_revenue_allocations?.length > 0) {
