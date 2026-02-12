@@ -211,9 +211,15 @@ export default function Leads() {
     { status: 'followup', label: 'Follow-up', color: 'bg-emerald-100 border-emerald-200' },
   ];
 
-  const activeLeads = leads.filter(l => !['converted', 'disqualified'].includes(l.status));
-  const convertedLeads = leads.filter(l => l.status === 'converted');
-  const disqualifiedLeads = leads.filter(l => l.status === 'disqualified');
+  const filteredLeads = filterSalesperson === 'all'
+    ? leads
+    : leads.filter(l => l.assigned_to === filterSalesperson);
+
+  const activeLeads = filteredLeads.filter(l => !['converted', 'disqualified'].includes(l.status));
+  const convertedLeads = filteredLeads.filter(l => l.status === 'converted');
+  const disqualifiedLeads = filteredLeads.filter(l => l.status === 'disqualified');
+
+  const salespeopleWithLeads = [...new Set(leads.map(l => l.assigned_to).filter(Boolean))];
 
   const getNextStatus = (currentStatus) => {
     const statuses = ['new_project_lead', 'initial_video_consult', 'initial_inperson_consultation', 'preconstruction_proposal', 'followup'];
