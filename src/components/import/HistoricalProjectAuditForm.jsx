@@ -251,6 +251,16 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         return found ? found.source : 'project';
     };
 
+    // Statuses whose dates drive revenue/commission calculations
+    const revenueKeyStatuses = new Set([
+        'closed_won',                          // precon revenue recognition
+        'feasibility',                         // precon phase commission trigger
+        'pending_construction_sale',           // precon phase commission trigger
+        'active_construction',                 // construction revenue start
+        'substantial_completion_closeout',     // construction revenue milestone
+        'closed',                              // final revenue recognition
+    ]);
+
     const sourceColors = {
         lead: 'bg-blue-50 border-blue-200',
         sale: 'bg-purple-50 border-purple-200',
