@@ -150,10 +150,13 @@ export default function Sales() {
 
   const closePreconMutation = useMutation({
     mutationFn: async ({ preconSale, finalValue }) => {
+      // Add closed_won to phase_history
+      const updatedHistory = [...(preconSale.phase_history || []), { status: 'closed_won', entered_date: new Date().toISOString(), source: 'sale' }];
       // Update preconstruction sale as closed won with final value
       await base44.entities.Sale.update(preconSale.id, {
         status: 'closed_won',
-        contract_value: parseFloat(finalValue)
+        contract_value: parseFloat(finalValue),
+        phase_history: updatedHistory
       });
 
       // Update preconstruction commission with final value
