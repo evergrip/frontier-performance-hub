@@ -276,9 +276,9 @@ export default function Projects() {
       console.error('Phase commission update failed:', error);
     }
     
-    // Build status history
+    // Build status history — tag with source: 'project'
     const currentHistory = selectedProject.status_history || [];
-    const newHistory = [...currentHistory, { status: nextStatus, entered_date: new Date().toISOString() }];
+    const newHistory = [...currentHistory, { status: nextStatus, entered_date: new Date().toISOString(), source: 'project' }];
 
     // Save allocations if advancing TO mobilization or later
     const updateData = {
