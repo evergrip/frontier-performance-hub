@@ -314,7 +314,7 @@ export default function Dashboard() {
       monthsOfBacklog,
       usingGrowthForecast: !!settings.next_year_revenue_target
     };
-  }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth]);
+  }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth, currentYear, currentMonth]);
 
   // Monthly trend data
   const monthlyTrendData = dateRange.start && dateRange.end ? eachMonthOfInterval({
