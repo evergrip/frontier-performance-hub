@@ -203,11 +203,14 @@ export default function Projects() {
     setSelectedFiscalYear(adjustedFiscalYear);
     
     // Initialize monthly allocations for the current fiscal year
+    // FY ends in adjustedFiscalYear, so months >= fiscalStartMonth are in (adjustedFiscalYear - 1), months < fiscalStartMonth are in adjustedFiscalYear
     const allocations = [];
     for (let i = 0; i < 12; i++) {
       const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
-      const year = month < fiscalStartMonth ? currentFiscalYear + 1 : currentFiscalYear;
-      allocations.push({ year, month, percentage: 0 });
+      const year = month >= fiscalStartMonth ? adjustedFiscalYear - 1 : adjustedFiscalYear;
+      // Special case: if fiscal starts in Jan, all months are in the same year
+      const adjustedYear = fiscalStartMonth === 1 ? adjustedFiscalYear : year;
+      allocations.push({ year: adjustedYear, month, percentage: 0 });
     }
     setMonthlyAllocations(allocations);
     setCloseoutDialogOpen(true);
