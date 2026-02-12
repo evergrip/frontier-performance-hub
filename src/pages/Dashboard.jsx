@@ -257,10 +257,26 @@ export default function Dashboard() {
       ? settings.next_year_revenue_target / 12 
       : currentYearMonthlyCapacity;
 
-    // Sum active construction projects (not closed)
+    // Sum active construction projects (not closed), minus already-recognized revenue
     const activeProjectsValue = projects
       .filter(p => p.status !== 'closed')
-      .reduce((sum, p) => sum + (p.contract_value || 0), 0);
+      .reduce((sum, p) => {
+        const contractVal = p.contract_value || 0;
+        const pastAllocPct = (p.monthly_revenue_allocations || [])
+          .filter(a => {
+            let aYear = a.year;
+            let aMonth = a.month;
+            if (!aYear && a.period) {
+              const parts = a.period.split('-');
+              aYear = parseInt(parts[0]);
+              aMonth = parseInt(parts[1]);
+            }
+            if (!aYear || !aMonth) return false;
+            return (aYear < currentYear) || (aYear === currentYear && aMonth < currentMonth);
+          })
+          .reduce((s, a) => s + (a.percentage || 0), 0);
+        return sum + contractVal - (contractVal * pastAllocPct / 100);
+      }, 0);
 
     // Sum precon pipeline expected construction budgets
     const preconPipelineValue = sales
