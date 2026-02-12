@@ -401,9 +401,13 @@ export default function Projects() {
       client_id: projectForm.client_id || selectedProject.client_id
     };
     
-    // Always save allocations if they exist (even if schedule panel is hidden)
+    // Always replace the full allocation array — this prevents orphaned entries from accumulating
     if (monthlyAllocations.length > 0) {
-      updateData.monthly_revenue_allocations = monthlyAllocations.filter(a => parseFloat(a.percentage) > 0);
+      updateData.monthly_revenue_allocations = monthlyAllocations
+        .filter(a => a.year && a.month && parseFloat(a.percentage) > 0)
+        .map(a => ({ year: a.year, month: a.month, percentage: a.percentage }));
+    } else {
+      updateData.monthly_revenue_allocations = [];
     }
     
     updateProjectStatusMutation.mutate(updateData);
