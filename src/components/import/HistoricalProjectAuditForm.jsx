@@ -151,7 +151,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             
             // Set sale status history with all default phases if empty
             const saleHistory = sale.phase_history && sale.phase_history.length > 0 
-                ? sale.phase_history 
+                ? sale.phase_history.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
                 : [
                     { status: 'feasibility', entered_date: '' },
                     { status: 'design_material_selections', entered_date: '' },
