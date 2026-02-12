@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Search, Users, Mail, Phone, MapPin, Target, ArrowRight, Archive, MoreVertical } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import EmptyState from '../components/common/EmptyState';
+import LeadSourcePicker from '../components/common/LeadSourcePicker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -548,18 +549,10 @@ export default function Clients() {
             </div>
             <div>
               <Label>Source</Label>
-              <select
+              <LeadSourcePicker
                 value={leadForm.source}
-                onChange={(e) => setLeadForm({...leadForm, source: e.target.value})}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="referral">Referral</option>
-                <option value="website">Website</option>
-                <option value="cold_call">Cold Call</option>
-                <option value="networking">Networking</option>
-                <option value="advertisement">Advertisement</option>
-                <option value="other">Other</option>
-              </select>
+                onChange={(val) => setLeadForm({...leadForm, source: val})}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
