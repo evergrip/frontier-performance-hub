@@ -68,9 +68,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         user.departments?.includes('sales')
     );
 
-    const [leadStatusHistory, setLeadStatusHistory] = useState([]);
-    const [saleStatusHistory, setSaleStatusHistory] = useState([]);
-    const [projectStatusHistory, setProjectStatusHistory] = useState([]);
+    const [unifiedTimeline, setUnifiedTimeline] = useState([]);
     const [relatedCommissions, setRelatedCommissions] = useState([]);
 
     const { register, handleSubmit, setValue, reset, watch } = useForm();
