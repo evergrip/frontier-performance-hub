@@ -382,9 +382,9 @@ export default function Projects() {
     const projectId = draggableId;
     const project = projects.find(p => p.id === projectId);
     
-    // Build status history
+    // Build status history — tag with source: 'project'
     const currentHistory = project?.status_history || [];
-    const newHistory = [...currentHistory, { status: newStatus, entered_date: new Date().toISOString() }];
+    const newHistory = [...currentHistory, { status: newStatus, entered_date: new Date().toISOString(), source: 'project' }];
 
     // Generate random color when moving away from awaiting_to_be_scheduled
     const updates = { status: newStatus, status_history: newHistory };
