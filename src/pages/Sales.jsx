@@ -615,7 +615,7 @@ export default function Sales() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-emerald-600">${(totalValue / 1000000).toFixed(1)}M</div>
+            <div className="text-2xl font-bold text-emerald-600">${totalValue.toLocaleString()}</div>
             <div className="text-sm text-slate-500">Pipeline Value</div>
           </CardContent>
         </Card>

@@ -268,11 +268,19 @@ export default function Leads() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-slate-900">{activeLeads.length}</div>
             <div className="text-sm text-slate-500">Active Leads</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-emerald-600">
+              ${activeLeads.reduce((sum, l) => sum + (l.estimated_construction_value || 0), 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-slate-500">Pipeline Value</div>
           </CardContent>
         </Card>
         <Card>
