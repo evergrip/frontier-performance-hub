@@ -70,6 +70,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
 
     const [unifiedTimeline, setUnifiedTimeline] = useState([]);
     const [relatedCommissions, setRelatedCommissions] = useState([]);
+    const [monthlyAllocations, setMonthlyAllocations] = useState([]);
 
     const { register, handleSubmit, setValue, reset, watch } = useForm();
 
@@ -148,6 +149,19 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('crew_assignment', project.crew_assignment || 'crew_a');
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
+
+            // Load monthly revenue allocations
+            if (project.monthly_revenue_allocations?.length > 0) {
+                setMonthlyAllocations(project.monthly_revenue_allocations.map(a => ({
+                    year: a.year || (a.period ? parseInt(a.period.split('-')[0]) : ''),
+                    month: a.month || (a.period ? parseInt(a.period.split('-')[1]) : ''),
+                    percentage: a.percentage || 0
+                })));
+            } else {
+                setMonthlyAllocations([]);
+            }
+        } else {
+            setMonthlyAllocations([]);
         }
 
         // Build unified timeline from all sources
