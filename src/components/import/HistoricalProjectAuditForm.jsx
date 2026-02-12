@@ -129,7 +129,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         
         // Set lead status history with all default phases if empty
         const leadHistory = lead.status_history && lead.status_history.length > 0 
-            ? lead.status_history 
+            ? lead.status_history.map(h => ({ ...h, entered_date: toDatetimeLocal(h.entered_date) }))
             : [
                 { status: 'new_project_lead', entered_date: '' },
                 { status: 'initial_video_consult', entered_date: '' },
