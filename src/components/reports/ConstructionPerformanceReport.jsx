@@ -99,11 +99,14 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
     }).filter(Boolean);
     const avgDuration = durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
 
-    // Budget variance
-    const varianceProjects = closedInRange.filter(p => p.contract_value && p.actual_costs);
+    // Budget variance using margin-aware costs
+    const varianceProjects = closedInRange.filter(p => p.contract_value);
     const avgVariance = varianceProjects.length > 0
       ? varianceProjects.reduce((sum, p) => {
-          const variance = ((p.actual_costs - p.contract_value) / p.contract_value) * 100;
+          const trueCost = (p.actual_margin != null && p.actual_margin > 0)
+            ? p.contract_value * (1 - p.actual_margin / 100)
+            : (p.actual_costs || 0);
+          const variance = ((trueCost - p.contract_value) / p.contract_value) * 100;
           return sum + variance;
         }, 0) / varianceProjects.length
       : 0;
