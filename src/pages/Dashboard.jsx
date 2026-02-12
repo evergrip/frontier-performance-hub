@@ -662,6 +662,20 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* Metric Drilldown Dialog */}
+      <MetricDrilldownDialog
+        open={!!drilldownMetric}
+        onOpenChange={(open) => !open && setDrilldownMetric(null)}
+        metricKey={drilldownMetric}
+        sales={sales}
+        projects={projects}
+        leads={leads}
+        clients={[]}
+        dateRange={dateRange}
+        getSaleEffectiveDate={getSaleEffectiveDate}
+        getProjectEffectiveDate={getProjectEffectiveDate}
+      />
+
       {/* Customize Dialog */}
       <Dialog open={customizeDialogOpen} onOpenChange={setCustomizeDialogOpen}>
         <DialogContent className="max-w-2xl">
