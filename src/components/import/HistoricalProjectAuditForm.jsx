@@ -664,13 +664,21 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                     <Label>Project Title *</Label>
                                     <Input {...register('project_title')} placeholder="e.g., Main Project - Basement Renovation" required />
                                 </div>
-                                <div>
-                                    <Label>Actual Costs *</Label>
-                                    <Input {...register('actual_costs')} type="number" placeholder="130000" required />
+                                <div className="relative">
+                                    <Label className="flex items-center gap-1.5">
+                                        <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Actual Costs *</span>
+                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
+                                    </Label>
+                                    <Input {...register('actual_costs')} type="number" placeholder="130000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
-                                <div>
-                                    <Label>Actual Margin (%) *</Label>
-                                    <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required />
+                                <div className="relative">
+                                    <Label className="flex items-center gap-1.5">
+                                        <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Actual Margin (%) *</span>
+                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
+                                    </Label>
+                                    <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
