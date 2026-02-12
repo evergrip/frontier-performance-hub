@@ -638,7 +638,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                         <span>Contract Value *</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
                                     </Label>
-                                    <Input {...register('contract_value')} type="number" placeholder="150000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('contract_value')} type="number" step="0.01" placeholder="150000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div>
                                     <Label>Estimated Margin (%)</Label>
