@@ -252,9 +252,8 @@ export default function Projects() {
         return slots;
       };
       
-      const existingAllocs = project.monthly_revenue_allocations || [];
-      // Check if existing allocations have proper year/month fields
-      const hasProperFields = existingAllocs.length > 0 && existingAllocs.every(a => a.year && a.month);
+      const existingAllocs = (project.monthly_revenue_allocations || []).filter(a => a.year && a.month);
+      const hasProperFields = existingAllocs.length > 0;
       
       if (hasProperFields) {
         // Merge existing allocations into fiscal year slots
