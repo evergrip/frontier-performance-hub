@@ -957,9 +957,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         <Button type="button" variant="outline" onClick={() => {
                             setSelectedLeadId(null);
                             reset();
-                            setLeadStatusHistory([]);
-                            setSaleStatusHistory([]);
-                            setProjectStatusHistory([]);
+                            setUnifiedTimeline([]);
                         }}>
                             Clear Selection
                         </Button>
