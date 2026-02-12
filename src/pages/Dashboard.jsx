@@ -192,10 +192,17 @@ export default function Dashboard() {
           aMonth = parseInt(parts[1]);
         }
         if (!aYear || !aMonth) return false; // skip allocations without valid dates
-        // Only include months strictly before the current month
-        if (aYear < currentYear) return true;
-        if (aYear === currentYear && aMonth < currentMonth) return true;
-        return false;
+        
+        // Must be strictly before the current month
+        const isPast = (aYear < currentYear) || (aYear === currentYear && aMonth < currentMonth);
+        if (!isPast) return false;
+        
+        // Must fall within the selected date range
+        if (dateRange.start && dateRange.end) {
+          const allocDate = new Date(aYear, aMonth - 1, 1); // first of allocation month
+          if (allocDate < dateRange.start || allocDate > dateRange.end) return false;
+        }
+        return true;
       });
       const pastPercent = pastAllocations.reduce((s, a) => s + (a.percentage || 0), 0);
       return sum + (revenueBase * pastPercent / 100);

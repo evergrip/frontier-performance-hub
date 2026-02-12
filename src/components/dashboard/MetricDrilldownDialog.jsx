@@ -38,7 +38,7 @@ export default function MetricDrilldownDialog({
           })
           .sort((a, b) => new Date(b.actual_completion_date || b.created_date) - new Date(a.actual_completion_date || a.created_date));
 
-        // Active projects with recognized revenue from past months
+        // Active projects with recognized revenue from past months within the date range
         const activeWithRevenue = projects
           .filter(p => 
             p.project_type === 'construction' && 
@@ -56,9 +56,17 @@ export default function MetricDrilldownDialog({
                 aMonth = parseInt(parts[1]);
               }
               if (!aYear || !aMonth) return false;
-              if (aYear < currentYear) return true;
-              if (aYear === currentYear && aMonth < currentMonth) return true;
-              return false;
+              
+              // Must be strictly before the current month
+              const isPast = (aYear < currentYear) || (aYear === currentYear && aMonth < currentMonth);
+              if (!isPast) return false;
+              
+              // Must fall within the selected date range
+              if (dateRange.start && dateRange.end) {
+                const allocDate = new Date(aYear, aMonth - 1, 1);
+                if (allocDate < dateRange.start || allocDate > dateRange.end) return false;
+              }
+              return true;
             });
             const pastPercent = pastAllocations.reduce((s, a) => s + (a.percentage || 0), 0);
             const recognizedRevenue = revenueBase * pastPercent / 100;
