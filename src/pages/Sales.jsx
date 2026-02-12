@@ -486,7 +486,8 @@ export default function Sales() {
       // Reopen the lead at the target phase
       const leadHistory = [...(lead.status_history || []), {
         status: targetPhase,
-        entered_date: new Date().toISOString()
+        entered_date: new Date().toISOString(),
+        source: 'lead'
       }];
       await base44.entities.Lead.update(lead.id, {
         status: targetPhase,
