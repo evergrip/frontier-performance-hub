@@ -119,9 +119,21 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
   // Project-level detail table for closed projects
   const closedProjectDetails = useMemo(() => {
     return closedInRange.map(p => {
-      const variance = p.contract_value ? ((p.actual_costs || 0) - p.contract_value) / p.contract_value * 100 : 0;
-      const margin = p.contract_value ? ((p.contract_value - (p.actual_costs || 0)) / p.contract_value) * 100 : 0;
-      return { ...p, variance, margin };
+      // Use actual_margin field if available (historical imports have actual_costs === contract_value)
+      let margin;
+      if (p.actual_margin != null && p.actual_margin > 0) {
+        margin = p.actual_margin;
+      } else if (p.contract_value && p.actual_costs && p.actual_costs !== p.contract_value) {
+        margin = ((p.contract_value - p.actual_costs) / p.contract_value) * 100;
+      } else {
+        margin = 0;
+      }
+      
+      // Calculate true cost and variance using margin
+      const trueCost = p.contract_value ? p.contract_value * (1 - margin / 100) : 0;
+      const variance = p.contract_value ? ((trueCost - p.contract_value) / p.contract_value) * 100 : 0;
+      
+      return { ...p, variance, margin, trueCost };
     }).sort((a, b) => (b.contract_value || 0) - (a.contract_value || 0));
   }, [closedInRange]);
 
