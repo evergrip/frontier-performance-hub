@@ -251,11 +251,33 @@ export default function Dashboard() {
     const fiscalYearEnd = new Date(fiscalYear, fiscalYearStartMonth - 1, 0);
     const monthsLeftInYear = Math.max(0, (fiscalYearEnd.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
     
-    // Use current year capacity for remaining months, then next year capacity
-    const currentYearMonthlyCapacity = currentFiscalGoal.revenue_target / 12;
-    const nextYearMonthlyCapacity = settings.next_year_revenue_target 
-      ? settings.next_year_revenue_target / 12 
-      : currentYearMonthlyCapacity;
+    // Determine monthly capacity from schedule or fallback to annual target / 12
+    const capacitySchedule = (settings.monthly_capacity_schedule || [])
+      .filter(e => e.effective_year && e.effective_month && e.monthly_capacity)
+      .sort((a, b) => a.effective_year !== b.effective_year 
+        ? a.effective_year - b.effective_year 
+        : a.effective_month - b.effective_month);
+
+    const getCapacityForMonth = (year, month) => {
+      // Find the most recent entry on or before this month
+      let capacity = null;
+      for (const entry of capacitySchedule) {
+        if (entry.effective_year < year || (entry.effective_year === year && entry.effective_month <= month)) {
+          capacity = entry.monthly_capacity;
+        }
+      }
+      return capacity;
+    };
+
+    const currentCapacity = getCapacityForMonth(currentDate.getFullYear(), currentDate.getMonth() + 1);
+    const currentYearMonthlyCapacity = currentCapacity || (currentFiscalGoal.revenue_target / 12);
+    
+    // For next year, check if there's a future schedule entry, else fall back
+    const nextYearCapacity = getCapacityForMonth(currentDate.getFullYear() + 1, 1);
+    const nextYearMonthlyCapacity = nextYearCapacity 
+      || (settings.next_year_revenue_target ? settings.next_year_revenue_target / 12 : currentYearMonthlyCapacity);
+    
+    const hasManualCapacity = !!currentCapacity;
 
     // Sum active construction projects (not closed), minus already-recognized revenue
     const activeProjectsValue = projects
@@ -312,7 +334,8 @@ export default function Dashboard() {
       preconPipelineValue,
       totalPipeline,
       monthsOfBacklog,
-      usingGrowthForecast: !!settings.next_year_revenue_target
+      usingGrowthForecast: !!settings.next_year_revenue_target || !!nextYearCapacity,
+      hasManualCapacity
     };
   }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth, currentYear, currentMonth]);
 
@@ -598,7 +621,7 @@ export default function Dashboard() {
                   ${(capacityForecast.monthlyCapacity / 1000).toFixed(0)}K
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
-                  Current year
+                  {capacityForecast.hasManualCapacity ? 'Manual override' : 'From annual target'}
                   {capacityForecast.usingGrowthForecast && (
                     <> · Next: ${(capacityForecast.nextYearMonthlyCapacity / 1000).toFixed(0)}K</>
                   )}

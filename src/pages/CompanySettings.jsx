@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building2, Save, TrendingUp, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import MonthlyCapacitySchedule from '../components/admin/MonthlyCapacitySchedule';
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
@@ -334,6 +335,12 @@ export default function CompanySettings() {
           </form>
         </CardContent>
       </Card>
+
+      <MonthlyCapacitySchedule
+        settings={settings[0] || {}}
+        settingsId={settingsId}
+        onSave={(data) => saveSettingsMutation.mutate(data)}
+      />
 
       <Card>
         <CardHeader>
