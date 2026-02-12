@@ -183,9 +183,18 @@ export default function Dashboard() {
     .reduce((sum, p) => {
       const revenueBase = p.actual_costs || p.contract_value || 0;
       const pastAllocations = (p.monthly_revenue_allocations || []).filter(a => {
+        // Parse year/month from either direct fields or period string
+        let aYear = a.year;
+        let aMonth = a.month;
+        if (!aYear && a.period) {
+          const parts = a.period.split('-');
+          aYear = parseInt(parts[0]);
+          aMonth = parseInt(parts[1]);
+        }
+        if (!aYear || !aMonth) return false; // skip allocations without valid dates
         // Only include months strictly before the current month
-        if (a.year < currentYear) return true;
-        if (a.year === currentYear && a.month < currentMonth) return true;
+        if (aYear < currentYear) return true;
+        if (aYear === currentYear && aMonth < currentMonth) return true;
         return false;
       });
       const pastPercent = pastAllocations.reduce((s, a) => s + (a.percentage || 0), 0);
