@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [fiscalYear, setFiscalYear] = useState(new Date().getFullYear());
 
+  const [drilldownMetric, setDrilldownMetric] = useState(null);
+
   const [visibleMetrics, setVisibleMetrics] = useState({
     totalRevenue: true,
     activeProjects: true,
