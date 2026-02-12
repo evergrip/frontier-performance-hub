@@ -401,11 +401,12 @@ export default function Projects() {
       client_id: projectForm.client_id || selectedProject.client_id
     };
     
-    // Always replace the full allocation array — this prevents orphaned entries from accumulating
+    // Always replace the full allocation array with clean objects
     if (monthlyAllocations.length > 0) {
-      updateData.monthly_revenue_allocations = monthlyAllocations
+      const cleanAllocations = monthlyAllocations
         .filter(a => a.year && a.month && parseFloat(a.percentage) > 0)
-        .map(a => ({ year: a.year, month: a.month, percentage: a.percentage }));
+        .map(a => ({ year: Number(a.year), month: Number(a.month), period: `${a.year}-${String(a.month).padStart(2, '0')}`, percentage: Number(a.percentage) }));
+      updateData.monthly_revenue_allocations = cleanAllocations;
     } else {
       updateData.monthly_revenue_allocations = [];
     }
