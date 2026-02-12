@@ -341,6 +341,7 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                     <TableHead className="text-right">Contract</TableHead>
                     <TableHead className="text-right">Actual Cost</TableHead>
                     <TableHead className="text-right">Margin</TableHead>
+                    <TableHead className="text-right">Est. Margin</TableHead>
                     <TableHead className="text-right">Variance</TableHead>
                   </TableRow>
                 </TableHeader>
