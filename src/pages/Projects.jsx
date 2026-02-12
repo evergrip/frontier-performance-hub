@@ -188,14 +188,19 @@ export default function Projects() {
     });
     
     // Determine current fiscal year based on company settings
+    // FY convention: fiscalYear = the calendar year in which the FY ENDS
+    // e.g. FY 2026 = Oct 2025 – Sep 2026
     const now = new Date();
-    const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1; // Default to January
+    const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
     
-    // If we're before the fiscal year start month, we're in the previous fiscal year
-    const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear : currentYear - 1;
-    setSelectedFiscalYear(currentFiscalYear);
+    // If we're on or after the fiscal start month, the FY ends next calendar year
+    // If we're before the fiscal start month, the FY ends this calendar year
+    const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear;
+    // Special case: if fiscal year starts in January, FY ends same year
+    const adjustedFiscalYear = fiscalStartMonth === 1 ? currentYear : currentFiscalYear;
+    setSelectedFiscalYear(adjustedFiscalYear);
     
     // Initialize monthly allocations for the current fiscal year
     const allocations = [];
