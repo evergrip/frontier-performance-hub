@@ -157,7 +157,7 @@ export default function Dashboard() {
     return leadDate >= dateRange.start && leadDate <= dateRange.end;
   });
 
-  // Calculate metrics - closed jobs only
+  // Calculate metrics
   const closedSales = filteredSales.filter(s => s.status === 'closed_won');
   const closedProjects = filteredProjects.filter(p => p.status === 'closed');
   
@@ -165,9 +165,34 @@ export default function Dashboard() {
   const preconRevenue = closedSales.filter(s => s.sale_type === 'preconstruction').reduce((sum, s) => sum + (s.contract_value || 0), 0);
   
   // Construction revenue = from closed PROJECT records (actual_costs if available, else contract_value)
-  const constructionRevenue = closedProjects
+  const closedConstructionRevenue = closedProjects
     .filter(p => p.project_type === 'construction')
     .reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+
+  // Recognized revenue from active/closeout projects — only past months count
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12
+  
+  const activeRecognizedRevenue = projects
+    .filter(p => 
+      p.project_type === 'construction' && 
+      ['active_construction', 'substantial_completion_closeout'].includes(p.status) &&
+      p.monthly_revenue_allocations?.length > 0
+    )
+    .reduce((sum, p) => {
+      const revenueBase = p.actual_costs || p.contract_value || 0;
+      const pastAllocations = (p.monthly_revenue_allocations || []).filter(a => {
+        // Only include months strictly before the current month
+        if (a.year < currentYear) return true;
+        if (a.year === currentYear && a.month < currentMonth) return true;
+        return false;
+      });
+      const pastPercent = pastAllocations.reduce((s, a) => s + (a.percentage || 0), 0);
+      return sum + (revenueBase * pastPercent / 100);
+    }, 0);
+
+  const constructionRevenue = closedConstructionRevenue + activeRecognizedRevenue;
   
   // Total revenue = precon fees + construction revenue
   const totalRevenue = preconRevenue + constructionRevenue;
