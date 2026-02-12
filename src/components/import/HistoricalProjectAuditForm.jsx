@@ -770,11 +770,15 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                     const src = item.source || getSourceForStatus(item.status);
                                     const srcStyle = sourceLabels[src] || sourceLabels.project;
                                     const borderStyle = sourceColors[src] || sourceColors.project;
+                                    const isRevenueKey = revenueKeyStatuses.has(item.status);
                                     return (
-                                        <div key={index} className={`flex gap-2 items-center p-2 rounded-lg border ${borderStyle}`}>
+                                        <div key={index} className={`flex gap-2 items-center p-2 rounded-lg border ${isRevenueKey ? 'bg-amber-50 border-amber-300 ring-1 ring-amber-200' : borderStyle}`}>
                                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${srcStyle.badge}`}>
                                                 {srcStyle.text}
                                             </span>
+                                            {isRevenueKey && (
+                                                <DollarSign className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                            )}
                                             <Select 
                                                 value={item.status}
                                                 onValueChange={(value) => {
