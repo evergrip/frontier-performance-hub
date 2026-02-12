@@ -109,7 +109,8 @@ export default function Leads() {
         ...statusHistory,
         {
           status: 'disqualified',
-          entered_date: new Date().toISOString()
+          entered_date: new Date().toISOString(),
+          source: 'lead'
         }
       ];
       return base44.entities.Lead.update(leadId, { 
