@@ -997,7 +997,7 @@ export default function Projects() {
             {selectedProject && ['mobilization', 'active_construction', 'substantial_completion_closeout'].includes(selectedProject.status) && (
               <div className="border-t pt-4 mt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Label>Revenue Forecast</Label>
+                  <Label>Revenue Allocation</Label>
                   <Button
                     type="button"
                     variant="outline"
@@ -1007,8 +1007,25 @@ export default function Projects() {
                     {allocationDialogOpen ? 'Hide' : 'Edit'} Schedule
                   </Button>
                 </div>
+                {(!selectedProject.monthly_revenue_allocations || selectedProject.monthly_revenue_allocations.length === 0) ? (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-3">
+                    <p className="text-xs text-amber-800 font-medium">No revenue allocated yet</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Allocate monthly percentages so this project's revenue appears in reports before closeout.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg mb-3">
+                    <p className="text-xs text-emerald-800 font-medium">
+                      {selectedProject.monthly_revenue_allocations.reduce((sum, a) => sum + (a.percentage || 0), 0).toFixed(1)}% allocated across {selectedProject.monthly_revenue_allocations.filter(a => a.percentage > 0).length} months
+                    </p>
+                    <p className="text-xs text-emerald-700 mt-1">
+                      Revenue: ${(((parseFloat(projectForm.actual_costs) || 0) * selectedProject.monthly_revenue_allocations.reduce((sum, a) => sum + (a.percentage || 0), 0) / 100)).toLocaleString(undefined, {maximumFractionDigits: 0})} of ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} recognized
+                    </p>
+                  </div>
+                )}
                 <p className="text-xs text-slate-500 mb-3">
-                  Adjust monthly revenue forecast for ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()}. Flexible until project closeout.
+                  Distribute revenue across months for reporting. Update anytime — finalized at closeout.
                 </p>
                 
                 {allocationDialogOpen && (
