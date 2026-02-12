@@ -108,17 +108,38 @@ export default function Dashboard() {
 
   const dateRange = getDateRange();
 
+  // Helper: get effective date for a sale using phase_history dates
+  const getSaleEffectiveDate = (sale) => {
+    const history = sale.phase_history || [];
+    if (history.length > 0) {
+      // Use the first phase_history entry as when it entered the pipeline
+      return new Date(history[0].entered_date);
+    }
+    if (sale.close_date) return new Date(sale.close_date);
+    return new Date(sale.created_date);
+  };
+
+  // Helper: get effective date for a project using status_history dates
+  const getProjectEffectiveDate = (project) => {
+    const history = project.status_history || [];
+    // Find when the project entered construction (awaiting_to_be_scheduled)
+    const constructionEntry = history.find(h => h.status === 'awaiting_to_be_scheduled');
+    if (constructionEntry) return new Date(constructionEntry.entered_date);
+    if (history.length > 0) return new Date(history[0].entered_date);
+    if (project.start_date) return new Date(project.start_date);
+    return new Date(project.created_date);
+  };
+
   const filteredSales = sales.filter(sale => {
     if (!dateRange.start || !dateRange.end) return true;
-    if (!sale.close_date) return false;
-    const closeDate = new Date(sale.close_date);
-    return closeDate >= dateRange.start && closeDate <= dateRange.end;
+    const effectiveDate = getSaleEffectiveDate(sale);
+    return effectiveDate >= dateRange.start && effectiveDate <= dateRange.end;
   });
 
   const filteredProjects = projects.filter(project => {
     if (!dateRange.start || !dateRange.end) return true;
-    const projectDate = project.start_date ? new Date(project.start_date) : new Date(project.created_date);
-    return projectDate >= dateRange.start && projectDate <= dateRange.end;
+    const effectiveDate = getProjectEffectiveDate(project);
+    return effectiveDate >= dateRange.start && effectiveDate <= dateRange.end;
   });
 
   const filteredLeads = leads.filter(lead => {
