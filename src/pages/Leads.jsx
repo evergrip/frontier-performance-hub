@@ -129,7 +129,7 @@ export default function Leads() {
 
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);
-    return client?.company_name || 'Unknown Client';
+    return client?.company_name || client?.contact_name || 'Unknown Client';
   };
 
   const openSaleDialog = (lead) => {
