@@ -347,7 +347,7 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                       <TableCell className="text-sm text-slate-600">{getClientName(p.client_id)}</TableCell>
                       <TableCell className="text-sm text-slate-600">{getPMName(p.project_manager_id)}</TableCell>
                       <TableCell className="text-right">${Math.round(p.contract_value || 0).toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${Math.round(p.actual_costs || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">${Math.round(p.trueCost || 0).toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <span className={p.margin >= 20 ? 'text-emerald-600 font-semibold' : p.margin >= 10 ? 'text-amber-600 font-semibold' : 'text-red-600 font-semibold'}>
                           {p.margin.toFixed(1)}%
