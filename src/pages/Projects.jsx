@@ -330,9 +330,13 @@ export default function Projects() {
       }
     }
     
+    // Add 'closed' to status_history
+    const closedHistory = [...(selectedProject.status_history || []), { status: 'closed', entered_date: new Date().toISOString(), source: 'project' }];
+
     updateProjectStatusMutation.mutate({
       projectId: selectedProject.id,
       status: 'closed',
+      status_history: closedHistory,
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0,
       monthly_revenue_allocations: monthlyAllocations.filter(a => parseFloat(a.percentage) > 0),
