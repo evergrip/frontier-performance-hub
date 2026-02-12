@@ -425,7 +425,7 @@ export default function Dashboard() {
             title="Construction Revenue"
             value={`$${(constructionRevenue / 1000).toFixed(0)}K`}
             icon={Building2}
-            subtitle={`${closedSales.filter(s => s.sale_type === 'construction').length} closed construction sales`}
+            subtitle={`${closedProjects.filter(p => p.project_type === 'construction').length} closed construction projects`}
           />
         )}
         {visibleMetrics.activeProjects && (
