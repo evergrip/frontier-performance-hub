@@ -12,6 +12,8 @@ import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, en
 import { getFiscalYearDates } from '../components/utils/fiscalYear';
 import SalesReport from '../components/reports/SalesReport';
 import PreConstructionReport from '../components/reports/PreConstructionReport';
+import ConstructionPerformanceReport from '../components/reports/ConstructionPerformanceReport';
+import CompanyPerformanceReport from '../components/reports/CompanyPerformanceReport';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('sales');
