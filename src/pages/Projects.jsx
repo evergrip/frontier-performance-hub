@@ -1150,8 +1150,8 @@ export default function Projects() {
                   const allocations = [];
                   for (let i = 0; i < 12; i++) {
                     const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
-                    const year = month < fiscalStartMonth ? newFiscalYear + 1 : newFiscalYear;
-                    allocations.push({ year, month, percentage: 0 });
+                    const yr = fiscalStartMonth === 1 ? newFiscalYear : (month >= fiscalStartMonth ? newFiscalYear - 1 : newFiscalYear);
+                    allocations.push({ year: yr, month, percentage: 0 });
                   }
                   setMonthlyAllocations(allocations);
                 }}
