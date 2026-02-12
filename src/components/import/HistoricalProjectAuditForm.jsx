@@ -225,28 +225,51 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         onSuccess: () => queryClient.invalidateQueries(['commissionTransactions'])
     });
 
-    const addLeadStatus = () => {
-        setLeadStatusHistory([...leadStatusHistory, { status: 'initial_video_consult', entered_date: '' }]);
+    const allStatuses = [
+        { value: 'new_project_lead', label: 'New Project Lead', source: 'lead' },
+        { value: 'initial_video_consult', label: 'Video Consult', source: 'lead' },
+        { value: 'initial_inperson_consultation', label: 'In-Person Consult', source: 'lead' },
+        { value: 'preconstruction_proposal', label: 'Proposal', source: 'lead' },
+        { value: 'followup', label: 'Follow-up', source: 'lead' },
+        { value: 'converted', label: 'Converted', source: 'lead' },
+        { value: 'disqualified', label: 'Disqualified', source: 'lead' },
+        { value: 'feasibility', label: 'Feasibility', source: 'sale' },
+        { value: 'design_material_selections', label: 'Design & Materials', source: 'sale' },
+        { value: 'engineering_permits', label: 'Engineering & Permits', source: 'sale' },
+        { value: 'pending_construction_sale', label: 'Pending Construction', source: 'sale' },
+        { value: 'closed_won', label: 'Closed Won', source: 'sale' },
+        { value: 'closed_lost', label: 'Closed Lost', source: 'sale' },
+        { value: 'awaiting_to_be_scheduled', label: 'Awaiting to be Scheduled', source: 'project' },
+        { value: 'mobilization', label: 'Mobilization', source: 'project' },
+        { value: 'active_construction', label: 'Active Construction', source: 'project' },
+        { value: 'substantial_completion_closeout', label: 'Substantial Completion/Closeout', source: 'project' },
+        { value: 'closed', label: 'Closed', source: 'project' },
+    ];
+
+    const getSourceForStatus = (statusValue) => {
+        const found = allStatuses.find(s => s.value === statusValue);
+        return found ? found.source : 'project';
     };
 
-    const removeLeadStatus = (index) => {
-        setLeadStatusHistory(leadStatusHistory.filter((_, i) => i !== index));
+    const sourceColors = {
+        lead: 'bg-blue-50 border-blue-200',
+        sale: 'bg-purple-50 border-purple-200',
+        project: 'bg-green-50 border-green-200',
     };
 
-    const addSaleStatus = () => {
-        setSaleStatusHistory([...saleStatusHistory, { status: 'design_material_selections', entered_date: '' }]);
+    const sourceLabels = {
+        lead: { text: 'Lead', badge: 'bg-blue-100 text-blue-700' },
+        sale: { text: 'Pre-Con', badge: 'bg-purple-100 text-purple-700' },
+        project: { text: 'Construction', badge: 'bg-green-100 text-green-700' },
     };
 
-    const removeSaleStatus = (index) => {
-        setSaleStatusHistory(saleStatusHistory.filter((_, i) => i !== index));
+    const addTimelineEntry = () => {
+        setUnifiedTimeline([...unifiedTimeline, { status: 'new_project_lead', entered_date: '', source: 'lead' }]);
     };
 
-    const addProjectStatus = () => {
-        setProjectStatusHistory([...projectStatusHistory, { status: 'awaiting_to_be_scheduled', entered_date: '' }]);
-    };
-
-    const removeProjectStatus = (index) => {
-        setProjectStatusHistory(projectStatusHistory.filter((_, i) => i !== index));
+    const removeTimelineEntry = (index) => {
+        if (unifiedTimeline.length <= 1) return;
+        setUnifiedTimeline(unifiedTimeline.filter((_, i) => i !== index));
     };
 
     const onSubmit = async (data) => {
