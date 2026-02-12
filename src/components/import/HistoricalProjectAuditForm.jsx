@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Plus, Trash2, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
