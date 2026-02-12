@@ -705,7 +705,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                         <span>Actual Costs *</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
                                     </Label>
-                                    <Input {...register('actual_costs')} type="number" placeholder="130000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('actual_costs')} type="number" step="0.01" placeholder="130000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
