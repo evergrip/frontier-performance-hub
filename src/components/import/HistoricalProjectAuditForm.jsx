@@ -570,57 +570,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 <Label>Lead Notes</Label>
                                 <Textarea {...register('lead_notes')} placeholder="Any lead-specific notes" rows={2} />
                             </div>
-                            
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <Label>Lead Status History</Label>
-                                    <Button type="button" variant="outline" size="sm" onClick={addLeadStatus}>
-                                        <Plus className="w-4 h-4 mr-1" /> Add Status
-                                    </Button>
-                                </div>
-                                <div className="space-y-2">
-                                    {leadStatusHistory.map((item, index) => (
-                                        <div key={index} className="flex gap-2">
-                                            <Select 
-                                                value={item.status}
-                                                onValueChange={(value) => {
-                                                    const updated = [...leadStatusHistory];
-                                                    updated[index].status = value;
-                                                    setLeadStatusHistory(updated);
-                                                }}
-                                            >
-                                                <SelectTrigger className="flex-1">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="new_project_lead">New Project Lead</SelectItem>
-                                                    <SelectItem value="initial_video_consult">Initial Video Consult</SelectItem>
-                                                    <SelectItem value="initial_inperson_consultation">Initial In-Person Consultation</SelectItem>
-                                                    <SelectItem value="preconstruction_proposal">Preconstruction Proposal</SelectItem>
-                                                    <SelectItem value="followup">Follow-up</SelectItem>
-                                                    <SelectItem value="converted">Converted</SelectItem>
-                                                    <SelectItem value="disqualified">Disqualified</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Input 
-                                                type="datetime-local"
-                                                value={item.entered_date}
-                                                onChange={(e) => {
-                                                    const updated = [...leadStatusHistory];
-                                                    updated[index].entered_date = e.target.value;
-                                                    setLeadStatusHistory(updated);
-                                                }}
-                                                className="flex-1"
-                                            />
-                                            {leadStatusHistory.length > 1 && (
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeLeadStatus(index)}>
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
 
