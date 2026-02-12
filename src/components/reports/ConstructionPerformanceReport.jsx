@@ -288,9 +288,9 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-sm text-slate-600">Avg Budget Variance</p>
-            <p className={`text-3xl font-bold ${kpis.avgVariance <= 0 ? 'text-emerald-600' : kpis.avgVariance <= 5 ? 'text-amber-600' : 'text-red-600'}`}>
-              {kpis.avgVariance > 0 ? '+' : ''}{kpis.avgVariance.toFixed(1)}%
+            <p className="text-sm text-slate-600">Avg Margin Variance</p>
+            <p className={`text-3xl font-bold ${kpis.avgVariance == null ? 'text-slate-400' : kpis.avgVariance >= 0 ? 'text-emerald-600' : Math.abs(kpis.avgVariance) <= 5 ? 'text-amber-600' : 'text-red-600'}`}>
+              {kpis.avgVariance != null ? `${kpis.avgVariance > 0 ? '+' : ''}${kpis.avgVariance.toFixed(1)}%` : '—'}
             </p>
           </CardContent>
         </Card>
