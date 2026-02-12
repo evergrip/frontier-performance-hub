@@ -25,6 +25,10 @@ export default function MetricDrilldownDialog({
   const config = useMemo(() => {
     switch (metricKey) {
       case 'constructionRevenue': {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+
         const closedConstruction = projects
           .filter(p => p.project_type === 'construction' && p.status === 'closed')
           .filter(p => {
@@ -33,6 +37,37 @@ export default function MetricDrilldownDialog({
             return d >= dateRange.start && d <= dateRange.end;
           })
           .sort((a, b) => new Date(b.actual_completion_date || b.created_date) - new Date(a.actual_completion_date || a.created_date));
+
+        // Active projects with recognized revenue from past months
+        const activeWithRevenue = projects
+          .filter(p => 
+            p.project_type === 'construction' && 
+            ['active_construction', 'substantial_completion_closeout'].includes(p.status) &&
+            p.monthly_revenue_allocations?.length > 0
+          )
+          .map(p => {
+            const revenueBase = p.actual_costs || p.contract_value || 0;
+            const pastAllocations = (p.monthly_revenue_allocations || []).filter(a => {
+              let aYear = a.year;
+              let aMonth = a.month;
+              if (!aYear && a.period) {
+                const parts = a.period.split('-');
+                aYear = parseInt(parts[0]);
+                aMonth = parseInt(parts[1]);
+              }
+              if (!aYear || !aMonth) return false;
+              if (aYear < currentYear) return true;
+              if (aYear === currentYear && aMonth < currentMonth) return true;
+              return false;
+            });
+            const pastPercent = pastAllocations.reduce((s, a) => s + (a.percentage || 0), 0);
+            const recognizedRevenue = revenueBase * pastPercent / 100;
+            return { ...p, _recognizedRevenue: recognizedRevenue, _recognizedPercent: pastPercent };
+          })
+          .filter(p => p._recognizedRevenue > 0);
+
+        const closedTotal = closedConstruction.reduce((s, p) => s + (p.actual_costs || p.contract_value || 0), 0);
+        const activeTotal = activeWithRevenue.reduce((s, p) => s + p._recognizedRevenue, 0);
 
         const monthlyData = dateRange.start && dateRange.end ? eachMonthOfInterval({ start: dateRange.start, end: dateRange.end }).map(month => {
           const mStart = startOfMonth(month);
@@ -43,21 +78,41 @@ export default function MetricDrilldownDialog({
           return { month: format(month, 'MMM yy'), revenue: monthRevenue / 1000 };
         }) : [];
 
+        // Combine closed and active items with a _source tag
+        const allItems = [
+          ...closedConstruction.map(p => ({ ...p, _source: 'closed', _displayRevenue: p.actual_costs || p.contract_value || 0 })),
+          ...activeWithRevenue.map(p => ({ ...p, _source: 'active', _displayRevenue: p._recognizedRevenue })),
+        ];
+
         return {
           title: 'Construction Revenue Breakdown',
-          items: closedConstruction,
-          columns: ['Project', 'Client', 'Contract Value', 'Actual Revenue', 'Margin', 'Closed Date'],
+          items: allItems,
+          columns: ['Project', 'Client', 'Status', 'Contract Value', 'Recognized Revenue', 'Margin', 'Closed Date'],
           renderRow: (p) => (
             <TableRow key={p.id}>
               <TableCell className="font-medium">{p.title}</TableCell>
               <TableCell>{getClientName(p.client_id)}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${p._source === 'closed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                  {p._source === 'closed' ? 'Closed' : (p.status || '').replace(/_/g, ' ')}
+                </span>
+              </TableCell>
               <TableCell>${((p.contract_value || 0) / 1000).toFixed(0)}K</TableCell>
-              <TableCell className="font-semibold">${((p.actual_costs || p.contract_value || 0) / 1000).toFixed(0)}K</TableCell>
+              <TableCell className="font-semibold">
+                ${((p._displayRevenue || 0) / 1000).toFixed(0)}K
+                {p._source === 'active' && p._recognizedPercent != null && (
+                  <span className="text-xs text-slate-500 ml-1">({p._recognizedPercent.toFixed(0)}%)</span>
+                )}
+              </TableCell>
               <TableCell>{(p.actual_margin || 0).toFixed(1)}%</TableCell>
               <TableCell>{p.actual_completion_date ? format(new Date(p.actual_completion_date), 'MMM d, yyyy') : '-'}</TableCell>
             </TableRow>
           ),
-          total: closedConstruction.reduce((s, p) => s + (p.actual_costs || p.contract_value || 0), 0),
+          total: closedTotal + activeTotal,
+          _closedTotal: closedTotal,
+          _activeTotal: activeTotal,
+          _activeCount: activeWithRevenue.length,
+          _closedCount: closedConstruction.length,
           monthlyData,
           chartLabel: 'Revenue ($K)'
         };
