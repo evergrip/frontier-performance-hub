@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { BarChart, Bar, LineChart as RechartsLine, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from 'recharts';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format, eachMonthOfInterval } from 'date-fns';
 import { getFiscalYearLabel, getFiscalYearDates } from '../components/utils/fiscalYear';
+import MetricDrilldownDialog from '../components/dashboard/MetricDrilldownDialog';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
