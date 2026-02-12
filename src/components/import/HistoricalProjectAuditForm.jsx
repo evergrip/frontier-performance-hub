@@ -384,6 +384,16 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             if (project) {
                 console.log('Updating project...');
                 try {
+                    // Build clean allocations
+                    const cleanAllocations = monthlyAllocations
+                        .filter(a => a.year && a.month && parseFloat(a.percentage) > 0)
+                        .map(a => ({
+                            year: Number(a.year),
+                            month: Number(a.month),
+                            period: `${a.year}-${String(a.month).padStart(2, '0')}`,
+                            percentage: Number(a.percentage)
+                        }));
+
                     await updateProjectMutation.mutateAsync({
                         id: project.id,
                         project_type: data.project_type || project.project_type,
@@ -397,6 +407,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         crew_assignment: data.crew_assignment || project.crew_assignment,
                         color: data.color || project.color,
                         status_history: filledTimeline,
+                        monthly_revenue_allocations: cleanAllocations,
                         notes: data.project_notes
                     });
                     console.log('Project updated successfully');
