@@ -605,9 +605,13 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                     <Label>Estimated Margin (%)</Label>
                                     <Input {...register('estimated_margin')} type="number" step="0.01" placeholder="45.00" />
                                 </div>
-                                <div>
-                                    <Label>Close Date *</Label>
-                                    <Input {...register('close_date')} type="date" required />
+                                <div className="relative">
+                                    <Label className="flex items-center gap-1.5">
+                                        <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                                        <span>Close Date *</span>
+                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Date</span>
+                                    </Label>
+                                    <Input {...register('close_date')} type="date" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div>
                                     <Label>Assigned To</Label>
