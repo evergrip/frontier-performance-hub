@@ -676,7 +676,7 @@ export default function Dashboard() {
         sales={sales}
         projects={projects}
         leads={leads}
-        clients={[]}
+        clients={clients}
         dateRange={dateRange}
         getSaleEffectiveDate={getSaleEffectiveDate}
         getProjectEffectiveDate={getProjectEffectiveDate}
