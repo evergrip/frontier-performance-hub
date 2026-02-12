@@ -334,7 +334,9 @@ export default function Projects() {
     };
     
     if (nextStatus === 'mobilization' && monthlyAllocations.length > 0) {
-      updateData.monthly_revenue_allocations = monthlyAllocations.filter(a => parseFloat(a.percentage) > 0);
+      updateData.monthly_revenue_allocations = monthlyAllocations
+        .filter(a => a.year && a.month && parseFloat(a.percentage) > 0)
+        .map(a => ({ year: Number(a.year), month: Number(a.month), period: `${a.year}-${String(a.month).padStart(2, '0')}`, percentage: Number(a.percentage) }));
     }
     
     updateProjectStatusMutation.mutate(updateData);
@@ -383,7 +385,9 @@ export default function Projects() {
       status_history: closedHistory,
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0,
-      monthly_revenue_allocations: monthlyAllocations.filter(a => parseFloat(a.percentage) > 0),
+      monthly_revenue_allocations: monthlyAllocations
+        .filter(a => a.year && a.month && parseFloat(a.percentage) > 0)
+        .map(a => ({ year: Number(a.year), month: Number(a.month), period: `${a.year}-${String(a.month).padStart(2, '0')}`, percentage: Number(a.percentage) })),
       notes: projectForm.variance_explanation ? 
         `${selectedProject.notes || ''}\n\nCloseout Variance Explanation: ${projectForm.variance_explanation}`.trim() :
         selectedProject.notes
