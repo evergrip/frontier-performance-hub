@@ -472,7 +472,7 @@ export default function Dashboard() {
             title="Construction Revenue"
             value={`$${(constructionRevenue / 1000).toFixed(0)}K`}
             icon={Building2}
-            subtitle={`${closedProjects.filter(p => p.project_type === 'construction').length} closed construction projects`}
+            subtitle={`${closedProjects.filter(p => p.project_type === 'construction').length} closed + $${(activeRecognizedRevenue / 1000).toFixed(0)}K recognized from active`}
             onClick={() => setDrilldownMetric('constructionRevenue')}
           />
         )}
