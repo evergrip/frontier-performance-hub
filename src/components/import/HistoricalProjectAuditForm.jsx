@@ -714,6 +714,82 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         </CardContent>
                     </Card>
 
+                    {/* Unified Timeline */}
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>Complete Project Timeline</CardTitle>
+                                    <CardDescription>
+                                        The full history from lead through construction. Each entry is tagged with its phase (Lead, Pre-Con, Construction). 
+                                        On save, this timeline is written back to the project as the master record, and also synced to the individual lead and sale histories.
+                                    </CardDescription>
+                                </div>
+                                <Button type="button" variant="outline" size="sm" onClick={addTimelineEntry}>
+                                    <Plus className="w-4 h-4 mr-1" /> Add Entry
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                {unifiedTimeline.map((item, index) => {
+                                    const src = item.source || getSourceForStatus(item.status);
+                                    const srcStyle = sourceLabels[src] || sourceLabels.project;
+                                    const borderStyle = sourceColors[src] || sourceColors.project;
+                                    return (
+                                        <div key={index} className={`flex gap-2 items-center p-2 rounded-lg border ${borderStyle}`}>
+                                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap ${srcStyle.badge}`}>
+                                                {srcStyle.text}
+                                            </span>
+                                            <Select 
+                                                value={item.status}
+                                                onValueChange={(value) => {
+                                                    const updated = [...unifiedTimeline];
+                                                    updated[index].status = value;
+                                                    updated[index].source = getSourceForStatus(value);
+                                                    setUnifiedTimeline(updated);
+                                                }}
+                                            >
+                                                <SelectTrigger className="flex-1">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem disabled value="__lead_header" className="font-bold text-blue-700">— Lead Phases —</SelectItem>
+                                                    {allStatuses.filter(s => s.source === 'lead').map(s => (
+                                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                                    ))}
+                                                    <SelectItem disabled value="__sale_header" className="font-bold text-purple-700">— Pre-Con Phases —</SelectItem>
+                                                    {allStatuses.filter(s => s.source === 'sale').map(s => (
+                                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                                    ))}
+                                                    <SelectItem disabled value="__project_header" className="font-bold text-green-700">— Construction Phases —</SelectItem>
+                                                    {allStatuses.filter(s => s.source === 'project').map(s => (
+                                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <Input 
+                                                type="datetime-local"
+                                                value={item.entered_date}
+                                                onChange={(e) => {
+                                                    const updated = [...unifiedTimeline];
+                                                    updated[index].entered_date = e.target.value;
+                                                    setUnifiedTimeline(updated);
+                                                }}
+                                                className="flex-1"
+                                            />
+                                            {unifiedTimeline.length > 1 && (
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeTimelineEntry(index)}>
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* Commission Records */}
                     <Card>
                         <CardHeader>
