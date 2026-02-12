@@ -378,7 +378,10 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                     <TableCell className="text-right">${Math.round(kpis.totalContractValue).toLocaleString()}</TableCell>
                     <TableCell className="text-right">${Math.round(kpis.totalActualCosts).toLocaleString()}</TableCell>
                     <TableCell className="text-right text-emerald-600">{kpis.avgMargin.toFixed(1)}%</TableCell>
-                    <TableCell className="text-right">{kpis.avgVariance > 0 ? '+' : ''}{kpis.avgVariance.toFixed(1)}%</TableCell>
+                    <TableCell></TableCell>
+                    <TableCell className="text-right">
+                      {kpis.avgVariance != null ? `${kpis.avgVariance > 0 ? '+' : ''}${kpis.avgVariance.toFixed(1)}%` : '—'}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
