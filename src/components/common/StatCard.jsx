@@ -9,10 +9,14 @@ export default function StatCard({
   trend, 
   trendDirection = 'up',
   subtitle,
-  className = ''
+  className = '',
+  onClick
 }) {
   return (
-    <Card className={`overflow-hidden hover:shadow-xl transition-shadow duration-300 ${className}`}>
+    <Card 
+      className={`overflow-hidden hover:shadow-xl transition-shadow duration-300 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -32,6 +36,9 @@ export default function StatCard({
                 )}
                 <span>{trend}</span>
               </div>
+            )}
+            {onClick && (
+              <p className="text-xs text-amber-500 mt-2">Click for details →</p>
             )}
           </div>
           {Icon && (
