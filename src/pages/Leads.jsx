@@ -22,6 +22,8 @@ export default function Leads() {
   const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
 
+  const [filterSalesperson, setFilterSalesperson] = useState('all');
+
   const [saleForm, setSaleForm] = useState({
     contract_value: '',
     estimated_construction_budget: '',
