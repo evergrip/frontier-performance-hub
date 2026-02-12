@@ -264,25 +264,11 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="construction" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Construction Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Construction reports and metrics will be displayed here</p>
-            </CardContent>
-          </Card>
+          <ConstructionPerformanceReport dateRange={dateRange} staffId={selectedStaffId} />
         </TabsContent>
 
         <TabsContent value="company" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Company Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">Company-wide reports and metrics will be displayed here</p>
-            </CardContent>
-          </Card>
+          <CompanyPerformanceReport dateRange={dateRange} staffId={selectedStaffId} />
         </TabsContent>
       </Tabs>
     </div>
