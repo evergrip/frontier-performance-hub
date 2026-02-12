@@ -338,6 +338,14 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             if (project) {
                 console.log('Updating project...');
                 try {
+                    // Rebuild full status_history: keep carried-over lead/sale entries + edited project entries
+                    const existingFullHistory = project.status_history || [];
+                    const carriedOverEntries = existingFullHistory.filter(h => h.source && h.source !== 'project');
+                    const editedProjectEntries = projectStatusHistory
+                        .filter(h => h.entered_date)
+                        .map(h => ({ ...h, source: 'project' }));
+                    const mergedHistory = [...carriedOverEntries, ...editedProjectEntries];
+
                     await updateProjectMutation.mutateAsync({
                         id: project.id,
                         project_type: data.project_type || project.project_type,
@@ -350,7 +358,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         project_manager_id: data.project_manager || project.project_manager_id,
                         crew_assignment: data.crew_assignment || project.crew_assignment,
                         color: data.color || project.color,
-                        status_history: projectStatusHistory.filter(h => h.entered_date),
+                        status_history: mergedHistory,
                         notes: data.project_notes
                     });
                     console.log('Project updated successfully');
