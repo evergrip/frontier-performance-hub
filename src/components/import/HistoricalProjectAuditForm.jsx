@@ -711,55 +711,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 <Label>Project Notes</Label>
                                 <Textarea {...register('project_notes')} placeholder="Any project-specific notes" rows={2} />
                             </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <Label>Project Status History</Label>
-                                    <Button type="button" variant="outline" size="sm" onClick={addProjectStatus}>
-                                        <Plus className="w-4 h-4 mr-1" /> Add Status
-                                    </Button>
-                                </div>
-                                <div className="space-y-2">
-                                    {projectStatusHistory.map((item, index) => (
-                                        <div key={index} className="flex gap-2">
-                                            <Select 
-                                                value={item.status}
-                                                onValueChange={(value) => {
-                                                    const updated = [...projectStatusHistory];
-                                                    updated[index].status = value;
-                                                    setProjectStatusHistory(updated);
-                                                }}
-                                            >
-                                                <SelectTrigger className="flex-1">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="awaiting_to_be_scheduled">Awaiting to be Scheduled</SelectItem>
-                                                    <SelectItem value="mobilization">Mobilization</SelectItem>
-                                                    <SelectItem value="active_construction">Active Construction</SelectItem>
-                                                    <SelectItem value="substantial_completion_closeout">Substantial Completion/Closeout</SelectItem>
-                                                    <SelectItem value="closed">Closed</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Input 
-                                                type="datetime-local"
-                                                value={item.entered_date}
-                                                onChange={(e) => {
-                                                    const updated = [...projectStatusHistory];
-                                                    updated[index].entered_date = e.target.value;
-                                                    setProjectStatusHistory(updated);
-                                                }}
-                                                className="flex-1"
-                                            />
-                                            {projectStatusHistory.length > 1 && (
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeProjectStatus(index)}>
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
 
