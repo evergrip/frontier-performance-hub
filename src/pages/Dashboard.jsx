@@ -255,15 +255,26 @@ export default function Dashboard() {
     start: dateRange.start,
     end: dateRange.end
   }).map(month => {
-    const monthSales = sales.filter(s => {
-      if (!s.close_date) return false;
-      const closeDate = new Date(s.close_date);
-      return closeDate >= startOfMonth(month) && closeDate <= endOfMonth(month);
-    });
-    const revenue = monthSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+    const mStart = startOfMonth(month);
+    const mEnd = endOfMonth(month);
+    
+    // Precon revenue from closed precon sales in this month
+    const monthPrecon = sales.filter(s => {
+      if (s.sale_type !== 'preconstruction' || s.status !== 'closed_won') return false;
+      const d = getSaleEffectiveDate(s);
+      return d >= mStart && d <= mEnd;
+    }).reduce((sum, s) => sum + (s.contract_value || 0), 0);
+    
+    // Construction revenue from closed projects in this month
+    const monthConstruction = projects.filter(p => {
+      if (p.project_type !== 'construction' || p.status !== 'closed') return false;
+      const d = getProjectEffectiveDate(p);
+      return d >= mStart && d <= mEnd;
+    }).reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+    
     return {
       month: format(month, 'MMM yy'),
-      revenue: revenue / 1000
+      revenue: (monthPrecon + monthConstruction) / 1000
     };
   }) : [];
 
