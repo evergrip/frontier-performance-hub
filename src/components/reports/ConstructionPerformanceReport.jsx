@@ -73,8 +73,15 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
   // KPI Summaries
   const kpis = useMemo(() => {
     const totalContractValue = closedInRange.reduce((s, p) => s + (p.contract_value || 0), 0);
-    const totalActualCosts = closedInRange.reduce((s, p) => s + (p.actual_costs || 0), 0);
-    const totalGrossProfit = totalContractValue - totalActualCosts;
+    
+    // Calculate true costs using actual_margin when actual_costs === contract_value (historical imports)
+    const totalTrueCosts = closedInRange.reduce((s, p) => {
+      if (p.actual_margin != null && p.actual_margin > 0) {
+        return s + (p.contract_value || 0) * (1 - p.actual_margin / 100);
+      }
+      return s + (p.actual_costs || 0);
+    }, 0);
+    const totalGrossProfit = totalContractValue - totalTrueCosts;
     const avgMargin = totalContractValue > 0 ? (totalGrossProfit / totalContractValue) * 100 : 0;
 
     // Average project duration for closed projects
