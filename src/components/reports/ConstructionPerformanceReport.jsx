@@ -137,12 +137,20 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
       let costAllocated = 0;
 
       constructionProjects.forEach(p => {
-        const alloc = (p.monthly_revenue_allocations || []).find(a => a.period === period);
-        if (alloc && p.contract_value) {
-          const amount = (alloc.percentage / 100) * p.contract_value;
+        // Allocations store year/month separately, not as a period string
+        const monthNum = monthStart.getMonth() + 1;
+        const yearNum = monthStart.getFullYear();
+        const alloc = (p.monthly_revenue_allocations || []).find(a => 
+          (a.period === period) || (a.year === yearNum && a.month === monthNum)
+        );
+        if (alloc && (p.actual_costs || p.contract_value)) {
+          const revenueBase = p.actual_costs || p.contract_value;
+          const amount = (alloc.percentage / 100) * revenueBase;
           recognized += amount;
-          // Estimate cost proportionally
-          if (p.actual_costs && p.contract_value) {
+          // Estimate cost proportionally using margin
+          if (p.actual_margin) {
+            costAllocated += amount * (1 - (p.actual_margin / 100));
+          } else if (p.actual_costs && p.contract_value) {
             costAllocated += (alloc.percentage / 100) * p.actual_costs;
           }
         }
