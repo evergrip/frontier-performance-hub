@@ -131,16 +131,30 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         setValue('lead_assigned_to', lead.assigned_to || '');
         setValue('lead_notes', lead.notes || '');
 
-        // Sale data
-        if (sale) {
-            setValue('sale_type', sale.sale_type || 'construction');
-            setValue('sale_title', sale.title || '');
-            setValue('sale_contract_value', sale.contract_value || '');
-            setValue('estimated_construction_budget', sale.estimated_construction_budget || '');
-            setValue('estimated_margin', sale.estimated_margin || '');
-            setValue('close_date', sale.close_date || '');
-            setValue('sale_assigned_to', sale.assigned_to || '');
-            setValue('sale_notes', sale.notes || '');
+        // Sale data — load from construction sale for project values, precon sale for precon values
+        if (constructionSale) {
+            setValue('sale_type', constructionSale.sale_type || 'construction');
+            setValue('sale_title', constructionSale.title || '');
+            setValue('construction_contract_value', constructionSale.contract_value || '');
+            setValue('estimated_margin', constructionSale.estimated_margin || '');
+            setValue('close_date', constructionSale.close_date || '');
+            setValue('sale_assigned_to', constructionSale.assigned_to || '');
+            setValue('sale_notes', constructionSale.notes || '');
+        } else if (preconSale) {
+            setValue('sale_type', preconSale.sale_type || 'preconstruction');
+            setValue('sale_title', preconSale.title || '');
+            setValue('construction_contract_value', preconSale.estimated_construction_budget || '');
+            setValue('estimated_margin', preconSale.estimated_margin || '');
+            setValue('close_date', preconSale.close_date || '');
+            setValue('sale_assigned_to', preconSale.assigned_to || '');
+            setValue('sale_notes', preconSale.notes || '');
+        }
+
+        // Final Pre-Construction Value comes from the precon sale's contract_value
+        if (preconSale) {
+            setValue('final_precon_value', preconSale.contract_value || '');
+        } else {
+            setValue('final_precon_value', '');
         }
 
         // Project data
