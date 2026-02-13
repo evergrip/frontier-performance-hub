@@ -381,26 +381,39 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                 throw new Error(`Lead update failed: ${err.message}`);
             }
 
-            // Update sale
-            if (sale) {
-                console.log('Updating sale...');
+            // Update construction sale
+            if (constructionSale) {
+                console.log('Updating construction sale...');
                 try {
                     await updateSaleMutation.mutateAsync({
-                        id: sale.id,
-                        sale_type: data.sale_type,
+                        id: constructionSale.id,
                         title: data.sale_title,
                         phase_history: saleEntries,
-                        contract_value: data.sale_contract_value ? parseFloat(data.sale_contract_value) : sale.contract_value,
-                        estimated_construction_budget: data.estimated_construction_budget ? parseFloat(data.estimated_construction_budget) : sale.estimated_construction_budget,
+                        contract_value: data.construction_contract_value ? parseFloat(data.construction_contract_value) : constructionSale.contract_value,
                         estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
-                        close_date: data.close_date || sale.close_date,
-                        assigned_to: data.sale_assigned_to || sale.assigned_to,
+                        close_date: data.close_date || constructionSale.close_date,
+                        assigned_to: data.sale_assigned_to || constructionSale.assigned_to,
                         notes: data.sale_notes
                     });
-                    console.log('Sale updated successfully');
+                    console.log('Construction sale updated successfully');
                 } catch (err) {
-                    console.error('Sale update failed:', err);
-                    throw new Error(`Sale update failed: ${err.message}`);
+                    console.error('Construction sale update failed:', err);
+                    throw new Error(`Construction sale update failed: ${err.message}`);
+                }
+            }
+
+            // Update precon sale (final precon value)
+            if (preconSale && data.final_precon_value) {
+                console.log('Updating precon sale...');
+                try {
+                    await updateSaleMutation.mutateAsync({
+                        id: preconSale.id,
+                        contract_value: parseFloat(data.final_precon_value)
+                    });
+                    console.log('Precon sale updated successfully');
+                } catch (err) {
+                    console.error('Precon sale update failed:', err);
+                    throw new Error(`Precon sale update failed: ${err.message}`);
                 }
             }
 
