@@ -30,7 +30,6 @@ export default function Sales() {
   const [editTargetDate, setEditTargetDate] = useState('');
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
-    actual_precon_costs: '',
     construction_budget: ''
   });
   const [financeForm, setFinanceForm] = useState({
