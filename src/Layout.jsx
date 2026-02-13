@@ -4,7 +4,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -37,6 +37,7 @@ export default function Layout({ children, currentPageName }) {
 
   const adminNavigation = [
     { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
+    { name: 'Data Quality', icon: Flag, page: 'DataQuality' },
     { name: 'Import Historical Data', icon: Upload, page: 'ImportHistoricalData' },
     { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
     { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
