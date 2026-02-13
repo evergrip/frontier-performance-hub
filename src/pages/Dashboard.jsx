@@ -183,9 +183,9 @@ export default function Dashboard() {
     .reduce((sum, p) => {
       const revenueBase = p.actual_costs || p.contract_value || 0;
       const pastAllocations = (p.monthly_revenue_allocations || []).filter(a => {
-        // Parse year/month from either direct fields or period string
-        let aYear = a.year;
-        let aMonth = a.month;
+        // Parse year/month from either direct fields or period string (may be stored as floats)
+        let aYear = a.year != null ? Number(a.year) : null;
+        let aMonth = a.month != null ? Number(a.month) : null;
         if (!aYear && a.period) {
           const parts = a.period.split('-');
           aYear = parseInt(parts[0]);
