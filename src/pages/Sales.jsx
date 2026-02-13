@@ -362,7 +362,6 @@ export default function Sales() {
     convertToConstructionMutation.mutate({
       preconSale: selectedSale,
       final_precon_value: constructionForm.final_precon_value,
-      actual_precon_costs: constructionForm.actual_precon_costs,
       construction_budget: constructionForm.construction_budget
     });
   };
