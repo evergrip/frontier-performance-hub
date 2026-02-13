@@ -30,6 +30,7 @@ export default function Sales() {
   const [editTargetDate, setEditTargetDate] = useState('');
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
+    actual_precon_costs: '',
     construction_budget: ''
   });
   const [financeForm, setFinanceForm] = useState({
@@ -182,11 +183,12 @@ export default function Sales() {
   });
 
   const convertToConstructionMutation = useMutation({
-    mutationFn: async ({ preconSale, final_precon_value, construction_budget }) => {
-      // Update preconstruction sale with final value and add closed_won to phase_history
+    mutationFn: async ({ preconSale, final_precon_value, actual_precon_costs, construction_budget }) => {
+      // Update preconstruction sale with final value, actual costs, and add closed_won to phase_history
       const updatedPreconHistory = [...(preconSale.phase_history || []), { status: 'closed_won', entered_date: new Date().toISOString(), source: 'sale' }];
       await base44.entities.Sale.update(preconSale.id, {
         contract_value: parseFloat(final_precon_value),
+        actual_precon_costs: parseFloat(actual_precon_costs) || 0,
         status: 'closed_won',
         phase_history: updatedPreconHistory
       });
@@ -258,7 +260,7 @@ export default function Sales() {
       queryClient.invalidateQueries(['sales']);
       queryClient.invalidateQueries(['projects']);
       setConstructionDialogOpen(false);
-      setConstructionForm({ final_precon_value: '', construction_budget: '' });
+      setConstructionForm({ final_precon_value: '', actual_precon_costs: '', construction_budget: '' });
       toast.success('Converted to construction project');
     }
   });
@@ -293,8 +295,11 @@ export default function Sales() {
 
   const openConstructionDialog = (sale) => {
     setSelectedSale(sale);
+    // Calculate actual precon costs from invoices if available
+    const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
     setConstructionForm({
       final_precon_value: sale.contract_value || '',
+      actual_precon_costs: sale.actual_precon_costs || totalInvoiced || '',
       construction_budget: sale.estimated_construction_budget || ''
     });
     setConstructionDialogOpen(true);
@@ -361,6 +366,7 @@ export default function Sales() {
     convertToConstructionMutation.mutate({
       preconSale: selectedSale,
       final_precon_value: constructionForm.final_precon_value,
+      actual_precon_costs: constructionForm.actual_precon_costs,
       construction_budget: constructionForm.construction_budget
     });
   };
