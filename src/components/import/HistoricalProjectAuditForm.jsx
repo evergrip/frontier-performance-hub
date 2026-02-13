@@ -656,19 +656,20 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Precon Sale Value (contract_value) *</span>
+                                        <span>Construction Contract Value *</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
                                     </Label>
-                                    <Input {...register('sale_contract_value')} type="number" step="0.01" placeholder="150000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('construction_contract_value')} type="number" step="0.01" placeholder="750000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <p className="text-xs text-slate-500 mt-1">The construction sale contract value</p>
                                 </div>
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Final Pre-Construction Value *</span>
-                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Precon Total</span>
+                                        <span>Final Pre-Construction Value</span>
+                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">Precon Revenue</span>
                                     </Label>
-                                    <Input {...register('estimated_construction_budget')} type="number" step="0.01" placeholder="25000" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
-                                    <p className="text-xs text-slate-500 mt-1">Total spent/earned during pre-construction phase</p>
+                                    <Input {...register('final_precon_value')} type="number" step="0.01" placeholder="25000" className="border-purple-300 ring-1 ring-purple-200 focus-visible:ring-purple-400" />
+                                    <p className="text-xs text-slate-500 mt-1">From precon sale — locked in at conversion</p>
                                 </div>
                                 <div>
                                     <Label>Estimated Margin (%)</Label>
