@@ -294,11 +294,8 @@ export default function Sales() {
 
   const openConstructionDialog = (sale) => {
     setSelectedSale(sale);
-    // Calculate actual precon costs from invoices if available
-    const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
     setConstructionForm({
       final_precon_value: sale.contract_value || '',
-      actual_precon_costs: sale.actual_precon_costs || totalInvoiced || '',
       construction_budget: sale.estimated_construction_budget || ''
     });
     setConstructionDialogOpen(true);
