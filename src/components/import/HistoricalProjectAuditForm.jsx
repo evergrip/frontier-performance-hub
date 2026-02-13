@@ -92,6 +92,9 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         const lead = leads.find(l => l.id === selectedLeadId);
         if (!lead) return;
 
+        // Reset ALL form fields first to prevent stale data from previous lead
+        reset();
+
         const client = clients.find(c => c.id === lead.client_id);
         // Find both precon and construction sales for this lead
         const leadSales = sales.filter(s => s.lead_id === lead.id);
@@ -101,8 +104,9 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         const sale = constructionSale || preconSale;
         const project = sale ? projects.find(p => p.sale_id === sale.id) : null;
 
-        // Find related commission transactions
-        const saleCommissions = sale ? commissionTransactions.filter(t => t.sale_id === sale.id) : [];
+        // Find related commission transactions — also check precon sale commissions
+        const allSaleIds = leadSales.map(s => s.id);
+        const saleCommissions = commissionTransactions.filter(t => allSaleIds.includes(t.sale_id));
         setRelatedCommissions(saleCommissions);
 
         // Client data
@@ -113,13 +117,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('client_phone', client.phone || '');
             setValue('client_address', client.address || '');
             setValue('client_notes', client.notes || '');
-        } else {
-            setValue('client_company_name', '');
-            setValue('client_contact_name', '');
-            setValue('client_email', '');
-            setValue('client_phone', '');
-            setValue('client_address', '');
-            setValue('client_notes', '');
         }
 
         // Lead data
@@ -153,11 +150,9 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         // Final Pre-Construction Value comes from the precon sale's contract_value
         if (preconSale) {
             setValue('final_precon_value', preconSale.contract_value || '');
-        } else {
-            setValue('final_precon_value', '');
         }
 
-        // Project data
+        // Project data — always set all fields explicitly (reset already cleared them)
         if (project) {
             setValue('project_type', project.project_type || 'construction');
             setValue('project_title', project.title || '');
@@ -166,7 +161,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('start_date', project.start_date || '');
             setValue('actual_completion_date', project.actual_completion_date || '');
             setValue('project_manager', project.project_manager_id || '');
-            setValue('crew_assignment', project.crew_assignment || 'crew_a');
+            setValue('crew_assignment', project.crew_assignment || 'unassigned');
             setValue('color', project.color || '#3B82F6');
             setValue('project_notes', project.notes || '');
 
@@ -181,6 +176,16 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                 setMonthlyAllocations([]);
             }
         } else {
+            // No project — ensure project fields are blank
+            setValue('project_title', '');
+            setValue('actual_costs', '');
+            setValue('actual_margin', '');
+            setValue('start_date', '');
+            setValue('actual_completion_date', '');
+            setValue('project_manager', '');
+            setValue('crew_assignment', 'unassigned');
+            setValue('color', '#3B82F6');
+            setValue('project_notes', '');
             setMonthlyAllocations([]);
         }
 
