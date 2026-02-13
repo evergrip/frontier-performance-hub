@@ -67,10 +67,11 @@ import Projects from './pages/Projects';
 import ProjectsAdmin from './pages/ProjectsAdmin';
 import Relationships from './pages/Relationships';
 import Reports from './pages/Reports';
-import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import UsersAdmin from './pages/UsersAdmin';
+import Sales from './pages/Sales';
+import DataQuality from './pages/DataQuality';
 import __Layout from './Layout.jsx';
 
 
@@ -95,10 +96,11 @@ export const PAGES = {
     "ProjectsAdmin": ProjectsAdmin,
     "Relationships": Relationships,
     "Reports": Reports,
-    "Sales": Sales,
     "ScheduleView": ScheduleView,
     "Scheduler": Scheduler,
     "UsersAdmin": UsersAdmin,
+    "Sales": Sales,
+    "DataQuality": DataQuality,
 }
 
 export const pagesConfig = {
