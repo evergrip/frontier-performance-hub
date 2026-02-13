@@ -259,7 +259,7 @@ export default function Sales() {
       queryClient.invalidateQueries(['sales']);
       queryClient.invalidateQueries(['projects']);
       setConstructionDialogOpen(false);
-      setConstructionForm({ final_precon_value: '', actual_precon_costs: '', construction_budget: '' });
+      setConstructionForm({ final_precon_value: '', construction_budget: '' });
       toast.success('Converted to construction project');
     }
   });
