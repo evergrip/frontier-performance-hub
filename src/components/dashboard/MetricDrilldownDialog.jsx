@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
+import DataInspector from '../common/DataInspector';
 
 export default function MetricDrilldownDialog({ 
   open, 
@@ -17,6 +19,36 @@ export default function MetricDrilldownDialog({
   getSaleEffectiveDate,
   getProjectEffectiveDate
 }) {
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorEntity, setInspectorEntity] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      try { const u = await base44.auth.me(); setIsAdmin(u?.role === 'admin'); } catch {}
+    };
+    check();
+  }, []);
+
+  const openInspector = (entityType, entityData) => {
+    if (!isAdmin) return;
+    const related = [];
+    if (entityType === 'Project' && entityData.sale_id) {
+      const sale = sales.find(s => s.id === entityData.sale_id);
+      related.push({ label: 'Linked Sale', data: sale });
+      if (sale?.client_id) related.push({ label: 'Client', data: clients.find(c => c.id === sale.client_id) });
+    }
+    if (entityType === 'Sale') {
+      if (entityData.client_id) related.push({ label: 'Client', data: clients.find(c => c.id === entityData.client_id) });
+      if (entityData.lead_id) related.push({ label: 'Lead', data: leads.find(l => l.id === entityData.lead_id) });
+    }
+    if (entityType === 'Lead' && entityData.client_id) {
+      related.push({ label: 'Client', data: clients.find(c => c.id === entityData.client_id) });
+    }
+    setInspectorEntity({ type: entityType, id: entityData.id, data: entityData, related });
+    setInspectorOpen(true);
+  };
+
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);
     return client?.company_name || client?.contact_name || 'Unknown';
@@ -424,6 +456,7 @@ export default function MetricDrilldownDialog({
 
         {config.items.length > 0 ? (
           <div className="border rounded-lg overflow-hidden">
+            {isAdmin && <p className="text-[10px] text-blue-400 px-3 pt-2">Admin: Click any row to inspect source data</p>}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -433,12 +466,35 @@ export default function MetricDrilldownDialog({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {config.items.map(item => config.renderRow(item))}
+                {config.items.map(item => {
+                  const entityType = item.project_type ? 'Project' : item.sale_type ? 'Sale' : item.lead_score !== undefined ? 'Lead' : item._type === 'precon' ? 'Sale' : item._type === 'construction' ? 'Project' : 'Project';
+                  return (
+                    <tr
+                      key={item.id}
+                      className={isAdmin ? 'cursor-pointer hover:bg-blue-50' : ''}
+                      onClick={() => openInspector(entityType, item)}
+                    >
+                      {React.Children.map(config.renderRow(item).props.children, child => child)}
+                    </tr>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         ) : (
           <p className="text-center text-slate-400 py-8">No data for selected period</p>
+        )}
+
+        {/* Data Inspector */}
+        {inspectorEntity && (
+          <DataInspector
+            open={inspectorOpen}
+            onOpenChange={setInspectorOpen}
+            entityType={inspectorEntity.type}
+            entityId={inspectorEntity.id}
+            entityData={inspectorEntity.data}
+            relatedData={inspectorEntity.related}
+          />
         )}
       </DialogContent>
     </Dialog>
