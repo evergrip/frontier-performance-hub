@@ -733,34 +733,34 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Actual Costs *</span>
+                                        <span>Actual Costs</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
                                     </Label>
-                                    <Input {...register('actual_costs')} type="number" step="0.01" placeholder="130000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('actual_costs')} type="number" step="0.01" placeholder="130000" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Actual Margin (%) *</span>
+                                        <span>Actual Margin (%)</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
                                     </Label>
-                                    <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('actual_margin')} type="number" step="0.01" placeholder="45.00" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Start Date *</span>
+                                        <span>Start Date</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Date</span>
                                     </Label>
-                                    <Input {...register('start_date')} type="date" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('start_date')} type="date" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div className="relative">
                                     <Label className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Completion Date *</span>
+                                        <span>Completion Date</span>
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Date</span>
                                     </Label>
-                                    <Input {...register('actual_completion_date')} type="date" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
+                                    <Input {...register('actual_completion_date')} type="date" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div>
                                     <Label>Project Manager</Label>
