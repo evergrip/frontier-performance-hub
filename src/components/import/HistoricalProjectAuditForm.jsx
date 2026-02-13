@@ -329,7 +329,10 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             console.log('Starting update process...');
             const lead = leads.find(l => l.id === selectedLeadId);
             const client = clients.find(c => c.id === lead?.client_id);
-            const sale = sales.find(s => s.lead_id === lead?.id);
+            const leadSales = sales.filter(s => s.lead_id === lead?.id);
+            const preconSale = leadSales.find(s => s.sale_type === 'preconstruction');
+            const constructionSale = leadSales.find(s => s.sale_type === 'construction');
+            const sale = constructionSale || preconSale;
             const project = sale ? projects.find(p => p.sale_id === sale.id) : null;
 
             // Update client
