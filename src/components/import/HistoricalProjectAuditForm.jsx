@@ -368,7 +368,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         sale_type: data.sale_type,
                         title: data.sale_title,
                         phase_history: saleEntries,
-                        contract_value: data.contract_value ? parseFloat(data.contract_value) : sale.contract_value,
+                        contract_value: data.sale_contract_value ? parseFloat(data.sale_contract_value) : sale.contract_value,
                         estimated_construction_budget: data.estimated_construction_budget ? parseFloat(data.estimated_construction_budget) : sale.estimated_construction_budget,
                         estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
                         close_date: data.close_date || sale.close_date,
