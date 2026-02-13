@@ -123,7 +123,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         setValue('lead_score', lead.lead_score || 50);
         setValue('estimated_precon_value', lead.estimated_precon_value || '');
         setValue('estimated_construction_value', lead.estimated_construction_value || '');
-        setValue('actual_precon_costs', lead.actual_precon_costs || '');
         setValue('lead_assigned_to', lead.assigned_to || '');
         setValue('lead_notes', lead.notes || '');
 
@@ -350,7 +349,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                     status_history: leadEntries,
                     estimated_precon_value: data.estimated_precon_value ? parseFloat(data.estimated_precon_value) : undefined,
                     estimated_construction_value: data.estimated_construction_value ? parseFloat(data.estimated_construction_value) : undefined,
-                    actual_precon_costs: data.actual_precon_costs ? parseFloat(data.actual_precon_costs) : undefined,
                     assigned_to: data.lead_assigned_to,
                     notes: data.lead_notes
                 });
@@ -582,14 +580,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                 <div>
                                      <Label>Estimated Construction Value</Label>
                                      <Input {...register('estimated_construction_value')} type="number" step="0.01" placeholder="150000" />
-                                 </div>
-                                 <div className="relative">
-                                     <Label className="flex items-center gap-1.5">
-                                         <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                         <span>Actual Precon Costs</span>
-                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
-                                     </Label>
-                                     <Input {...register('actual_precon_costs')} type="number" step="0.01" placeholder="4000" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                  </div>
                                  <div>
                                      <Label>Lead Score (0-100)</Label>
