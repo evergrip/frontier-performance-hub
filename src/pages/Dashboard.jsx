@@ -339,13 +339,15 @@ export default function Dashboard() {
     };
   }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth, currentYear, currentMonth]);
 
-  // Monthly trend data
+  // Monthly trend data — uses revenue allocations for construction projects
   const monthlyTrendData = dateRange.start && dateRange.end ? eachMonthOfInterval({
     start: dateRange.start,
     end: dateRange.end
   }).map(month => {
     const mStart = startOfMonth(month);
     const mEnd = endOfMonth(month);
+    const monthNum = month.getMonth() + 1;
+    const yearNum = month.getFullYear();
     
     // Precon revenue from closed precon sales in this month
     const monthPrecon = sales.filter(s => {
@@ -354,12 +356,35 @@ export default function Dashboard() {
       return d >= mStart && d <= mEnd;
     }).reduce((sum, s) => sum + (s.contract_value || 0), 0);
     
-    // Construction revenue from closed projects in this month
-    const monthConstruction = projects.filter(p => {
+    // Construction revenue from ALL construction projects that have allocations for this month
+    let monthConstruction = 0;
+    projects.filter(p => p.project_type === 'construction').forEach(p => {
+      const allocations = p.monthly_revenue_allocations || [];
+      const alloc = allocations.find(a => {
+        let aYear = a.year;
+        let aMonth = a.month;
+        if (!aYear && a.period) {
+          const parts = a.period.split('-');
+          aYear = parseInt(parts[0]);
+          aMonth = parseInt(parts[1]);
+        }
+        return aYear === yearNum && aMonth === monthNum;
+      });
+      if (alloc && alloc.percentage > 0) {
+        const revenueBase = p.actual_costs || p.contract_value || 0;
+        monthConstruction += revenueBase * (alloc.percentage / 100);
+      }
+    });
+
+    // For closed projects WITHOUT allocations, fall back to effective date
+    projects.filter(p => {
       if (p.project_type !== 'construction' || p.status !== 'closed') return false;
+      if (p.monthly_revenue_allocations?.length > 0) return false; // already counted above
       const d = getProjectEffectiveDate(p);
       return d >= mStart && d <= mEnd;
-    }).reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+    }).forEach(p => {
+      monthConstruction += p.actual_costs || p.contract_value || 0;
+    });
     
     return {
       month: format(month, 'MMM yy'),
