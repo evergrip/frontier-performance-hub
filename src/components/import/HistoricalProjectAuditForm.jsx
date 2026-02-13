@@ -235,27 +235,27 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
     }, [selectedLeadId, leads, clients, sales, projects, commissionTransactions, setValue]);
 
     const updateLeadMutation = useMutation({
-        mutationFn: (data) => base44.entities.Lead.update(data.id, data),
+        mutationFn: ({ id, ...rest }) => base44.entities.Lead.update(id, rest),
         onSuccess: () => queryClient.invalidateQueries(['leads'])
     });
 
     const updateClientMutation = useMutation({
-        mutationFn: (data) => base44.entities.Client.update(data.id, data),
+        mutationFn: ({ id, ...rest }) => base44.entities.Client.update(id, rest),
         onSuccess: () => queryClient.invalidateQueries(['clients'])
     });
 
     const updateSaleMutation = useMutation({
-        mutationFn: (data) => base44.entities.Sale.update(data.id, data),
+        mutationFn: ({ id, ...rest }) => base44.entities.Sale.update(id, rest),
         onSuccess: () => queryClient.invalidateQueries(['sales'])
     });
 
     const updateProjectMutation = useMutation({
-        mutationFn: (data) => base44.entities.Project.update(data.id, data),
+        mutationFn: ({ id, ...rest }) => base44.entities.Project.update(id, rest),
         onSuccess: () => queryClient.invalidateQueries(['projects'])
     });
 
     const updateCommissionMutation = useMutation({
-        mutationFn: (data) => base44.entities.CommissionTransaction.update(data.id, data),
+        mutationFn: ({ id, ...rest }) => base44.entities.CommissionTransaction.update(id, rest),
         onSuccess: () => queryClient.invalidateQueries(['commissionTransactions'])
     });
 
