@@ -131,6 +131,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('sale_type', sale.sale_type || 'construction');
             setValue('sale_title', sale.title || '');
             setValue('contract_value', sale.contract_value || '');
+            setValue('estimated_construction_budget', sale.estimated_construction_budget || '');
             setValue('estimated_margin', sale.estimated_margin || '');
             setValue('close_date', sale.close_date || '');
             setValue('sale_assigned_to', sale.assigned_to || '');
