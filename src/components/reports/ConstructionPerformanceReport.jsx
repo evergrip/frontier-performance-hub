@@ -190,11 +190,11 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
       let costAllocated = 0;
 
       constructionProjects.forEach(p => {
-        // Allocations store year/month separately, not as a period string
+        // Allocations store year/month separately (sometimes as floats), not as a period string
         const monthNum = monthStart.getMonth() + 1;
         const yearNum = monthStart.getFullYear();
         const alloc = (p.monthly_revenue_allocations || []).find(a => 
-          (a.period === period) || (a.year === yearNum && a.month === monthNum)
+          (a.period === period) || (Number(a.year) === yearNum && Number(a.month) === monthNum)
         );
         if (alloc && (p.actual_costs || p.contract_value)) {
           const revenueBase = p.actual_costs || p.contract_value;
