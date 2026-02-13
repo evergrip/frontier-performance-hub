@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +7,32 @@ import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Cell } from 'recharts';
 import { Building2, DollarSign, Clock, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import { format, differenceInDays, eachMonthOfInterval, endOfMonth } from 'date-fns';
+import DataInspector from '../common/DataInspector';
 
 export default function ConstructionPerformanceReport({ dateRange, staffId }) {
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorEntity, setInspectorEntity] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      try { const u = await base44.auth.me(); setIsAdmin(u?.role === 'admin'); } catch {}
+    };
+    check();
+  }, []);
+
+  const openInspector = (entityType, entityData) => {
+    if (!isAdmin) return;
+    const related = [];
+    if (entityType === 'Project' && entityData.sale_id) {
+      const sale = sales.find(s => s.id === entityData.sale_id);
+      related.push({ label: 'Linked Sale', data: sale });
+      if (sale?.client_id) related.push({ label: 'Client', data: clients.find(c => c.id === sale.client_id) });
+    }
+    setInspectorEntity({ type: entityType, id: entityData.id, data: entityData, related });
+    setInspectorOpen(true);
+  };
+
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
@@ -350,8 +374,8 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                 </TableHeader>
                 <TableBody>
                   {closedProjectDetails.map(p => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.title}</TableCell>
+                    <TableRow key={p.id} className={isAdmin ? 'cursor-pointer hover:bg-blue-50' : ''} onClick={() => openInspector('Project', p)}>
+                      <TableCell className="font-medium">{p.title} {isAdmin && <span className="text-[10px] text-blue-400 ml-1">inspect</span>}</TableCell>
                       <TableCell className="text-sm text-slate-600">{getClientName(p.client_id)}</TableCell>
                       <TableCell className="text-sm text-slate-600">{getPMName(p.project_manager_id)}</TableCell>
                       <TableCell className="text-right">${Math.round(p.contract_value || 0).toLocaleString()}</TableCell>
@@ -434,6 +458,18 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
             </Table>
           </CardContent>
         </Card>
+      )}
+
+      {/* Data Inspector */}
+      {inspectorEntity && (
+        <DataInspector
+          open={inspectorOpen}
+          onOpenChange={setInspectorOpen}
+          entityType={inspectorEntity.type}
+          entityId={inspectorEntity.id}
+          entityData={inspectorEntity.data}
+          relatedData={inspectorEntity.related}
+        />
       )}
 
       {/* Crew Utilization */}
