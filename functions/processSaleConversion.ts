@@ -100,7 +100,6 @@ Deno.serve(async (req) => {
                 title: data?.title || sale.title,
                 status: 'planning',
                 contract_value: sale.contract_value,
-                actual_costs: sale.actual_precon_costs || 0,
                 start_date: data?.start_date || new Date().toISOString().split('T')[0],
                 project_manager_id: data?.project_manager_id || sale.assigned_to,
                 notes: data?.notes || `Converted from Sale: ${sale.title}`

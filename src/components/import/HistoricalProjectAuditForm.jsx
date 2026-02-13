@@ -131,9 +131,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('sale_type', sale.sale_type || 'construction');
             setValue('sale_title', sale.title || '');
             setValue('contract_value', sale.contract_value || '');
-            // Pre-fill actual precon costs: use stored value, fall back to total invoices
-            const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
-            setValue('actual_precon_costs', sale.actual_precon_costs || totalInvoiced || '');
             setValue('estimated_margin', sale.estimated_margin || '');
             setValue('close_date', sale.close_date || '');
             setValue('sale_assigned_to', sale.assigned_to || '');
@@ -371,7 +368,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         title: data.sale_title,
                         phase_history: saleEntries,
                         contract_value: data.contract_value ? parseFloat(data.contract_value) : sale.contract_value,
-                        actual_precon_costs: data.actual_precon_costs ? parseFloat(data.actual_precon_costs) : sale.actual_precon_costs || 0,
                         estimated_margin: data.estimated_margin ? parseFloat(data.estimated_margin) : undefined,
                         close_date: data.close_date || sale.close_date,
                         assigned_to: data.sale_assigned_to || sale.assigned_to,
@@ -582,11 +578,11 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                     <Input {...register('estimated_precon_value')} type="number" step="0.01" placeholder="5000" />
                                 </div>
                                 <div>
-                                     <Label>Estimated Construction Value</Label>
-                                     <Input {...register('estimated_construction_value')} type="number" step="0.01" placeholder="150000" />
-                                 </div>
-                                 <div>
-                                     <Label>Lead Score (0-100)</Label>
+                                    <Label>Estimated Construction Value</Label>
+                                    <Input {...register('estimated_construction_value')} type="number" step="0.01" placeholder="150000" />
+                                </div>
+                                <div>
+                                    <Label>Lead Score (0-100)</Label>
                                     <Input {...register('lead_score')} type="number" min="0" max="100" placeholder="50" />
                                 </div>
                                 <div>
@@ -643,14 +639,6 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                                         <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
                                     </Label>
                                     <Input {...register('contract_value')} type="number" step="0.01" placeholder="150000" required className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
-                                </div>
-                                <div className="relative">
-                                    <Label className="flex items-center gap-1.5">
-                                        <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                                        <span>Actual Precon Costs</span>
-                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Revenue Calc</span>
-                                    </Label>
-                                    <Input {...register('actual_precon_costs')} type="number" step="0.01" placeholder="4000" className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400" />
                                 </div>
                                 <div>
                                     <Label>Estimated Margin (%)</Label>
