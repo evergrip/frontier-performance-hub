@@ -273,7 +273,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         }
 
         setUnifiedTimeline(timeline);
-    }, [selectedLeadId, leads, clients, sales, projects, commissionTransactions, setValue]);
+    }, [selectedLeadId, lastLoadedLeadId, leads, clients, sales, projects, commissionTransactions, setValue, reset]);
 
     const updateLeadMutation = useMutation({
         mutationFn: ({ id, ...rest }) => base44.entities.Lead.update(id, rest),
