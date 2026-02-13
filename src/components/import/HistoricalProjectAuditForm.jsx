@@ -131,7 +131,9 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
             setValue('sale_type', sale.sale_type || 'construction');
             setValue('sale_title', sale.title || '');
             setValue('contract_value', sale.contract_value || '');
-            setValue('actual_precon_costs', sale.actual_precon_costs || '');
+            // Pre-fill actual precon costs: use stored value, fall back to total invoices
+            const totalInvoiced = (sale.invoices || []).reduce((sum, inv) => sum + (inv.amount || 0), 0);
+            setValue('actual_precon_costs', sale.actual_precon_costs || totalInvoiced || '');
             setValue('estimated_margin', sale.estimated_margin || '');
             setValue('close_date', sale.close_date || '');
             setValue('sale_assigned_to', sale.assigned_to || '');
