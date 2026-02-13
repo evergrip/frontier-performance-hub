@@ -96,16 +96,47 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         reset();
 
         const client = clients.find(c => c.id === lead.client_id);
-        // Find both precon and construction sales for this lead
+        // Find all sales for this lead
         const leadSales = sales.filter(s => s.lead_id === lead.id);
-        const preconSale = leadSales.find(s => s.sale_type === 'preconstruction');
-        const constructionSale = leadSales.find(s => s.sale_type === 'construction');
-        // The "sale" used for project lookup is the construction sale (project.sale_id points to it)
-        const sale = constructionSale || preconSale;
-        const project = sale ? projects.find(p => p.sale_id === sale.id) : null;
-
-        // Find related commission transactions — also check precon sale commissions
         const allSaleIds = leadSales.map(s => s.id);
+        
+        // Identify precon sale (explicitly typed)
+        const preconSale = leadSales.find(s => s.sale_type === 'preconstruction');
+        
+        // Find the construction sale: explicitly typed OR the one that has a project linked to it
+        let constructionSale = leadSales.find(s => s.sale_type === 'construction');
+        
+        // Find the project by checking ALL sales for this lead (handles empty sale_type)
+        let project = null;
+        for (const s of leadSales) {
+            const p = projects.find(pr => pr.sale_id === s.id);
+            if (p) {
+                project = p;
+                // If this sale wasn't identified as the construction sale, it should be
+                if (!constructionSale || constructionSale.id !== s.id) {
+                    constructionSale = s;
+                }
+                break;
+            }
+        }
+        
+        // Also check converted_to_project_id on sales
+        if (!project) {
+            for (const s of leadSales) {
+                if (s.converted_to_project_id) {
+                    const p = projects.find(pr => pr.id === s.converted_to_project_id);
+                    if (p) {
+                        project = p;
+                        if (!constructionSale) constructionSale = s;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        const sale = constructionSale || preconSale;
+
+        // Find related commission transactions for all sales of this lead
         const saleCommissions = commissionTransactions.filter(t => allSaleIds.includes(t.sale_id));
         setRelatedCommissions(saleCommissions);
 
