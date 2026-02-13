@@ -435,7 +435,7 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         id: project.id,
                         project_type: data.project_type || project.project_type,
                         title: data.project_title || project.title,
-                        contract_value: data.sale_contract_value ? parseFloat(data.sale_contract_value) : project.contract_value,
+                        contract_value: data.construction_contract_value ? parseFloat(data.construction_contract_value) : project.contract_value,
                         actual_costs: data.actual_costs ? parseFloat(data.actual_costs) : project.actual_costs,
                         actual_margin: data.actual_margin ? parseFloat(data.actual_margin) : project.actual_margin,
                         start_date: data.start_date || project.start_date,
