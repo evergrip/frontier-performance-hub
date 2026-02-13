@@ -358,11 +358,14 @@ export default function Dashboard() {
     
     // Construction revenue from ALL construction projects that have allocations for this month
     let monthConstruction = 0;
+    const targetPeriod = `${yearNum}-${String(monthNum).padStart(2, '0')}`;
     projects.filter(p => p.project_type === 'construction').forEach(p => {
       const allocations = p.monthly_revenue_allocations || [];
       const alloc = allocations.find(a => {
-        let aYear = a.year;
-        let aMonth = a.month;
+        // Check period string first, then numeric year/month
+        if (a.period === targetPeriod) return true;
+        let aYear = a.year != null ? Number(a.year) : null;
+        let aMonth = a.month != null ? Number(a.month) : null;
         if (!aYear && a.period) {
           const parts = a.period.split('-');
           aYear = parseInt(parts[0]);
@@ -371,7 +374,7 @@ export default function Dashboard() {
         return aYear === yearNum && aMonth === monthNum;
       });
       if (alloc && alloc.percentage > 0) {
-        const revenueBase = p.actual_costs || p.contract_value || 0;
+        const revenueBase = p.contract_value || 0;
         monthConstruction += revenueBase * (alloc.percentage / 100);
       }
     });
