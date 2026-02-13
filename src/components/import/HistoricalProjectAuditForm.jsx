@@ -645,25 +645,17 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         </CardContent>
                     </Card>
 
-                    {/* Sale Information */}
+                    {/* Pre-Construction Sale Information */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Sale Information</CardTitle>
-                            <CardDescription>Review and edit sale details</CardDescription>
+                            <CardTitle>Pre-Construction Sale</CardTitle>
+                            <CardDescription>Review and edit pre-construction sale details</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label>Sale Type *</Label>
-                                    <Select value={watch('sale_type')} onValueChange={(value) => setValue('sale_type', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="preconstruction">Preconstruction</SelectItem>
-                                            <SelectItem value="construction">Construction</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Label>Sale Type</Label>
+                                    <Input value="Preconstruction" disabled className="bg-slate-50" />
                                 </div>
                                 <div>
                                     <Label>Sale Title *</Label>
@@ -722,25 +714,17 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
                         </CardContent>
                     </Card>
 
-                    {/* Project Information */}
+                    {/* Construction Project Information */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Project Information</CardTitle>
-                            <CardDescription>Review and edit project details</CardDescription>
+                            <CardTitle>Construction Project</CardTitle>
+                            <CardDescription>Review and edit construction project details</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <Label>Project Type *</Label>
-                                    <Select value={watch('project_type')} onValueChange={(value) => setValue('project_type', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="preconstruction">Preconstruction</SelectItem>
-                                            <SelectItem value="construction">Construction</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Label>Project Type</Label>
+                                    <Input value="Construction" disabled className="bg-slate-50" />
                                 </div>
                                 <div>
                                     <Label>Project Title *</Label>
