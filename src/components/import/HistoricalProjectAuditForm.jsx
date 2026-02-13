@@ -93,7 +93,12 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
         if (!lead) return;
 
         const client = clients.find(c => c.id === lead.client_id);
-        const sale = sales.find(s => s.lead_id === lead.id);
+        // Find both precon and construction sales for this lead
+        const leadSales = sales.filter(s => s.lead_id === lead.id);
+        const preconSale = leadSales.find(s => s.sale_type === 'preconstruction');
+        const constructionSale = leadSales.find(s => s.sale_type === 'construction');
+        // The "sale" used for project lookup is the construction sale (project.sale_id points to it)
+        const sale = constructionSale || preconSale;
         const project = sale ? projects.find(p => p.sale_id === sale.id) : null;
 
         // Find related commission transactions
