@@ -87,11 +87,15 @@ export default function HistoricalProjectAuditForm({ preselectedLeadId }) {
     };
 
     // When a lead is selected, auto-fill all related data
+    // Only re-run when the user actually picks a DIFFERENT lead, not on data refetches
     useEffect(() => {
         if (!selectedLeadId) return;
+        if (selectedLeadId === lastLoadedLeadId) return;
 
         const lead = leads.find(l => l.id === selectedLeadId);
         if (!lead) return;
+
+        setLastLoadedLeadId(selectedLeadId);
 
         // Reset ALL form fields first to prevent stale data from previous lead
         reset();
