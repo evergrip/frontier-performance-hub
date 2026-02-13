@@ -903,25 +903,6 @@ export default function Sales() {
             </div>
 
             <div>
-              <Label className="flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 text-amber-600" />
-                <span>Actual Pre-Construction Costs *</span>
-              </Label>
-              <p className="text-xs text-slate-500 mb-2">
-                Total spent during preconstruction (pre-filled from invoices if available)
-              </p>
-              <Input
-                type="number"
-                step="0.01"
-                value={constructionForm.actual_precon_costs}
-                onChange={(e) => setConstructionForm({...constructionForm, actual_precon_costs: e.target.value})}
-                placeholder="15000"
-                required
-                className="border-amber-300 ring-1 ring-amber-200 focus-visible:ring-amber-400"
-              />
-            </div>
-
-            <div>
               <Label>Construction Budget *</Label>
               <p className="text-xs text-slate-500 mb-2">
                 Pre-filled with latest estimate. Override as needed.
