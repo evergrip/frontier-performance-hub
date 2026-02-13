@@ -286,8 +286,8 @@ export default function Dashboard() {
         const contractVal = p.contract_value || 0;
         const pastAllocPct = (p.monthly_revenue_allocations || [])
           .filter(a => {
-            let aYear = a.year;
-            let aMonth = a.month;
+            let aYear = a.year != null ? Number(a.year) : null;
+            let aMonth = a.month != null ? Number(a.month) : null;
             if (!aYear && a.period) {
               const parts = a.period.split('-');
               aYear = parseInt(parts[0]);
