@@ -1237,15 +1237,13 @@ export default function Sales() {
                   </Button>
                 )}
                 {selectedSale.status === 'pending_construction_sale' && (
-                  <>
-                    <Button size="sm" className="text-xs bg-amber-600 hover:bg-amber-700" onClick={() => { setDetailDialogOpen(false); openConstructionDialog(selectedSale); }}>
-                      <Building2 className="w-3 h-3 mr-1" /> Convert to Construction
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setFinalPreconValue(selectedSale.contract_value || ''); setClosePreconDialogOpen(true); }}>
-                      Finalize Pre-Con Only
-                    </Button>
-                  </>
+                  <Button size="sm" className="text-xs bg-amber-600 hover:bg-amber-700" onClick={() => { setDetailDialogOpen(false); openConstructionDialog(selectedSale); }}>
+                    <Building2 className="w-3 h-3 mr-1" /> Convert to Construction
+                  </Button>
                 )}
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setSelectedSale(selectedSale); setFinalPreconValue(selectedSale.contract_value || ''); setClosePreconDialogOpen(true); }}>
+                  Finalize Pre-Con Only
+                </Button>
                 {selectedSale.lead_id && (
                   <Button size="sm" variant="outline" className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => { setDetailDialogOpen(false); setSendBackLeadPhase('new_project_lead'); setSendBackToLeadsDialogOpen(true); }}>
                     <ChevronLeft className="w-3 h-3 mr-1" /> Send Back to Leads
