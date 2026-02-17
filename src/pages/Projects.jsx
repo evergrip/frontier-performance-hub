@@ -310,15 +310,11 @@ export default function Projects() {
     if (!nextStatus) return;
     
     // Update phase-based commission availability
-    try {
-      await base44.functions.invoke('updatePhaseCommission', {
-        project_id: selectedProject.id,
-        phase: nextStatus,
-        type: 'construction'
-      });
-    } catch (error) {
-      console.error('Phase commission update failed:', error);
-    }
+    await base44.functions.invoke('updatePhaseCommission', {
+      project_id: selectedProject.id,
+      phase: nextStatus,
+      type: 'construction'
+    });
     
     // Build status history — tag with source: 'project'
     const currentHistory = selectedProject.status_history || [];
@@ -364,19 +360,15 @@ export default function Projects() {
     
     // Update commission with actual construction cost
     if (selectedProject.sale_id) {
-      try {
-        const actualCostsVal = parseFloat(projectForm.actual_costs) || 0;
-        const actualMarginVal = parseFloat(projectForm.actual_margin) || 0;
-        const actualGrossRevenue = actualMarginVal < 100 ? actualCostsVal / (1 - (actualMarginVal / 100)) : actualCostsVal;
-        await base44.functions.invoke('processCommission', {
-          sale_id: selectedProject.sale_id,
-          sale_type: 'construction',
-          final_amount: actualGrossRevenue,
-          is_update: true
-        });
-      } catch (error) {
-        console.error('Commission update failed:', error);
-      }
+      const actualCostsVal = parseFloat(projectForm.actual_costs) || 0;
+      const actualMarginVal = parseFloat(projectForm.actual_margin) || 0;
+      const actualGrossRevenue = actualMarginVal < 100 ? actualCostsVal / (1 - (actualMarginVal / 100)) : actualCostsVal;
+      await base44.functions.invoke('processCommission', {
+        sale_id: selectedProject.sale_id,
+        sale_type: 'construction',
+        final_amount: actualGrossRevenue,
+        is_update: true
+      });
     }
     
     // Add 'closed' to status_history

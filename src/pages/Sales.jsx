@@ -160,16 +160,12 @@ export default function Sales() {
       });
 
       // Update preconstruction commission with final value
-      try {
-        await base44.functions.invoke('processCommission', {
-          sale_id: preconSale.id,
-          sale_type: 'preconstruction',
-          final_amount: parseFloat(finalValue),
-          is_update: true
-        });
-      } catch (error) {
-        console.error('Precon commission update failed:', error);
-      }
+      await base44.functions.invoke('processCommission', {
+        sale_id: preconSale.id,
+        sale_type: 'preconstruction',
+        final_amount: parseFloat(finalValue),
+        is_update: true
+      });
 
       return { success: true };
     },
@@ -192,16 +188,12 @@ export default function Sales() {
       });
 
       // Update preconstruction commission with final value
-      try {
-        await base44.functions.invoke('processCommission', {
-          sale_id: preconSale.id,
-          sale_type: 'preconstruction',
-          final_amount: parseFloat(final_precon_value),
-          is_update: true
-        });
-      } catch (error) {
-        console.error('Precon commission update failed:', error);
-      }
+      await base44.functions.invoke('processCommission', {
+        sale_id: preconSale.id,
+        sale_type: 'preconstruction',
+        final_amount: parseFloat(final_precon_value),
+        is_update: true
+      });
 
       // Create construction sale
       const constructionSale = await base44.entities.Sale.create({
@@ -243,14 +235,10 @@ export default function Sales() {
       });
 
       // Process commission for construction sale
-      try {
-        await base44.functions.invoke('processCommission', {
-          sale_id: constructionSale.id,
-          sale_type: 'construction'
-        });
-      } catch (error) {
-        console.error('Commission processing failed:', error);
-      }
+      await base44.functions.invoke('processCommission', {
+        sale_id: constructionSale.id,
+        sale_type: 'construction'
+      });
 
       return { constructionSale, project };
     },
@@ -319,28 +307,20 @@ export default function Sales() {
     if (!nextStatus) return;
 
     // Update phase-based commission availability
-    try {
-      await base44.functions.invoke('updatePhaseCommission', {
-        sale_id: selectedSale.id,
-        phase: nextStatus,
-        type: 'preconstruction'
-      });
-    } catch (error) {
-      console.error('Phase commission update failed:', error);
-    }
+    await base44.functions.invoke('updatePhaseCommission', {
+      sale_id: selectedSale.id,
+      phase: nextStatus,
+      type: 'preconstruction'
+    });
 
     // If moving from engineering_permits, update commission with actual precon cost
     if (selectedSale.status === 'engineering_permits') {
-      try {
-        await base44.functions.invoke('processCommission', {
-          sale_id: selectedSale.id,
-          sale_type: 'preconstruction',
-          final_amount: selectedSale.contract_value,
-          is_update: true
-        });
-      } catch (error) {
-        console.error('Commission update failed:', error);
-      }
+      await base44.functions.invoke('processCommission', {
+        sale_id: selectedSale.id,
+        sale_type: 'preconstruction',
+        final_amount: selectedSale.contract_value,
+        is_update: true
+      });
     }
 
     updateSaleStatusMutation.mutate({
