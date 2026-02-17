@@ -60,15 +60,10 @@ export default function Leads() {
       });
       
       // Process commission for preconstruction sale
-      try {
-        await base44.functions.invoke('processCommission', {
-          sale_id: sale.id,
-          sale_type: 'preconstruction'
-        });
-      } catch (error) {
-        console.error('Commission processing failed:', error);
-        toast.error('Commission processing failed: ' + error.message);
-      }
+      await base44.functions.invoke('processCommission', {
+        sale_id: sale.id,
+        sale_type: 'preconstruction'
+      });
       
       return sale;
     },
