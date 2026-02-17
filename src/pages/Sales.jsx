@@ -629,7 +629,7 @@ export default function Sales() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-slate-700">{closedSales.length}</div>
+            <div className="text-2xl font-bold text-slate-700">{constructionConversions.length}</div>
             <div className="text-sm text-slate-500">Converted to Construction</div>
           </CardContent>
         </Card>
