@@ -319,101 +319,26 @@ export default function Leads() {
                           snapshot.isDraggingOver ? 'bg-slate-100' : ''
                         }`}
                       >
-                        {columnLeads.map((lead, index) => {
-                          const nextStatus = getNextStatus(lead.status);
-                          return (
+                        {columnLeads.map((lead, index) => (
                             <Draggable key={lead.id} draggableId={lead.id} index={index}>
                               {(provided, snapshot) => (
                                 <Card
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`border-2 ${column.color} transition-all ${
-                                    snapshot.isDragging ? 'shadow-2xl rotate-1' : 'hover:shadow-lg'
+                                  {...provided.dragHandleProps}
+                                  className={`border ${column.color} transition-all cursor-pointer ${
+                                    snapshot.isDragging ? 'shadow-2xl rotate-1' : 'hover:shadow-md'
                                   }`}
+                                  onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
                                 >
-                                  <CardContent className="p-3">
-                                    <div
-                                      {...provided.dragHandleProps}
-                                      className="flex items-center gap-1.5 mb-1 cursor-grab active:cursor-grabbing"
-                                    >
-                                      <GripVertical className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                                      <h4
-                                        className="font-semibold text-slate-900 text-sm hover:text-[#ea7924] cursor-pointer flex-1"
-                                        onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
-                                      >
-                                        {lead.title}
-                                      </h4>
-                                      <Pencil
-                                        className="w-3 h-3 text-slate-400 hover:text-[#ea7924] cursor-pointer flex-shrink-0"
-                                        onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
-                                      />
-                                    </div>
-                                    <p
-                                      className="text-xs text-slate-500 mb-2 ml-5 hover:text-[#ea7924] cursor-pointer"
-                                      onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
-                                    >
-                                      {getClientName(lead.client_id)}
-                                    </p>
-                                    {(lead.estimated_precon_value || lead.estimated_construction_value) && (
-                                      <div className="text-xs text-slate-600 mb-2 space-y-0.5">
-                                        {lead.estimated_precon_value > 0 && (
-                                          <div className="flex justify-between">
-                                            <span>Precon:</span>
-                                            <span className="font-semibold">${lead.estimated_precon_value.toLocaleString()}</span>
-                                          </div>
-                                        )}
-                                        {lead.estimated_construction_value > 0 && (
-                                          <div className="flex justify-between">
-                                            <span>Construction:</span>
-                                            <span className="font-semibold">${lead.estimated_construction_value.toLocaleString()}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    <div className="space-y-1.5">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="w-full text-xs text-slate-500"
-                                        onClick={() => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
-                                      >
-                                        View/Edit Timeline
-                                      </Button>
-                                      {nextStatus && (
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="w-full text-xs"
-                                          onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: nextStatus, currentLead: lead })}
-                                        >
-                                          <ChevronRight className="w-3 h-3 mr-1" />
-                                          Advance
-                                        </Button>
-                                      )}
-                                      <Button
-                                        size="sm"
-                                        className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
-                                        onClick={() => openSaleDialog(lead)}
-                                      >
-                                        <Briefcase className="w-3 h-3 mr-1" />
-                                        Convert to Sale
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="w-full text-xs border-red-200 text-red-600 hover:bg-red-50"
-                                        onClick={() => openDisqualifyDialog(lead)}
-                                      >
-                                        Disqualify
-                                      </Button>
-                                    </div>
+                                  <CardContent className="px-3 py-2">
+                                    <p className="font-medium text-slate-900 text-sm truncate">{lead.title}</p>
+                                    <p className="text-xs text-slate-500 truncate">{getClientName(lead.client_id)}</p>
                                   </CardContent>
                                 </Card>
                               )}
                             </Draggable>
-                          );
-                        })}
+                        ))}
                         {provided.placeholder}
                       </div>
                     )}
