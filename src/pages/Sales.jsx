@@ -656,153 +656,39 @@ export default function Sales() {
                           snapshot.isDraggingOver ? 'bg-slate-100' : ''
                         }`}
                       >
-                        {columnSales.map((sale, index) => {
-                          const nextStatus = getNextStatus(sale.status);
-                          return (
+                        {columnSales.map((sale, index) => (
                             <Draggable key={sale.id} draggableId={sale.id} index={index}>
                               {(provided, snapshot) => (
                                 <Card 
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
-                                  className={`border-2 ${column.color} transition-all cursor-pointer ${
-                                    snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
+                                  {...provided.dragHandleProps}
+                                  className={`border ${column.color} transition-all cursor-pointer ${
+                                    snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-md'
                                   }`}
                                   onClick={() => openDetailDialog(sale)}
                                 >
-                                  <CardContent className="p-4">
-                                    <div 
-                                      {...provided.dragHandleProps}
-                                      className="flex items-center gap-2 mb-2 cursor-grab active:cursor-grabbing"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <GripVertical className="w-4 h-4 text-slate-400" />
-                                      <h4 className="font-semibold text-slate-900 flex-1">{sale.title}</h4>
+                                  <CardContent className="px-3 py-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-medium text-slate-900 text-sm truncate">{sale.title}</p>
+                                        <p className="text-xs text-slate-500 truncate">{getClientName(sale.client_id)}</p>
+                                      </div>
+                                      <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
+                                        ${((sale.contract_value || 0) / 1000).toFixed(0)}k
+                                      </span>
                                     </div>
-                                    <p className="text-xs text-slate-500 mb-2 ml-6">{getClientName(sale.client_id)}</p>
-                          
-                          <div className="space-y-1 mb-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-slate-500">Precon Value</span>
-                              <span className="text-sm font-bold text-slate-700">
-                                ${(sale.contract_value / 1000).toFixed(0)}k
-                              </span>
-                            </div>
-                            {sale.estimated_construction_budget && (
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-slate-500">Est. Construction</span>
-                                <span className="text-sm font-semibold text-amber-600">
-                                  ${(sale.estimated_construction_budget / 1000).toFixed(0)}k
-                                </span>
-                              </div>
-                            )}
-                            {getTotalDeposits(sale) > 0 && (
-                              <>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-slate-500">Deposits</span>
-                                  <span className="text-sm font-medium text-emerald-600">
-                                    ${(getTotalDeposits(sale) / 1000).toFixed(1)}k
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-slate-500">Balance</span>
-                                  <span className={`text-sm font-medium ${needsDrawAlert(sale) ? 'text-red-600' : 'text-slate-700'}`}>
-                                    ${((calculateRemainingBalance(sale) || 0) / 1000).toFixed(1)}k
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-
-                          {needsDrawAlert(sale) && (
-                            <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                              <AlertCircle className="w-3 h-3 text-red-600 flex-shrink-0" />
-                              <span className="text-xs text-red-700">Draw needed</span>
-                            </div>
-                          )}
-
-                          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                            {!(sale.deposits || []).length && !sale.minimum_draw_threshold && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-xs"
-                                onClick={() => openFinanceDialog(sale)}
-                              >
-                                <DollarSign className="w-3 h-3 mr-1" />
-                                Setup Tracking
-                              </Button>
-                            )}
-
-                            {((sale.deposits || []).length > 0 || sale.minimum_draw_threshold) && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-xs"
-                                onClick={() => openInvoiceDialog(sale)}
-                              >
-                                <FileText className="w-3 h-3 mr-1" />
-                                Manage Deposits & Invoices
-                              </Button>
-                            )}
-
-                            {nextStatus && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-xs"
-                                onClick={() => openAdvanceDialog(sale)}
-                              >
-                                <ChevronRight className="w-3 h-3 mr-1" />
-                                Move to Next Phase
-                              </Button>
-                            )}
-
-                            {sale.status === 'pending_construction_sale' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  className="w-full text-xs bg-amber-600 hover:bg-amber-700"
-                                  onClick={() => openConstructionDialog(sale)}
-                                >
-                                  <Building2 className="w-3 h-3 mr-1" />
-                                  Convert to Construction
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="w-full text-xs"
-                                  onClick={() => {
-                                    setSelectedSale(sale);
-                                    setFinalPreconValue(sale.contract_value || '');
-                                    setClosePreconDialogOpen(true);
-                                  }}
-                                >
-                                  Finalize Pre-Con Only
-                                </Button>
-                              </>
-                            )}
-                            {sale.lead_id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
-                                onClick={() => {
-                                  setSelectedSale(sale);
-                                  setSendBackLeadPhase('new_project_lead');
-                                  setSendBackToLeadsDialogOpen(true);
-                                }}
-                              >
-                                <ChevronLeft className="w-3 h-3 mr-1" />
-                                Send Back to Leads
-                              </Button>
-                            )}
-                          </div>
+                                    {needsDrawAlert(sale) && (
+                                      <div className="mt-1 flex items-center gap-1">
+                                        <AlertCircle className="w-3 h-3 text-red-500" />
+                                        <span className="text-[10px] text-red-600 font-medium">Draw needed</span>
+                                      </div>
+                                    )}
                                   </CardContent>
                                 </Card>
                               )}
                             </Draggable>
-                          );
-                        })}
+                        ))}
                         {provided.placeholder}
                       </div>
                     )}
