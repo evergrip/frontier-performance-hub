@@ -460,6 +460,12 @@ export default function Sales() {
     initialData: [],
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    initialData: [],
+  });
+
   const leadPhases = [
     { value: 'new_project_lead', label: 'New Project Lead' },
     { value: 'initial_video_consult', label: 'Video Consult' },
