@@ -146,6 +146,33 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
             </Button>
           </div>
         </form>
+
+        {/* Quick Actions */}
+        <div className="border-t pt-4 mt-2 space-y-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</p>
+          <div className="grid grid-cols-2 gap-2">
+            {onViewTimeline && (
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => { onOpenChange(false); onViewTimeline(lead); }}>
+                View Timeline
+              </Button>
+            )}
+            {onAdvance && (
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => { onOpenChange(false); onAdvance(lead); }}>
+                <ChevronRight className="w-3 h-3 mr-1" /> Advance
+              </Button>
+            )}
+            {onConvert && (
+              <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => { onOpenChange(false); onConvert(lead); }}>
+                <Briefcase className="w-3 h-3 mr-1" /> Convert to Sale
+              </Button>
+            )}
+            {onDisqualify && (
+              <Button size="sm" variant="outline" className="text-xs border-red-200 text-red-600 hover:bg-red-50" onClick={() => { onOpenChange(false); onDisqualify(lead); }}>
+                Disqualify
+              </Button>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
