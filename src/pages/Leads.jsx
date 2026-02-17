@@ -535,6 +535,15 @@ export default function Leads() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Lead Dialog */}
+      <EditLeadDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        lead={selectedLead}
+        clients={clients}
+        users={users}
+      />
+
       {/* Disqualify Lead Dialog */}
       <Dialog open={disqualifyDialogOpen} onOpenChange={setDisqualifyDialogOpen}>
         <DialogContent>
