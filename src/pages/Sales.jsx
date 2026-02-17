@@ -509,7 +509,8 @@ export default function Sales() {
     }
   });
 
-  const totalValue = preconstructionSales.reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
+  const totalPreconValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
+  const totalConstructionValue = preconstructionSales.reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
