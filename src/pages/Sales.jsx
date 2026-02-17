@@ -1183,24 +1183,33 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
-      {/* Detail Dialog - Phase Timeline */}
+      {/* Detail Dialog - Phase Timeline & Actions */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Project Timeline</DialogTitle>
+            <DialogTitle>{selectedSale?.title}</DialogTitle>
           </DialogHeader>
-          {selectedSale && (
+          {selectedSale && (() => {
+            const nextStatus = getNextStatus(selectedSale.status);
+            return (
             <div className="space-y-4">
               <div className="p-3 bg-slate-50 rounded-lg">
-                <p className="text-sm font-medium text-slate-900">{selectedSale.title}</p>
                 <p className="text-xs text-slate-500">{getClientName(selectedSale.client_id)}</p>
-                <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-3 gap-4 mt-2">
                   <div>
                     <p className="text-xs text-slate-500">Precon Value</p>
                     <p className="text-sm font-semibold text-slate-900">
                       ${((selectedSale.contract_value || 0) / 1000).toFixed(0)}k
                     </p>
                   </div>
+                  {selectedSale.estimated_construction_budget > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-500">Est. Construction</p>
+                      <p className="text-sm font-semibold text-amber-600">
+                        ${((selectedSale.estimated_construction_budget || 0) / 1000).toFixed(0)}k
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs text-slate-500">Started</p>
                     <p className="text-sm font-semibold text-slate-900">
@@ -1208,6 +1217,40 @@ export default function Sales() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-2">
+                {nextStatus && (
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openAdvanceDialog(selectedSale); }}>
+                    <ChevronRight className="w-3 h-3 mr-1" /> Move to Next Phase
+                  </Button>
+                )}
+                {!(selectedSale.deposits || []).length && !selectedSale.minimum_draw_threshold && (
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openFinanceDialog(selectedSale); }}>
+                    <DollarSign className="w-3 h-3 mr-1" /> Setup Tracking
+                  </Button>
+                )}
+                {((selectedSale.deposits || []).length > 0 || selectedSale.minimum_draw_threshold) && (
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openInvoiceDialog(selectedSale); }}>
+                    <FileText className="w-3 h-3 mr-1" /> Deposits & Invoices
+                  </Button>
+                )}
+                {selectedSale.status === 'pending_construction_sale' && (
+                  <>
+                    <Button size="sm" className="text-xs bg-amber-600 hover:bg-amber-700" onClick={() => { setDetailDialogOpen(false); openConstructionDialog(selectedSale); }}>
+                      <Building2 className="w-3 h-3 mr-1" /> Convert to Construction
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setFinalPreconValue(selectedSale.contract_value || ''); setClosePreconDialogOpen(true); }}>
+                      Finalize Pre-Con Only
+                    </Button>
+                  </>
+                )}
+                {selectedSale.lead_id && (
+                  <Button size="sm" variant="outline" className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => { setDetailDialogOpen(false); setSendBackLeadPhase('new_project_lead'); setSendBackToLeadsDialogOpen(true); }}>
+                    <ChevronLeft className="w-3 h-3 mr-1" /> Send Back to Leads
+                  </Button>
+                )}
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1246,7 +1289,8 @@ export default function Sales() {
                 </Button>
               </div>
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
