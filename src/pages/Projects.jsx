@@ -598,109 +598,40 @@ export default function Projects() {
                           snapshot.isDraggingOver ? 'bg-slate-100' : ''
                         }`}
                       >
-                        {columnProjects.map((project, index) => {
-                          const nextStatus = getNextStatus(project.status);
-                          return (
+                        {columnProjects.map((project, index) => (
                             <Draggable key={project.id} draggableId={project.id} index={index}>
                                {(provided, snapshot) => (
                                  <Card 
                                    ref={provided.innerRef}
                                    {...provided.draggableProps}
+                                   {...provided.dragHandleProps}
                                    style={{
                                       ...provided.draggableProps.style,
                                       ...(project.color ? { borderColor: project.color, borderWidth: '2px', backgroundColor: project.color + '18' } : {})
                                     }}
-                                    className={`border-2 ${!project.color ? column.color : ''} transition-all cursor-pointer ${
-                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-lg'
+                                    className={`border ${!project.color ? column.color : ''} transition-all cursor-pointer ${
+                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-md'
                                    }`}
                                    onClick={() => openEditDialog(project)}
                                  >
-                                  <CardContent className="p-4">
-                                    <div 
-                                      {...provided.dragHandleProps}
-                                      className="flex items-center gap-2 mb-2 cursor-grab active:cursor-grabbing"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <GripVertical className="w-4 h-4 text-slate-400" />
-                                      <h4 className="font-semibold text-slate-900 flex-1">{project.title}</h4>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mb-2 ml-6">{getProjectClientName(project)}</p>
-                          
-                                    <div className="space-y-1 mb-3">
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-xs text-slate-500">Contract Value</span>
-                                        <span className="text-sm font-bold text-slate-700">
-                                          ${((project.contract_value || 0) / 1000).toFixed(0)}k
-                                        </span>
+                                  <CardContent className="px-3 py-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-medium text-slate-900 text-sm truncate">{project.title}</p>
+                                        <p className="text-xs text-slate-500 truncate">{getProjectClientName(project)}</p>
                                       </div>
-                                      {project.start_date && (
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-xs text-slate-500">Start Date</span>
-                                          <span className="text-xs text-slate-600">
-                                            {format(new Date(project.start_date), 'MMM d, yyyy')}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {project.target_completion_date && (
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-xs text-slate-500">Target Completion</span>
-                                          <span className="text-xs text-slate-600">
-                                            {format(new Date(project.target_completion_date), 'MMM d, yyyy')}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-xs text-slate-500">Crew</span>
-                                          <span className="text-xs font-medium text-slate-700">
-                                            {project.crew_assignment.replace('_', ' ').toUpperCase()}
-                                          </span>
-                                        </div>
-                                      )}
+                                      <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
+                                        ${((project.contract_value || 0) / 1000).toFixed(0)}k
+                                      </span>
                                     </div>
-
-                                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                                      {nextStatus && (
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          className="w-full text-xs"
-                                          onClick={() => openAdvanceDialog(project)}
-                                        >
-                                          <ChevronRight className="w-3 h-3 mr-1" />
-                                          Move to Next Phase
-                                        </Button>
-                                      )}
-                                      {project.status === 'substantial_completion_closeout' && (
-                                        <Button
-                                          size="sm"
-                                          className="w-full text-xs bg-emerald-600 hover:bg-emerald-700"
-                                          onClick={() => openCloseoutDialog(project)}
-                                        >
-                                          <CheckCircle className="w-3 h-3 mr-1" />
-                                          Close Out Project
-                                        </Button>
-                                      )}
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="w-full text-xs border-amber-200 text-amber-700 hover:bg-amber-50"
-                                        onClick={() => {
-                                          setSelectedProject(project);
-                                          setSendBackPhase('feasibility');
-                                          setSendBackDialogOpen(true);
-                                        }}
-                                      >
-                                        <ChevronLeft className="w-3 h-3 mr-1" />
-                                        Send Back to Pre-Con
-                                      </Button>
-                                    </div>
+                                    {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
+                                      <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
+                                    )}
                                   </CardContent>
                                 </Card>
                               )}
                             </Draggable>
-                          );
-                        })}
+                        ))}
                         {provided.placeholder}
                       </div>
                     )}
