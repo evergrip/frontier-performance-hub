@@ -467,6 +467,13 @@ export default function Leads() {
         lead={selectedLead}
         clients={clients}
         users={users}
+        onAdvance={(lead) => {
+          const next = getNextStatus(lead.status);
+          if (next) updateLeadStatusMutation.mutate({ leadId: lead.id, status: next, currentLead: lead });
+        }}
+        onConvert={(lead) => openSaleDialog(lead)}
+        onDisqualify={(lead) => openDisqualifyDialog(lead)}
+        onViewTimeline={(lead) => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
       />
 
       {/* Disqualify Lead Dialog */}
