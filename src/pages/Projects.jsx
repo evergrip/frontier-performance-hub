@@ -365,6 +365,9 @@ export default function Projects() {
     // Update commission with actual construction cost
     if (selectedProject.sale_id) {
       try {
+        const actualCostsVal = parseFloat(projectForm.actual_costs) || 0;
+        const actualMarginVal = parseFloat(projectForm.actual_margin) || 0;
+        const actualGrossRevenue = actualMarginVal < 100 ? actualCostsVal / (1 - (actualMarginVal / 100)) : actualCostsVal;
         await base44.functions.invoke('processCommission', {
           sale_id: selectedProject.sale_id,
           sale_type: 'construction',

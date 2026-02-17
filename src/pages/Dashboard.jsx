@@ -31,7 +31,7 @@ export default function Dashboard() {
     totalRevenue: true,
     activeProjects: true,
     activeSales: true,
-    activeLead: true,
+    activeLeads: true,
     cashFlow: true,
     margins: true,
     grossProfit: true,
