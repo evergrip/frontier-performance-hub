@@ -337,9 +337,23 @@ export default function Leads() {
                                       className="flex items-center gap-1.5 mb-1 cursor-grab active:cursor-grabbing"
                                     >
                                       <GripVertical className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                                      <h4 className="font-semibold text-slate-900 text-sm">{lead.title}</h4>
+                                      <h4
+                                        className="font-semibold text-slate-900 text-sm hover:text-[#ea7924] cursor-pointer flex-1"
+                                        onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
+                                      >
+                                        {lead.title}
+                                      </h4>
+                                      <Pencil
+                                        className="w-3 h-3 text-slate-400 hover:text-[#ea7924] cursor-pointer flex-shrink-0"
+                                        onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
+                                      />
                                     </div>
-                                    <p className="text-xs text-slate-500 mb-2 ml-5">{getClientName(lead.client_id)}</p>
+                                    <p
+                                      className="text-xs text-slate-500 mb-2 ml-5 hover:text-[#ea7924] cursor-pointer"
+                                      onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
+                                    >
+                                      {getClientName(lead.client_id)}
+                                    </p>
                                     {(lead.estimated_precon_value || lead.estimated_construction_value) && (
                                       <div className="text-xs text-slate-600 mb-2 space-y-0.5">
                                         {lead.estimated_precon_value > 0 && (
