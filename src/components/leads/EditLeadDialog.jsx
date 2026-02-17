@@ -11,7 +11,7 @@ import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
 import LeadSourcePicker from '../common/LeadSourcePicker';
 
-export default function EditLeadDialog({ open, onOpenChange, lead, clients, users }) {
+export default function EditLeadDialog({ open, onOpenChange, lead, clients, users, onAdvance, onConvert, onDisqualify, onViewTimeline }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({});
 
