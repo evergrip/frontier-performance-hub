@@ -20,6 +20,7 @@ export default function Leads() {
   const [disqualifyDialogOpen, setDisqualifyDialogOpen] = useState(false);
   const [timelineDialogOpen, setTimelineDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
 
