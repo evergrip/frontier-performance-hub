@@ -9,10 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Briefcase, ArrowRight, ChevronRight, GripVertical } from 'lucide-react';
+import { Target, Briefcase, ArrowRight, ChevronRight, GripVertical, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
+import EditLeadDialog from '../components/leads/EditLeadDialog';
 
 export default function Leads() {
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
