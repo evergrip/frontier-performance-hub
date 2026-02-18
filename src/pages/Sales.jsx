@@ -906,12 +906,17 @@ export default function Sales() {
               <Button type="button" variant="outline" onClick={() => setConstructionDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={convertToConstructionMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
+              <Button type="submit" disabled={convertToConstructionMutation.isPending || !auditPassed} className="bg-amber-600 hover:bg-amber-700">
                 <Building2 className="w-4 h-4 mr-2" />
                 Convert to Construction
               </Button>
+              {!auditPassed && (
+                <p className="text-xs text-red-600 mt-1">Resolve all audit items before converting</p>
+              )}
             </div>
           </form>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
