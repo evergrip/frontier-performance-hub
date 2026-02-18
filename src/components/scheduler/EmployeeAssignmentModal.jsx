@@ -24,6 +24,43 @@ export default function EmployeeAssignmentModal({
   );
   const [overtimeAlert, setOvertimeAlert] = useState(null);
 
+  // Build a summary of employee assignments for the same day across all jobs
+  const dayEmployeeSummary = useMemo(() => {
+    if (!date) return [];
+    const dateStr = typeof date === 'string' && date.includes(',') 
+      ? null // formatted date like "Feb 18, 2026" - need to parse from allAssignments
+      : date;
+    
+    const employeeMap = {};
+    allAssignments.forEach(a => {
+      // Match assignments on the same day
+      const aDate = a.assignment_date;
+      const formattedADate = (() => {
+        try {
+          const d = new Date(aDate + 'T00:00:00');
+          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        } catch { return ''; }
+      })();
+      
+      const isMatch = dateStr ? aDate === dateStr : formattedADate === date;
+      if (!isMatch) return;
+
+      const projectName = a._projectTitle; // we'll pass this in
+      a.employee_assignments?.forEach(ea => {
+        if (!ea.employee_id) return;
+        if (!employeeMap[ea.employee_id]) {
+          employeeMap[ea.employee_id] = { totalHours: 0, jobs: [] };
+        }
+        employeeMap[ea.employee_id].totalHours += (ea.hours || 0);
+        employeeMap[ea.employee_id].jobs.push({
+          projectId: a.project_id,
+          hours: ea.hours || 0
+        });
+      });
+    });
+    return employeeMap;
+  }, [date, allAssignments]);
+
   React.useEffect(() => {
     if (isOpen && existingAssignments && existingAssignments.length > 0) {
       setAssignments(existingAssignments);
