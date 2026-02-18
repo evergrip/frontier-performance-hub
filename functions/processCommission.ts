@@ -9,9 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-    }
+    // Auth check only - this is called from frontend flows by any authenticated user
 
     const { sale_id, sale_type, final_amount, is_update } = await req.json();
 
