@@ -149,6 +149,56 @@ export default function EmployeeAssignmentModal({
             Date: {date}
           </div>
 
+          {/* Day employee overview */}
+          {(() => {
+            const constructionUsers = users.filter(u => u.departments?.includes('construction'));
+            const assignedEmployeeIds = Object.keys(dayEmployeeSummary);
+            const assignedCount = assignedEmployeeIds.length;
+            const unassignedUsers = constructionUsers.filter(u => !assignedEmployeeIds.includes(u.id));
+            
+            return (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <Users className="w-4 h-4" />
+                  Staff on this day: {assignedCount} assigned, {unassignedUsers.length} available
+                </div>
+                {assignedCount > 0 && (
+                  <div className="space-y-1">
+                    {assignedEmployeeIds.map(empId => {
+                      const emp = users.find(u => u.id === empId);
+                      const info = dayEmployeeSummary[empId];
+                      const jobNames = info.jobs.map(j => {
+                        const proj = projects.find(p => p.id === j.projectId);
+                        return `${proj?.title || 'Unknown'} (${j.hours}h)`;
+                      });
+                      return (
+                        <div key={empId} className="flex items-center justify-between text-xs">
+                          <span className="text-slate-700">{emp?.full_name || 'Unknown'}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-slate-500">{jobNames.join(', ')}</span>
+                            <Badge variant={info.totalHours >= 8 ? 'destructive' : 'secondary'} className="text-[10px] px-1.5 py-0">
+                              {info.totalHours}h
+                            </Badge>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {unassignedUsers.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-200">
+                    <span className="text-[10px] text-green-700 font-medium mr-1">Available:</span>
+                    {unassignedUsers.map(u => (
+                      <Badge key={u.id} variant="outline" className="text-[10px] px-1.5 py-0 bg-green-50 text-green-700 border-green-200">
+                        {u.full_name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {assignments.map((assignment, index) => (
               <div key={index} className="flex gap-2 items-end">
