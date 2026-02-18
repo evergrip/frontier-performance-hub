@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Plus, Trash2, CalendarOff, UserX, Clock } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertCircle, Plus, Trash2, CalendarOff, UserX, Clock, AlertTriangle } from 'lucide-react';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 
 const REASON_LABELS = {
@@ -21,13 +22,17 @@ export default function EmployeeProjectAssignDialog({
   holidays = [],
   assignments = [],
   unavailabilities = [],
-  onAssign
+  onAssign,
+  onOverrunExtend
 }) {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [dateBlocks, setDateBlocks] = useState([{ startDate: '', endDate: '', hours: 8, includeWeekdays: true, includeSaturday: false, includeSunday: false }]);
   const [showConflicts, setShowConflicts] = useState(false);
   const [conflicts, setConflicts] = useState([]);
+  const [showOverrunDialog, setShowOverrunDialog] = useState(false);
+  const [overrunExplanation, setOverrunExplanation] = useState('');
+  const [overrunDays, setOverrunDays] = useState([]);
 
   const holidaySet = useMemo(() => new Set(holidays.map(h => h.date)), [holidays]);
   const holidayNames = useMemo(() => {
@@ -36,6 +41,7 @@ export default function EmployeeProjectAssignDialog({
     return map;
   }, [holidays]);
 
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
   const constructionUsers = users.filter(u => u.departments?.includes('construction'));
 
   const getEmployeeDayHours = (employeeId, dateStr) => {
@@ -70,13 +76,9 @@ export default function EmployeeProjectAssignDialog({
       const start = new Date(block.startDate + 'T00:00:00');
       const end = new Date(block.endDate + 'T00:00:00');
       if (start > end) return;
-
       eachDayOfInterval({ start, end }).forEach(day => {
         const dow = getDay(day);
-        const isWeekday = dow >= 1 && dow <= 5;
-        const isSat = dow === 6;
-        const isSun = dow === 0;
-        if ((isWeekday && block.includeWeekdays) || (isSat && block.includeSaturday) || (isSun && block.includeSunday)) {
+        if ((dow >= 1 && dow <= 5 && block.includeWeekdays) || (dow === 6 && block.includeSaturday) || (dow === 0 && block.includeSunday)) {
           daysList.push({ date: format(day, 'yyyy-MM-dd'), hours: block.hours, blockIdx });
         }
       });
@@ -86,25 +88,23 @@ export default function EmployeeProjectAssignDialog({
 
   const dayAnalysis = useMemo(() => {
     if (!selectedEmployeeId) return [];
+    const targetDate = selectedProject?.target_completion_date;
     return allTargetDays.map(d => {
       const isHoliday = holidaySet.has(d.date);
       const unavail = isEmployeeUnavailable(selectedEmployeeId, d.date);
       const existingJob = getEmployeeJobOnDay(selectedEmployeeId, d.date);
       const existingHours = getEmployeeDayHours(selectedEmployeeId, d.date);
       const totalHours = existingHours + d.hours;
+      const isOverrun = targetDate ? d.date > targetDate : false;
       return {
-        ...d,
-        isHoliday,
-        holidayName: holidayNames[d.date],
-        unavail,
-        existingJob,
-        existingHours,
-        totalHours,
-        hasOvertime: totalHours > 8,
-        hasConflict: !!unavail || isHoliday
+        ...d, isHoliday, holidayName: holidayNames[d.date], unavail, existingJob,
+        existingHours, totalHours, hasOvertime: totalHours > 8,
+        hasConflict: !!unavail || isHoliday, isOverrun
       };
     });
-  }, [allTargetDays, selectedEmployeeId, assignments, unavailabilities, holidays]);
+  }, [allTargetDays, selectedEmployeeId, assignments, unavailabilities, holidays, selectedProject]);
+
+  const overrunCount = dayAnalysis.filter(d => d.isOverrun).length;
 
   const addBlock = () => {
     setDateBlocks(prev => [...prev, { startDate: '', endDate: '', hours: 8, includeWeekdays: true, includeSaturday: false, includeSunday: false }]);
@@ -119,7 +119,41 @@ export default function EmployeeProjectAssignDialog({
   };
 
   const handleAssign = () => {
+    // Check overrun first
+    const overrunDaysList = dayAnalysis.filter(d => d.isOverrun && !d.unavail);
+    if (overrunDaysList.length > 0) {
+      setOverrunDays(overrunDaysList);
+      setOverrunExplanation('');
+      setShowOverrunDialog(true);
+      return;
+    }
+
+    // Then check other conflicts
     const problemDays = dayAnalysis.filter(d => d.hasConflict || d.hasOvertime);
+    if (problemDays.length > 0) {
+      setConflicts(problemDays);
+      setShowConflicts(true);
+      return;
+    }
+    executeAssign();
+  };
+
+  const handleOverrunConfirm = () => {
+    // Extend project and log overrun
+    const latestOverrunDate = overrunDays.reduce((max, d) => d.date > max ? d.date : max, overrunDays[0].date);
+    if (onOverrunExtend) {
+      onOverrunExtend({
+        projectId: selectedProjectId,
+        employeeId: selectedEmployeeId,
+        originalDate: selectedProject?.target_completion_date,
+        newDate: latestOverrunDate,
+        explanation: overrunExplanation
+      });
+    }
+    setShowOverrunDialog(false);
+
+    // Now check remaining conflicts (non-overrun)
+    const problemDays = dayAnalysis.filter(d => (d.hasConflict || d.hasOvertime) && !d.isOverrun);
     if (problemDays.length > 0) {
       setConflicts(problemDays);
       setShowConflicts(true);
@@ -140,11 +174,10 @@ export default function EmployeeProjectAssignDialog({
   };
 
   const resetForm = () => {
-    setSelectedProjectId('');
-    setSelectedEmployeeId('');
+    setSelectedProjectId(''); setSelectedEmployeeId('');
     setDateBlocks([{ startDate: '', endDate: '', hours: 8, includeWeekdays: true, includeSaturday: false, includeSunday: false }]);
-    setConflicts([]);
-    setShowConflicts(false);
+    setConflicts([]); setShowConflicts(false);
+    setShowOverrunDialog(false); setOverrunExplanation(''); setOverrunDays([]);
   };
 
   const employeeName = constructionUsers.find(u => u.id === selectedEmployeeId)?.full_name;
@@ -152,23 +185,29 @@ export default function EmployeeProjectAssignDialog({
 
   return (
     <>
-      <Dialog open={isOpen && !showConflicts} onOpenChange={() => { resetForm(); onClose(); }}>
+      <Dialog open={isOpen && !showConflicts && !showOverrunDialog} onOpenChange={() => { resetForm(); onClose(); }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Assign Employee to Project</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-5">
-            {/* Project & Employee */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">Project</Label>
                 <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)} className="w-full mt-1 px-3 py-2 border rounded-md text-sm">
                   <option value="">Select project...</option>
                   {projects.filter(p => p.status !== 'closed' && p.status !== 'awaiting_to_be_scheduled').map(p => (
-                    <option key={p.id} value={p.id}>{p.title}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.title} {p.target_completion_date ? `(due ${format(new Date(p.target_completion_date + 'T00:00:00'), 'MMM d')})` : ''}
+                    </option>
                   ))}
                 </select>
+                {selectedProject?.target_completion_date && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Target completion: {format(new Date(selectedProject.target_completion_date + 'T00:00:00'), 'MMM d, yyyy')}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm font-medium">Employee</Label>
@@ -181,6 +220,17 @@ export default function EmployeeProjectAssignDialog({
               </div>
             </div>
 
+            {/* Overrun pre-emptive warning */}
+            {overrunCount > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>{overrunCount} day(s)</strong> extend beyond the project's target completion date ({selectedProject?.target_completion_date ? format(new Date(selectedProject.target_completion_date + 'T00:00:00'), 'MMM d, yyyy') : 'N/A'}).
+                  You will be asked for an explanation before proceeding.
+                </div>
+              </div>
+            )}
+
             {/* Date Blocks */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -189,7 +239,6 @@ export default function EmployeeProjectAssignDialog({
                   <Plus className="w-3 h-3 mr-1" /> Add Range
                 </Button>
               </div>
-
               {dateBlocks.map((block, idx) => (
                 <div key={idx} className="bg-slate-50 rounded-lg p-3 space-y-2 border">
                   <div className="flex items-center justify-between">
@@ -216,16 +265,13 @@ export default function EmployeeProjectAssignDialog({
                   </div>
                   <div className="flex gap-4 text-xs">
                     <label className="flex items-center gap-1">
-                      <input type="checkbox" checked={block.includeWeekdays} onChange={(e) => updateBlock(idx, 'includeWeekdays', e.target.checked)} className="rounded" />
-                      Mon-Fri
+                      <input type="checkbox" checked={block.includeWeekdays} onChange={(e) => updateBlock(idx, 'includeWeekdays', e.target.checked)} className="rounded" /> Mon-Fri
                     </label>
                     <label className="flex items-center gap-1">
-                      <input type="checkbox" checked={block.includeSaturday} onChange={(e) => updateBlock(idx, 'includeSaturday', e.target.checked)} className="rounded" />
-                      Sat
+                      <input type="checkbox" checked={block.includeSaturday} onChange={(e) => updateBlock(idx, 'includeSaturday', e.target.checked)} className="rounded" /> Sat
                     </label>
                     <label className="flex items-center gap-1">
-                      <input type="checkbox" checked={block.includeSunday} onChange={(e) => updateBlock(idx, 'includeSunday', e.target.checked)} className="rounded" />
-                      Sun
+                      <input type="checkbox" checked={block.includeSunday} onChange={(e) => updateBlock(idx, 'includeSunday', e.target.checked)} className="rounded" /> Sun
                     </label>
                   </div>
                 </div>
@@ -241,7 +287,7 @@ export default function EmployeeProjectAssignDialog({
                 <div className="max-h-52 overflow-y-auto border rounded-lg divide-y">
                   {dayAnalysis.map((d, i) => (
                     <div key={i} className={`px-3 py-2 text-xs flex items-center justify-between ${
-                      d.unavail ? 'bg-rose-50' : d.isHoliday ? 'bg-amber-50' : d.hasOvertime ? 'bg-orange-50' : 'bg-white'
+                      d.unavail ? 'bg-rose-50' : d.isOverrun ? 'bg-red-50' : d.isHoliday ? 'bg-amber-50' : d.hasOvertime ? 'bg-orange-50' : 'bg-white'
                     }`}>
                       <div className="flex items-center gap-2">
                         <span className="font-medium w-24">{format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}</span>
@@ -254,10 +300,13 @@ export default function EmployeeProjectAssignDialog({
                             {d.existingJob.projectTitle} ({d.existingJob.hours}h)
                           </Badge>
                         )}
-                        {d.hasOvertime && (
-                          <Badge className="bg-orange-100 text-orange-800 text-[10px]">
-                            {d.totalHours}h total
+                        {d.isOverrun && (
+                          <Badge className="bg-red-100 text-red-800 text-[10px]">
+                            <AlertTriangle className="w-2.5 h-2.5 mr-1" /> Past target date
                           </Badge>
+                        )}
+                        {d.hasOvertime && (
+                          <Badge className="bg-orange-100 text-orange-800 text-[10px]">{d.totalHours}h total</Badge>
                         )}
                         {d.isHoliday && (
                           <Badge className="bg-amber-100 text-amber-800 text-[10px]">
@@ -269,7 +318,7 @@ export default function EmployeeProjectAssignDialog({
                             <UserX className="w-2.5 h-2.5 mr-1" /> {REASON_LABELS[d.unavail.reason] || d.unavail.reason}
                           </Badge>
                         )}
-                        {!d.hasConflict && !d.hasOvertime && !d.existingJob && (
+                        {!d.hasConflict && !d.hasOvertime && !d.existingJob && !d.isOverrun && (
                           <span className="text-green-600">✓</span>
                         )}
                       </div>
@@ -284,9 +333,7 @@ export default function EmployeeProjectAssignDialog({
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
                 <strong>Summary:</strong> {employeeName} → {projectName} for {dayAnalysis.length} day(s) across {dateBlocks.filter(b => b.startDate && b.endDate).length} range(s).
                 {dayAnalysis.some(d => d.unavail) && (
-                  <span className="text-rose-600 ml-1">
-                    ({dayAnalysis.filter(d => d.unavail).length} day(s) will be skipped — unavailable)
-                  </span>
+                  <span className="text-rose-600 ml-1">({dayAnalysis.filter(d => d.unavail).length} day(s) will be skipped — unavailable)</span>
                 )}
               </div>
             )}
@@ -294,11 +341,57 @@ export default function EmployeeProjectAssignDialog({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => { resetForm(); onClose(); }}>Cancel</Button>
-            <Button
-              onClick={handleAssign}
-              disabled={!selectedProjectId || !selectedEmployeeId || dayAnalysis.length === 0}
-            >
+            <Button onClick={handleAssign} disabled={!selectedProjectId || !selectedEmployeeId || dayAnalysis.length === 0}>
               Assign {dayAnalysis.filter(d => !d.unavail).length} Days
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Overrun Dialog */}
+      <Dialog open={showOverrunDialog} onOpenChange={() => setShowOverrunDialog(false)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Project Timeline Overrun
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-slate-700">
+              <strong>{overrunDays.length} day(s)</strong> for <strong>{employeeName}</strong> extend beyond <strong>{projectName}</strong>'s target completion date of{' '}
+              <strong>{selectedProject?.target_completion_date ? format(new Date(selectedProject.target_completion_date + 'T00:00:00'), 'MMM d, yyyy') : 'N/A'}</strong>.
+            </p>
+            <div className="bg-red-50 rounded-lg p-3 text-xs space-y-1 max-h-32 overflow-y-auto">
+              {overrunDays.map((d, i) => (
+                <div key={i} className="flex justify-between">
+                  <span>{format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d, yyyy')}</span>
+                  <span className="text-red-600">{d.hours}h</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Explanation (required)</Label>
+              <Textarea
+                value={overrunExplanation}
+                onChange={(e) => setOverrunExplanation(e.target.value)}
+                placeholder="Why does this project need to be extended?"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              The project's target completion date will be extended to{' '}
+              <strong>{overrunDays.length > 0 ? format(new Date(overrunDays[overrunDays.length - 1].date + 'T00:00:00'), 'MMM d, yyyy') : ''}</strong>.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOverrunDialog(false)}>Cancel</Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700"
+              disabled={!overrunExplanation.trim()}
+              onClick={handleOverrunConfirm}
+            >
+              Extend Project & Assign
             </Button>
           </DialogFooter>
         </DialogContent>
