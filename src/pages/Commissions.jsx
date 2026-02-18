@@ -230,7 +230,6 @@ export default function Commissions() {
   const requestBalloonMutation = useMutation({
     mutationFn: async ({ amount, notes }) => {
       const response = await base44.functions.invoke('processBalloonPayment', {
-        user_id: user.id,
         requested_amount: parseFloat(amount),
         notes
       });
