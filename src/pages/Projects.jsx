@@ -1130,12 +1130,30 @@ export default function Projects() {
           <DialogHeader>
             <DialogTitle>Close Out Project</DialogTitle>
           </DialogHeader>
+          {(() => {
+            const linkedSale = selectedProject ? sales.find(s => s.id === selectedProject.sale_id) : null;
+            const linkedLead = linkedSale ? leads.find(l => l.id === linkedSale.lead_id) : null;
+            const linkedClient = selectedProject ? clients.find(c => c.id === selectedProject.client_id) : null;
+            const saleTxns = linkedSale ? commissionTransactions.filter(t => t.sale_id === linkedSale.id) : [];
+            const auditChecks = linkedSale ? getChecks({ sale: linkedSale, project: selectedProject, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'construction_closeout' }) : [];
+            const auditPassed = auditChecks.every(c => c.pass);
+            return (
           <form onSubmit={handleCloseoutProject} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
               <p className="text-xs text-slate-500">{getClientName(selectedProject?.client_id)}</p>
               <p className="text-xs text-amber-600 mt-2">Finalizing this project will remove it from the scheduler and active projects</p>
             </div>
+
+            <FileAuditChecklist
+              sale={linkedSale}
+              project={selectedProject}
+              lead={linkedLead}
+              client={linkedClient}
+              users={users}
+              commissionTransactions={saleTxns}
+              mode="construction_closeout"
+            />
 
             <div>
               <Label>Final Project Costs *</Label>
