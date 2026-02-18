@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       transaction_type: 'phase_commission',
       amount: 0, // No new commission earned
       phase_name: phase,
-      phase_payout_percentage: phasePayout.payout_percentage,
+      phase_payout_percentage: phasePayout.available_percentage,
       amount_made_available: amountToMakeAvailable,
       status: 'available',
       notes: `${phasePayout.payout_percentage}% made available upon completing ${phase} phase`
