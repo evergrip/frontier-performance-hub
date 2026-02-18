@@ -36,7 +36,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Leads', icon: Target, page: 'Leads' },
     { name: 'Pre-Construction', icon: Briefcase, page: 'Sales' },
     { name: 'Projects', icon: Building2, page: 'Projects' },
-    { name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' },
+    ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
     { name: 'Reports', icon: Settings, page: 'Reports' },
     { name: 'My KPIs', icon: Target, page: 'MyKPIs' },
   ];
