@@ -260,7 +260,7 @@ export default function Sales() {
   };
 
   const preconstructionSales = sales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
-  const closedSales = sales.filter(s => ['closed_won', 'closed_lost'].includes(s.status));
+  const closedPreconSales = sales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status));
 
   const statusColumns = [
     { status: 'feasibility', label: 'Feasibility', color: 'bg-blue-100 border-blue-200', description: 'Initial assessment' },
