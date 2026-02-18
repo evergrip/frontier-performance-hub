@@ -15,7 +15,7 @@ const REASON_LABELS = {
   injury: 'Injury', vacation: 'Vacation', other: 'Other'
 };
 
-function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignments, selectedProjectId, users, constructionUsers }) {
+function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignments, selectedProjectId, users, subtrades }) {
   const [expanded, setExpanded] = useState(false);
 
   const dayStaffMap = useMemo(() => {
@@ -25,14 +25,15 @@ function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignm
         const user = users.find(u => u.id === ea.employee_id);
         return { name: user?.full_name || 'Unknown', hours: ea.hours || 0 };
       });
-      return { date: dateStr, staffCount: staffList.length, staff: staffList };
+      const subList = (dayAssignment?.subtrade_assignments || []).map(sa => {
+        const sub = subtrades.find(s => s.id === sa.subtrade_id);
+        return { name: sub?.name || 'Unknown', notes: sa.notes || '' };
+      });
+      return { date: dateStr, staffCount: staffList.length, staff: staffList, subCount: subList.length, subs: subList };
     });
-  }, [projectScheduledDays, assignments, selectedProjectId, users]);
+  }, [projectScheduledDays, assignments, selectedProjectId, users, subtrades]);
 
   const totalUnstaffed = dayStaffMap.filter(d => d.staffCount === 0).length;
-  const avgStaff = dayStaffMap.length > 0
-    ? (dayStaffMap.reduce((sum, d) => sum + d.staffCount, 0) / dayStaffMap.length).toFixed(1)
-    : 0;
 
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
@@ -44,7 +45,6 @@ function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignm
           </Label>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[10px] text-slate-500">Avg {avgStaff} staff/day</span>
           {totalUnstaffed > 0 && (
             <Badge className="bg-amber-100 text-amber-800 text-[10px]">{totalUnstaffed} unstaffed</Badge>
           )}
@@ -55,16 +55,45 @@ function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignm
       </div>
 
       {!expanded && (
-        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+        <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
           {dayStaffMap.map(d => (
-            <Badge
-              key={d.date}
-              variant="outline"
-              className={`text-[10px] font-normal ${d.staffCount === 0 ? 'border-amber-300 bg-amber-50 text-amber-700' : ''}`}
-            >
-              {format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}
-              <span className="ml-1 text-slate-400">({d.staffCount})</span>
-            </Badge>
+            <Popover key={d.date}>
+              <PopoverTrigger asChild>
+                <button
+                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-normal cursor-pointer hover:bg-slate-100 transition-colors ${
+                    d.staffCount === 0 ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-700'
+                  }`}
+                >
+                  {format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}
+                  <span className="ml-1 text-slate-400">
+                    <Users className="w-2 h-2 inline" />{d.staffCount}
+                    {d.subCount > 0 && <> <Wrench className="w-2 h-2 inline" />{d.subCount}</>}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-52 p-3" side="top" align="start">
+                <p className="font-semibold text-xs text-slate-900 mb-1">{format(new Date(d.date + 'T00:00:00'), 'EEEE, MMM d')}</p>
+                {d.staff.length > 0 && (
+                  <div className="mb-1.5">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Staff ({d.staffCount})</p>
+                    {d.staff.map((s, i) => (
+                      <div key={i} className="text-xs flex justify-between"><span>{s.name}</span><span className="text-slate-400">{s.hours}h</span></div>
+                    ))}
+                  </div>
+                )}
+                {d.subs.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Subs ({d.subCount})</p>
+                    {d.subs.map((s, i) => (
+                      <div key={i} className="text-xs">{s.name}{s.notes && <span className="text-slate-400 ml-1">— {s.notes}</span>}</div>
+                    ))}
+                  </div>
+                )}
+                {d.staffCount === 0 && d.subCount === 0 && (
+                  <p className="text-xs text-amber-600">No staff or subs assigned</p>
+                )}
+              </PopoverContent>
+            </Popover>
           ))}
         </div>
       )}
@@ -72,18 +101,25 @@ function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignm
       {expanded && (
         <div className="max-h-48 overflow-y-auto border rounded-md divide-y bg-white">
           {dayStaffMap.map(d => (
-            <div key={d.date} className={`px-3 py-1.5 text-xs flex items-center justify-between ${d.staffCount === 0 ? 'bg-amber-50' : ''}`}>
-              <span className="font-medium w-28">{format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}</span>
-              {d.staffCount === 0 ? (
-                <span className="text-amber-600 flex items-center gap-1">
-                  <AlertTriangle className="w-2.5 h-2.5" /> No staff assigned
+            <div key={d.date} className={`px-3 py-1.5 text-xs ${d.staffCount === 0 && d.subCount === 0 ? 'bg-amber-50' : ''}`}>
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}</span>
+                <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                  <span><Users className="w-2.5 h-2.5 inline mr-0.5" />{d.staffCount}</span>
+                  {d.subCount > 0 && <span><Wrench className="w-2.5 h-2.5 inline mr-0.5" />{d.subCount}</span>}
+                </div>
+              </div>
+              {d.staffCount === 0 && d.subCount === 0 ? (
+                <span className="text-amber-600 flex items-center gap-1 mt-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" /> No staff or subs assigned
                 </span>
               ) : (
-                <div className="flex flex-wrap gap-1 justify-end">
+                <div className="flex flex-wrap gap-1 mt-1">
                   {d.staff.map((s, i) => (
-                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
-                      {s.name} ({s.hours}h)
-                    </Badge>
+                    <Badge key={`s${i}`} variant="secondary" className="text-[10px] px-1.5 py-0">{s.name} ({s.hours}h)</Badge>
+                  ))}
+                  {d.subs.map((s, i) => (
+                    <Badge key={`sub${i}`} className="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0"><Wrench className="w-2 h-2 mr-0.5 inline" />{s.name}</Badge>
                   ))}
                 </div>
               )}
