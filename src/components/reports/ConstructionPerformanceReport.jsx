@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Line, Cell } from 'recharts';
-import { Building2, DollarSign, Clock, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { Building2, DollarSign, Clock, TrendingUp, TrendingDown, AlertTriangle, Users } from 'lucide-react';
 import { format, differenceInDays, eachMonthOfInterval, endOfMonth } from 'date-fns';
 import DataInspector from '../common/DataInspector';
 
@@ -57,6 +57,12 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
     initialData: [],
   });
 
+  const { data: assignments = [] } = useQuery({
+    queryKey: ['employeeAssignments'],
+    queryFn: () => base44.entities.EmployeeAssignment.list(),
+    initialData: [],
+  });
+
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);
     return client?.company_name || client?.contact_name || 'Unknown';
@@ -66,6 +72,19 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
     const user = users.find(u => u.id === pmId);
     return user?.full_name || 'Unassigned';
   };
+
+  // Calculate total assigned hours per project
+  const projectHoursMap = useMemo(() => {
+    const map = {};
+    assignments.forEach(a => {
+      if (!a.project_id || !a.employee_assignments) return;
+      if (!map[a.project_id]) map[a.project_id] = 0;
+      a.employee_assignments.forEach(ea => {
+        map[a.project_id] += ea.hours || 0;
+      });
+    });
+    return map;
+  }, [assignments]);
 
   // Filter construction projects relevant to the date range
   const constructionProjects = useMemo(() => {

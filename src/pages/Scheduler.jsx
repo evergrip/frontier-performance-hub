@@ -190,6 +190,7 @@ export default function Scheduler() {
       <MonthlyAllocationView
         projects={projects}
         holidays={holidays}
+        assignments={assignments}
         onMonthClick={handleMonthClick}
       />
 
