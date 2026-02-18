@@ -103,6 +103,7 @@ export default function EmployeeProjectAssignDialog({
   holidays = [],
   assignments = [],
   unavailabilities = [],
+  subtrades = [],
   onAssign,
   onOverrunExtend
 }) {
