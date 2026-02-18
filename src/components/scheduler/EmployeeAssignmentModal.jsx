@@ -51,7 +51,10 @@ export default function EmployeeAssignmentModal({
 
   const handleSave = () => {
     const validAssignments = assignments.filter(a => a.employee_id && a.hours > 0);
-    if (validAssignments.length === 0) return;
+    if (validAssignments.length === 0) {
+      proceedWithSave([]);
+      return;
+    }
 
     const dateStr = date ? new Date(date).toISOString().split('T')[0] : null;
     
