@@ -1339,12 +1339,17 @@ export default function Projects() {
               <Button type="button" variant="outline" onClick={() => setCloseoutDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateProjectStatusMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button type="submit" disabled={updateProjectStatusMutation.isPending || !auditPassed} className="bg-emerald-600 hover:bg-emerald-700">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Close Out Project
               </Button>
+              {!auditPassed && (
+                <p className="text-xs text-red-600 mt-1">Resolve all audit items before closing</p>
+              )}
             </div>
           </form>
+            );
+          })()}
         </DialogContent>
       </Dialog>
       {/* Send Back to Pre-Con Dialog */}
