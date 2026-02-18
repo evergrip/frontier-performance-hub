@@ -389,6 +389,7 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                     <TableHead className="text-right">Margin</TableHead>
                     <TableHead className="text-right">Est. Margin</TableHead>
                     <TableHead className="text-right">Variance</TableHead>
+                    <TableHead className="text-right">Hours</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -414,6 +415,9 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                           </Badge>
                         ) : '—'}
                       </TableCell>
+                      <TableCell className="text-right font-medium text-blue-600">
+                        {(projectHoursMap[p.id] || 0).toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-slate-50 font-bold">
@@ -424,6 +428,9 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
                     <TableCell></TableCell>
                     <TableCell className="text-right">
                       {kpis.avgVariance != null ? `${kpis.avgVariance > 0 ? '+' : ''}${kpis.avgVariance.toFixed(1)}%` : '—'}
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-blue-600">
+                      {closedInRange.reduce((sum, p) => sum + (projectHoursMap[p.id] || 0), 0).toLocaleString()}
                     </TableCell>
                   </TableRow>
                 </TableBody>
