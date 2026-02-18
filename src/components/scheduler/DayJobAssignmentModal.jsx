@@ -181,33 +181,92 @@ export default function DayJobAssignmentModal({
                       const employeeCount = assignment.employee_assignments?.length || 0;
                       const subtradeCount = assignment.subtrade_assignments?.length || 0;
                       const isUnassigned = employeeCount === 0;
+                      const employeeNames = (assignment.employee_assignments || []).map(ea => {
+                        const u = users.find(u => u.id === ea.employee_id);
+                        return { name: u?.full_name || 'Unknown', hours: ea.hours || 0 };
+                      });
+                      const subtradeNames = (assignment.subtrade_assignments || []).map(sa => {
+                        const s = subtrades.find(s => s.id === sa.subtrade_id);
+                        return { name: s?.name || 'Unknown', notes: sa.notes || '' };
+                      });
                       return (
                         <div key={assignment.id}>
-                          <div
-                            className={`p-1 rounded text-white text-xs flex items-center justify-between gap-1 cursor-pointer hover:opacity-80 transition-opacity ${isUnassigned ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
-                            style={{ backgroundColor: getProjectColor(projectIdx) }}
-                            onClick={() => handleJobClick(assignment, day)}
-                          >
-                            <div className="truncate text-xs flex flex-col">
-                              <span>{project?.title}</span>
-                              <div className="flex items-center gap-1">
-                                {employeeCount > 0 && (
-                                  <span className="text-[10px] opacity-80">{employeeCount} staff</span>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <div
+                                className={`p-1 rounded text-white text-xs flex items-center justify-between gap-1 cursor-pointer hover:opacity-80 transition-opacity ${isUnassigned ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
+                                style={{ backgroundColor: getProjectColor(projectIdx) }}
+                              >
+                                <div className="truncate text-xs flex flex-col">
+                                  <span>{project?.title}</span>
+                                  <div className="flex items-center gap-1">
+                                    {employeeCount > 0 && (
+                                      <span className="text-[10px] opacity-80">
+                                        <Users className="w-2 h-2 inline mr-0.5" />{employeeCount}
+                                      </span>
+                                    )}
+                                    {subtradeCount > 0 && (
+                                      <span className="text-[10px] opacity-80 flex items-center">
+                                        <Wrench className="w-2 h-2 mr-0.5" />{subtradeCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-0.5 flex-shrink-0">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleJobClick(assignment, day); }}
+                                    className="hover:bg-white/30 rounded p-0.5"
+                                    title="Edit staff"
+                                  >
+                                    <Users className="w-2.5 h-2.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onRemove(assignment.id); }}
+                                    className="hover:bg-white/30 rounded p-0.5"
+                                  >
+                                    <X className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-3" side="right" align="start">
+                              <div className="space-y-2">
+                                <p className="font-semibold text-sm text-slate-900">{project?.title}</p>
+                                <p className="text-[10px] text-slate-500">{format(day, 'EEEE, MMM d, yyyy')}</p>
+                                {employeeNames.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1">Staff ({employeeNames.length})</p>
+                                    <div className="space-y-0.5">
+                                      {employeeNames.map((e, i) => (
+                                        <div key={i} className="text-xs flex justify-between">
+                                          <span>{e.name}</span>
+                                          <span className="text-slate-500">{e.hours}h</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
-                                {subtradeCount > 0 && (
-                                  <span className="text-[10px] opacity-80 flex items-center">
-                                    <Wrench className="w-2 h-2 mr-0.5" />{subtradeCount}
-                                  </span>
+                                {subtradeNames.length > 0 && (
+                                  <div>
+                                    <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1">Subs ({subtradeNames.length})</p>
+                                    <div className="space-y-0.5">
+                                      {subtradeNames.map((s, i) => (
+                                        <div key={i} className="text-xs">
+                                          <span>{s.name}</span>
+                                          {s.notes && <span className="text-slate-400 ml-1">— {s.notes}</span>}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                {employeeNames.length === 0 && subtradeNames.length === 0 && (
+                                  <p className="text-xs text-amber-600 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" /> No staff or subs assigned
+                                  </p>
                                 )}
                               </div>
-                            </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onRemove(assignment.id); }}
-                              className="hover:bg-white/30 rounded p-0.5 flex-shrink-0"
-                            >
-                              <X className="w-2.5 h-2.5" />
-                            </button>
-                          </div>
+                            </PopoverContent>
+                          </Popover>
                           {isUnassigned && (
                             <div className="flex items-center gap-1 mt-0.5 text-[9px] text-amber-600">
                               <AlertTriangle className="w-2.5 h-2.5" /> No staff assigned
