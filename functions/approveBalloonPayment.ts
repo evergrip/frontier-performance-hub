@@ -105,9 +105,6 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error approving balloon payment:', error);
-    return Response.json({ 
-      error: error.message,
-      stack: error.stack 
-    }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
