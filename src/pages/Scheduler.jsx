@@ -72,9 +72,10 @@ export default function Scheduler() {
 
     if (existingAssignment) {
       // Update existing job with new employee assignments
-      base44.entities.EmployeeAssignment.update(existingAssignment.id, {
+      const updateAssignmentMutation = base44.entities.EmployeeAssignment.update(existingAssignment.id, {
         employee_assignments: data.employee_assignments || existingAssignment.employee_assignments
-      }).then(() => refetchAssignments());
+      });
+      updateAssignmentMutation.then(() => refetchAssignments());
     } else {
       // Create new job assignment
       createAssignmentMutation.mutate({
