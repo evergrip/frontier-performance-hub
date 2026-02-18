@@ -74,7 +74,6 @@ export default function MyKPIs() {
       updateEntryMutation.mutate({
         id: selectedEntry.id,
         data: {
-          ...selectedEntry,
           explanation_provided: explanation
         }
       });
