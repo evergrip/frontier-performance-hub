@@ -178,27 +178,40 @@ export default function DayJobAssignmentModal({
                       const project = projects.find(p => p.id === assignment.project_id);
                       const projectIdx = projects.findIndex(p => p.id === assignment.project_id);
                       const employeeCount = assignment.employee_assignments?.length || 0;
+                      const subtradeCount = assignment.subtrade_assignments?.length || 0;
+                      const isUnassigned = employeeCount === 0;
                       return (
-                        <div
-                          key={assignment.id}
-                          className="p-1 rounded text-white text-xs flex items-center justify-between gap-1 cursor-pointer hover:opacity-80 transition-opacity"
-                          style={{ backgroundColor: getProjectColor(projectIdx) }}
-                          onClick={() => handleJobClick(assignment, day)}
-                        >
-                          <div className="truncate text-xs flex flex-col">
-                            <span>{project?.title}</span>
-                            {employeeCount > 0 && (
-                              <span className="text-[10px] opacity-80">
-                                {employeeCount} staff
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onRemove(assignment.id); }}
-                            className="hover:bg-white/30 rounded p-0.5 flex-shrink-0"
+                        <div key={assignment.id}>
+                          <div
+                            className={`p-1 rounded text-white text-xs flex items-center justify-between gap-1 cursor-pointer hover:opacity-80 transition-opacity ${isUnassigned ? 'ring-2 ring-amber-400 ring-offset-1' : ''}`}
+                            style={{ backgroundColor: getProjectColor(projectIdx) }}
+                            onClick={() => handleJobClick(assignment, day)}
                           >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
+                            <div className="truncate text-xs flex flex-col">
+                              <span>{project?.title}</span>
+                              <div className="flex items-center gap-1">
+                                {employeeCount > 0 && (
+                                  <span className="text-[10px] opacity-80">{employeeCount} staff</span>
+                                )}
+                                {subtradeCount > 0 && (
+                                  <span className="text-[10px] opacity-80 flex items-center">
+                                    <Wrench className="w-2 h-2 mr-0.5" />{subtradeCount}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onRemove(assignment.id); }}
+                              className="hover:bg-white/30 rounded p-0.5 flex-shrink-0"
+                            >
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                          {isUnassigned && (
+                            <div className="flex items-center gap-1 mt-0.5 text-[9px] text-amber-600">
+                              <AlertTriangle className="w-2.5 h-2.5" /> No staff assigned
+                            </div>
+                          )}
                         </div>
                       );
                     })}
