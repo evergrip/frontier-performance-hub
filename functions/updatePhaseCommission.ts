@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       phase_payout_percentage: phasePayout.available_percentage,
       amount_made_available: amountToMakeAvailable,
       status: 'available',
-      notes: `${phasePayout.payout_percentage}% made available upon completing ${phase} phase`
+      notes: `${phasePayout.available_percentage}% made available upon completing ${phase} phase`
     });
 
     // Update commission bank - move from banked to available
