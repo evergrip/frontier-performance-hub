@@ -203,10 +203,19 @@ export default function EmployeeProjectAssignDialog({
                     </option>
                   ))}
                 </select>
-                {selectedProject?.target_completion_date && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Target completion: {format(new Date(selectedProject.target_completion_date + 'T00:00:00'), 'MMM d, yyyy')}
-                  </p>
+                {selectedProject && (
+                  <div className="mt-1 space-y-1">
+                    {selectedProject.target_completion_date && (
+                      <p className="text-xs text-slate-500">
+                        Target completion: {format(new Date(selectedProject.target_completion_date + 'T00:00:00'), 'MMM d, yyyy')}
+                      </p>
+                    )}
+                    {selectedProject.start_date && (
+                      <p className="text-xs text-slate-500">
+                        Start: {format(new Date(selectedProject.start_date + 'T00:00:00'), 'MMM d, yyyy')}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
               <div>
