@@ -10,6 +10,22 @@ import UsersAdminTab from '@/components/admin/UsersAdminTab';
 import CompanySettingsTab from '@/components/admin/CompanySettingsTab';
 import ReportingRelationshipsTab from '@/components/admin/ReportingRelationshipsTab';
 
+function CollapsibleSection({ title, isOpen, onToggle, children }) {
+  return (
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <CollapsibleTrigger asChild>
+        <button className="flex items-center justify-between w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors">
+          <span className="text-lg font-semibold text-slate-800">{title}</span>
+          <ChevronDown className={`w-5 h-5 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-4">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export default function CompanyAdmin() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('sales');
