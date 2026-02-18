@@ -38,6 +38,7 @@ export default function Projects() {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(null);
   const [sendBackDialogOpen, setSendBackDialogOpen] = useState(false);
   const [sendBackPhase, setSendBackPhase] = useState('');
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -536,6 +537,26 @@ export default function Projects() {
     }
   });
 
+  const reopenProjectMutation = useMutation({
+    mutationFn: ({ project }) => {
+      const newHistory = [...(project.status_history || []), {
+        status: 'substantial_completion_closeout',
+        entered_date: new Date().toISOString(),
+        source: 'project'
+      }];
+      return base44.entities.Project.update(project.id, {
+        status: 'substantial_completion_closeout',
+        status_history: newHistory
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      setReopenDialogOpen(false);
+      setSelectedProject(null);
+      toast.success('Project reopened');
+    }
+  });
+
   const totalValue = activeProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0);
 
   return (
@@ -676,6 +697,7 @@ export default function Projects() {
                       <TableHead>Margin</TableHead>
                       <TableHead>Start Date</TableHead>
                       <TableHead>Completion Date</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -699,6 +721,16 @@ export default function Projects() {
                         </TableCell>
                         <TableCell>
                           {project.actual_completion_date ? format(new Date(project.actual_completion_date), 'MMM d, yyyy') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                            onClick={(e) => { e.stopPropagation(); setSelectedProject(project); setReopenDialogOpen(true); }}
+                          >
+                            Reopen
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1352,6 +1384,36 @@ export default function Projects() {
           })()}
         </DialogContent>
       </Dialog>
+      {/* Reopen Project Dialog */}
+      <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reopen Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
+              <p className="text-xs text-slate-500">{getProjectClientName(selectedProject)}</p>
+            </div>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                This will move the project back to <strong>Substantial Completion & Closeout</strong> and return it to the active board.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setReopenDialogOpen(false)}>Cancel</Button>
+              <Button
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={reopenProjectMutation.isPending}
+                onClick={() => reopenProjectMutation.mutate({ project: selectedProject })}
+              >
+                Reopen Project
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Send Back to Pre-Con Dialog */}
       <Dialog open={sendBackDialogOpen} onOpenChange={setSendBackDialogOpen}>
         <DialogContent>
