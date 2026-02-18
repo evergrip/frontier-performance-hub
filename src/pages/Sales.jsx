@@ -1252,13 +1252,18 @@ export default function Sales() {
               </Button>
               <Button 
                 type="submit"
-                disabled={closePreconMutation.isPending}
+                disabled={closePreconMutation.isPending || !auditPassed}
                 className="bg-green-600 hover:bg-green-700"
               >
                 Finalize Pre-Construction
               </Button>
+              {!auditPassed && (
+                <p className="text-xs text-red-600 mt-1">Resolve all audit items before finalizing</p>
+              )}
             </div>
           </form>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
