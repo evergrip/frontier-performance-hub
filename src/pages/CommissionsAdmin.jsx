@@ -449,10 +449,26 @@ export default function CommissionsAdmin() {
         <TabsContent value="banks">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                All Commission Banks
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  All Commission Banks
+                </CardTitle>
+                <ExportCSVButton
+                  data={allBanks}
+                  filename="commission_banks"
+                  columns={[
+                    { header: 'Salesperson', accessor: (b) => getUserName(b.user_id) },
+                    { header: 'Current Tier', accessor: (b) => b.current_tier || 'N/A' },
+                    { header: 'YTD Volume', accessor: (b) => b.ytd_sales_volume || 0 },
+                    { header: 'Bank Balance', accessor: (b) => b.current_bank_balance || 0 },
+                    { header: 'Available Balance', accessor: (b) => b.available_balance || 0 },
+                    { header: 'Quarterly Payout', accessor: (b) => b.quarterly_payout_amount || 0 },
+                    { header: 'Total Earned', accessor: (b) => b.total_earned || 0 },
+                    { header: 'Total Paid', accessor: (b) => b.total_paid_out || 0 },
+                  ]}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
