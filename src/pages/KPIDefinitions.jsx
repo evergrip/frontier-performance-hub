@@ -25,7 +25,22 @@ export default function KPIDefinitions() {
   const [aiDescription, setAiDescription] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [formData, setFormData] = useState(getEmptyForm());
+  const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
+
+  if (currentUser && currentUser.role !== 'admin') {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center">
+        <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-slate-900">Admin Access Required</h1>
+        <p className="text-slate-500 mt-2">Only administrators can manage KPI definitions.</p>
+      </div>
+    );
+  }
 
   const { data: kpis = [], isLoading } = useQuery({
     queryKey: ['kpis'],
