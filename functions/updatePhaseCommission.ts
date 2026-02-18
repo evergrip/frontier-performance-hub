@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     }
 
     const phasePayout = phasePayouts.find(p => p.phase === phase);
-    if (!phasePayout || !phasePayout.payout_percentage) {
+    if (!phasePayout || !phasePayout.available_percentage) {
       return Response.json({ success: true, message: 'No payout configured for this phase' });
     }
 
