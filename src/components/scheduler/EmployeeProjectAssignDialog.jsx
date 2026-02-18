@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Plus, Trash2, CalendarOff, UserX, Clock, AlertTriangle, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, Plus, Trash2, CalendarOff, UserX, Clock, AlertTriangle, Users, ChevronDown, ChevronUp, Wrench } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, eachDayOfInterval, getDay } from 'date-fns';
 
 const REASON_LABELS = {
