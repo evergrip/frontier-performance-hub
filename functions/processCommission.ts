@@ -438,6 +438,7 @@ Deno.serve(async (req) => {
 
     // Update commission bank
     const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedAmount;
+    const newAvailableBalance = (commissionBank.available_balance || 0) + availableAmount;
     const newTotalEarned = (commissionBank.total_earned || 0) + commissionAmount;
     
     // Update volumes based on sale type
@@ -451,6 +452,7 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
       current_bank_balance: newBankBalance,
+      available_balance: newAvailableBalance,
       total_earned: newTotalEarned,
       ytd_sales_volume: newTotalVolume,
       ytd_construction_volume: newConstructionVolume,
