@@ -205,27 +205,36 @@ export default function MonthlyAllocationView({ projects, holidays = [], assignm
                   </div>
 
                   <div className="space-y-2 mb-4">
-                    {schedulableProjects
-                      .filter(project => isProjectInMonth(project.id, month))
-                      .map((project, idx) => (
-                        <div
-                          key={project.id}
-                          className="p-2 rounded text-white text-xs"
-                          style={{ backgroundColor: getProjectColor(project, idx) }}
-                        >
-                          <div className="flex items-start justify-between gap-1">
-                            <div className="flex-1">
-                              <div className="font-medium">{project.title}</div>
+                    {getProjectsForMonth(month)
+                      .map((project, idx) => {
+                        const isAllocated = isProjectInMonth(project.id, month);
+                        const monthKey = format(month, 'yyyy-MM');
+                        const scheduledDays = assignments.filter(a => a.project_id === project.id && a.assignment_date?.startsWith(monthKey)).length;
+                        return (
+                          <div
+                            key={project.id}
+                            className={`p-2 rounded text-white text-xs ${!isAllocated ? 'ring-1 ring-offset-1 ring-blue-400' : ''}`}
+                            style={{ backgroundColor: getProjectColor(project, idx) }}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="flex-1">
+                                <div className="font-medium">{project.title}</div>
+                                {scheduledDays > 0 && (
+                                  <div className="text-[10px] opacity-80 mt-0.5">{scheduledDays} day{scheduledDays > 1 ? 's' : ''} scheduled</div>
+                                )}
+                              </div>
+                              {isAllocated && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleRemoveAllocation(project.id, month); }}
+                                  className="p-1 hover:bg-white/20 rounded transition-colors flex-shrink-0"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
                             </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleRemoveAllocation(project.id, month); }}
-                              className="p-1 hover:bg-white/20 rounded transition-colors flex-shrink-0"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
 
                   <div className="pt-2 border-t border-slate-200 space-y-1">
