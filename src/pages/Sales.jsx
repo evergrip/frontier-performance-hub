@@ -849,16 +849,16 @@ export default function Sales() {
       {/* Convert to Construction Dialog */}
       <Dialog open={constructionDialogOpen} onOpenChange={setConstructionDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convert to Construction Sale</DialogTitle>
-          </DialogHeader>
           {(() => {
             const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
             const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
             const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
             const auditChecks = selectedSale ? getChecks({ sale: selectedSale, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'convert_to_construction' }) : [];
             const auditPassed = auditChecks.every(c => c.pass);
-            return (
+            return (<>
+          <DialogHeader>
+            <DialogTitle>Convert to Construction Sale</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleConvertToConstruction} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
@@ -915,7 +915,7 @@ export default function Sales() {
               )}
             </div>
           </form>
-            );
+            </>);
           })()}
         </DialogContent>
       </Dialog>
@@ -1191,16 +1191,16 @@ export default function Sales() {
       {/* Close Pre-Con Only Dialog */}
       <Dialog open={closePreconDialogOpen} onOpenChange={setClosePreconDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Finalize Pre-Construction Only</DialogTitle>
-          </DialogHeader>
           {(() => {
             const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
             const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
             const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
             const auditChecks = selectedSale ? getChecks({ sale: selectedSale, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'finalize_precon' }) : [];
             const auditPassed = auditChecks.every(c => c.pass);
-            return (
+            return (<>
+          <DialogHeader>
+            <DialogTitle>Finalize Pre-Construction Only</DialogTitle>
+          </DialogHeader>
           <form onSubmit={(e) => {
             e.preventDefault();
             if (!finalPreconValue) {
@@ -1262,7 +1262,7 @@ export default function Sales() {
               )}
             </div>
           </form>
-            );
+            </>);
           })()}
         </DialogContent>
       </Dialog>
