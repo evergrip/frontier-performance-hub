@@ -12,6 +12,21 @@ import { format, subMonths } from 'date-fns';
 export default function KPIDashboard() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const [user, setUser] = useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  if (user && user.role !== 'admin') {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center">
+        <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-slate-900">Admin Access Required</h1>
+        <p className="text-slate-500 mt-2">Only administrators can access the KPI Dashboard.</p>
+      </div>
+    );
+  }
 
   const { data: kpis = [] } = useQuery({
     queryKey: ['active-kpis'],
