@@ -337,6 +337,28 @@ export default function CompanySettings() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Feature Toggles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <Label className="text-sm font-medium">Staff Scheduler</Label>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Enable the staff scheduling module for project day assignments, employee scheduling, and subtrade management
+              </p>
+            </div>
+            <Switch
+              checked={settings[0]?.scheduler_enabled || false}
+              onCheckedChange={(checked) => {
+                saveSettingsMutation.mutate({ scheduler_enabled: checked });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <MonthlyCapacitySchedule
         settings={settings[0] || {}}
         settingsId={settingsId}
