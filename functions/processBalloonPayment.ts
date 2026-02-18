@@ -9,12 +9,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { user_id, requested_amount, notes } = await req.json();
+    const { requested_amount, notes } = await req.json();
+
+    // Use the authenticated user's ID — users can only request for themselves
+    const user_id = user.id;
 
     // Validate inputs
-    if (!user_id || !requested_amount) {
+    if (!requested_amount) {
       return Response.json({ 
-        error: 'user_id and requested_amount are required' 
+        error: 'requested_amount is required' 
       }, { status: 400 });
     }
 
