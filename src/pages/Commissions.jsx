@@ -602,18 +602,37 @@ export default function Commissions() {
               <History className="w-5 h-5" />
               Recent Transactions
             </CardTitle>
-            <Select value={transactionPeriod} onValueChange={setTransactionPeriod}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current_fiscal_year">Current Fiscal Year</SelectItem>
-                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                <SelectItem value="last_90_days">Last 90 Days</SelectItem>
-                <SelectItem value="last_year">Last Year</SelectItem>
-                <SelectItem value="all_time">All Time</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <ExportCSVButton
+                data={filteredTransactions}
+                filename="commission_transactions"
+                columns={[
+                  { header: 'Date', accessor: (t) => format(new Date(t.created_date), 'yyyy-MM-dd') },
+                  { header: 'Type', accessor: (t) => t.transaction_type?.replace('_', ' ') },
+                  { header: 'Sale/Project', accessor: (t) => t.sale_id ? getSaleName(t.sale_id, t.sale_type) : '' },
+                  { header: 'Sale Value', accessor: (t) => t.sale_amount || '' },
+                  { header: 'Phase', accessor: (t) => t.phase_name || '' },
+                  { header: 'Tier', accessor: (t) => t.tier_at_time || '' },
+                  { header: 'Commission Amount', accessor: (t) => t.amount },
+                  { header: 'Status', accessor: (t) => t.status },
+                  { header: 'Banked Amount', accessor: (t) => t.banked_amount || '' },
+                  { header: 'Immediate Payout', accessor: (t) => t.immediate_payout_amount || '' },
+                  { header: 'Notes', accessor: (t) => t.notes || '' },
+                ]}
+              />
+              <Select value={transactionPeriod} onValueChange={setTransactionPeriod}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current_fiscal_year">Current Fiscal Year</SelectItem>
+                  <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                  <SelectItem value="last_90_days">Last 90 Days</SelectItem>
+                  <SelectItem value="last_year">Last Year</SelectItem>
+                  <SelectItem value="all_time">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
