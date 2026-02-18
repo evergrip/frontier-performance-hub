@@ -364,7 +364,7 @@ export default function EmployeeProjectAssignDialog({
                 assignments={assignments}
                 selectedProjectId={selectedProjectId}
                 users={users}
-                constructionUsers={constructionUsers}
+                subtrades={subtrades}
               />
             )}
             {selectedProjectId && projectScheduledDays.length === 0 && (
