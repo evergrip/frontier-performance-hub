@@ -238,6 +238,28 @@ export default function EmployeeProjectAssignDialog({
               </div>
             </div>
 
+            {/* Scheduled days for selected project */}
+            {selectedProjectId && projectScheduledDays.length > 0 && (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <Label className="text-xs font-medium text-slate-600 mb-1.5 block">
+                  Scheduled Days for {projectName} ({projectScheduledDays.length})
+                </Label>
+                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                  {projectScheduledDays.map(d => (
+                    <Badge key={d} variant="outline" className="text-[10px] font-normal">
+                      {format(new Date(d + 'T00:00:00'), 'EEE, MMM d')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {selectedProjectId && projectScheduledDays.length === 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-center gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                No days have been scheduled for this project yet. Use "Schedule Days" first.
+              </div>
+            )}
+
             {/* Overrun pre-emptive warning */}
             {overrunCount > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-start gap-2">
