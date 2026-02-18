@@ -65,6 +65,18 @@ export default function Sales() {
     initialData: [],
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
+  const { data: commissionTransactions = [] } = useQuery({
+    queryKey: ['commission-transactions'],
+    queryFn: () => base44.entities.CommissionTransaction.list(),
+    initialData: [],
+  });
+
   const updateSaleStatusMutation = useMutation({
     mutationFn: ({ saleId, status, estimated_construction_budget, target_precon_completion_date }) => {
       const sale = sales.find(s => s.id === saleId);

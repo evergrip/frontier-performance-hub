@@ -71,6 +71,18 @@ export default function Projects() {
     }
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
+  const { data: commissionTransactions = [] } = useQuery({
+    queryKey: ['commission-transactions'],
+    queryFn: () => base44.entities.CommissionTransaction.list(),
+    initialData: [],
+  });
+
   const updateProjectStatusMutation = useMutation({
     mutationFn: ({ projectId, status, actual_costs, actual_margin, color, client_id, status_history, monthly_revenue_allocations, notes }) => {
       const updateData = {};
