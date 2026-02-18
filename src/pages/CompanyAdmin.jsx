@@ -13,6 +13,17 @@ import ReportingRelationshipsTab from '@/components/admin/ReportingRelationships
 export default function CompanyAdmin() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('sales');
+  const [openSections, setOpenSections] = useState({
+    commissionRules: true,
+    commissionsAdmin: false,
+    projectsAdmin: true,
+    usersAdmin: false,
+    reportingRelationships: false,
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   React.useEffect(() => {
     const loadUser = async () => {
