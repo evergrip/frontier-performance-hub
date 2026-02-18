@@ -3,7 +3,7 @@ import { format, getDaysInMonth, startOfMonth, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, CalendarOff } from 'lucide-react';
+import { X, Plus, CalendarOff, AlertTriangle, Wrench } from 'lucide-react';
 import EmployeeAssignmentModal from './EmployeeAssignmentModal';
 import DateRangePickerModal from './DateRangePickerModal';
 import HolidayWorkApprovalDialog from './HolidayWorkApprovalDialog';
@@ -20,6 +20,7 @@ export default function DayJobAssignmentModal({
   assignments,
   users,
   holidays = [],
+  subtrades = [],
   onAssign,
   onRemove,
   onCreateSchedule
