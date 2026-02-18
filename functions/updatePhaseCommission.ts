@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
 
     const originalTransaction = transactions[0];
     const totalCommission = originalTransaction.amount || 0;
-    const amountToMakeAvailable = (totalCommission * phasePayout.payout_percentage) / 100;
+    const amountToMakeAvailable = (totalCommission * phasePayout.available_percentage) / 100;
 
     // Create phase commission transaction
     const phaseTransaction = await base44.asServiceRole.entities.CommissionTransaction.create({
