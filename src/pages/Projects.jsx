@@ -1127,9 +1127,6 @@ export default function Projects() {
       {/* Closeout Dialog */}
       <Dialog open={closeoutDialogOpen} onOpenChange={setCloseoutDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Close Out Project</DialogTitle>
-          </DialogHeader>
           {(() => {
             const linkedSale = selectedProject ? sales.find(s => s.id === selectedProject.sale_id) : null;
             const linkedLead = linkedSale ? leads.find(l => l.id === linkedSale.lead_id) : null;
@@ -1137,7 +1134,10 @@ export default function Projects() {
             const saleTxns = linkedSale ? commissionTransactions.filter(t => t.sale_id === linkedSale.id) : [];
             const auditChecks = linkedSale ? getChecks({ sale: linkedSale, project: selectedProject, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'construction_closeout' }) : [];
             const auditPassed = auditChecks.every(c => c.pass);
-            return (
+            return (<>
+          <DialogHeader>
+            <DialogTitle>Close Out Project</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleCloseoutProject} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
               <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
@@ -1348,7 +1348,7 @@ export default function Projects() {
               )}
             </div>
           </form>
-            );
+            </>);
           })()}
         </DialogContent>
       </Dialog>
