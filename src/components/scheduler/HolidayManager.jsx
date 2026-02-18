@@ -36,7 +36,7 @@ export default function HolidayManager({ isOpen, onClose }) {
 
   const handleAdd = () => {
     if (!newDate || !newName) return;
-    createMutation.mutate({ date: newDate, name: newName, notes: newNewNotes || '' });
+    createMutation.mutate({ date: newDate, name: newName, notes: newNotes || '' });
   };
 
   return (
