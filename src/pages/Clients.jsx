@@ -58,7 +58,8 @@ export default function Clients() {
     queryKey: ['salesUsers'],
     queryFn: async () => {
       const users = await base44.entities.User.list();
-      return users.filter(u => u.departments?.includes('sales'));
+      // Return all users — there is no departments field on User entity
+      return users;
     },
     initialData: [],
   });
