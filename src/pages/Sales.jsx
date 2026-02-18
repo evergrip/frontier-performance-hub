@@ -27,6 +27,8 @@ export default function Sales() {
   const [closePreconDialogOpen, setClosePreconDialogOpen] = useState(false);
   const [sendBackToLeadsDialogOpen, setSendBackToLeadsDialogOpen] = useState(false);
   const [sendBackLeadPhase, setSendBackLeadPhase] = useState('');
+  const [reopenPreconDialogOpen, setReopenPreconDialogOpen] = useState(false);
+  const [reopenAction, setReopenAction] = useState('reopen'); // 'reopen' or 'convert'
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
@@ -511,6 +513,87 @@ export default function Sales() {
     }
   });
 
+  const reopenPreconMutation = useMutation({
+    mutationFn: async ({ sale, action }) => {
+      if (action === 'reopen') {
+        // Reopen back to pending_construction_sale
+        const newHistory = [...(sale.phase_history || []), {
+          status: 'pending_construction_sale',
+          entered_date: new Date().toISOString(),
+          source: 'sale'
+        }];
+        await base44.entities.Sale.update(sale.id, {
+          status: 'pending_construction_sale',
+          phase_history: newHistory
+        });
+      } else if (action === 'convert') {
+        // Reopen then convert to construction
+        const newHistory = [...(sale.phase_history || []), {
+          status: 'pending_construction_sale',
+          entered_date: new Date().toISOString(),
+          source: 'sale'
+        }, {
+          status: 'closed_won',
+          entered_date: new Date().toISOString(),
+          source: 'sale'
+        }];
+        await base44.entities.Sale.update(sale.id, {
+          status: 'closed_won',
+          phase_history: newHistory
+        });
+
+        // Create construction sale
+        const constructionSale = await base44.entities.Sale.create({
+          title: `${sale.title} - Construction`,
+          client_id: sale.client_id,
+          lead_id: sale.lead_id,
+          sale_type: 'construction',
+          contract_value: parseFloat(constructionForm.construction_budget),
+          linked_precon_sale_id: sale.id,
+          assigned_to: sale.assigned_to,
+          sale_contributors: sale.sale_contributors,
+          status: 'closed_won'
+        });
+
+        // Build project status history from sale history
+        const saleHistory = (sale.phase_history || []).map(entry => ({ ...entry, source: entry.source || 'sale' }));
+        const projectStatusHistory = [
+          ...saleHistory,
+          { status: 'awaiting_to_be_scheduled', entered_date: new Date().toISOString(), source: 'project' }
+        ];
+
+        // Create construction project
+        const project = await base44.entities.Project.create({
+          title: sale.title,
+          client_id: sale.client_id,
+          sale_id: constructionSale.id,
+          project_type: 'construction',
+          status: 'awaiting_to_be_scheduled',
+          contract_value: parseFloat(constructionForm.construction_budget),
+          status_history: projectStatusHistory
+        });
+
+        await base44.entities.Sale.update(constructionSale.id, {
+          converted_to_project_id: project.id
+        });
+
+        await base44.functions.invoke('processCommission', {
+          sale_id: constructionSale.id,
+          sale_type: 'construction'
+        });
+      }
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      queryClient.invalidateQueries(['projects']);
+      setReopenPreconDialogOpen(false);
+      setReopenAction('reopen');
+      setConstructionForm({ final_precon_value: '', construction_budget: '' });
+      toast.success(reopenAction === 'convert' ? 'Converted to construction project' : 'Pre-construction sale reopened');
+    }
+  });
+
   const totalPreconValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
   const totalConstructionValue = preconstructionSales.reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
   const constructionProjects = projects.filter(p => p.project_type === 'construction');
@@ -744,6 +827,7 @@ export default function Sales() {
                       <TableHead>Contract Value</TableHead>
                       <TableHead>Est. Construction</TableHead>
                       <TableHead>Close Date</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -777,6 +861,20 @@ export default function Sales() {
                               sale.phase_history?.length > 0 
                                 ? format(new Date(sale.phase_history[sale.phase_history.length - 1].entered_date), 'MMM d, yyyy')
                                 : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              {!hasConstructionSale && sale.status === 'closed_won' && (
+                                <>
+                                  <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); setReopenAction('reopen'); setReopenPreconDialogOpen(true); }}>
+                                    Reopen
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); setConstructionForm({ final_precon_value: sale.contract_value || '', construction_budget: sale.estimated_construction_budget || '' }); setReopenAction('convert'); setReopenPreconDialogOpen(true); }}>
+                                    <Building2 className="w-3 h-3 mr-1" /> Convert to Construction
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -1264,6 +1362,64 @@ export default function Sales() {
           </form>
             </>);
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reopen / Convert Closed Pre-Con Dialog */}
+      <Dialog open={reopenPreconDialogOpen} onOpenChange={setReopenPreconDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{reopenAction === 'convert' ? 'Convert to Construction Project' : 'Reopen Pre-Construction Sale'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+            </div>
+
+            {reopenAction === 'reopen' && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  This will move the sale back to <strong>Pending Construction Sale</strong> so you can make changes before converting or finalizing.
+                </p>
+              </div>
+            )}
+
+            {reopenAction === 'convert' && (
+              <>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    This will create a construction sale and project from this closed pre-con sale.
+                  </p>
+                </div>
+                <div>
+                  <Label>Construction Budget *</Label>
+                  <p className="text-xs text-slate-500 mb-2">Total construction contract value</p>
+                  <Input
+                    type="number"
+                    value={constructionForm.construction_budget}
+                    onChange={(e) => setConstructionForm({...constructionForm, construction_budget: e.target.value})}
+                    placeholder="750000"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={() => setReopenPreconDialogOpen(false)}>Cancel</Button>
+              <Button
+                className={reopenAction === 'convert' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                disabled={reopenPreconMutation.isPending || (reopenAction === 'convert' && !constructionForm.construction_budget)}
+                onClick={() => reopenPreconMutation.mutate({ sale: selectedSale, action: reopenAction })}
+              >
+                {reopenAction === 'convert' ? (
+                  <><Building2 className="w-4 h-4 mr-2" /> Convert to Construction</>
+                ) : (
+                  'Reopen Sale'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
