@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, getMonth, getYear, startOfMonth } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CalendarOff, UserX, CalendarPlus, UserPlus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, CalendarOff, UserX, CalendarPlus, UserPlus, Wrench, AlertTriangle } from 'lucide-react';
 import { createPageUrl } from '../utils';
 import MonthlyAllocationView from '@/components/scheduler/MonthlyAllocationView';
 import DayJobAssignmentModal from '@/components/scheduler/DayJobAssignmentModal';
@@ -13,6 +14,8 @@ import BulkAssignDialog from '@/components/scheduler/BulkAssignDialog';
 import EmployeeProjectAssignDialog from '@/components/scheduler/EmployeeProjectAssignDialog';
 import HolidayManager from '@/components/scheduler/HolidayManager';
 import StaffUnavailabilityManager from '@/components/scheduler/StaffUnavailabilityManager';
+import SubtradeManager from '@/components/scheduler/SubtradeManager';
+import SubtradeAssignDialog from '@/components/scheduler/SubtradeAssignDialog';
 
 export default function Scheduler() {
   const navigate = useNavigate();
@@ -22,6 +25,8 @@ export default function Scheduler() {
   const [showHolidays, setShowHolidays] = useState(false);
   const [showUnavailability, setShowUnavailability] = useState(false);
   const [showEmployeeAssign, setShowEmployeeAssign] = useState(false);
+  const [showSubtradeManager, setShowSubtradeManager] = useState(false);
+  const [showSubtradeAssign, setShowSubtradeAssign] = useState(false);
   const [user, setUser] = useState(null);
 
   React.useEffect(() => {
@@ -57,6 +62,11 @@ export default function Scheduler() {
     queryFn: () => base44.entities.EmployeeUnavailability.list(),
   });
 
+  const { data: subtrades = [] } = useQuery({
+    queryKey: ['subtrades'],
+    queryFn: () => base44.entities.Subtrade.list(),
+  });
+
   const createAssignmentMutation = useMutation({
     mutationFn: (data) => base44.entities.EmployeeAssignment.create(data),
     onSuccess: () => refetchAssignments(),
@@ -66,6 +76,14 @@ export default function Scheduler() {
     mutationFn: (id) => base44.entities.EmployeeAssignment.delete(id),
     onSuccess: () => refetchAssignments(),
   });
+
+  // Compute unassigned warnings: assignments with no staff (subtrades don't count)
+  const unassignedWarnings = React.useMemo(() => {
+    return assignments.filter(a => {
+      const staffCount = a.employee_assignments?.length || 0;
+      return staffCount === 0;
+    });
+  }, [assignments]);
 
   const handleMonthClick = (month) => {
     setSelectedMonth(month);
@@ -101,13 +119,14 @@ export default function Scheduler() {
         project_id: data.project_id,
         status: 'Assigned',
         employee_assignments: data.employee_assignments || [],
+        subtrade_assignments: [],
         color: color,
         notes: data.notes || ''
       });
     }
   };
 
-  const handleBulkAssign = useCallback(async ({ projectId, employees, days, hoursPerDay, holidayNotes, skipUnavailable }) => {
+  const handleBulkAssign = useCallback(async ({ projectId, days, holidayNotes }) => {
     const projectIndex = projects.findIndex(p => p.id === projectId);
     const color = COLORS[projectIndex % COLORS.length];
 
@@ -115,33 +134,59 @@ export default function Scheduler() {
       const existingAssignment = assignments.find(
         a => a.assignment_date === dateStr && a.project_id === projectId
       );
-
-      const employeeAssignments = employees.map(empId => ({
-        employee_id: empId,
-        hours: hoursPerDay
-      }));
-
       const notes = holidayNotes?.[dateStr] ? `Holiday work: ${holidayNotes[dateStr]}` : '';
 
-      if (existingAssignment) {
-        const merged = [...(existingAssignment.employee_assignments || [])];
-        for (const ea of employeeAssignments) {
-          if (!merged.some(m => m.employee_id === ea.employee_id)) {
-            merged.push(ea);
-          }
-        }
-        await base44.entities.EmployeeAssignment.update(existingAssignment.id, {
-          employee_assignments: merged,
-          notes: notes || existingAssignment.notes
+      if (!existingAssignment) {
+        await base44.entities.EmployeeAssignment.create({
+          assignment_date: dateStr,
+          project_id: projectId,
+          status: 'Assigned',
+          employee_assignments: [],
+          subtrade_assignments: [],
+          color,
+          notes
         });
+      }
+    }
+    refetchAssignments();
+  }, [projects, assignments, refetchAssignments]);
+
+  const handleOverrunExtend = useCallback(async ({ projectId, employeeId, originalDate, newDate, explanation }) => {
+    // Update project target_completion_date
+    await base44.entities.Project.update(projectId, { target_completion_date: newDate });
+    // Create overrun record
+    await base44.entities.ProjectOverrun.create({
+      project_id: projectId,
+      employee_id: employeeId,
+      original_target_completion_date: originalDate,
+      new_target_completion_date: newDate,
+      explanation,
+      explained_by_user_id: user?.id
+    });
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
+  }, [user, queryClient]);
+
+  const handleSubtradeAssign = useCallback(async ({ projectId, subtradeId, days, notes }) => {
+    const projectIndex = projects.findIndex(p => p.id === projectId);
+    const color = COLORS[projectIndex % COLORS.length];
+
+    for (const dateStr of days) {
+      const existing = assignments.find(a => a.assignment_date === dateStr && a.project_id === projectId);
+      if (existing) {
+        const merged = [...(existing.subtrade_assignments || [])];
+        if (!merged.some(s => s.subtrade_id === subtradeId)) {
+          merged.push({ subtrade_id: subtradeId, notes });
+        }
+        await base44.entities.EmployeeAssignment.update(existing.id, { subtrade_assignments: merged });
       } else {
         await base44.entities.EmployeeAssignment.create({
           assignment_date: dateStr,
           project_id: projectId,
           status: 'Assigned',
-          employee_assignments: employeeAssignments,
+          employee_assignments: [],
+          subtrade_assignments: [{ subtrade_id: subtradeId, notes }],
           color,
-          notes
+          notes: ''
         });
       }
     }
@@ -159,21 +204,56 @@ export default function Scheduler() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => setShowBulkAssign(true)} className="bg-blue-600 hover:bg-blue-700">
-            <CalendarPlus className="w-4 h-4 mr-2" /> Bulk Assign
+            <CalendarPlus className="w-4 h-4 mr-2" /> Schedule Days
           </Button>
           <Button onClick={() => setShowEmployeeAssign(true)} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
             <UserPlus className="w-4 h-4 mr-2" /> Assign Employee
+          </Button>
+          <Button onClick={() => setShowSubtradeAssign(true)} variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+            <Wrench className="w-4 h-4 mr-2" /> Assign Subtrade
           </Button>
           <Button variant="outline" onClick={() => setShowUnavailability(true)}>
             <UserX className="w-4 h-4 mr-2" /> Staff Availability
           </Button>
           {isAdmin && (
-            <Button variant="outline" onClick={() => setShowHolidays(true)}>
-              <CalendarOff className="w-4 h-4 mr-2" /> Holidays
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setShowHolidays(true)}>
+                <CalendarOff className="w-4 h-4 mr-2" /> Holidays
+              </Button>
+              <Button variant="outline" onClick={() => setShowSubtradeManager(true)} className="border-purple-300 text-purple-700 hover:bg-purple-50">
+                <Wrench className="w-4 h-4 mr-2" /> Manage Subtrades
+              </Button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Unassigned warnings */}
+      {unassignedWarnings.length > 0 && (
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="pt-6">
+            <div className="flex gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-900">
+                <strong>{unassignedWarnings.length} scheduled job(s) have no staff assigned.</strong>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {unassignedWarnings.slice(0, 10).map(a => {
+                    const project = projects.find(p => p.id === a.project_id);
+                    return (
+                      <Badge key={a.id} variant="outline" className="text-xs text-amber-700 border-amber-300">
+                        {project?.title || 'Unknown'} — {a.assignment_date}
+                      </Badge>
+                    );
+                  })}
+                  {unassignedWarnings.length > 10 && (
+                    <span className="text-xs text-amber-600">+{unassignedWarnings.length - 10} more</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-blue-50 border-blue-200">
         <CardContent className="pt-6">
@@ -181,7 +261,7 @@ export default function Scheduler() {
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
               <strong>How it works:</strong> Drag projects to months to schedule them. Click a month to assign jobs to specific days.
-              Use <strong>Bulk Assign</strong> to assign a project and employees across many days at once.
+              Use <strong>Schedule Days</strong> to add project days, then <strong>Assign Employee</strong> or <strong>Assign Subtrade</strong> to staff them.
             </div>
           </div>
         </CardContent>
@@ -203,6 +283,7 @@ export default function Scheduler() {
         assignments={assignments}
         users={users}
         holidays={holidays}
+        subtrades={subtrades}
         onAssign={handleAssignJobToDay}
         onRemove={(id) => deleteAssignmentMutation.mutate(id)}
         onCreateSchedule={(startDate, endDate) => {
@@ -216,10 +297,7 @@ export default function Scheduler() {
         isOpen={showBulkAssign}
         onClose={() => setShowBulkAssign(false)}
         projects={projects}
-        users={users}
         holidays={holidays}
-        assignments={assignments}
-        unavailabilities={unavailabilities}
         onBulkAssign={handleBulkAssign}
       />
 
@@ -231,6 +309,19 @@ export default function Scheduler() {
         users={users}
       />
 
+      <SubtradeManager
+        isOpen={showSubtradeManager}
+        onClose={() => setShowSubtradeManager(false)}
+      />
+
+      <SubtradeAssignDialog
+        isOpen={showSubtradeAssign}
+        onClose={() => setShowSubtradeAssign(false)}
+        projects={projects}
+        subtrades={subtrades}
+        onAssign={handleSubtradeAssign}
+      />
+
       <EmployeeProjectAssignDialog
         isOpen={showEmployeeAssign}
         onClose={() => setShowEmployeeAssign(false)}
@@ -239,6 +330,7 @@ export default function Scheduler() {
         holidays={holidays}
         assignments={assignments}
         unavailabilities={unavailabilities}
+        onOverrunExtend={handleOverrunExtend}
         onAssign={async ({ projectId, employeeId, days }) => {
           const projectIndex = projects.findIndex(p => p.id === projectId);
           const color = COLORS[projectIndex % COLORS.length];
@@ -260,6 +352,7 @@ export default function Scheduler() {
                 project_id: projectId,
                 status: 'Assigned',
                 employee_assignments: [{ employee_id: employeeId, hours }],
+                subtrade_assignments: [],
                 color
               });
             }
