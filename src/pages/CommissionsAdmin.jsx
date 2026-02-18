@@ -655,7 +655,23 @@ export default function CommissionsAdmin() {
         <TabsContent value="history">
           <Card>
             <CardHeader>
-              <CardTitle>Payout History</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Payout History</CardTitle>
+                <ExportCSVButton
+                  data={allPayouts.filter(p => p.status !== 'pending').sort((a, b) => new Date(b.payout_date) - new Date(a.payout_date))}
+                  filename="payout_history"
+                  columns={[
+                    { header: 'Salesperson', accessor: (p) => getUserName(p.user_id) },
+                    { header: 'Type', accessor: (p) => p.payout_type?.replace('_', ' ') },
+                    { header: 'Amount', accessor: (p) => p.amount },
+                    { header: 'Request Date', accessor: (p) => p.request_date ? format(new Date(p.request_date), 'yyyy-MM-dd') : '' },
+                    { header: 'Approved By', accessor: (p) => p.approved_by ? getUserName(p.approved_by) : '' },
+                    { header: 'Payout Date', accessor: (p) => format(new Date(p.payout_date), 'yyyy-MM-dd') },
+                    { header: 'Status', accessor: (p) => p.status },
+                    { header: 'Notes', accessor: (p) => p.notes || '' },
+                  ]}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
