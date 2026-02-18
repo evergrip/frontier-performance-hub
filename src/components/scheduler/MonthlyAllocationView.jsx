@@ -120,6 +120,29 @@ export default function MonthlyAllocationView({ projects, holidays = [], assignm
     return holidays.filter(h => h.date?.startsWith(monthStr)).length;
   };
 
+  // Build a map of projectId -> Set of month keys that have scheduled assignments
+  const assignmentsByMonth = useMemo(() => {
+    const map = {};
+    assignments.forEach(a => {
+      if (!a.assignment_date || !a.project_id) return;
+      const monthKey = a.assignment_date.substring(0, 7); // "yyyy-MM"
+      if (!map[monthKey]) map[monthKey] = new Set();
+      map[monthKey].add(a.project_id);
+    });
+    return map;
+  }, [assignments]);
+
+  const getProjectsForMonth = (month) => {
+    const monthKey = format(month, 'yyyy-MM');
+    const allocatedIds = new Set(
+      schedulableProjects.filter(p => isProjectInMonth(p.id, month)).map(p => p.id)
+    );
+    const scheduledIds = assignmentsByMonth[monthKey] || new Set();
+    // Merge: allocated projects + any scheduled-only projects
+    const allIds = new Set([...allocatedIds, ...scheduledIds]);
+    return projects.filter(p => allIds.has(p.id));
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* Projects Sidebar */}
