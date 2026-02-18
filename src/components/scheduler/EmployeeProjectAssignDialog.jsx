@@ -14,6 +14,86 @@ const REASON_LABELS = {
   injury: 'Injury', vacation: 'Vacation', other: 'Other'
 };
 
+function ScheduledDaysStaffOverview({ projectName, projectScheduledDays, assignments, selectedProjectId, users, constructionUsers }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const dayStaffMap = useMemo(() => {
+    return projectScheduledDays.map(dateStr => {
+      const dayAssignment = assignments.find(a => a.project_id === selectedProjectId && a.assignment_date === dateStr);
+      const staffList = (dayAssignment?.employee_assignments || []).map(ea => {
+        const user = users.find(u => u.id === ea.employee_id);
+        return { name: user?.full_name || 'Unknown', hours: ea.hours || 0 };
+      });
+      return { date: dateStr, staffCount: staffList.length, staff: staffList };
+    });
+  }, [projectScheduledDays, assignments, selectedProjectId, users]);
+
+  const totalUnstaffed = dayStaffMap.filter(d => d.staffCount === 0).length;
+  const avgStaff = dayStaffMap.length > 0
+    ? (dayStaffMap.reduce((sum, d) => sum + d.staffCount, 0) / dayStaffMap.length).toFixed(1)
+    : 0;
+
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users className="w-3.5 h-3.5 text-slate-500" />
+          <Label className="text-xs font-medium text-slate-600">
+            Scheduled Days for {projectName} ({projectScheduledDays.length})
+          </Label>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] text-slate-500">Avg {avgStaff} staff/day</span>
+          {totalUnstaffed > 0 && (
+            <Badge className="bg-amber-100 text-amber-800 text-[10px]">{totalUnstaffed} unstaffed</Badge>
+          )}
+          <button onClick={() => setExpanded(!expanded)} className="p-0.5 hover:bg-slate-200 rounded">
+            {expanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+          </button>
+        </div>
+      </div>
+
+      {!expanded && (
+        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+          {dayStaffMap.map(d => (
+            <Badge
+              key={d.date}
+              variant="outline"
+              className={`text-[10px] font-normal ${d.staffCount === 0 ? 'border-amber-300 bg-amber-50 text-amber-700' : ''}`}
+            >
+              {format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}
+              <span className="ml-1 text-slate-400">({d.staffCount})</span>
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {expanded && (
+        <div className="max-h-48 overflow-y-auto border rounded-md divide-y bg-white">
+          {dayStaffMap.map(d => (
+            <div key={d.date} className={`px-3 py-1.5 text-xs flex items-center justify-between ${d.staffCount === 0 ? 'bg-amber-50' : ''}`}>
+              <span className="font-medium w-28">{format(new Date(d.date + 'T00:00:00'), 'EEE, MMM d')}</span>
+              {d.staffCount === 0 ? (
+                <span className="text-amber-600 flex items-center gap-1">
+                  <AlertTriangle className="w-2.5 h-2.5" /> No staff assigned
+                </span>
+              ) : (
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {d.staff.map((s, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0">
+                      {s.name} ({s.hours}h)
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EmployeeProjectAssignDialog({
   isOpen,
   onClose,
