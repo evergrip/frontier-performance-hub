@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { format, startOfMonth, addMonths, getMonth, getYear } from 'date-fns';
+import { format, startOfMonth, addMonths, getMonth, getYear, endOfMonth, isBefore, startOfDay } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,7 @@ const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'
 
 const getProjectColor = (project, index) => project.color || COLORS[index % COLORS.length];
 
-export default function MonthlyAllocationView({ projects, holidays = [], onMonthClick }) {
+export default function MonthlyAllocationView({ projects, holidays = [], assignments = [], onMonthClick, onRemoveAllocation }) {
   const schedulableProjects = projects.filter(p => p.status !== 'awaiting_to_be_scheduled');
   
   const [startMonth, setStartMonth] = useState(startOfMonth(new Date()));
@@ -83,12 +83,36 @@ export default function MonthlyAllocationView({ projects, holidays = [], onMonth
     setDraggedProject(null);
   };
 
-  const handleRemoveAllocation = (projectId, month) => {
+  const handleRemoveAllocation = async (projectId, month) => {
     const project = projects.find(p => p.id === projectId);
     const allocations = (project?.monthly_work_allocations || []).filter(
       a => !(a.year === getYear(month) && a.month === getMonth(month) + 1)
     );
     updateProjectMutation.mutate({ projectId, allocations });
+
+    // Delete future assignments for this project in this month, keep past ones
+    const today = startOfDay(new Date());
+    const monthEnd = endOfMonth(month);
+    const monthKey = format(month, 'yyyy-MM');
+
+    const futureAssignments = assignments.filter(a => {
+      if (a.project_id !== projectId) return false;
+      if (!a.assignment_date?.startsWith(monthKey)) return false;
+      const assignDate = new Date(a.assignment_date + 'T00:00:00');
+      return !isBefore(assignDate, today); // today or future
+    });
+
+    for (const a of futureAssignments) {
+      await base44.entities.EmployeeAssignment.delete(a.id);
+    }
+
+    if (futureAssignments.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ['employeeAssignments'] });
+    }
+
+    if (onRemoveAllocation) {
+      onRemoveAllocation(projectId, month, futureAssignments.length);
+    }
   };
 
   const getHolidayCountForMonth = (month) => {
