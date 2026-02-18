@@ -886,6 +886,27 @@ export default function Projects() {
               <p className="text-sm font-medium text-slate-900">{selectedProject?.title}</p>
             </div>
 
+            {/* Action Buttons */}
+            {selectedProject && selectedProject.status !== 'closed' && (
+              <div className="grid grid-cols-2 gap-2">
+                {getNextStatus(selectedProject.status) && (
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setEditDialogOpen(false); setAllocationDialogOpen(false); openAdvanceDialog(selectedProject); }}>
+                    <ChevronRight className="w-3 h-3 mr-1" /> Move to Next Phase
+                  </Button>
+                )}
+                {selectedProject.status === 'substantial_completion_closeout' && (
+                  <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => { setEditDialogOpen(false); setAllocationDialogOpen(false); openCloseoutDialog(selectedProject); }}>
+                    <CheckCircle className="w-3 h-3 mr-1" /> Close Out Project
+                  </Button>
+                )}
+                {selectedProject.sale_id && (
+                  <Button size="sm" variant="outline" className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => { setEditDialogOpen(false); setAllocationDialogOpen(false); setSendBackPhase(''); setSendBackDialogOpen(true); }}>
+                    <ChevronLeft className="w-3 h-3 mr-1" /> Send Back to Pre-Con
+                  </Button>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Client</Label>
               <Select value={projectForm.client_id} onValueChange={(value) => setProjectForm({...projectForm, client_id: value})}>
