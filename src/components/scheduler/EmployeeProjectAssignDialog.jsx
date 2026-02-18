@@ -238,20 +238,16 @@ export default function EmployeeProjectAssignDialog({
               </div>
             </div>
 
-            {/* Scheduled days for selected project */}
+            {/* Scheduled days for selected project with staffing info */}
             {selectedProjectId && projectScheduledDays.length > 0 && (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <Label className="text-xs font-medium text-slate-600 mb-1.5 block">
-                  Scheduled Days for {projectName} ({projectScheduledDays.length})
-                </Label>
-                <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                  {projectScheduledDays.map(d => (
-                    <Badge key={d} variant="outline" className="text-[10px] font-normal">
-                      {format(new Date(d + 'T00:00:00'), 'EEE, MMM d')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <ScheduledDaysStaffOverview
+                projectName={projectName}
+                projectScheduledDays={projectScheduledDays}
+                assignments={assignments}
+                selectedProjectId={selectedProjectId}
+                users={users}
+                constructionUsers={constructionUsers}
+              />
             )}
             {selectedProjectId && projectScheduledDays.length === 0 && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 flex items-center gap-2">
