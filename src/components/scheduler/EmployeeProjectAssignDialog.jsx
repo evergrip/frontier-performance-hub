@@ -44,6 +44,15 @@ export default function EmployeeProjectAssignDialog({
   const selectedProject = projects.find(p => p.id === selectedProjectId);
   const constructionUsers = users.filter(u => u.departments?.includes('construction'));
 
+  // Scheduled days for the selected project
+  const projectScheduledDays = useMemo(() => {
+    if (!selectedProjectId) return [];
+    return assignments
+      .filter(a => a.project_id === selectedProjectId)
+      .map(a => a.assignment_date)
+      .sort();
+  }, [selectedProjectId, assignments]);
+
   const getEmployeeDayHours = (employeeId, dateStr) => {
     return assignments
       .filter(a => a.assignment_date === dateStr && a.employee_assignments?.some(ea => ea.employee_id === employeeId))
