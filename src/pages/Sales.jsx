@@ -624,6 +624,16 @@ export default function Sales() {
         </Card>
       </div>
 
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList>
+          <TabsTrigger value="active">Active Pre-Construction</TabsTrigger>
+          <TabsTrigger value="closed">
+            <Archive className="w-4 h-4 mr-2" />
+            Past Projects ({closedPreconSales.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="mt-6">
       {preconstructionSales.length > 0 ? (
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -706,6 +716,71 @@ export default function Sales() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="closed" className="mt-6">
+          <Card>
+            <CardContent className="p-6">
+              {closedPreconSales.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Outcome</TableHead>
+                      <TableHead>Contract Value</TableHead>
+                      <TableHead>Est. Construction</TableHead>
+                      <TableHead>Close Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {closedPreconSales.map((sale) => {
+                      const hasConstructionSale = sales.some(s => s.linked_precon_sale_id === sale.id);
+                      return (
+                        <TableRow 
+                          key={sale.id} 
+                          className="cursor-pointer hover:bg-slate-50"
+                          onClick={() => openDetailDialog(sale)}
+                        >
+                          <TableCell className="font-medium">{sale.title}</TableCell>
+                          <TableCell>{getClientName(sale.client_id)}</TableCell>
+                          <TableCell>
+                            {sale.status === 'closed_won' ? (
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${hasConstructionSale ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {hasConstructionSale ? 'Converted to Construction' : 'Closed as Pre-Con'}
+                              </span>
+                            ) : (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                Lost
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>${((sale.contract_value || 0) / 1000).toFixed(0)}k</TableCell>
+                          <TableCell>
+                            {sale.estimated_construction_budget ? `$${((sale.estimated_construction_budget) / 1000).toFixed(0)}k` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {sale.close_date ? format(new Date(sale.close_date), 'MMM d, yyyy') : 
+                              sale.phase_history?.length > 0 
+                                ? format(new Date(sale.phase_history[sale.phase_history.length - 1].entered_date), 'MMM d, yyyy')
+                                : '-'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : (
+                <EmptyState
+                  icon={Archive}
+                  title="No closed pre-construction projects"
+                  description="Closed and finalized pre-construction projects will appear here"
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Advance Phase Dialog */}
       <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
