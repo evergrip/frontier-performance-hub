@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, DollarSign, Building2, Users as UsersIcon } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Settings, DollarSign, Building2, Users as UsersIcon, ChevronDown } from 'lucide-react';
 import CommissionRulesTab from '@/components/admin/CommissionRulesTab';
 import CommissionsAdminTab from '@/components/admin/CommissionsAdminTab';
 import ProjectsAdminTab from '@/components/admin/ProjectsAdminTab';
