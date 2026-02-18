@@ -14,8 +14,10 @@ export default function ImportHistoricalData() {
     const [result, setResult] = useState(null);
     const [activeTab, setActiveTab] = useState('form');
     const [preselectedLeadId, setPreselectedLeadId] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
+        base44.auth.me().then(setCurrentUser).catch(() => {});
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
         const leadId = urlParams.get('lead_id');
@@ -27,6 +29,16 @@ export default function ImportHistoricalData() {
             setPreselectedLeadId(leadId);
         }
     }, []);
+
+    if (currentUser && currentUser.role !== 'admin') {
+        return (
+            <div className="max-w-4xl mx-auto py-12 text-center">
+                <Upload className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-slate-900">Admin Access Required</h1>
+                <p className="text-slate-500 mt-2">Only administrators can import historical data.</p>
+            </div>
+        );
+    }
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
