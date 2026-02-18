@@ -18,7 +18,7 @@ export default function CompanyAdmin() {
       const user = await base44.auth.me();
       setCurrentUser(user);
       if (user?.role !== 'admin') {
-        window.location.href = '/';
+        base44.auth.redirectToLogin('/');
       }
     };
     loadUser();
