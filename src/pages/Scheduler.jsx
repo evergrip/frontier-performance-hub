@@ -330,6 +330,7 @@ export default function Scheduler() {
         holidays={holidays}
         assignments={assignments}
         unavailabilities={unavailabilities}
+        subtrades={subtrades}
         onOverrunExtend={handleOverrunExtend}
         onAssign={async ({ projectId, employeeId, days }) => {
           const projectIndex = projects.findIndex(p => p.id === projectId);
