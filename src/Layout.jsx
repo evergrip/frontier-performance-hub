@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [schedulerEnabled, setSchedulerEnabled] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -22,6 +23,11 @@ export default function Layout({ children, currentPageName }) {
       }
     };
     loadUser();
+    base44.entities.CompanySettings.list().then(settings => {
+      if (settings.length > 0) {
+        setSchedulerEnabled(!!settings[0].scheduler_enabled);
+      }
+    }).catch(() => {});
   }, []);
 
   const navigation = [
