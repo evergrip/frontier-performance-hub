@@ -13,6 +13,7 @@ export default function EmployeeAssignmentModal({
   projectTitle,
   date,
   users,
+  projects = [],
   existingAssignments = [],
   allAssignments = [],
   currentAssignmentId = null
