@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
+import FileAuditChecklist, { getChecks } from '../components/common/FileAuditChecklist';
 
 export default function Sales() {
   const queryClient = useQueryClient();
