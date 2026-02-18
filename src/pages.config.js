@@ -71,8 +71,8 @@ import Reports from './pages/Reports';
 import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
-import UsersAdmin from './pages/UsersAdmin';
 import Subtrades from './pages/Subtrades';
+import UsersAdmin from './pages/UsersAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -101,8 +101,8 @@ export const PAGES = {
     "Sales": Sales,
     "ScheduleView": ScheduleView,
     "Scheduler": Scheduler,
-    "UsersAdmin": UsersAdmin,
     "Subtrades": Subtrades,
+    "UsersAdmin": UsersAdmin,
 }
 
 export const pagesConfig = {
