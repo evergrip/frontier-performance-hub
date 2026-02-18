@@ -498,6 +498,61 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
         />
       )}
 
+      {/* Active Projects with Hours */}
+      {activeProjects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-500" />
+              Active Projects — Assigned Hours
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>PM</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Contract</TableHead>
+                    <TableHead className="text-right">Total Hours</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeProjects
+                    .sort((a, b) => (projectHoursMap[b.id] || 0) - (projectHoursMap[a.id] || 0))
+                    .map(p => (
+                    <TableRow key={p.id} className={isAdmin ? 'cursor-pointer hover:bg-blue-50' : ''} onClick={() => openInspector('Project', p)}>
+                      <TableCell className="font-medium">{p.title}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{getClientName(p.client_id)}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{getPMName(p.project_manager_id)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {(p.status || '').replace(/_/g, ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">${Math.round(p.contract_value || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-bold text-blue-600">
+                        {(projectHoursMap[p.id] || 0).toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-slate-50 font-bold">
+                    <TableCell colSpan={4}>Totals</TableCell>
+                    <TableCell className="text-right">${Math.round(kpis.activeContractValue).toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-blue-600">
+                      {activeProjects.reduce((sum, p) => sum + (projectHoursMap[p.id] || 0), 0).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Crew Utilization */}
       {crewSummary.length > 0 && (
         <Card>
