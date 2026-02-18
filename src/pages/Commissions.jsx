@@ -121,7 +121,7 @@ export default function Commissions() {
     const currentMonth = today.getMonth() + 1;
     
     // Determine the current fiscal year (year in which it ends)
-    const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear;
+    const currentFiscalYear = fiscalStartMonth === 1 ? currentYear : (currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear);
     const { startDate: fiscalYearStart } = getFiscalYearDates(currentFiscalYear, fiscalStartMonth);
     
     return transactions.filter(transaction => {
@@ -157,7 +157,7 @@ export default function Commissions() {
   const today = new Date();
   const currentMonth = today.getMonth() + 1;
   const currentYear = today.getFullYear();
-  const currentFiscalYear = currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear;
+  const currentFiscalYear = fiscalStartMonth === 1 ? currentYear : (currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear);
   const { startDate: fiscalYearStart } = getFiscalYearDates(currentFiscalYear, fiscalStartMonth);
   
   const ytdPreconSales = transactions
