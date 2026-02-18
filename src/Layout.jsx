@@ -39,6 +39,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
     { name: 'Data Quality', icon: Flag, page: 'DataQuality' },
     { name: 'Import Historical Data', icon: Upload, page: 'ImportHistoricalData' },
+    { name: 'Subtrades', icon: Wrench, page: 'Subtrades' },
     { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
     { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
     { name: 'Team KPI Review', icon: Users, page: 'KPIReview' },
