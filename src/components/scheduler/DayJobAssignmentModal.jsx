@@ -265,6 +265,7 @@ export default function DayJobAssignmentModal({
         projectTitle={selectedJob?.project?.title}
         date={selectedJob?.day}
         users={users}
+        projects={projects}
         existingAssignments={selectedJob?.existingEmployees}
         allAssignments={assignments}
         currentAssignmentId={selectedJob?.assignment?.id}
