@@ -64,26 +64,46 @@ export default function CompanyAdmin() {
         </TabsList>
 
         {/* Sales Tab - Commission Rules & Commission Admin */}
-        <TabsContent value="sales" className="space-y-8">
-          <div id="commission-rules">
+        <TabsContent value="sales" className="space-y-4">
+          <CollapsibleSection
+            title="Commission Rules"
+            isOpen={openSections.commissionRules}
+            onToggle={() => toggleSection('commissionRules')}
+          >
             <CommissionRulesTab />
-          </div>
-          <div className="border-t pt-8" id="commissions-admin">
+          </CollapsibleSection>
+          <CollapsibleSection
+            title="Commission Management"
+            isOpen={openSections.commissionsAdmin}
+            onToggle={() => toggleSection('commissionsAdmin')}
+          >
             <CommissionsAdminTab />
-          </div>
+          </CollapsibleSection>
         </TabsContent>
 
         {/* Operations Tab - Projects Admin & Users Admin */}
-        <TabsContent value="operations" className="space-y-8">
-          <div id="projects-admin">
+        <TabsContent value="operations" className="space-y-4">
+          <CollapsibleSection
+            title="Projects"
+            isOpen={openSections.projectsAdmin}
+            onToggle={() => toggleSection('projectsAdmin')}
+          >
             <ProjectsAdminTab />
-          </div>
-          <div className="border-t pt-8" id="users-admin">
+          </CollapsibleSection>
+          <CollapsibleSection
+            title="User Management"
+            isOpen={openSections.usersAdmin}
+            onToggle={() => toggleSection('usersAdmin')}
+          >
             <UsersAdminTab />
-          </div>
-          <div className="border-t pt-8" id="reporting-relationships">
+          </CollapsibleSection>
+          <CollapsibleSection
+            title="Reporting Relationships"
+            isOpen={openSections.reportingRelationships}
+            onToggle={() => toggleSection('reportingRelationships')}
+          >
             <ReportingRelationshipsTab />
-          </div>
+          </CollapsibleSection>
         </TabsContent>
 
         {/* Company Settings Tab */}
