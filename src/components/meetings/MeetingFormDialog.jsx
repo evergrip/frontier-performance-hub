@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { X, Plus, Loader2, Lock } from 'lucide-react';
+import { X, Plus, Loader2, Lock, Target } from 'lucide-react';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -18,7 +18,7 @@ const MEETING_TYPES = [
   { value: 'quarterly_reset', label: 'Quarterly Reset/Reflect' },
 ];
 
-const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false };
+const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false, linked_kpi_id: '', kpi_impact_value: 1 };
 
 export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving }) {
   const [form, setForm] = useState({});
@@ -38,6 +38,12 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
+    initialData: [],
+  });
+
+  const { data: kpis = [] } = useQuery({
+    queryKey: ['kpis'],
+    queryFn: () => base44.entities.KPI.list(),
     initialData: [],
   });
 
@@ -103,6 +109,19 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     if (!data.related_client_id) delete data.related_client_id;
     if (!data.related_lead_id) delete data.related_lead_id;
     if (!data.related_project_id) delete data.related_project_id;
+    // Auto-set has_agenda based on whether description is filled
+    data.has_agenda = !!(data.description && data.description.trim().length > 0);
+    // Clean KPI links on action items
+    if (data.action_items) {
+      data.action_items = data.action_items.map(item => {
+        const cleaned = { ...item };
+        if (!cleaned.linked_kpi_id) {
+          delete cleaned.linked_kpi_id;
+          delete cleaned.kpi_impact_value;
+        }
+        return cleaned;
+      });
+    }
     onSubmit(data);
   };
 
@@ -288,6 +307,31 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
                     </SelectContent>
                   </Select>
                   <Input type="date" value={item.due_date || ''} onChange={e => updateActionItem(idx, 'due_date', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={item.linked_kpi_id || 'none'} onValueChange={v => updateActionItem(idx, 'linked_kpi_id', v === 'none' ? '' : v)}>
+                    <SelectTrigger className="text-xs">
+                      <div className="flex items-center gap-1">
+                        <Target className="w-3 h-3 text-indigo-500" />
+                        <SelectValue placeholder="Link KPI..." />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No KPI Link</SelectItem>
+                      {kpis.filter(k => k.is_active !== false).map(k => (
+                        <SelectItem key={k.id} value={k.id}>{k.name} ({k.category})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {item.linked_kpi_id && (
+                    <Input
+                      type="number"
+                      value={item.kpi_impact_value || 1}
+                      onChange={e => updateActionItem(idx, 'kpi_impact_value', parseFloat(e.target.value) || 0)}
+                      placeholder="Impact value"
+                      className="text-xs"
+                    />
+                  )}
                 </div>
               </div>
             ))}
