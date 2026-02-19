@@ -19,6 +19,7 @@ const EMPTY_FORM = {
   type: 'calculated',
   category: 'sales',
   measurement_unit: 'count',
+  scope: 'company',
   assigned_user_ids: [],
   source_entity: '',
   metric_field: '',
@@ -38,7 +39,7 @@ const EMPTY_FORM = {
   display_order: 0
 };
 
-export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit, isSubmitting }) {
+export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit, isSubmitting, defaultScope, hideScope = false, hideAssignment = false }) {
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [filterText, setFilterText] = useState('');
 
@@ -53,11 +54,11 @@ export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit
         setFormData({ ...EMPTY_FORM, ...editingKPI });
         setFilterText(editingKPI.filter_conditions ? JSON.stringify(editingKPI.filter_conditions) : '');
       } else {
-        setFormData({ ...EMPTY_FORM });
+        setFormData({ ...EMPTY_FORM, scope: defaultScope || 'company' });
         setFilterText('');
       }
     }
-  }, [open, editingKPI]);
+  }, [open, editingKPI, defaultScope]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -342,7 +343,23 @@ export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit
             </div>
           )}
 
+          {/* Scope (only shown if not hidden) */}
+          {!hideScope && (
+            <div>
+              <Label className="mb-1 block text-xs text-slate-500">KPI Scope</Label>
+              <Select value={formData.scope || 'company'} onValueChange={(v) => set('scope', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal">Personal (for yourself only)</SelectItem>
+                  <SelectItem value="department">Department (for your team)</SelectItem>
+                  <SelectItem value="company">Company-wide</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Assign Users */}
+          {!hideAssignment ? (
           <div>
             <Label className="mb-2 block text-xs text-slate-500">Assign to Specific Users (leave empty = all users)</Label>
             <div className="flex flex-wrap gap-2">
