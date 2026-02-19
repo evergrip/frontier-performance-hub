@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Mail, UserCog, Search, Shield, User as UserIcon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
 export default function UsersAdmin() {
@@ -116,6 +117,8 @@ export default function UsersAdmin() {
         full_name: selectedUser.full_name,
         role: selectedUser.role,
         departments: selectedUser.departments,
+        is_department_manager: selectedUser.is_department_manager || false,
+        managed_departments: selectedUser.is_department_manager ? (selectedUser.managed_departments || []) : [],
         commission_rule_ids: selectedUser.commission_rule_ids,
         next_year_commission_rule_ids: selectedUser.next_year_commission_rule_ids,
         is_commission_eligible: selectedUser.departments?.includes('sales'),
@@ -356,6 +359,43 @@ export default function UsersAdmin() {
                   ))}
                 </div>
               </div>
+              {/* Department Manager Toggle */}
+              <div className="space-y-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Department Manager</Label>
+                    <p className="text-xs text-slate-500">Can create KPIs for their managed departments</p>
+                  </div>
+                  <Switch
+                    checked={selectedUser.is_department_manager || false}
+                    onCheckedChange={(checked) => setSelectedUser({ ...selectedUser, is_department_manager: checked, managed_departments: checked ? (selectedUser.managed_departments || []) : [] })}
+                  />
+                </div>
+                {selectedUser.is_department_manager && (
+                  <div>
+                    <Label className="text-xs text-slate-500 mb-1 block">Managed Departments</Label>
+                    <div className="space-y-1">
+                      {['sales', 'preconstruction', 'construction', 'admin', 'management'].map(dept => (
+                        <label key={dept} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUser.managed_departments?.includes(dept) || false}
+                            onChange={(e) => {
+                              const newDepts = e.target.checked
+                                ? [...(selectedUser.managed_departments || []), dept]
+                                : (selectedUser.managed_departments || []).filter(d => d !== dept);
+                              setSelectedUser({ ...selectedUser, managed_departments: newDepts });
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm capitalize">{dept}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {selectedUser.departments?.includes('sales') && (
                 <>
                   <div>
