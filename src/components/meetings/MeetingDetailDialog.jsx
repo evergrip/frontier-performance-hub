@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2, Pencil } from 'lucide-react';
 import CalendarInviteButton from './CalendarInviteButton';
 import { format } from 'date-fns';
 
@@ -29,7 +29,7 @@ const SCORECARD_LABELS = {
   good_use_of_time: 'Good use of time',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [] }) {
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
@@ -62,8 +62,14 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
           <div className="flex gap-2 mt-2 flex-wrap items-center">
             <Badge>{TYPE_LABELS[meeting.meeting_type]}</Badge>
             <Badge variant="outline">{meeting.status?.replace('_', ' ')}</Badge>
-            <div className="ml-auto">
+            <div className="ml-auto flex gap-2">
               <CalendarInviteButton meeting={meeting} />
+              {onEdit && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { onOpenChange(false); onEdit(meeting); }}>
+                  <Pencil className="w-4 h-4" />
+                  Edit
+                </Button>
+              )}
             </div>
           </div>
         </DialogHeader>
