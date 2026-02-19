@@ -11,6 +11,7 @@ import MeetingCard from '../components/meetings/MeetingCard';
 import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
 import MeetingKPIStats from '../components/meetings/MeetingKPIStats';
 import MeetingEffectivenessScorecard from '../components/meetings/MeetingEffectivenessScorecard';
+import ImportActionItemsDialog from '../components/meetings/ImportActionItemsDialog';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
@@ -21,6 +22,8 @@ export default function Meetings() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentUser, setCurrentUser] = useState(null);
   const [scorecardMeeting, setScorecardMeeting] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importTargetForm, setImportTargetForm] = useState(null);
 
   useState(() => {
     base44.auth.me().then(u => setCurrentUser(u));
@@ -69,9 +72,57 @@ export default function Meetings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meetings'] }),
   });
 
-  const handleSubmit = (data) => {
+  const handleSubmit = async (data) => {
     if (editingMeeting) {
       updateMutation.mutate({ id: editingMeeting.id, data });
+    } else if (data.is_recurring && data.recurrence_pattern && data.start_date && data.recurrence_end_date) {
+      // Generate recurring meeting instances
+      const seriesId = `series_${Date.now()}`;
+      const startDate = new Date(data.start_date);
+      const endDate = data.end_date ? new Date(data.end_date) : null;
+      const durationMs = endDate ? endDate.getTime() - startDate.getTime() : 60 * 60 * 1000;
+      const seriesEndDate = new Date(data.recurrence_end_date);
+
+      const intervalDays = {
+        daily: 1,
+        weekly: 7,
+        biweekly: 14,
+        monthly: 0, // handled separately
+      };
+
+      const instances = [];
+      let current = new Date(startDate);
+      while (current <= seriesEndDate) {
+        const instanceStart = new Date(current);
+        const instanceEnd = new Date(instanceStart.getTime() + durationMs);
+        instances.push({
+          ...data,
+          start_date: instanceStart.toISOString(),
+          end_date: instanceEnd.toISOString(),
+          recurring_series_id: seriesId,
+          action_items: data.action_items?.map(item => ({ ...item, is_completed: false, completed_date: null })) || [],
+        });
+
+        if (data.recurrence_pattern === 'monthly') {
+          current.setMonth(current.getMonth() + 1);
+        } else {
+          current.setDate(current.getDate() + intervalDays[data.recurrence_pattern]);
+        }
+      }
+
+      // Remove recurrence fields that don't need repeating, keep on first only
+      const cleanInstances = instances.map((inst, i) => {
+        const clean = { ...inst };
+        delete clean.recurrence_end_date;
+        if (i > 0) delete clean.is_recurring;
+        if (i > 0) delete clean.recurrence_pattern;
+        return clean;
+      });
+
+      await base44.entities.Meeting.bulkCreate(cleanInstances);
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      setFormOpen(false);
+      setEditingMeeting(null);
     } else {
       createMutation.mutate(data);
     }
@@ -121,6 +172,20 @@ export default function Meetings() {
     if (detailMeeting?.id === meeting.id) {
       setDetailMeeting({ ...meeting, action_items: items });
     }
+  };
+
+  // Handle importing action items from previous meetings into the form
+  const formDialogRef = React.useRef(null);
+  const [pendingImportItems, setPendingImportItems] = useState(null);
+
+  const handleOpenImportActions = (currentFormData) => {
+    setImportTargetForm(currentFormData);
+    setImportDialogOpen(true);
+  };
+
+  const handleImportItems = (items) => {
+    setPendingImportItems(items);
+    setImportDialogOpen(false);
   };
 
   const handleScorecardSubmit = (scorecardData) => {
@@ -300,6 +365,17 @@ export default function Meetings() {
         meeting={editingMeeting}
         onSubmit={handleSubmit}
         saving={createMutation.isPending || updateMutation.isPending}
+        onOpenImportActions={handleOpenImportActions}
+        pendingImportItems={pendingImportItems}
+        onImportItemsConsumed={() => setPendingImportItems(null)}
+      />
+      <ImportActionItemsDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        meetings={meetings}
+        users={users}
+        currentMeeting={editingMeeting}
+        onImport={handleImportItems}
       />
       <MeetingDetailDialog
         open={!!detailMeeting}
