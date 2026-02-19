@@ -60,6 +60,7 @@ import KPIAgentChat from './pages/KPIAgentChat';
 import KPIDashboard from './pages/KPIDashboard';
 import KPIDefinitions from './pages/KPIDefinitions';
 import Leads from './pages/Leads';
+import Meetings from './pages/Meetings';
 import MyKPIs from './pages/MyKPIs';
 import Projects from './pages/Projects';
 import ProjectsAdmin from './pages/ProjectsAdmin';
@@ -70,7 +71,6 @@ import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import Subtrades from './pages/Subtrades';
 import UsersAdmin from './pages/UsersAdmin';
-import Meetings from './pages/Meetings';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +88,7 @@ export const PAGES = {
     "KPIDashboard": KPIDashboard,
     "KPIDefinitions": KPIDefinitions,
     "Leads": Leads,
+    "Meetings": Meetings,
     "MyKPIs": MyKPIs,
     "Projects": Projects,
     "ProjectsAdmin": ProjectsAdmin,
@@ -98,7 +99,6 @@ export const PAGES = {
     "Scheduler": Scheduler,
     "Subtrades": Subtrades,
     "UsersAdmin": UsersAdmin,
-    "Meetings": Meetings,
 }
 
 export const pagesConfig = {

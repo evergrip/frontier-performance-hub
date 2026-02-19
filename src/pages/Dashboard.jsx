@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DollarSign, Target, Briefcase, Building2, TrendingUp, Settings2, CheckCircle2, Activity } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import BuildCapacityForecast from '../components/dashboard/BuildCapacityForecast
 import FiscalGoalProgress from '../components/dashboard/FiscalGoalProgress';
 import RevenueTrendChart from '../components/dashboard/RevenueTrendChart';
 import CustomizeMetricsDialog from '../components/dashboard/CustomizeMetricsDialog';
+import MyMeetingsDashboard from '../components/dashboard/MyMeetingsDashboard';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -60,6 +61,29 @@ export default function Dashboard() {
     initialData: [],
   });
 
+  const { data: allMeetings = [] } = useQuery({
+    queryKey: ['meetings'],
+    queryFn: () => base44.entities.Meeting.list('-created_date'),
+    initialData: [],
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
+  // Filter meetings for privacy
+  const visibleMeetings = allMeetings.filter(m => {
+    if (!m.is_private) return true;
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (m.organizer_id === user.id) return true;
+    if ((m.attendees || []).includes(user.id)) return true;
+    if ((m.visible_to_user_ids || []).includes(user.id)) return true;
+    return false;
+  });
+
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list(),
@@ -84,7 +108,21 @@ export default function Dashboard() {
     initialData: [],
   });
 
+  const queryClient = useQueryClient();
   const isLoading = settingsLoading || leadsLoading || salesLoading || projectsLoading;
+
+  const handleUpdateActionItem = async (meetingId, actionIndex, markComplete) => {
+    const meeting = allMeetings.find(m => m.id === meetingId);
+    if (!meeting) return;
+    const items = [...(meeting.action_items || [])];
+    items[actionIndex] = {
+      ...items[actionIndex],
+      is_completed: markComplete,
+      completed_date: markComplete ? new Date().toISOString().split('T')[0] : null,
+    };
+    await base44.entities.Meeting.update(meetingId, { action_items: items });
+    queryClient.invalidateQueries({ queryKey: ['meetings'] });
+  };
 
   const settings = companySettings[0] || {};
   const fiscalYearStartMonth = settings.fiscal_year_start_month || 10;
@@ -457,6 +495,14 @@ export default function Dashboard() {
         filteredProjectsCount={filteredProjects.length}
         fiscalYear={fiscalYear}
         fiscalYearStartMonth={fiscalYearStartMonth}
+      />
+
+      {/* My Meetings & Action Items */}
+      <MyMeetingsDashboard
+        meetings={visibleMeetings}
+        users={allUsers}
+        currentUser={user}
+        onUpdateActionItem={handleUpdateActionItem}
       />
 
       {/* Revenue Trend Chart */}
