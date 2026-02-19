@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Target, TrendingUp, AlertTriangle, Users, RefreshCw, Loader2, MessageSquare, CheckCircle } from 'lucide-react';
+import { Target, TrendingUp, AlertTriangle, Users, RefreshCw, Loader2, MessageSquare, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, subMonths } from 'date-fns';
+import { format, subMonths, startOfMonth, endOfMonth, addMonths } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function KPIDashboard() {
@@ -21,6 +21,7 @@ export default function KPIDashboard() {
   const [reviewEntry, setReviewEntry] = useState(null);
   const [managerNotes, setManagerNotes] = useState('');
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [viewMonth, setViewMonth] = useState(new Date());
   const queryClient = useQueryClient();
 
   React.useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
@@ -76,12 +77,13 @@ export default function KPIDashboard() {
   const getKPIById = (id) => kpis.find(k => k.id === id);
   const getUserName = (id) => allUsers.find(u => u.id === id)?.full_name || id;
 
-  // Current period entries
+  // Period entries based on selected month
+  const periodStart = startOfMonth(viewMonth);
+  const periodEnd = endOfMonth(viewMonth);
   const currentPeriodEntries = allEntries.filter(entry => {
     const start = new Date(entry.reporting_period_start_date);
     const end = new Date(entry.reporting_period_end_date);
-    const now = new Date();
-    return now >= start && now <= end;
+    return start <= periodEnd && end >= periodStart;
   });
 
   // Filter by category
@@ -159,6 +161,14 @@ export default function KPIDashboard() {
             Recalculate
           </Button>
         </div>
+      </div>
+
+      {/* Period Selector */}
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="icon" onClick={() => setViewMonth(addMonths(viewMonth, -1))}><ChevronLeft className="w-4 h-4" /></Button>
+        <span className="text-sm font-medium text-slate-700 min-w-[120px] text-center">{format(viewMonth, 'MMMM yyyy')}</span>
+        <Button variant="outline" size="icon" onClick={() => setViewMonth(addMonths(viewMonth, 1))}><ChevronRight className="w-4 h-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={() => setViewMonth(new Date())}>Today</Button>
       </div>
 
       {/* Summary */}
