@@ -14,19 +14,36 @@ import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
+const DEPARTMENTS = ['sales', 'operations', 'finance', 'precon', 'projects'];
+
 export default function MyMeetingsDashboard({ meetings, users, currentUser, onUpdateActionItem }) {
   const [statusReportOpen, setStatusReportOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [statusNote, setStatusNote] = useState('');
+  const [viewScope, setViewScope] = useState('mine'); // 'mine', 'employee', 'department', 'company'
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
 
-  const userId = currentUser?.id;
-  if (!userId) return null;
+  const isAdmin = currentUser?.role === 'admin';
+  if (!currentUser?.id) return null;
 
-  // Get all action items assigned to this user across all visible meetings
+  // Determine which user IDs to show action items for
+  const getTargetUserIds = () => {
+    if (viewScope === 'mine') return [currentUser.id];
+    if (viewScope === 'employee' && selectedUserId) return [selectedUserId];
+    if (viewScope === 'department' && selectedDept) {
+      return users.filter(u => u.department === selectedDept).map(u => u.id);
+    }
+    if (viewScope === 'company') return users.map(u => u.id);
+    return [currentUser.id];
+  };
+  const targetUserIds = getTargetUserIds();
+
+  // Get all action items for target users across all visible meetings
   const myActionItems = [];
   meetings.forEach(m => {
     (m.action_items || []).forEach((item, idx) => {
-      if (item.assigned_to_user_id === userId) {
+      if (targetUserIds.includes(item.assigned_to_user_id)) {
         myActionItems.push({ ...item, meetingId: m.id, meetingTitle: m.title, actionIndex: idx });
       }
     });
@@ -39,18 +56,23 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
   const dueSoonItems = pendingItems.filter(a => a.due_date && !isBefore(new Date(a.due_date), today) && isBefore(new Date(a.due_date), addDays(today, 7)));
   const completionRate = myActionItems.length > 0 ? (completedItems.length / myActionItems.length) * 100 : 0;
 
-  // Upcoming meetings for this user (attendee or organizer)
+  // Upcoming meetings for target users (attendee or organizer)
   const upcomingMeetings = meetings
     .filter(m =>
       (m.status === 'scheduled' || m.status === 'in_progress') &&
       m.start_date &&
       isAfter(new Date(m.start_date), new Date()) &&
-      (m.organizer_id === userId || (m.attendees || []).includes(userId))
+      (targetUserIds.includes(m.organizer_id) || (m.attendees || []).some(a => targetUserIds.includes(a)))
     )
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
     .slice(0, 5);
 
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || 'Unknown';
+
+  const scopeLabel = viewScope === 'mine' ? 'My' :
+    viewScope === 'employee' ? (getUserName(selectedUserId) + "'s") :
+    viewScope === 'department' ? (selectedDept ? selectedDept.charAt(0).toUpperCase() + selectedDept.slice(1) : 'Department') :
+    'Company-Wide';
 
   const handleStatusReport = (item) => {
     setSelectedItem(item);
@@ -73,16 +95,57 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-indigo-600" />
-            <CardTitle className="text-lg">My Meetings & Action Items</CardTitle>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-indigo-600" />
+              <CardTitle className="text-lg">{scopeLabel} Meetings & Action Items</CardTitle>
+            </div>
+            <Link to={createPageUrl('Meetings')}>
+              <Button variant="ghost" size="sm" className="text-indigo-600">
+                View All <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
           </div>
-          <Link to={createPageUrl('Meetings')}>
-            <Button variant="ghost" size="sm" className="text-indigo-600">
-              View All <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </Link>
+          {isAdmin && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={viewScope} onValueChange={(v) => { setViewScope(v); setSelectedUserId(''); setSelectedDept(''); }}>
+                <SelectTrigger className="w-40 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mine">My Items</SelectItem>
+                  <SelectItem value="employee">By Employee</SelectItem>
+                  <SelectItem value="department">By Department</SelectItem>
+                  <SelectItem value="company">Company-Wide</SelectItem>
+                </SelectContent>
+              </Select>
+              {viewScope === 'employee' && (
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="w-48 h-8 text-xs">
+                    <SelectValue placeholder="Select employee..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {viewScope === 'department' && (
+                <Select value={selectedDept} onValueChange={setSelectedDept}>
+                  <SelectTrigger className="w-40 h-8 text-xs">
+                    <SelectValue placeholder="Select dept..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTMENTS.map(d => (
+                      <SelectItem key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -142,6 +205,9 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
                           <p className="text-sm font-medium">{item.description}</p>
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             <span className="text-xs text-slate-400">from: {item.meetingTitle}</span>
+                            {viewScope !== 'mine' && (
+                              <span className="text-xs text-indigo-500 font-medium">{getUserName(item.assigned_to_user_id)}</span>
+                            )}
                             {item.due_date && (
                               <span className={`text-xs ${isOverdue ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
                                 Due: {format(new Date(item.due_date), 'MMM d, yyyy')}
