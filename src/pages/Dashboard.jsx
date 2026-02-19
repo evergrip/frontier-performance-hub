@@ -420,6 +420,14 @@ export default function Dashboard() {
         </Button>
       </div>
 
+      {/* Meetings & Action Items - Top of Dashboard */}
+      <MyMeetingsDashboard
+        meetings={visibleMeetings}
+        users={allUsers}
+        currentUser={user}
+        onUpdateActionItem={handleUpdateActionItem}
+      />
+
       {/* Date Range Selector */}
       <DateRangeSelector
         selectedDateRangeType={selectedDateRangeType} setSelectedDateRangeType={setSelectedDateRangeType}
@@ -495,14 +503,6 @@ export default function Dashboard() {
         filteredProjectsCount={filteredProjects.length}
         fiscalYear={fiscalYear}
         fiscalYearStartMonth={fiscalYearStartMonth}
-      />
-
-      {/* My Meetings & Action Items */}
-      <MyMeetingsDashboard
-        meetings={visibleMeetings}
-        users={allUsers}
-        currentUser={user}
-        onUpdateActionItem={handleUpdateActionItem}
       />
 
       {/* Revenue Trend Chart */}
