@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat } from 'lucide-react';
+import CalendarInviteButton from './CalendarInviteButton';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -65,10 +66,11 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
             </div>
           </div>
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(meeting)}>
+            <CalendarInviteButton meeting={meeting} variant="ghost" size="icon" />
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(meeting); }}>
               <Pencil className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(meeting)}>
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onDelete(meeting); }}>
               <Trash2 className="w-4 h-4 text-red-500" />
             </Button>
           </div>

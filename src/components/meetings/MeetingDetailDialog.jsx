@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2 } from 'lucide-react';
+import CalendarInviteButton from './CalendarInviteButton';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -58,9 +59,12 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{meeting.title}</DialogTitle>
-          <div className="flex gap-2 mt-2 flex-wrap">
+          <div className="flex gap-2 mt-2 flex-wrap items-center">
             <Badge>{TYPE_LABELS[meeting.meeting_type]}</Badge>
             <Badge variant="outline">{meeting.status?.replace('_', ' ')}</Badge>
+            <div className="ml-auto">
+              <CalendarInviteButton meeting={meeting} />
+            </div>
           </div>
         </DialogHeader>
 
