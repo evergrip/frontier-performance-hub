@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { X, Plus, Loader2, Lock, Target, AlertTriangle, Repeat, Download } from 'lucide-react';
+import { X, Plus, Loader2, Lock, Target, AlertTriangle, Download } from 'lucide-react';
+import RecurrenceConfig from './RecurrenceConfig';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -71,7 +72,7 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
           attendees: [], organizer_id: '', status: 'scheduled',
           is_private: false, visible_to_user_ids: [],
           action_items: [], outcome_summary: '', notes: '',
-          is_recurring: false, recurrence_pattern: '', recurrence_end_date: '',
+          recurrence: { enabled: false, frequency: '', interval: 1, days_of_week: [], monthly_type: 'day_of_month', day_of_month: 1, nth_ordinal: 1, nth_day_of_week: null, end_date: '' },
         });
       }
     }
@@ -238,35 +239,10 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
 
           {/* Recurrence */}
           {!meeting && (
-            <div className="border rounded-lg p-4 space-y-3 bg-slate-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Repeat className="w-4 h-4 text-slate-500" />
-                  <Label className="text-base font-semibold">Recurring Meeting</Label>
-                </div>
-                <Switch checked={form.is_recurring || false} onCheckedChange={v => updateField('is_recurring', v)} />
-              </div>
-              {form.is_recurring && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Repeat</Label>
-                    <Select value={form.recurrence_pattern || ''} onValueChange={v => updateField('recurrence_pattern', v)}>
-                      <SelectTrigger><SelectValue placeholder="Select frequency" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="biweekly">Biweekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Series Ends</Label>
-                    <Input type="date" value={form.recurrence_end_date || ''} onChange={e => updateField('recurrence_end_date', e.target.value)} />
-                  </div>
-                </div>
-              )}
-            </div>
+            <RecurrenceConfig
+              recurrence={form.recurrence}
+              onChange={v => updateField('recurrence', v)}
+            />
           )}
 
           {/* Status */}
