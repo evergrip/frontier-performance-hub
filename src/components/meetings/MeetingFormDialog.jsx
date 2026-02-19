@@ -20,7 +20,7 @@ const MEETING_TYPES = [
 
 const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false, linked_kpi_id: '', kpi_impact_value: 1 };
 
-export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving, onOpenImportActions }) {
+export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving, onOpenImportActions, pendingImportItems, onImportItemsConsumed }) {
   const [form, setForm] = useState({});
 
   const { data: users = [] } = useQuery({
@@ -137,6 +137,17 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     }
     onSubmit(data);
   };
+
+  // Consume imported action items from parent
+  useEffect(() => {
+    if (pendingImportItems && pendingImportItems.length > 0) {
+      setForm(prev => ({
+        ...prev,
+        action_items: [...(prev.action_items || []), ...pendingImportItems],
+      }));
+      onImportItemsConsumed?.();
+    }
+  }, [pendingImportItems]);
 
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || id;
 
