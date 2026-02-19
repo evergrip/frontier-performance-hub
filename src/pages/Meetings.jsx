@@ -411,6 +411,7 @@ export default function Meetings() {
         meeting={detailMeeting}
         users={users}
         kpis={kpis}
+        allMeetings={meetings}
         onToggleActionItem={handleToggleActionItem}
         onOpenScorecard={(m) => { setDetailMeeting(null); setScorecardMeeting(m); }}
       />
