@@ -10,6 +10,7 @@ import MeetingFormDialog from '../components/meetings/MeetingFormDialog';
 import MeetingCard from '../components/meetings/MeetingCard';
 import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
 import MeetingKPIStats from '../components/meetings/MeetingKPIStats';
+import MeetingEffectivenessScorecard from '../components/meetings/MeetingEffectivenessScorecard';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
@@ -19,6 +20,7 @@ export default function Meetings() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentUser, setCurrentUser] = useState(null);
+  const [scorecardMeeting, setScorecardMeeting] = useState(null);
 
   useState(() => {
     base44.auth.me().then(u => setCurrentUser(u));
@@ -119,6 +121,14 @@ export default function Meetings() {
     if (detailMeeting?.id === meeting.id) {
       setDetailMeeting({ ...meeting, action_items: items });
     }
+  };
+
+  const handleScorecardSubmit = (scorecardData) => {
+    if (!scorecardMeeting) return;
+    updateMutation.mutate(
+      { id: scorecardMeeting.id, data: { effectiveness_scorecard: scorecardData } },
+      { onSuccess: () => setScorecardMeeting(null) }
+    );
   };
 
   // Filter out private meetings the current user shouldn't see
@@ -298,6 +308,15 @@ export default function Meetings() {
         users={users}
         kpis={kpis}
         onToggleActionItem={handleToggleActionItem}
+        onOpenScorecard={(m) => { setDetailMeeting(null); setScorecardMeeting(m); }}
+      />
+      <MeetingEffectivenessScorecard
+        open={!!scorecardMeeting}
+        onOpenChange={(open) => !open && setScorecardMeeting(null)}
+        meeting={scorecardMeeting}
+        currentUser={currentUser}
+        onSubmit={handleScorecardSubmit}
+        saving={updateMutation.isPending}
       />
     </div>
   );
