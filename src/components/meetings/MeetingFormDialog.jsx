@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { X, Plus, Loader2, Lock, Target, AlertTriangle, Download } from 'lucide-react';
 import RecurrenceConfig from './RecurrenceConfig';
+import ParentMeetingPicker from './ParentMeetingPicker';
+import PreviousBusinessSection from './PreviousBusinessSection';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -21,7 +23,7 @@ const MEETING_TYPES = [
 
 const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false, linked_kpi_id: '', kpi_impact_value: 1 };
 
-export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving, onOpenImportActions, pendingImportItems, onImportItemsConsumed }) {
+export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving, onOpenImportActions, pendingImportItems, onImportItemsConsumed, allMeetings = [] }) {
   const [form, setForm] = useState({});
 
   const { data: users = [] } = useQuery({
@@ -68,10 +70,11 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
         setForm({
           title: '', description: '', meeting_type: 'weekly_tactical',
           start_date: '', end_date: '', location: '',
+          parent_meeting_id: '',
           related_client_id: '', related_lead_id: '', related_project_id: '',
           attendees: [], organizer_id: '', status: 'scheduled',
           is_private: false, visible_to_user_ids: [],
-          action_items: [], outcome_summary: '', notes: '',
+          previous_business_items: [], action_items: [], outcome_summary: '', notes: '',
           recurrence: { enabled: false, frequency: '', interval: 1, days_of_week: [], monthly_type: 'day_of_month', day_of_month: 1, nth_ordinal: 1, nth_day_of_week: null, end_date: '' },
         });
       }
@@ -92,6 +95,48 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
 
   const removeActionItem = (index) => {
     updateField('action_items', (form.action_items || []).filter((_, i) => i !== index));
+  };
+
+  // Handle parent meeting selection and auto-import previous business
+  const handleParentSelect = (parentId) => {
+    updateField('parent_meeting_id', parentId);
+    if (parentId) {
+      const parent = allMeetings.find(m => m.id === parentId);
+      if (parent) {
+        const outstanding = (parent.action_items || [])
+          .filter(a => !a.is_completed)
+          .map(a => ({
+            description: a.description,
+            assigned_to_user_id: a.assigned_to_user_id,
+            due_date: a.due_date,
+            is_completed: false,
+            linked_kpi_id: a.linked_kpi_id || '',
+            kpi_impact_value: a.kpi_impact_value || 1,
+            source_meeting_id: parentId,
+          }));
+        // Also carry forward incomplete previous business from parent
+        const outstandingPrev = (parent.previous_business_items || [])
+          .filter(a => !a.is_completed)
+          .map(a => ({
+            ...a,
+            is_completed: false,
+            source_meeting_id: a.source_meeting_id || parentId,
+          }));
+        updateField('previous_business_items', [...outstandingPrev, ...outstanding]);
+      }
+    } else {
+      updateField('previous_business_items', []);
+    }
+  };
+
+  const updatePrevBusinessItem = (index, field, value) => {
+    const items = [...(form.previous_business_items || [])];
+    items[index] = { ...items[index], [field]: value };
+    updateField('previous_business_items', items);
+  };
+
+  const removePrevBusinessItem = (index) => {
+    updateField('previous_business_items', (form.previous_business_items || []).filter((_, i) => i !== index));
   };
 
   const toggleVisibleTo = (userId) => {
@@ -125,6 +170,8 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     if (!data.related_project_id) delete data.related_project_id;
     // Auto-set has_agenda based on whether description is filled
     data.has_agenda = !!(data.description && data.description.trim().length > 0);
+    // Clean parent_meeting_id
+    if (!data.parent_meeting_id) delete data.parent_meeting_id;
     // Clean KPI links on action items
     if (data.action_items) {
       data.action_items = data.action_items.map(item => {
@@ -237,6 +284,17 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
             </div>
           </div>
 
+          {/* Parent meeting link */}
+          {!meeting && (
+            <ParentMeetingPicker
+              meetings={allMeetings}
+              meetingType={form.meeting_type}
+              parentMeetingId={form.parent_meeting_id || ''}
+              onParentSelect={handleParentSelect}
+              users={users}
+            />
+          )}
+
           {/* Recurrence */}
           {!meeting && (
             <RecurrenceConfig
@@ -344,6 +402,15 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
               </Select>
             </div>
           </div>
+
+          {/* Previous Business */}
+          <PreviousBusinessSection
+            items={form.previous_business_items || []}
+            users={users}
+            kpis={kpis}
+            onUpdate={updatePrevBusinessItem}
+            onRemove={removePrevBusinessItem}
+          />
 
           {/* Action Items */}
           <div>
