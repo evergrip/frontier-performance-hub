@@ -12,6 +12,7 @@ import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
 import MeetingKPIStats from '../components/meetings/MeetingKPIStats';
 import MeetingEffectivenessScorecard from '../components/meetings/MeetingEffectivenessScorecard';
 import ImportActionItemsDialog from '../components/meetings/ImportActionItemsDialog';
+import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
@@ -75,56 +76,39 @@ export default function Meetings() {
   const handleSubmit = async (data) => {
     if (editingMeeting) {
       updateMutation.mutate({ id: editingMeeting.id, data });
-    } else if (data.is_recurring && data.recurrence_pattern && data.start_date && data.recurrence_end_date) {
-      // Generate recurring meeting instances
+    } else if (data.recurrence?.enabled && data.recurrence?.frequency && data.start_date && data.recurrence?.end_date) {
+      // Generate recurring meeting instances using the recurrence engine
       const seriesId = `series_${Date.now()}`;
       const startDate = new Date(data.start_date);
       const endDate = data.end_date ? new Date(data.end_date) : null;
       const durationMs = endDate ? endDate.getTime() - startDate.getTime() : 60 * 60 * 1000;
-      const seriesEndDate = new Date(data.recurrence_end_date);
 
-      const intervalDays = {
-        daily: 1,
-        weekly: 7,
-        biweekly: 14,
-        monthly: 0, // handled separately
-      };
+      const occurrences = generateOccurrences(data.recurrence, data.start_date);
 
-      const instances = [];
-      let current = new Date(startDate);
-      while (current <= seriesEndDate) {
-        const instanceStart = new Date(current);
-        const instanceEnd = new Date(instanceStart.getTime() + durationMs);
-        instances.push({
-          ...data,
-          start_date: instanceStart.toISOString(),
+      const instances = occurrences.map((occDate, i) => {
+        const instanceEnd = new Date(occDate.getTime() + durationMs);
+        const { recurrence, ...rest } = data;
+        return {
+          ...rest,
+          start_date: occDate.toISOString(),
           end_date: instanceEnd.toISOString(),
           recurring_series_id: seriesId,
+          is_recurring: i === 0,
+          recurrence_pattern: i === 0 ? recurrence.frequency : undefined,
           action_items: data.action_items?.map(item => ({ ...item, is_completed: false, completed_date: null })) || [],
-        });
-
-        if (data.recurrence_pattern === 'monthly') {
-          current.setMonth(current.getMonth() + 1);
-        } else {
-          current.setDate(current.getDate() + intervalDays[data.recurrence_pattern]);
-        }
-      }
-
-      // Remove recurrence fields that don't need repeating, keep on first only
-      const cleanInstances = instances.map((inst, i) => {
-        const clean = { ...inst };
-        delete clean.recurrence_end_date;
-        if (i > 0) delete clean.is_recurring;
-        if (i > 0) delete clean.recurrence_pattern;
-        return clean;
+        };
       });
 
-      await base44.entities.Meeting.bulkCreate(cleanInstances);
+      if (instances.length > 0) {
+        await base44.entities.Meeting.bulkCreate(instances);
+      }
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setFormOpen(false);
       setEditingMeeting(null);
     } else {
-      createMutation.mutate(data);
+      // Strip recurrence config from single meeting
+      const { recurrence, ...cleanData } = data;
+      createMutation.mutate(cleanData);
     }
   };
 
