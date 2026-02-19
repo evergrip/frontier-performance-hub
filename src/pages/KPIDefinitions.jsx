@@ -6,8 +6,10 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/ca
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, Play, Pause, Target, Calculator, Users, Sparkles, BookOpen, ClipboardCheck, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Play, Pause, Target, Calculator, Users, Sparkles, BookOpen, ClipboardCheck, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../utils';
 import KPIFormDialog from '../components/kpi/KPIFormDialog';
 
 export default function KPIDefinitions() {
@@ -182,6 +184,12 @@ Create a KPI config. For calculated type, source_entity must be one of the entit
           <p className="text-slate-600 mt-1">Define what you want to track — the system does the rest</p>
         </div>
         <div className="flex gap-2">
+          <Link to={createPageUrl('KPIAgentChat')}>
+            <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:bg-purple-100">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              KPI Assistant
+            </Button>
+          </Link>
           <Button variant="outline" onClick={() => setShowAICreator(true)} className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700 hover:bg-amber-100">
             <Sparkles className="w-4 h-4 mr-2" />
             AI Creator

@@ -8,7 +8,9 @@ import { Loader2 } from 'lucide-react';
 const ENTITY_NAMES = [
   'Lead', 'Sale', 'Project', 'Client', 'CommissionTransaction', 'CommissionBank',
   'CommissionPayout', 'EmployeeAssignment', 'EmployeeUnavailability', 'Holiday',
-  'Subtrade', 'ProjectOverrun', 'FiscalGoal', 'DataFlag', 'User'
+  'Subtrade', 'ProjectOverrun', 'FiscalGoal', 'DataFlag', 'User',
+  'KPI', 'KPIEntry', 'KPITarget', 'CompanySettings', 'CommissionRule', 'LeadSource',
+  'ReportingRelationship'
 ];
 
 export default function EntityFieldPicker({ 

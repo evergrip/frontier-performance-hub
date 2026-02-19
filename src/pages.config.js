@@ -59,10 +59,7 @@ import ImportHistoricalData from './pages/ImportHistoricalData';
 import KPIAgentChat from './pages/KPIAgentChat';
 import KPIDashboard from './pages/KPIDashboard';
 import KPIDefinitions from './pages/KPIDefinitions';
-import KPIManagement from './pages/KPIManagement';
-import KPIReview from './pages/KPIReview';
 import Leads from './pages/Leads';
-import MyKPIScorecard from './pages/MyKPIScorecard';
 import MyKPIs from './pages/MyKPIs';
 import Projects from './pages/Projects';
 import ProjectsAdmin from './pages/ProjectsAdmin';
@@ -89,10 +86,7 @@ export const PAGES = {
     "KPIAgentChat": KPIAgentChat,
     "KPIDashboard": KPIDashboard,
     "KPIDefinitions": KPIDefinitions,
-    "KPIManagement": KPIManagement,
-    "KPIReview": KPIReview,
     "Leads": Leads,
-    "MyKPIScorecard": MyKPIScorecard,
     "MyKPIs": MyKPIs,
     "Projects": Projects,
     "ProjectsAdmin": ProjectsAdmin,
