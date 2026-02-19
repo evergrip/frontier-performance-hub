@@ -9,13 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, TrendingUp, AlertTriangle, CheckCircle, Calendar, Edit2, ClipboardCheck, Save, CheckCircle2, XCircle, PenLine, Sparkles } from 'lucide-react';
+import { Target, TrendingUp, AlertTriangle, CheckCircle, Calendar, Edit2, ClipboardCheck, Save, CheckCircle2, XCircle, PenLine, Sparkles, Plus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import KPIEntryCard from '../components/kpi/KPIEntryCard';
 import ManualEntryDialog from '../components/kpi/ManualEntryDialog';
+import KPIFormDialog from '../components/kpi/KPIFormDialog';
 
 export default function MyKPIs() {
   const [user, setUser] = useState(null);
@@ -26,6 +27,7 @@ export default function MyKPIs() {
   const [scorecardAnswers, setScorecardAnswers] = useState({});
   const [scorecardExplanations, setScorecardExplanations] = useState({});
   const [manualEntryKPI, setManualEntryKPI] = useState(null);
+  const [showCreateKPI, setShowCreateKPI] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -58,6 +60,15 @@ export default function MyKPIs() {
       setSelectedEntry(null);
       setExplanation('');
       toast.success('Saved');
+    }
+  });
+
+  const createKPIMutation = useMutation({
+    mutationFn: (data) => base44.entities.KPI.create({ ...data, scope: 'personal', assigned_user_ids: [user.id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['active-kpis']);
+      setShowCreateKPI(false);
+      toast.success('Personal KPI created');
     }
   });
 
@@ -170,11 +181,16 @@ export default function MyKPIs() {
           <h1 className="text-3xl font-bold text-slate-900">My Performance</h1>
           <p className="text-slate-600 mt-1">Track your KPIs, log manual entries, and complete scorecards</p>
         </div>
-        <Link to={createPageUrl('KPIAgentChat')}>
-          <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700">
-            <Sparkles className="w-4 h-4 mr-2" /> KPI Assistant
+        <div className="flex gap-2">
+          <Button onClick={() => setShowCreateKPI(true)} variant="outline">
+            <Plus className="w-4 h-4 mr-2" /> Create Personal KPI
           </Button>
-        </Link>
+          <Link to={createPageUrl('KPIAgentChat')}>
+            <Button variant="outline" className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700">
+              <Sparkles className="w-4 h-4 mr-2" /> KPI Assistant
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Summary */}
@@ -368,6 +384,17 @@ export default function MyKPIs() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Create Personal KPI Dialog */}
+      <KPIFormDialog
+        open={showCreateKPI}
+        onOpenChange={setShowCreateKPI}
+        onSubmit={(data) => createKPIMutation.mutate(data)}
+        isSubmitting={createKPIMutation.isPending}
+        defaultScope="personal"
+        hideScope={true}
+        hideAssignment={true}
+      />
 
       {/* Manual Entry Dialog */}
       <ManualEntryDialog
