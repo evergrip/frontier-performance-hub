@@ -359,7 +359,7 @@ export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit
           )}
 
           {/* Assign Users */}
-          {!hideAssignment ? (
+          {!hideAssignment && (
           <div>
             <Label className="mb-2 block text-xs text-slate-500">Assign to Specific Users (leave empty = all users)</Label>
             <div className="flex flex-wrap gap-2">
@@ -378,6 +378,7 @@ export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit
               ))}
             </div>
           </div>
+          )}
 
           {/* Targets */}
           <div className="space-y-3 p-4 bg-green-50 rounded-xl border border-green-200">
