@@ -380,7 +380,6 @@ export default function KPIFormDialog({ open, onOpenChange, editingKPI, onSubmit
           </div>
           )}
 
-          {/* Targets */}
           <div className="space-y-3 p-4 bg-green-50 rounded-xl border border-green-200">
             <h3 className="font-semibold text-green-900 text-sm">Targets & Alerts</h3>
             <div className="grid grid-cols-2 gap-3">
