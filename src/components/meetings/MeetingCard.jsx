@@ -66,7 +66,7 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
             </div>
           </div>
           <div className="flex gap-1">
-            <CalendarInviteButton meeting={meeting} users={users} variant="ghost" size="sm" />
+            <CalendarInviteButton meeting={meeting} variant="ghost" size="sm" />
             <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(meeting); }}>
               <Pencil className="w-4 h-4" />
             </Button>

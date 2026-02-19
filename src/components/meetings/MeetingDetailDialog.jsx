@@ -63,7 +63,7 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             <Badge>{TYPE_LABELS[meeting.meeting_type]}</Badge>
             <Badge variant="outline">{meeting.status?.replace('_', ' ')}</Badge>
             <div className="ml-auto flex gap-2">
-              <CalendarInviteButton meeting={meeting} users={users} />
+              <CalendarInviteButton meeting={meeting} />
               {onEdit && (
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { onOpenChange(false); onEdit(meeting); }}>
                   <Pencil className="w-4 h-4" />
