@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -13,11 +13,13 @@ const TYPE_LABELS = {
   quarterly_reset: 'Quarterly Reset',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, onToggleActionItem }) {
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || 'Unknown';
+  const getKPIName = (id) => kpis.find(k => k.id === id)?.name || '';
+  const hasAgenda = meeting.has_agenda || (meeting.description && meeting.description.trim().length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,6 +71,14 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             </div>
           )}
 
+          {/* Agenda Compliance */}
+          <div className="flex items-center gap-2">
+            <FileText className={`w-4 h-4 ${hasAgenda ? 'text-green-500' : 'text-red-500'}`} />
+            <span className={`text-sm font-medium ${hasAgenda ? 'text-green-700' : 'text-red-700'}`}>
+              {hasAgenda ? 'Agenda provided' : 'No agenda — agenda required for all meetings'}
+            </span>
+          </div>
+
           {/* Description */}
           {meeting.description && (
             <div>
@@ -95,7 +105,7 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
                         <p className={`text-sm ${item.is_completed ? 'line-through text-slate-400' : ''}`}>
                           {item.description}
                         </p>
-                        <div className="flex gap-3 mt-1 text-xs text-slate-500">
+                        <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-500">
                           <span>Assigned: {getUserName(item.assigned_to_user_id)}</span>
                           {item.due_date && (
                             <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
@@ -105,6 +115,12 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
                           {item.completed_date && (
                             <span className="text-green-600">
                               Done: {format(new Date(item.completed_date), 'MMM d')}
+                            </span>
+                          )}
+                          {item.linked_kpi_id && (
+                            <span className="flex items-center gap-1 text-indigo-600">
+                              <Target className="w-3 h-3" />
+                              {getKPIName(item.linked_kpi_id)} (+{item.kpi_impact_value || 1})
                             </span>
                           )}
                         </div>
