@@ -149,7 +149,7 @@ export default function Meetings() {
     }
   };
 
-  const handleCompletionConfirm = async ({ notes, followUp }) => {
+  const handleCompletionConfirm = async ({ notes, fileUrls, followUp }) => {
     if (!completionDialog) return;
     const { meeting, actionIndex } = completionDialog;
     const items = [...(meeting.action_items || [])];
@@ -159,6 +159,7 @@ export default function Meetings() {
       is_completed: true,
       completed_date: new Date().toISOString().split('T')[0],
       completion_notes: notes || '',
+      file_urls: fileUrls || [],
     };
 
     // Add follow-up as a new action item if provided
@@ -394,6 +395,7 @@ export default function Meetings() {
         onOpenImportActions={handleOpenImportActions}
         pendingImportItems={pendingImportItems}
         onImportItemsConsumed={() => setPendingImportItems(null)}
+        allMeetings={meetings}
       />
       <ImportActionItemsDialog
         open={importDialogOpen}
