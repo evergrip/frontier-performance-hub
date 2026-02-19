@@ -414,6 +414,7 @@ export default function Meetings() {
         allMeetings={meetings}
         onToggleActionItem={handleToggleActionItem}
         onOpenScorecard={(m) => { setDetailMeeting(null); setScorecardMeeting(m); }}
+        onEdit={handleEdit}
       />
       <ActionItemCompletionDialog
         open={!!completionDialog}
