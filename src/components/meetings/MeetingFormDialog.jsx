@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { X, Plus, Loader2, Lock, Target } from 'lucide-react';
+import { X, Plus, Loader2, Lock, Target, AlertTriangle } from 'lucide-react';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -46,6 +46,14 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     queryFn: () => base44.entities.KPI.list(),
     initialData: [],
   });
+
+  const { data: companySettings = [] } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: () => base44.entities.CompanySettings.list(),
+    initialData: [],
+  });
+
+  const minNoticeHours = companySettings[0]?.minimum_meeting_notice_hours || 24;
 
   useEffect(() => {
     if (open) {
@@ -106,6 +114,10 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     const data = { ...form };
     if (data.start_date) data.start_date = new Date(data.start_date).toISOString();
     if (data.end_date) data.end_date = new Date(data.end_date).toISOString();
+    if (data.actual_start_time) data.actual_start_time = new Date(data.actual_start_time).toISOString();
+    else delete data.actual_start_time;
+    if (data.actual_end_time) data.actual_end_time = new Date(data.actual_end_time).toISOString();
+    else delete data.actual_end_time;
     if (!data.related_client_id) delete data.related_client_id;
     if (!data.related_lead_id) delete data.related_lead_id;
     if (!data.related_project_id) delete data.related_project_id;
@@ -126,6 +138,15 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
   };
 
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || id;
+
+  // Check if meeting is scheduled with insufficient notice
+  const hasInsufficientNotice = (() => {
+    if (!form.start_date) return false;
+    const startTime = new Date(form.start_date).getTime();
+    const now = Date.now();
+    const hoursUntilMeeting = (startTime - now) / (1000 * 60 * 60);
+    return hoursUntilMeeting < minNoticeHours && hoursUntilMeeting > 0;
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,17 +173,39 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
             </div>
           </div>
 
-          {/* Date/Time */}
+          {/* Scheduled Date/Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Start Date/Time *</Label>
+              <Label>Scheduled Start *</Label>
               <Input type="datetime-local" value={form.start_date || ''} onChange={e => updateField('start_date', e.target.value)} />
             </div>
             <div>
-              <Label>End Date/Time</Label>
+              <Label>Scheduled End</Label>
               <Input type="datetime-local" value={form.end_date || ''} onChange={e => updateField('end_date', e.target.value)} />
             </div>
           </div>
+
+          {/* Insufficient notice warning */}
+          {hasInsufficientNotice && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>This meeting is scheduled with less than {minNoticeHours} hours' notice. Best practice is to give participants sufficient time to prepare.</span>
+            </div>
+          )}
+
+          {/* Actual Start/End Time (for completed meetings) */}
+          {(form.status === 'completed' || form.status === 'in_progress') && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Actual Start Time</Label>
+                <Input type="datetime-local" value={form.actual_start_time ? form.actual_start_time.slice(0, 16) : ''} onChange={e => updateField('actual_start_time', e.target.value)} />
+              </div>
+              <div>
+                <Label>Actual End Time</Label>
+                <Input type="datetime-local" value={form.actual_end_time ? form.actual_end_time.slice(0, 16) : ''} onChange={e => updateField('actual_end_time', e.target.value)} />
+              </div>
+            </div>
+          )}
 
           {/* Location & Organizer */}
           <div className="grid grid-cols-2 gap-4">
