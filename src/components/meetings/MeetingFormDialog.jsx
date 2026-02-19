@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X, Plus, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { X, Plus, Loader2, Lock } from 'lucide-react';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -54,6 +55,7 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
           start_date: '', end_date: '', location: '',
           related_client_id: '', related_lead_id: '', related_project_id: '',
           attendees: [], organizer_id: '', status: 'scheduled',
+          is_private: false, visible_to_user_ids: [],
           action_items: [], outcome_summary: '', notes: '',
         });
       }
@@ -74,6 +76,15 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
 
   const removeActionItem = (index) => {
     updateField('action_items', (form.action_items || []).filter((_, i) => i !== index));
+  };
+
+  const toggleVisibleTo = (userId) => {
+    const current = form.visible_to_user_ids || [];
+    if (current.includes(userId)) {
+      updateField('visible_to_user_ids', current.filter(id => id !== userId));
+    } else {
+      updateField('visible_to_user_ids', [...current, userId]);
+    }
   };
 
   const toggleAttendee = (userId) => {
@@ -191,6 +202,40 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Privacy Settings */}
+          <div className="border rounded-lg p-4 space-y-3 bg-slate-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-slate-500" />
+                <Label className="text-base font-semibold">Private Meeting</Label>
+              </div>
+              <Switch checked={form.is_private || false} onCheckedChange={v => updateField('is_private', v)} />
+            </div>
+            <p className="text-xs text-slate-500">Private meetings are only visible to admins, the organizer, attendees, and anyone you add below.</p>
+
+            {form.is_private && (
+              <div>
+                <Label>Additional People Who Can See This Meeting</Label>
+                <div className="flex flex-wrap gap-2 mt-1 mb-2">
+                  {(form.visible_to_user_ids || []).map(id => (
+                    <Badge key={id} variant="secondary" className="gap-1">
+                      {getUserName(id)}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => toggleVisibleTo(id)} />
+                    </Badge>
+                  ))}
+                </div>
+                <Select onValueChange={v => toggleVisibleTo(v)}>
+                  <SelectTrigger><SelectValue placeholder="Add person..." /></SelectTrigger>
+                  <SelectContent>
+                    {users.filter(u => !(form.visible_to_user_ids || []).includes(u.id)).map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* Related Entities */}

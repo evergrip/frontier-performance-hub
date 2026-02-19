@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -47,6 +47,11 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
               <Badge className={STATUS_COLORS[meeting.status]}>
                 {meeting.status?.replace('_', ' ')}
               </Badge>
+              {meeting.is_private && (
+                <Badge variant="outline" className="gap-1 text-slate-600">
+                  <Lock className="w-3 h-3" /> Private
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex gap-1">

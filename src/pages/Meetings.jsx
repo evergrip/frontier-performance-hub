@@ -18,6 +18,11 @@ export default function Meetings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useState(() => {
+    base44.auth.me().then(u => setCurrentUser(u));
+  });
 
   const queryClient = useQueryClient();
 
@@ -89,7 +94,18 @@ export default function Meetings() {
     }
   };
 
-  const filtered = meetings.filter(m => {
+  // Filter out private meetings the current user shouldn't see
+  const visibleMeetings = meetings.filter(m => {
+    if (!m.is_private) return true;
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (m.organizer_id === currentUser.id) return true;
+    if ((m.attendees || []).includes(currentUser.id)) return true;
+    if ((m.visible_to_user_ids || []).includes(currentUser.id)) return true;
+    return false;
+  });
+
+  const filtered = visibleMeetings.filter(m => {
     if (typeFilter !== 'all' && m.meeting_type !== typeFilter) return false;
     if (statusFilter !== 'all' && m.status !== statusFilter) return false;
     if (searchQuery && !m.title?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -115,7 +131,7 @@ export default function Meetings() {
       </div>
 
       {/* KPI Stats */}
-      <MeetingKPIStats meetings={meetings} />
+      <MeetingKPIStats meetings={visibleMeetings} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
