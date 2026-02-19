@@ -111,19 +111,21 @@ export default function UsersAdmin() {
       return;
     }
     
+    const updateData = {
+      role: selectedUser.role,
+      departments: selectedUser.departments,
+      department: selectedUser.departments?.[0] || null,
+      is_department_manager: selectedUser.is_department_manager || false,
+      managed_departments: selectedUser.is_department_manager ? (selectedUser.managed_departments || []) : [],
+      commission_rule_ids: selectedUser.commission_rule_ids,
+      next_year_commission_rule_ids: selectedUser.next_year_commission_rule_ids,
+      is_commission_eligible: selectedUser.departments?.includes('sales'),
+      commission_start_date: selectedUser.commission_start_date || null
+    };
+    
     updateUserMutation.mutate({
       userId: selectedUser.id,
-      data: {
-        full_name: selectedUser.full_name,
-        role: selectedUser.role,
-        departments: selectedUser.departments,
-        is_department_manager: selectedUser.is_department_manager || false,
-        managed_departments: selectedUser.is_department_manager ? (selectedUser.managed_departments || []) : [],
-        commission_rule_ids: selectedUser.commission_rule_ids,
-        next_year_commission_rule_ids: selectedUser.next_year_commission_rule_ids,
-        is_commission_eligible: selectedUser.departments?.includes('sales'),
-        commission_start_date: selectedUser.commission_start_date || null
-      },
+      data: updateData,
     });
   };
 
