@@ -21,23 +21,36 @@ export default function KPIDefinitions() {
   const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
 
+  const isAdmin = currentUser?.role === 'admin';
+  const isManager = currentUser?.is_department_manager && currentUser?.managed_departments?.length > 0;
+
   React.useEffect(() => {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  if (currentUser && currentUser.role !== 'admin') {
+  if (currentUser && !isAdmin && !isManager) {
     return (
       <div className="max-w-4xl mx-auto py-12 text-center">
         <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-slate-900">Admin Access Required</h1>
-        <p className="text-slate-500 mt-2">Only administrators can manage KPI definitions.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Access Required</h1>
+        <p className="text-slate-500 mt-2">Only administrators and department managers can manage KPI definitions.</p>
       </div>
     );
   }
 
   const { data: kpis = [], isLoading } = useQuery({
     queryKey: ['kpis'],
-    queryFn: () => base44.entities.KPI.list('-created_date')
+    queryFn: async () => {
+      const allKPIs = await base44.entities.KPI.list('-created_date');
+      if (isAdmin) return allKPIs;
+      // Managers see company + their department KPIs + their own personal
+      return allKPIs.filter(kpi => 
+        kpi.scope === 'company' ||
+        (kpi.scope === 'department' && currentUser?.managed_departments?.includes(kpi.category)) ||
+        (kpi.scope === 'personal' && kpi.created_by === currentUser?.email)
+      );
+    },
+    enabled: !!currentUser
   });
 
   const createMutation = useMutation({
@@ -69,11 +82,22 @@ export default function KPIDefinitions() {
   });
 
   const handleSubmit = (submitData) => {
+    // Managers default to department scope
+    if (!isAdmin && isManager && !submitData.scope) {
+      submitData.scope = 'department';
+    }
     if (editingKPI) {
       updateMutation.mutate({ id: editingKPI.id, data: submitData });
     } else {
       createMutation.mutate(submitData);
     }
+  };
+
+  const canEditKPI = (kpi) => {
+    if (isAdmin) return true;
+    if (isManager && kpi.scope === 'department' && currentUser?.managed_departments?.includes(kpi.category)) return true;
+    if (kpi.scope === 'personal' && kpi.created_by === currentUser?.email) return true;
+    return false;
   };
 
   const handleEdit = (kpi) => {
@@ -181,7 +205,9 @@ Create a KPI config. For calculated type, source_entity must be one of the entit
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">KPI Definitions</h1>
-          <p className="text-slate-600 mt-1">Define what you want to track — the system does the rest</p>
+          <p className="text-slate-600 mt-1">
+            {isAdmin ? 'Define company-wide KPIs — the system does the rest' : `Manage KPIs for your departments: ${currentUser?.managed_departments?.join(', ')}`}
+          </p>
         </div>
         <div className="flex gap-2">
           <Link to={createPageUrl('KPIAgentChat')}>
@@ -256,15 +282,20 @@ Create a KPI config. For calculated type, source_entity must be one of the entit
                   </div>
                   
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActive(kpi)} title={kpi.is_active ? 'Deactivate' : 'Activate'}>
-                      {kpi.is_active ? <Pause className="w-4 h-4 text-amber-500" /> : <Play className="w-4 h-4 text-green-500" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(kpi)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(kpi.id)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    {kpi.scope && <Badge variant="outline" className="text-[10px] px-1.5 py-0">{kpi.scope}</Badge>}
+                    {canEditKPI(kpi) && (
+                      <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleActive(kpi)} title={kpi.is_active ? 'Deactivate' : 'Activate'}>
+                          {kpi.is_active ? <Pause className="w-4 h-4 text-amber-500" /> : <Play className="w-4 h-4 text-green-500" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(kpi)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(kpi.id)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -290,6 +321,9 @@ Create a KPI config. For calculated type, source_entity must be one of the entit
         editingKPI={editingKPI?._isNew ? { ...editingKPI, id: undefined } : editingKPI}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        defaultScope={isAdmin ? 'company' : 'department'}
+        hideScope={!isAdmin}
+        hideAssignment={!isAdmin}
       />
 
       {/* AI Creator */}
