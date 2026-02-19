@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -55,6 +55,11 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
               {!(meeting.has_agenda || (meeting.description && meeting.description.trim())) && (
                 <Badge className="bg-red-100 text-red-700 gap-1">
                   <FileText className="w-3 h-3" /> No Agenda
+                </Badge>
+              )}
+              {meeting.recurring_series_id && (
+                <Badge variant="outline" className="gap-1 text-indigo-600">
+                  <Repeat className="w-3 h-3" /> Recurring
                 </Badge>
               )}
             </div>
