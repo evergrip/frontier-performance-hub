@@ -41,6 +41,12 @@ export default function Layout({ children, currentPageName }) {
     { name: 'My Performance', icon: Target, page: 'MyKPIs' },
   ];
 
+  const isManager = user?.is_department_manager && user?.managed_departments?.length > 0;
+
+  const managerNavigation = [
+    { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
+  ];
+
   const adminNavigation = [
     { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
     { name: 'Data Quality', icon: Flag, page: 'DataQuality' },
@@ -147,6 +153,39 @@ export default function Layout({ children, currentPageName }) {
               <>
                 <div className="h-px bg-slate-200 my-4" />
                 {userNavigation.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.page);
+                  return (
+                    <Link
+                      key={item.page}
+                      to={createPageUrl(item.page)}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl
+                        transition-all duration-200 group
+                        ${active 
+                          ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                          : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
+                        }
+                      `}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
+                      <span className="font-medium">{item.name}</span>
+                      {active && <ChevronRight className="w-4 h-4 ml-auto" />}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Manager navigation (non-admin managers) */}
+            {user?.role !== 'admin' && isManager && (
+              <>
+                <div className="h-px bg-slate-200 my-4" />
+                <p className="px-4 py-2 text-xs font-semibold text-[#333333] uppercase tracking-wider">
+                  Manager
+                </p>
+                {managerNavigation.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.page);
                   return (
