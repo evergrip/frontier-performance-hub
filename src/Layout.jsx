@@ -39,6 +39,7 @@ export default function Layout({ children, currentPageName }) {
     ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
     { name: 'Reports', icon: Settings, page: 'Reports' },
     { name: 'My KPIs', icon: Target, page: 'MyKPIs' },
+    { name: 'My Scorecards', icon: Target, page: 'MyKPIScorecard' },
   ];
 
   const adminNavigation = [
