@@ -12,6 +12,7 @@ import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
 import MeetingKPIStats from '../components/meetings/MeetingKPIStats';
 import MeetingEffectivenessScorecard from '../components/meetings/MeetingEffectivenessScorecard';
 import ImportActionItemsDialog from '../components/meetings/ImportActionItemsDialog';
+import ActionItemCompletionDialog from '../components/meetings/ActionItemCompletionDialog';
 import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
 
 export default function Meetings() {
@@ -25,6 +26,7 @@ export default function Meetings() {
   const [scorecardMeeting, setScorecardMeeting] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importTargetForm, setImportTargetForm] = useState(null);
+  const [completionDialog, setCompletionDialog] = useState(null); // { meeting, actionIndex }
 
   useState(() => {
     base44.auth.me().then(u => setCurrentUser(u));
@@ -127,16 +129,56 @@ export default function Meetings() {
     const items = [...(meeting.action_items || [])];
     const wasCompleted = items[actionIndex].is_completed;
     const isNowCompleted = !wasCompleted;
+
+    if (isNowCompleted) {
+      // Open the completion dialog instead of immediately marking complete
+      setCompletionDialog({ meeting, actionIndex });
+      return;
+    }
+
+    // Uncompleting — just toggle directly
     items[actionIndex] = {
       ...items[actionIndex],
-      is_completed: isNowCompleted,
-      completed_date: isNowCompleted ? new Date().toISOString().split('T')[0] : null,
+      is_completed: false,
+      completed_date: null,
+      completion_notes: '',
     };
+    updateMutation.mutate({ id: meeting.id, data: { action_items: items } });
+    if (detailMeeting?.id === meeting.id) {
+      setDetailMeeting({ ...meeting, action_items: items });
+    }
+  };
+
+  const handleCompletionConfirm = async ({ notes, followUp }) => {
+    if (!completionDialog) return;
+    const { meeting, actionIndex } = completionDialog;
+    const items = [...(meeting.action_items || [])];
+
+    items[actionIndex] = {
+      ...items[actionIndex],
+      is_completed: true,
+      completed_date: new Date().toISOString().split('T')[0],
+      completion_notes: notes || '',
+    };
+
+    // Add follow-up as a new action item if provided
+    if (followUp && followUp.description) {
+      items.push({
+        description: followUp.description,
+        assigned_to_user_id: followUp.assigned_to_user_id || items[actionIndex].assigned_to_user_id,
+        due_date: followUp.due_date || '',
+        is_completed: false,
+        completed_date: null,
+        linked_kpi_id: '',
+        kpi_impact_value: 1,
+      });
+    }
+
     updateMutation.mutate({ id: meeting.id, data: { action_items: items } });
 
     // If completing an action item that has a linked KPI, create a KPI entry
     const actionItem = items[actionIndex];
-    if (isNowCompleted && actionItem.linked_kpi_id) {
+    if (actionItem.linked_kpi_id) {
       const now = new Date();
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
@@ -152,10 +194,10 @@ export default function Meetings() {
       });
     }
 
-    // Update detail dialog state
     if (detailMeeting?.id === meeting.id) {
       setDetailMeeting({ ...meeting, action_items: items });
     }
+    setCompletionDialog(null);
   };
 
   // Handle importing action items from previous meetings into the form
@@ -369,6 +411,13 @@ export default function Meetings() {
         kpis={kpis}
         onToggleActionItem={handleToggleActionItem}
         onOpenScorecard={(m) => { setDetailMeeting(null); setScorecardMeeting(m); }}
+      />
+      <ActionItemCompletionDialog
+        open={!!completionDialog}
+        onOpenChange={(open) => !open && setCompletionDialog(null)}
+        actionItem={completionDialog ? completionDialog.meeting.action_items[completionDialog.actionIndex] : null}
+        users={users}
+        onConfirm={handleCompletionConfirm}
       />
       <MeetingEffectivenessScorecard
         open={!!scorecardMeeting}
