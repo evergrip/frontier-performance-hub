@@ -29,12 +29,20 @@ function buildDescription(meeting) {
   return parts.join('\n');
 }
 
-function getGoogleCalendarUrl(meeting) {
+function getAttendeeEmails(meeting, users) {
+  if (!meeting.attendees?.length || !users?.length) return [];
+  return meeting.attendees
+    .map(id => users.find(u => u.id === id)?.email)
+    .filter(Boolean);
+}
+
+function getGoogleCalendarUrl(meeting, users) {
   const start = formatDateForGCal(meeting.start_date);
   const end = meeting.end_date
     ? formatDateForGCal(meeting.end_date)
     : formatDateForGCal(new Date(new Date(meeting.start_date).getTime() + 60 * 60 * 1000).toISOString());
   const description = buildDescription(meeting);
+  const emails = getAttendeeEmails(meeting, users);
 
   const params = new URLSearchParams({
     action: 'TEMPLATE',
@@ -43,16 +51,20 @@ function getGoogleCalendarUrl(meeting) {
     details: description,
     location: meeting.location || '',
   });
+  if (emails.length > 0) {
+    params.set('add', emails.join(','));
+  }
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function getOutlookUrl(meeting) {
+function getOutlookUrl(meeting, users) {
   const start = new Date(meeting.start_date).toISOString();
   const end = meeting.end_date
     ? new Date(meeting.end_date).toISOString()
     : new Date(new Date(meeting.start_date).getTime() + 60 * 60 * 1000).toISOString();
   const description = buildDescription(meeting);
+  const emails = getAttendeeEmails(meeting, users);
 
   const params = new URLSearchParams({
     path: '/calendar/action/compose',
@@ -63,22 +75,27 @@ function getOutlookUrl(meeting) {
     body: description,
     location: meeting.location || '',
   });
+  if (emails.length > 0) {
+    params.set('to', emails.join(';'));
+  }
 
   return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
 }
 
-function generateICSContent(meeting) {
+function generateICSContent(meeting, users) {
   const start = formatDateForICS(meeting.start_date);
   const end = meeting.end_date
     ? formatDateForICS(meeting.end_date)
     : formatDateForICS(new Date(new Date(meeting.start_date).getTime() + 60 * 60 * 1000).toISOString());
   const description = buildDescription(meeting).replace(/\n/g, '\\n');
   const now = formatDateForICS(new Date().toISOString());
+  const emails = getAttendeeEmails(meeting, users);
 
-  return [
+  const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Frontier//Meeting//EN',
+    'METHOD:REQUEST',
     'BEGIN:VEVENT',
     `DTSTART:${start}`,
     `DTEND:${end}`,
@@ -86,13 +103,17 @@ function generateICSContent(meeting) {
     `SUMMARY:${meeting.title}`,
     `DESCRIPTION:${description}`,
     `LOCATION:${meeting.location || ''}`,
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\r\n');
+  ];
+  emails.forEach(email => {
+    lines.push(`ATTENDEE;RSVP=TRUE;ROLE=REQ-PARTICIPANT:mailto:${email}`);
+  });
+  lines.push('END:VEVENT', 'END:VCALENDAR');
+
+  return lines.join('\r\n');
 }
 
-function downloadICS(meeting) {
-  const content = generateICSContent(meeting);
+function downloadICS(meeting, users) {
+  const content = generateICSContent(meeting, users);
   const blob = new Blob([content], { type: 'text/calendar;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -104,10 +125,10 @@ function downloadICS(meeting) {
   a.remove();
 }
 
-export default function CalendarInviteButton({ meeting, variant = 'outline', size = 'sm' }) {
+export default function CalendarInviteButton({ meeting, users = [], variant = 'outline', size = 'sm' }) {
   const [copied, setCopied] = useState(false);
 
-  const googleUrl = getGoogleCalendarUrl(meeting);
+  const googleUrl = getGoogleCalendarUrl(meeting, users);
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(googleUrl);
@@ -127,10 +148,10 @@ export default function CalendarInviteButton({ meeting, variant = 'outline', siz
         <DropdownMenuItem onClick={() => window.open(googleUrl, '_blank')}>
           <span>Google Calendar</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => window.open(getOutlookUrl(meeting), '_blank')}>
+        <DropdownMenuItem onClick={() => window.open(getOutlookUrl(meeting, users), '_blank')}>
           <span>Outlook</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadICS(meeting)}>
+        <DropdownMenuItem onClick={() => downloadICS(meeting, users)}>
           <span>Download .ics file</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleCopyLink}>
