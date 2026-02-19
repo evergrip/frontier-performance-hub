@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarCheck, ListChecks, Clock, TrendingUp } from 'lucide-react';
+import { CalendarCheck, ListChecks, Clock, TrendingUp, FileText, Target } from 'lucide-react';
 
 export default function MeetingKPIStats({ meetings }) {
   const completedMeetings = meetings.filter(m => m.status === 'completed');
@@ -15,6 +15,14 @@ export default function MeetingKPIStats({ meetings }) {
 
   // Overall completion rate
   const completionRate = allActionItems.length > 0 ? (completedActionItems.length / allActionItems.length) * 100 : 0;
+
+  // Agenda compliance
+  const meetingsWithAgenda = meetings.filter(m => m.has_agenda || (m.description && m.description.trim().length > 0));
+  const agendaRate = meetings.length > 0 ? (meetingsWithAgenda.length / meetings.length) * 100 : 0;
+
+  // KPI-linked items
+  const kpiLinkedItems = allActionItems.filter(a => a.linked_kpi_id);
+  const kpiCompletedItems = kpiLinkedItems.filter(a => a.is_completed);
 
   const stats = [
     {
@@ -49,10 +57,26 @@ export default function MeetingKPIStats({ meetings }) {
       color: onTimeRate >= 80 ? 'text-green-600' : onTimeRate >= 50 ? 'text-amber-600' : 'text-red-600',
       bg: onTimeRate >= 80 ? 'bg-green-50' : onTimeRate >= 50 ? 'bg-amber-50' : 'bg-red-50',
     },
+    {
+      title: 'Agenda Compliance',
+      value: `${agendaRate.toFixed(0)}%`,
+      subtitle: `${meetingsWithAgenda.length}/${meetings.length} have agendas`,
+      icon: FileText,
+      color: agendaRate >= 90 ? 'text-green-600' : agendaRate >= 70 ? 'text-amber-600' : 'text-red-600',
+      bg: agendaRate >= 90 ? 'bg-green-50' : agendaRate >= 70 ? 'bg-amber-50' : 'bg-red-50',
+    },
+    {
+      title: 'KPI-Linked Tasks',
+      value: kpiLinkedItems.length,
+      subtitle: `${kpiCompletedItems.length} completed → KPI updated`,
+      icon: Target,
+      color: 'text-indigo-600',
+      bg: 'bg-indigo-50',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
