@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -13,7 +13,22 @@ const TYPE_LABELS = {
   quarterly_reset: 'Quarterly Reset',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem }) {
+const SCORECARD_LABELS = {
+  agenda_distributed_prior: 'Agenda distributed prior',
+  clear_chairperson: 'Clear chairperson',
+  started_with_review: 'Started with review of time, agenda & outcomes',
+  senior_talks_last: 'Senior person talked last',
+  started_on_time: 'Started on time',
+  finished_on_time: 'Finished on time',
+  stuck_to_agenda: 'Stuck to agenda',
+  participants_focused: 'Participants focused',
+  phones_off: 'Phones off',
+  sufficient_notice: 'Sufficient notice given',
+  participants_prepared: 'Participants came prepared',
+  good_use_of_time: 'Good use of time',
+};
+
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
@@ -21,12 +36,27 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
   const getKPIName = (id) => kpis.find(k => k.id === id)?.name || '';
   const hasAgenda = meeting.has_agenda || (meeting.description && meeting.description.trim().length > 0);
 
+  // Punctuality
+  const startedOnTime = meeting.actual_start_time && meeting.start_date
+    ? new Date(meeting.actual_start_time) <= new Date(new Date(meeting.start_date).getTime() + 5 * 60000)
+    : null;
+  const finishedOnTime = meeting.actual_end_time && meeting.end_date
+    ? new Date(meeting.actual_end_time) <= new Date(new Date(meeting.end_date).getTime() + 5 * 60000)
+    : null;
+
+  // Scorecard
+  const sc = meeting.effectiveness_scorecard;
+  const scorecardKeys = Object.keys(SCORECARD_LABELS);
+  const scorecardScore = sc ? scorecardKeys.filter(k => sc[k]).length : 0;
+  const scorecardTotal = scorecardKeys.length;
+  const scorecardPct = sc ? Math.round((scorecardScore / scorecardTotal) * 100) : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{meeting.title}</DialogTitle>
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-2 flex-wrap">
             <Badge>{TYPE_LABELS[meeting.meeting_type]}</Badge>
             <Badge variant="outline">{meeting.status?.replace('_', ' ')}</Badge>
           </div>
@@ -58,6 +88,41 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
               <span>Organized by {organizer?.full_name || 'Unknown'}</span>
             </div>
           </div>
+
+          {/* Punctuality - actual times */}
+          {(meeting.actual_start_time || meeting.actual_end_time) && (
+            <div className="border rounded-lg p-3 bg-slate-50 space-y-1">
+              <h4 className="font-medium text-sm mb-1">Punctuality</h4>
+              <div className="flex flex-wrap gap-4 text-sm">
+                {meeting.actual_start_time && (
+                  <div className="flex items-center gap-2">
+                    {startedOnTime ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    <span>Actual start: {format(new Date(meeting.actual_start_time), 'h:mm a')}</span>
+                    <Badge className={startedOnTime ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                      {startedOnTime ? 'On time' : 'Late start'}
+                    </Badge>
+                  </div>
+                )}
+                {meeting.actual_end_time && (
+                  <div className="flex items-center gap-2">
+                    {finishedOnTime ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                    )}
+                    <span>Actual end: {format(new Date(meeting.actual_end_time), 'h:mm a')}</span>
+                    <Badge className={finishedOnTime ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                      {finishedOnTime ? 'On time' : 'Ran over'}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Attendees */}
           {(meeting.attendees || []).length > 0 && (
@@ -149,6 +214,49 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
               <p className="text-sm text-slate-600 whitespace-pre-wrap">{meeting.notes}</p>
             </div>
           )}
+
+          {/* Effectiveness Scorecard */}
+          <div className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-[#ea7924]" />
+                Meeting Effectiveness Scorecard
+              </h4>
+              <Button variant="outline" size="sm" onClick={() => onOpenScorecard?.(meeting)}>
+                {sc ? 'Edit Scorecard' : 'Fill Out Scorecard'}
+              </Button>
+            </div>
+
+            {sc ? (
+              <div className="space-y-2">
+                <div className={`flex items-center justify-between p-3 rounded-lg ${
+                  scorecardPct >= 80 ? 'bg-green-50' : scorecardPct >= 60 ? 'bg-amber-50' : 'bg-red-50'
+                }`}>
+                  <span className="text-sm font-medium">Score</span>
+                  <span className={`text-lg font-bold ${
+                    scorecardPct >= 80 ? 'text-green-600' : scorecardPct >= 60 ? 'text-amber-600' : 'text-red-600'
+                  }`}>{scorecardScore}/{scorecardTotal} ({scorecardPct}%)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                  {scorecardKeys.map(key => (
+                    <div key={key} className="flex items-center gap-2 text-xs py-1">
+                      {sc[key] ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                      )}
+                      <span className={sc[key] ? 'text-slate-700' : 'text-slate-400'}>{SCORECARD_LABELS[key]}</span>
+                    </div>
+                  ))}
+                </div>
+                {sc.notes && (
+                  <p className="text-xs text-slate-500 italic mt-2">"{sc.notes}"</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">No scorecard submitted yet. Rate this meeting's effectiveness after it's complete.</p>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
