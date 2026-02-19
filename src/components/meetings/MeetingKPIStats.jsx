@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarCheck, ListChecks, Clock, TrendingUp, FileText, Target } from 'lucide-react';
+import { CalendarCheck, ListChecks, Clock, TrendingUp, FileText, Target, Timer, ClipboardCheck } from 'lucide-react';
 
 export default function MeetingKPIStats({ meetings }) {
   const completedMeetings = meetings.filter(m => m.status === 'completed');
@@ -19,6 +19,24 @@ export default function MeetingKPIStats({ meetings }) {
   // Agenda compliance
   const meetingsWithAgenda = meetings.filter(m => m.has_agenda || (m.description && m.description.trim().length > 0));
   const agendaRate = meetings.length > 0 ? (meetingsWithAgenda.length / meetings.length) * 100 : 0;
+
+  // Punctuality
+  const meetingsWithActualStart = meetings.filter(m => m.actual_start_time && m.start_date);
+  const meetingsStartedOnTime = meetingsWithActualStart.filter(m => 
+    new Date(m.actual_start_time) <= new Date(new Date(m.start_date).getTime() + 5 * 60000)
+  );
+  const punctualityRate = meetingsWithActualStart.length > 0 ? (meetingsStartedOnTime.length / meetingsWithActualStart.length) * 100 : 0;
+
+  // Effectiveness scorecard average
+  const scorecardKeys = ['agenda_distributed_prior', 'clear_chairperson', 'started_with_review', 'senior_talks_last', 'started_on_time', 'finished_on_time', 'stuck_to_agenda', 'participants_focused', 'phones_off', 'sufficient_notice', 'participants_prepared', 'good_use_of_time'];
+  const meetingsWithScorecard = meetings.filter(m => m.effectiveness_scorecard?.submitted_by);
+  const avgScorecard = meetingsWithScorecard.length > 0
+    ? meetingsWithScorecard.reduce((sum, m) => {
+        const sc = m.effectiveness_scorecard;
+        return sum + scorecardKeys.filter(k => sc[k]).length;
+      }, 0) / meetingsWithScorecard.length
+    : 0;
+  const avgScorecardPct = meetingsWithScorecard.length > 0 ? Math.round((avgScorecard / scorecardKeys.length) * 100) : 0;
 
   // KPI-linked items
   const kpiLinkedItems = allActionItems.filter(a => a.linked_kpi_id);
@@ -66,6 +84,22 @@ export default function MeetingKPIStats({ meetings }) {
       bg: agendaRate >= 90 ? 'bg-green-50' : agendaRate >= 70 ? 'bg-amber-50' : 'bg-red-50',
     },
     {
+      title: 'Punctuality',
+      value: meetingsWithActualStart.length > 0 ? `${punctualityRate.toFixed(0)}%` : '—',
+      subtitle: meetingsWithActualStart.length > 0 ? `${meetingsStartedOnTime.length}/${meetingsWithActualStart.length} started on time` : 'No data yet',
+      icon: Timer,
+      color: punctualityRate >= 80 ? 'text-green-600' : punctualityRate >= 50 ? 'text-amber-600' : 'text-red-600',
+      bg: punctualityRate >= 80 ? 'bg-green-50' : punctualityRate >= 50 ? 'bg-amber-50' : 'bg-red-50',
+    },
+    {
+      title: 'Effectiveness',
+      value: meetingsWithScorecard.length > 0 ? `${avgScorecardPct}%` : '—',
+      subtitle: `${meetingsWithScorecard.length} scorecard${meetingsWithScorecard.length !== 1 ? 's' : ''} submitted`,
+      icon: ClipboardCheck,
+      color: avgScorecardPct >= 80 ? 'text-green-600' : avgScorecardPct >= 60 ? 'text-amber-600' : 'text-red-600',
+      bg: avgScorecardPct >= 80 ? 'bg-green-50' : avgScorecardPct >= 60 ? 'bg-amber-50' : 'bg-red-50',
+    },
+    {
       title: 'KPI-Linked Tasks',
       value: kpiLinkedItems.length,
       subtitle: `${kpiCompletedItems.length} completed → KPI updated`,
@@ -76,7 +110,7 @@ export default function MeetingKPIStats({ meetings }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
