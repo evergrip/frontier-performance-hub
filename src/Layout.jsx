@@ -49,7 +49,6 @@ export default function Layout({ children, currentPageName }) {
     ...(schedulerEnabled ? [{ name: 'Subtrades', icon: Wrench, page: 'Subtrades' }] : []),
     { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
     { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
-    { name: 'Team KPI Review', icon: Users, page: 'KPIReview' },
   ];
 
   const userNavigation = [
