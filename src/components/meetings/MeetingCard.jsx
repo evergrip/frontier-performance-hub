@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -50,6 +50,11 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
               {meeting.is_private && (
                 <Badge variant="outline" className="gap-1 text-slate-600">
                   <Lock className="w-3 h-3" /> Private
+                </Badge>
+              )}
+              {!(meeting.has_agenda || (meeting.description && meeting.description.trim())) && (
+                <Badge className="bg-red-100 text-red-700 gap-1">
+                  <FileText className="w-3 h-3" /> No Agenda
                 </Badge>
               )}
             </div>
@@ -112,6 +117,12 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
             </div>
             {overdueItems.length > 0 && (
               <p className="text-xs text-red-600 font-medium">{overdueItems.length} overdue task{overdueItems.length !== 1 ? 's' : ''}</p>
+            )}
+            {actionItems.some(a => a.linked_kpi_id) && (
+              <div className="flex items-center gap-1 text-xs text-indigo-600 mt-1">
+                <Target className="w-3 h-3" />
+                {actionItems.filter(a => a.linked_kpi_id).length} KPI-linked task{actionItems.filter(a => a.linked_kpi_id).length !== 1 ? 's' : ''}
+              </div>
             )}
           </div>
         )}
