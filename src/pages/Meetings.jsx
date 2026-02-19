@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Search, CalendarDays } from 'lucide-react';
+import { toast } from 'sonner';
 import MeetingFormDialog from '../components/meetings/MeetingFormDialog';
 import MeetingCard from '../components/meetings/MeetingCard';
 import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
@@ -18,6 +19,8 @@ export default function Meetings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [addToCalendar, setAddToCalendar] = useState(true);
+  const [calendarSyncing, setCalendarSyncing] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -56,11 +59,35 @@ export default function Meetings() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meetings'] }),
   });
 
-  const handleSubmit = (data) => {
+  const syncToCalendar = async (meetingId) => {
+    setCalendarSyncing(true);
+    try {
+      const response = await base44.functions.invoke('createCalendarEvent', { meeting_id: meetingId });
+      if (response.data?.success) {
+        toast.success('Meeting added to Google Calendar');
+      } else {
+        toast.error('Failed to sync to calendar');
+      }
+    } catch (err) {
+      toast.error('Could not add to Google Calendar');
+    } finally {
+      setCalendarSyncing(false);
+    }
+  };
+
+  const handleSubmit = async (data) => {
     if (editingMeeting) {
-      updateMutation.mutate({ id: editingMeeting.id, data });
+      updateMutation.mutate({ id: editingMeeting.id, data }, {
+        onSuccess: async (result) => {
+          if (addToCalendar) await syncToCalendar(editingMeeting.id);
+        }
+      });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(data, {
+        onSuccess: async (result) => {
+          if (addToCalendar && result?.id) await syncToCalendar(result.id);
+        }
+      });
     }
   };
 
@@ -220,7 +247,9 @@ export default function Meetings() {
         onOpenChange={setFormOpen}
         meeting={editingMeeting}
         onSubmit={handleSubmit}
-        saving={createMutation.isPending || updateMutation.isPending}
+        saving={createMutation.isPending || updateMutation.isPending || calendarSyncing}
+        addToCalendar={addToCalendar}
+        setAddToCalendar={setAddToCalendar}
       />
       <MeetingDetailDialog
         open={!!detailMeeting}
