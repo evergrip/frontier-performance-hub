@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { X, Plus, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Plus, Loader2 } from 'lucide-react';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -20,7 +19,7 @@ const MEETING_TYPES = [
 
 const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false };
 
-export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving, addToCalendar, setAddToCalendar }) {
+export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving }) {
   const [form, setForm] = useState({});
 
   const { data: users = [] } = useQuery({
@@ -262,25 +261,12 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-3">
-          <div className="flex items-center gap-2 mr-auto">
-            <Checkbox
-              id="addToCalendar"
-              checked={addToCalendar}
-              onCheckedChange={setAddToCalendar}
-            />
-            <label htmlFor="addToCalendar" className="text-sm flex items-center gap-1 cursor-pointer">
-              <CalendarIcon className="w-4 h-4 text-slate-500" />
-              Add to Google Calendar
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={saving || !form.title || !form.meeting_type || !form.start_date || !form.organizer_id}>
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {meeting ? 'Update Meeting' : 'Create Meeting'}
-            </Button>
-          </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={saving || !form.title || !form.meeting_type || !form.start_date || !form.organizer_id}>
+            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {meeting ? 'Update Meeting' : 'Create Meeting'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
