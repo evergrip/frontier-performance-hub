@@ -143,6 +143,8 @@ export default function Meetings() {
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   const past = filtered.filter(m => m.status === 'completed' || m.status === 'cancelled' || m.status === 'rescheduled')
     .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+  const noAgenda = filtered.filter(m => !(m.has_agenda || (m.description && m.description.trim())))
+    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -203,6 +205,11 @@ export default function Meetings() {
           <TabsTrigger value="upcoming">Upcoming ({upcoming.length})</TabsTrigger>
           <TabsTrigger value="past">Past ({past.length})</TabsTrigger>
           <TabsTrigger value="all">All ({filtered.length})</TabsTrigger>
+          {currentUser?.role === 'admin' && (
+            <TabsTrigger value="no_agenda" className="text-red-600">
+              <AlertTriangle className="w-3 h-3 mr-1" /> No Agenda ({noAgenda.length})
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="upcoming" className="mt-4">
@@ -255,6 +262,25 @@ export default function Meetings() {
             </div>
           )}
         </TabsContent>
+
+        {currentUser?.role === 'admin' && (
+          <TabsContent value="no_agenda" className="mt-4">
+            {noAgenda.length === 0 ? (
+              <div className="text-center py-12 text-green-500">
+                <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">All meetings have agendas!</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {noAgenda.map(m => (
+                  <div key={m.id} onClick={() => setDetailMeeting(m)} className="cursor-pointer">
+                    <MeetingCard meeting={m} users={users} onEdit={handleEdit} onDelete={handleDelete} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Dialogs */}
