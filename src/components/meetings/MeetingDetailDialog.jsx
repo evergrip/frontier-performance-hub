@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -28,13 +28,15 @@ const SCORECARD_LABELS = {
   good_use_of_time: 'Good use of time',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard }) {
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [] }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || 'Unknown';
   const getKPIName = (id) => kpis.find(k => k.id === id)?.name || '';
   const hasAgenda = meeting.has_agenda || (meeting.description && meeting.description.trim().length > 0);
+  const parentMeeting = meeting.parent_meeting_id ? allMeetings.find(m => m.id === meeting.parent_meeting_id) : null;
+  const getFileName = (url) => { try { return decodeURIComponent(url.split('/').pop().split('?')[0]); } catch { return 'File'; } };
 
   // Punctuality
   const startedOnTime = meeting.actual_start_time && meeting.start_date
@@ -124,6 +126,16 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             </div>
           )}
 
+          {/* Parent meeting link */}
+          {parentMeeting && (
+            <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-blue-50 border border-blue-200">
+              <Link2 className="w-4 h-4 text-blue-600" />
+              <span className="text-blue-800">Follow-up to: <strong>{parentMeeting.title}</strong>
+                {parentMeeting.start_date && ` (${format(new Date(parentMeeting.start_date), 'MMM d, yyyy')})`}
+              </span>
+            </div>
+          )}
+
           {/* Attendees */}
           {(meeting.attendees || []).length > 0 && (
             <div>
@@ -149,6 +161,33 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             <div>
               <h4 className="font-medium text-sm mb-1">Agenda / Description</h4>
               <p className="text-sm text-slate-600 whitespace-pre-wrap">{meeting.description}</p>
+            </div>
+          )}
+
+          {/* Previous Business */}
+          {(meeting.previous_business_items || []).length > 0 && (
+            <div>
+              <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <History className="w-4 h-4 text-blue-600" /> Previous Business
+              </h4>
+              <div className="space-y-2">
+                {meeting.previous_business_items.map((item, idx) => {
+                  const isOverdue = !item.is_completed && item.due_date && new Date(item.due_date) < new Date();
+                  return (
+                    <div key={idx} className={`flex items-start gap-3 p-3 rounded-lg border-l-4 border-blue-400 ${isOverdue ? 'bg-red-50 border-r border-t border-b border-r-red-200 border-t-red-200 border-b-red-200' : item.is_completed ? 'bg-green-50 border-r border-t border-b border-r-green-200 border-t-green-200 border-b-green-200' : 'bg-blue-50/40 border-r border-t border-b border-r-blue-100 border-t-blue-100 border-b-blue-100'}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm ${item.is_completed ? 'line-through text-slate-400' : ''}`}>{item.description}</p>
+                        <div className="flex flex-wrap gap-3 mt-1 text-xs text-slate-500">
+                          <span>Assigned: {getUserName(item.assigned_to_user_id)}</span>
+                          {item.due_date && <span className={isOverdue ? 'text-red-600 font-medium' : ''}>Due: {format(new Date(item.due_date), 'MMM d, yyyy')}</span>}
+                        </div>
+                      </div>
+                      {isOverdue && <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />}
+                      {item.is_completed && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -189,6 +228,18 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
                             </span>
                           )}
                         </div>
+                        {item.completion_notes && (
+                          <p className="text-xs text-slate-500 italic mt-1">"{item.completion_notes}"</p>
+                        )}
+                        {(item.file_urls || []).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.file_urls.map((url, fIdx) => (
+                              <a key={fIdx} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline bg-blue-50 px-2 py-0.5 rounded">
+                                <Paperclip className="w-3 h-3" /> {getFileName(url)}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {isOverdue && <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />}
                       {item.is_completed && <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />}
