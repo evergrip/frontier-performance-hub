@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, CalendarDays } from 'lucide-react';
+import { Plus, Search, CalendarDays, AlertTriangle } from 'lucide-react';
 import MeetingFormDialog from '../components/meetings/MeetingFormDialog';
 import MeetingCard from '../components/meetings/MeetingCard';
 import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
@@ -35,6 +35,12 @@ export default function Meetings() {
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
+  const { data: kpis = [] } = useQuery({
+    queryKey: ['kpis'],
+    queryFn: () => base44.entities.KPI.list(),
     initialData: [],
   });
 
@@ -80,14 +86,35 @@ export default function Meetings() {
     }
   };
 
-  const handleToggleActionItem = (meeting, actionIndex) => {
+  const handleToggleActionItem = async (meeting, actionIndex) => {
     const items = [...(meeting.action_items || [])];
+    const wasCompleted = items[actionIndex].is_completed;
+    const isNowCompleted = !wasCompleted;
     items[actionIndex] = {
       ...items[actionIndex],
-      is_completed: !items[actionIndex].is_completed,
-      completed_date: !items[actionIndex].is_completed ? new Date().toISOString().split('T')[0] : null,
+      is_completed: isNowCompleted,
+      completed_date: isNowCompleted ? new Date().toISOString().split('T')[0] : null,
     };
     updateMutation.mutate({ id: meeting.id, data: { action_items: items } });
+
+    // If completing an action item that has a linked KPI, create a KPI entry
+    const actionItem = items[actionIndex];
+    if (isNowCompleted && actionItem.linked_kpi_id) {
+      const now = new Date();
+      const periodStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+      await base44.entities.KPIEntry.create({
+        kpi_id: actionItem.linked_kpi_id,
+        user_id: actionItem.assigned_to_user_id,
+        reporting_period_start_date: periodStart,
+        reporting_period_end_date: periodEnd,
+        actual_value: actionItem.kpi_impact_value || 1,
+        source_meeting_id: meeting.id,
+        source_action_item_description: actionItem.description,
+        manual_entry: false,
+      });
+    }
+
     // Update detail dialog state
     if (detailMeeting?.id === meeting.id) {
       setDetailMeeting({ ...meeting, action_items: items });
@@ -243,6 +270,7 @@ export default function Meetings() {
         onOpenChange={(open) => !open && setDetailMeeting(null)}
         meeting={detailMeeting}
         users={users}
+        kpis={kpis}
         onToggleActionItem={handleToggleActionItem}
       />
     </div>
