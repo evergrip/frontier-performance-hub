@@ -24,6 +24,8 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
   const [viewScope, setViewScope] = useState('mine'); // 'mine', 'employee', 'department', 'company'
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completingItem, setCompletingItem] = useState(null);
 
   const isAdmin = currentUser?.role === 'admin';
   if (!currentUser?.id) return null;
