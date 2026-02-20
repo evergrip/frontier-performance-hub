@@ -15,13 +15,6 @@ import ParentMeetingPicker from './ParentMeetingPicker';
 import PreviousBusinessSection from './PreviousBusinessSection';
 import MeetingMaterials from './MeetingMaterials';
 
-const MEETING_TYPES = [
-  { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
-  { value: 'weekly_tactical', label: 'Weekly Tactical' },
-  { value: 'monthly_strategic', label: 'Monthly Strategic' },
-  { value: 'quarterly_reset', label: 'Quarterly Reset/Reflect' },
-];
-
 const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false, linked_kpi_id: '', kpi_impact_value: 1 };
 
 export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmit, saving, onOpenImportActions, pendingImportItems, onImportItemsConsumed, allMeetings = [] }) {
@@ -50,6 +43,16 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     queryFn: () => base44.entities.KPI.list(),
     initialData: [],
   });
+
+  const { data: meetingTypes = [] } = useQuery({
+    queryKey: ['meetingTypes'],
+    queryFn: () => base44.entities.MeetingType.list(),
+    initialData: [],
+  });
+
+  const activeMeetingTypes = meetingTypes
+    .filter(t => t.is_active !== false)
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
   const { data: companySettings = [] } = useQuery({
     queryKey: ['companySettings'],
@@ -82,7 +85,34 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     }
   }, [open, meeting]);
 
-  const updateField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const getDefaultDuration = (typeValue) => {
+    const mt = meetingTypes.find(t => t.value === typeValue);
+    return mt?.default_duration_minutes || 60;
+  };
+
+  const computeEndDate = (startStr, durationMinutes) => {
+    if (!startStr) return '';
+    const start = new Date(startStr);
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    // Format as local datetime-local string
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`;
+  };
+
+  const updateField = (field, value) => setForm(prev => {
+    const next = { ...prev, [field]: value };
+    // Auto-fill end date when start date changes
+    if (field === 'start_date' && value) {
+      const duration = getDefaultDuration(prev.meeting_type);
+      next.end_date = computeEndDate(value, duration);
+    }
+    // Auto-fill end date when meeting type changes (if start already set)
+    if (field === 'meeting_type' && prev.start_date) {
+      const duration = getDefaultDuration(value);
+      next.end_date = computeEndDate(prev.start_date, duration);
+    }
+    return next;
+  });
 
   const addActionItem = () => {
     updateField('action_items', [...(form.action_items || []), { ...EMPTY_ACTION_ITEM }]);
@@ -260,7 +290,11 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
               <Select value={form.meeting_type || ''} onValueChange={v => updateField('meeting_type', v)}>
                 <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
-                  {MEETING_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {activeMeetingTypes.map(t => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label} ({t.default_duration_minutes || 60}m)
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
