@@ -326,6 +326,15 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
         </Tabs>
       </CardContent>
 
+      {/* Completion Dialog */}
+      <ActionItemCompletionDialog
+        open={completionDialogOpen}
+        onOpenChange={(open) => { if (!open) { setCompletionDialogOpen(false); setCompletingItem(null); } }}
+        actionItem={completingItem}
+        users={users}
+        onConfirm={handleCompletionConfirm}
+      />
+
       {/* Status Report Dialog */}
       <Dialog open={statusReportOpen} onOpenChange={setStatusReportOpen}>
         <DialogContent>
