@@ -111,16 +111,18 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const isLoading = settingsLoading || leadsLoading || salesLoading || projectsLoading;
 
-  const handleUpdateActionItem = async (meetingId, actionIndex, markComplete) => {
-    const meeting = allMeetings.find(m => m.id === meetingId);
-    if (!meeting) return;
-    const items = [...(meeting.action_items || [])];
-    items[actionIndex] = {
-      ...items[actionIndex],
-      is_completed: markComplete,
-      completed_date: markComplete ? new Date().toISOString().split('T')[0] : null,
-    };
-    await base44.entities.Meeting.update(meetingId, { action_items: items });
+  const handleUpdateActionItem = async (meetingId, actionIndex, markComplete, alreadySaved = false) => {
+    if (!alreadySaved) {
+      const meeting = allMeetings.find(m => m.id === meetingId);
+      if (!meeting) return;
+      const items = [...(meeting.action_items || [])];
+      items[actionIndex] = {
+        ...items[actionIndex],
+        is_completed: markComplete,
+        completed_date: markComplete ? new Date().toISOString().split('T')[0] : null,
+      };
+      await base44.entities.Meeting.update(meetingId, { action_items: items });
+    }
     queryClient.invalidateQueries({ queryKey: ['meetings'] });
   };
 
