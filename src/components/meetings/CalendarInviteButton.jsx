@@ -30,10 +30,18 @@ function buildDescription(meeting) {
 }
 
 function getAttendeeEmails(meeting, users) {
-  if (!meeting.attendees?.length || !users?.length) return [];
-  return meeting.attendees
-    .map(id => users.find(u => u.id === id)?.email)
-    .filter(Boolean);
+  const emails = [];
+  if (meeting.attendees?.length && users?.length) {
+    meeting.attendees.forEach(id => {
+      const email = users.find(u => u.id === id)?.email;
+      if (email) emails.push(email);
+    });
+  }
+  // Add Fireflies AI notetaker if enabled
+  if (meeting.invite_fireflies) {
+    emails.push('fred@fireflies.ai');
+  }
+  return emails;
 }
 
 function getGoogleCalendarUrl(meeting, users) {

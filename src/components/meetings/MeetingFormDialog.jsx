@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { X, Plus, Loader2, Lock, Target, AlertTriangle, Download } from 'lucide-react';
+import { X, Plus, Loader2, Lock, Target, AlertTriangle, Download, Mic } from 'lucide-react';
 import RecurrenceConfig from './RecurrenceConfig';
 import ParentMeetingPicker from './ParentMeetingPicker';
 import PreviousBusinessSection from './PreviousBusinessSection';
@@ -375,6 +375,18 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Fireflies AI Notetaker */}
+          <div className="border rounded-lg p-4 space-y-2 bg-violet-50 border-violet-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mic className="w-4 h-4 text-violet-600" />
+                <Label className="text-base font-semibold">Fireflies.ai Notetaker</Label>
+              </div>
+              <Switch checked={form.invite_fireflies || false} onCheckedChange={v => updateField('invite_fireflies', v)} />
+            </div>
+            <p className="text-xs text-slate-500">When enabled, <strong>fred@fireflies.ai</strong> will be added as a guest to auto-transcribe and summarize the meeting.</p>
           </div>
 
           {/* Privacy Settings */}

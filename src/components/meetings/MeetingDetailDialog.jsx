@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2, Pencil } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2, Pencil, Mic, Link } from 'lucide-react';
 import CalendarInviteButton from './CalendarInviteButton';
 import { getScorecardAggregates } from './ScorecardAggregateBadge';
+import FirefliesSection from './FirefliesSection';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -30,7 +31,7 @@ const SCORECARD_LABELS = {
   good_use_of_time: 'Good use of time',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit, currentUser }) {
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit, currentUser, onSyncFireflies }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
@@ -63,6 +64,12 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             <Badge>{TYPE_LABELS[meeting.meeting_type]}</Badge>
             <Badge variant="outline">{meeting.status?.replace('_', ' ')}</Badge>
             <div className="ml-auto flex gap-2">
+              {!meeting.fireflies_transcript_id && onSyncFireflies && (
+                <Button variant="outline" size="sm" className="gap-1.5 text-violet-600 border-violet-200 hover:bg-violet-50" onClick={() => onSyncFireflies(meeting)}>
+                  <Link className="w-4 h-4" />
+                  Link Fireflies
+                </Button>
+              )}
               <CalendarInviteButton meeting={meeting} users={users} />
               {onEdit && (
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { onOpenChange(false); onEdit(meeting); }}>
@@ -259,6 +266,9 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
               </div>
             </div>
           )}
+
+          {/* Fireflies.ai Notes */}
+          <FirefliesSection meeting={meeting} />
 
           {/* Outcome Summary */}
           {meeting.outcome_summary && (
