@@ -30,7 +30,7 @@ const SCORECARD_LABELS = {
   good_use_of_time: 'Good use of time',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit }) {
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit, currentUser }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
@@ -48,12 +48,11 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
     ? new Date(meeting.actual_end_time) <= new Date(new Date(meeting.end_date).getTime() + 5 * 60000)
     : null;
 
-  // Scorecard
-  const sc = meeting.effectiveness_scorecard;
+  // Aggregated scorecards
+  const agg = getScorecardAggregates(meeting);
   const scorecardKeys = Object.keys(SCORECARD_LABELS);
-  const scorecardScore = sc ? scorecardKeys.filter(k => sc[k]).length : 0;
-  const scorecardTotal = scorecardKeys.length;
-  const scorecardPct = sc ? Math.round((scorecardScore / scorecardTotal) * 100) : null;
+  const attendeeScorecards = meeting.attendee_scorecards || [];
+  const myScorecard = currentUser ? attendeeScorecards.find(sc => sc.user_id === currentUser.id) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
