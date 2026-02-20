@@ -10,12 +10,7 @@ import FirefliesSection from './FirefliesSection';
 import MeetingMaterials from './MeetingMaterials';
 import { format } from 'date-fns';
 
-const TYPE_LABELS = {
-  daily_operational: 'Daily Operational',
-  weekly_tactical: 'Weekly Tactical',
-  monthly_strategic: 'Monthly Strategic',
-  quarterly_reset: 'Quarterly Reset',
-};
+// TYPE_LABELS now comes from meetingTypes prop
 
 const SCORECARD_LABELS = {
   agenda_distributed_prior: 'Agenda distributed prior',
@@ -32,7 +27,7 @@ const SCORECARD_LABELS = {
   good_use_of_time: 'Good use of time',
 };
 
-export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit, currentUser, onSyncFireflies }) {
+export default function MeetingDetailDialog({ open, onOpenChange, meeting, users, kpis = [], meetingTypes = [], onToggleActionItem, onOpenScorecard, allMeetings = [], onEdit, currentUser, onSyncFireflies }) {
   if (!meeting) return null;
 
   const organizer = users.find(u => u.id === meeting.organizer_id);
@@ -62,7 +57,7 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
         <DialogHeader>
           <DialogTitle>{meeting.title}</DialogTitle>
           <div className="flex gap-2 mt-2 flex-wrap items-center">
-            <Badge>{TYPE_LABELS[meeting.meeting_type]}</Badge>
+            <Badge>{meetingTypes.find(t => t.value === meeting.meeting_type)?.label || meeting.meeting_type?.replace(/_/g, ' ')}</Badge>
             <Badge variant="outline">{meeting.status?.replace('_', ' ')}</Badge>
             <div className="ml-auto flex gap-2">
               {!meeting.fireflies_transcript_id && onSyncFireflies && (

@@ -7,19 +7,16 @@ import CalendarInviteButton from './CalendarInviteButton';
 import ScorecardAggregateBadge, { getScorecardAggregates } from './ScorecardAggregateBadge';
 import { format } from 'date-fns';
 
-const TYPE_LABELS = {
-  daily_operational: 'Daily Operational',
-  weekly_tactical: 'Weekly Tactical',
-  monthly_strategic: 'Monthly Strategic',
-  quarterly_reset: 'Quarterly Reset',
-};
-
-const TYPE_COLORS = {
-  daily_operational: 'bg-blue-100 text-blue-800',
-  weekly_tactical: 'bg-purple-100 text-purple-800',
-  monthly_strategic: 'bg-amber-100 text-amber-800',
-  quarterly_reset: 'bg-emerald-100 text-emerald-800',
-};
+const DEFAULT_TYPE_COLORS = [
+  'bg-blue-100 text-blue-800',
+  'bg-purple-100 text-purple-800',
+  'bg-amber-100 text-amber-800',
+  'bg-emerald-100 text-emerald-800',
+  'bg-pink-100 text-pink-800',
+  'bg-cyan-100 text-cyan-800',
+  'bg-rose-100 text-rose-800',
+  'bg-teal-100 text-teal-800',
+];
 
 const STATUS_COLORS = {
   scheduled: 'bg-sky-100 text-sky-800',
@@ -29,7 +26,12 @@ const STATUS_COLORS = {
   rescheduled: 'bg-orange-100 text-orange-800',
 };
 
-export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
+export default function MeetingCard({ meeting, users, meetingTypes = [], onEdit, onDelete }) {
+  const getTypeLabel = (val) => meetingTypes.find(t => t.value === val)?.label || val?.replace(/_/g, ' ') || 'Unknown';
+  const getTypeColor = (val) => {
+    const idx = meetingTypes.findIndex(t => t.value === val);
+    return DEFAULT_TYPE_COLORS[idx >= 0 ? idx % DEFAULT_TYPE_COLORS.length : 0];
+  };
   const organizer = users.find(u => u.id === meeting.organizer_id);
   const attendeeNames = (meeting.attendees || []).map(id => users.find(u => u.id === id)?.full_name || 'Unknown');
   const actionItems = meeting.action_items || [];
@@ -43,8 +45,8 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
           <div className="space-y-1">
             <CardTitle className="text-lg">{meeting.title}</CardTitle>
             <div className="flex flex-wrap gap-2">
-              <Badge className={TYPE_COLORS[meeting.meeting_type]}>
-                {TYPE_LABELS[meeting.meeting_type] || meeting.meeting_type}
+              <Badge className={getTypeColor(meeting.meeting_type)}>
+                {getTypeLabel(meeting.meeting_type)}
               </Badge>
               <Badge className={STATUS_COLORS[meeting.status]}>
                 {meeting.status?.replace('_', ' ')}
