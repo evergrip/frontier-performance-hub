@@ -13,6 +13,7 @@ import {
 import { format, isAfter, isBefore, addDays, startOfDay } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import ActionItemCompletionDialog from '../meetings/ActionItemCompletionDialog';
 
 const DEPARTMENTS = ['sales', 'operations', 'finance', 'precon', 'projects'];
 
