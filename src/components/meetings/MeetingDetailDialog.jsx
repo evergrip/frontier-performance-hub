@@ -284,38 +284,54 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
                 Meeting Effectiveness Scorecard
               </h4>
               <Button variant="outline" size="sm" onClick={() => onOpenScorecard?.(meeting)}>
-                {sc ? 'Edit Scorecard' : 'Fill Out Scorecard'}
+                {myScorecard ? 'Edit My Scorecard' : 'Fill Out Scorecard'}
               </Button>
             </div>
 
-            {sc ? (
-              <div className="space-y-2">
+            {agg ? (
+              <div className="space-y-3">
+                {/* Aggregate score */}
                 <div className={`flex items-center justify-between p-3 rounded-lg ${
-                  scorecardPct >= 80 ? 'bg-green-50' : scorecardPct >= 60 ? 'bg-amber-50' : 'bg-red-50'
+                  agg.avgScore >= 80 ? 'bg-green-50' : agg.avgScore >= 60 ? 'bg-amber-50' : 'bg-red-50'
                 }`}>
-                  <span className="text-sm font-medium">Score</span>
+                  <div>
+                    <span className="text-sm font-medium">Average Score</span>
+                    <p className="text-xs text-slate-500">{agg.submittedCount} of {agg.totalExpected} attendees submitted</p>
+                  </div>
                   <span className={`text-lg font-bold ${
-                    scorecardPct >= 80 ? 'text-green-600' : scorecardPct >= 60 ? 'text-amber-600' : 'text-red-600'
-                  }`}>{scorecardScore}/{scorecardTotal} ({scorecardPct}%)</span>
+                    agg.avgScore >= 80 ? 'text-green-600' : agg.avgScore >= 60 ? 'text-amber-600' : 'text-red-600'
+                  }`}>{agg.avgScore}%</span>
                 </div>
+
+                {/* Per-question aggregate */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                  {scorecardKeys.map(key => (
-                    <div key={key} className="flex items-center gap-2 text-xs py-1">
-                      {sc[key] ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                      ) : (
-                        <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                      )}
-                      <span className={sc[key] ? 'text-slate-700' : 'text-slate-400'}>{SCORECARD_LABELS[key]}</span>
-                    </div>
-                  ))}
+                  {scorecardKeys.map(key => {
+                    const pct = agg.questionAvg[key] || 0;
+                    return (
+                      <div key={key} className="flex items-center gap-2 text-xs py-1">
+                        <div className={`w-8 text-right font-medium ${pct >= 80 ? 'text-green-600' : pct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>
+                          {pct}%
+                        </div>
+                        <span className="text-slate-600">{SCORECARD_LABELS[key]}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                {sc.notes && (
-                  <p className="text-xs text-slate-500 italic mt-2">"{sc.notes}"</p>
+
+                {/* Pending submissions */}
+                {agg.pendingUserIds.length > 0 && (
+                  <div className="p-2 rounded-lg bg-amber-50 border border-amber-200">
+                    <p className="text-xs font-medium text-amber-800 mb-1">Pending scorecards from:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {agg.pendingUserIds.map(id => (
+                        <span key={id} className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">{getUserName(id)}</span>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-slate-400">No scorecard submitted yet. Rate this meeting's effectiveness after it's complete.</p>
+              <p className="text-sm text-slate-400">No scorecards submitted yet. All attendees should rate this meeting's effectiveness.</p>
             )}
           </div>
         </div>
