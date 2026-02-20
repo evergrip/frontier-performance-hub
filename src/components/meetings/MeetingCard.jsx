@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat, ClipboardCheck } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat, ClipboardCheck, Mic } from 'lucide-react';
 import CalendarInviteButton from './CalendarInviteButton';
 import ScorecardAggregateBadge, { getScorecardAggregates } from './ScorecardAggregateBadge';
 import { format } from 'date-fns';
@@ -62,6 +62,16 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
               {meeting.recurring_series_id && (
                 <Badge variant="outline" className="gap-1 text-indigo-600">
                   <Repeat className="w-3 h-3" /> Recurring
+                </Badge>
+              )}
+              {meeting.fireflies_transcript_id && (
+                <Badge variant="outline" className="gap-1 text-violet-600 border-violet-300 bg-violet-50">
+                  <Mic className="w-3 h-3" /> Fireflies
+                </Badge>
+              )}
+              {meeting.invite_fireflies && !meeting.fireflies_transcript_id && (
+                <Badge variant="outline" className="gap-1 text-violet-400">
+                  <Mic className="w-3 h-3" /> AI Notetaker
                 </Badge>
               )}
             </div>
