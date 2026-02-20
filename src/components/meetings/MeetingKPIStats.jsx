@@ -27,16 +27,21 @@ export default function MeetingKPIStats({ meetings }) {
   );
   const punctualityRate = meetingsWithActualStart.length > 0 ? (meetingsStartedOnTime.length / meetingsWithActualStart.length) * 100 : 0;
 
-  // Effectiveness scorecard average
+  // Effectiveness scorecard average (using attendee_scorecards)
   const scorecardKeys = ['agenda_distributed_prior', 'clear_chairperson', 'started_with_review', 'senior_talks_last', 'started_on_time', 'finished_on_time', 'stuck_to_agenda', 'participants_focused', 'phones_off', 'sufficient_notice', 'participants_prepared', 'good_use_of_time'];
-  const meetingsWithScorecard = meetings.filter(m => m.effectiveness_scorecard?.submitted_by);
-  const avgScorecard = meetingsWithScorecard.length > 0
-    ? meetingsWithScorecard.reduce((sum, m) => {
-        const sc = m.effectiveness_scorecard;
-        return sum + scorecardKeys.filter(k => sc[k]).length;
-      }, 0) / meetingsWithScorecard.length
+  const allScorecards = meetings.flatMap(m => {
+    const cards = m.attendee_scorecards || [];
+    if (cards.length > 0) return cards;
+    // Fallback to legacy
+    if (m.effectiveness_scorecard?.submitted_by) return [m.effectiveness_scorecard];
+    return [];
+  });
+  const avgScorecardPct = allScorecards.length > 0
+    ? Math.round(allScorecards.reduce((sum, sc) => {
+        return sum + (scorecardKeys.filter(k => sc[k]).length / scorecardKeys.length) * 100;
+      }, 0) / allScorecards.length)
     : 0;
-  const avgScorecardPct = meetingsWithScorecard.length > 0 ? Math.round((avgScorecard / scorecardKeys.length) * 100) : 0;
+  const meetingsWithScorecard = meetings.filter(m => (m.attendee_scorecards || []).length > 0 || m.effectiveness_scorecard?.submitted_by);
 
   // KPI-linked items
   const kpiLinkedItems = allActionItems.filter(a => a.linked_kpi_id);
