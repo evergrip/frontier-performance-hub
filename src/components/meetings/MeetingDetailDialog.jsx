@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, File
 import CalendarInviteButton from './CalendarInviteButton';
 import { getScorecardAggregates } from './ScorecardAggregateBadge';
 import FirefliesSection from './FirefliesSection';
+import MeetingMaterials from './MeetingMaterials';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
@@ -172,6 +173,11 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
               {hasAgenda ? 'Agenda provided' : 'No agenda — agenda required for all meetings'}
             </span>
           </div>
+
+          {/* Meeting Materials */}
+          {(meeting.materials || []).length > 0 && (
+            <MeetingMaterials materials={meeting.materials} readOnly />
+          )}
 
           {/* Description */}
           {meeting.description && (

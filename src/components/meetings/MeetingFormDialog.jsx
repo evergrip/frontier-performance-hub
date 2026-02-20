@@ -13,6 +13,7 @@ import { X, Plus, Loader2, Lock, Target, AlertTriangle, Download, Mic } from 'lu
 import RecurrenceConfig from './RecurrenceConfig';
 import ParentMeetingPicker from './ParentMeetingPicker';
 import PreviousBusinessSection from './PreviousBusinessSection';
+import MeetingMaterials from './MeetingMaterials';
 
 const MEETING_TYPES = [
   { value: 'daily_operational', label: 'Daily Operational (Huddle)' },
@@ -446,6 +447,12 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
               </Select>
             </div>
           </div>
+
+          {/* Meeting Materials */}
+          <MeetingMaterials
+            materials={form.materials || []}
+            onChange={(materials) => updateField('materials', materials)}
+          />
 
           {/* Previous Business */}
           <PreviousBusinessSection
