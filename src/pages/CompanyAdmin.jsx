@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Settings, DollarSign, Building2, Users as UsersIcon, ChevronDown } from 'lucide-react';
+import { Settings, DollarSign, Building2, Users as UsersIcon, ChevronDown, MessageSquare } from 'lucide-react';
 import CommissionRulesTab from '@/components/admin/CommissionRulesTab';
+import MeetingTypesTab from '@/components/admin/MeetingTypesTab';
 import CommissionsAdminTab from '@/components/admin/CommissionsAdminTab';
 import ProjectsAdminTab from '@/components/admin/ProjectsAdminTab';
 import UsersAdminTab from '@/components/admin/UsersAdminTab';
@@ -35,6 +36,7 @@ export default function CompanyAdmin() {
     projectsAdmin: true,
     usersAdmin: false,
     reportingRelationships: false,
+    meetingTypes: true,
   });
 
   const toggleSection = (key) => {
@@ -64,7 +66,7 @@ export default function CompanyAdmin() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="sales" className="gap-2">
             <DollarSign className="w-4 h-4" />
             Sales
@@ -72,6 +74,10 @@ export default function CompanyAdmin() {
           <TabsTrigger value="operations" className="gap-2">
             <Building2 className="w-4 h-4" />
             Operations
+          </TabsTrigger>
+          <TabsTrigger value="meetings" className="gap-2">
+            <MessageSquare className="w-4 h-4" />
+            Meetings
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2">
             <Settings className="w-4 h-4" />
@@ -119,6 +125,17 @@ export default function CompanyAdmin() {
             onToggle={() => toggleSection('reportingRelationships')}
           >
             <ReportingRelationshipsTab />
+          </CollapsibleSection>
+        </TabsContent>
+
+        {/* Meetings Tab */}
+        <TabsContent value="meetings" className="space-y-4">
+          <CollapsibleSection
+            title="Meeting Types"
+            isOpen={openSections.meetingTypes}
+            onToggle={() => toggleSection('meetingTypes')}
+          >
+            <MeetingTypesTab />
           </CollapsibleSection>
         </TabsContent>
 
