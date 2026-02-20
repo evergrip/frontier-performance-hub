@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Sparkles, ChevronRight, ChevronLeft, Rocket, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, ChevronRight, ChevronLeft, Rocket, Wand2, Lightbulb, RefreshCw } from 'lucide-react';
 import WizardStepIndicator from './WizardStepIndicator';
 import CampaignPreview from './CampaignPreview';
 
@@ -24,7 +24,7 @@ const CHANNELS = [
   { value: 'mailing', label: 'Physical Mailings' },
 ];
 
-const STEPS = ['Brief', 'Channels', 'AI Generation', 'Review & Launch'];
+const STEPS = ['Brief', 'Focus Topic', 'Channels', 'AI Generation', 'Review & Launch'];
 
 export default function CampaignWizardDialog({ open, onOpenChange, onComplete }) {
   const [step, setStep] = useState(0);
@@ -41,9 +41,61 @@ export default function CampaignWizardDialog({ open, onOpenChange, onComplete })
   });
   const [selectedChannels, setSelectedChannels] = useState([]);
   const [generatedCampaign, setGeneratedCampaign] = useState(null);
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
+  const [loadingTopics, setLoadingTopics] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState(null);
 
   const toggleChannel = (ch) => {
     setSelectedChannels(prev => prev.includes(ch) ? prev.filter(c => c !== ch) : [...prev, ch]);
+  };
+
+  const generateTopics = async () => {
+    setLoadingTopics(true);
+    setSuggestedTopics([]);
+    setSelectedTopic(null);
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are a world-class marketing strategist for a HOME BUILDING & RENOVATION construction company called "Frontier Building Group" based in Halifax, Nova Scotia.
+
+Based on the following campaign brief, suggest 5 FOCUSED campaign topic angles. Each campaign should have ONE clear, singular theme — not a buffet of ideas. Think like a top CMO who knows that focused campaigns outperform scattered ones 10x.
+
+CAMPAIGN NAME: ${brief.name}
+OBJECTIVE: ${brief.objective}
+TARGET AUDIENCE: ${brief.target_audience || 'General'}
+BUDGET: $${brief.budget || 'Flexible'}
+DATE RANGE: ${brief.start_date || 'TBD'} to ${brief.end_date || 'TBD'}
+ADDITIONAL CONTEXT: ${brief.additional_context || 'None'}
+
+For each topic, provide:
+- topic_title: A sharp, compelling campaign angle (e.g. "Before & After: The $50K Kitchen That Changed Everything")
+- hook: The core emotional/logical hook in one sentence — why people will care
+- narrative: 2-3 sentences describing the story arc — how this campaign unfolds from first impression to conversion
+- key_message: The ONE message the audience should walk away with
+- content_pillars: Exactly 3 content pillars (sub-themes) that ALL content should ladder up to
+- why_it_works: One sentence on why this angle is strategically strong for a home builder
+
+IMPORTANT: Each topic must be FOCUSED on a single narrative. No "let's do everything" approaches. Each one should feel like a different creative direction a marketing team could rally behind.`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          topics: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                topic_title: { type: "string" },
+                hook: { type: "string" },
+                narrative: { type: "string" },
+                key_message: { type: "string" },
+                content_pillars: { type: "array", items: { type: "string" } },
+                why_it_works: { type: "string" }
+              }
+            }
+          }
+        }
+      }
+    });
+    setSuggestedTopics(result.topics || []);
+    setLoadingTopics(false);
   };
 
   const generateCampaign = async () => {
@@ -59,6 +111,15 @@ BUDGET: $${brief.budget || 'Flexible'}
 DATE RANGE: ${brief.start_date || 'TBD'} to ${brief.end_date || 'TBD'}
 CHANNELS: ${selectedChannels.join(', ')}
 ADDITIONAL CONTEXT: ${brief.additional_context || 'None'}
+
+CRITICAL — CAMPAIGN FOCUS TOPIC (all content MUST revolve around this single theme):
+Topic: ${selectedTopic?.topic_title}
+Hook: ${selectedTopic?.hook}
+Narrative: ${selectedTopic?.narrative}
+Key Message: ${selectedTopic?.key_message}
+Content Pillars: ${(selectedTopic?.content_pillars || []).join(', ')}
+
+IMPORTANT: Every single piece of content, every task, every event, every post MUST tie back to this focus topic and its 3 content pillars. Do NOT create content that doesn't serve this narrative. This campaign should feel cohesive and intentional — like every piece is part of one story.
 
 Generate a complete campaign with:
 1. strategy_summary: A strategic overview (2-3 paragraphs)
