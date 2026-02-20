@@ -13,6 +13,7 @@ import MeetingKPIStats from '../components/meetings/MeetingKPIStats';
 import MeetingEffectivenessScorecard from '../components/meetings/MeetingEffectivenessScorecard';
 import ImportActionItemsDialog from '../components/meetings/ImportActionItemsDialog';
 import ActionItemCompletionDialog from '../components/meetings/ActionItemCompletionDialog';
+import FirefliesSyncDialog from '../components/meetings/FirefliesSyncDialog';
 import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
 
 export default function Meetings() {
@@ -27,6 +28,7 @@ export default function Meetings() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importTargetForm, setImportTargetForm] = useState(null);
   const [completionDialog, setCompletionDialog] = useState(null); // { meeting, actionIndex }
+  const [firefliesSyncMeeting, setFirefliesSyncMeeting] = useState(null);
 
   useState(() => {
     base44.auth.me().then(u => setCurrentUser(u));
@@ -417,6 +419,13 @@ export default function Meetings() {
         onToggleActionItem={handleToggleActionItem}
         onOpenScorecard={(m) => { setDetailMeeting(null); setScorecardMeeting(m); }}
         onEdit={handleEdit}
+        onSyncFireflies={(m) => { setDetailMeeting(null); setFirefliesSyncMeeting(m); }}
+      />
+      <FirefliesSyncDialog
+        open={!!firefliesSyncMeeting}
+        onOpenChange={(open) => !open && setFirefliesSyncMeeting(null)}
+        meeting={firefliesSyncMeeting}
+        onSynced={() => { queryClient.invalidateQueries({ queryKey: ['meetings'] }); setFirefliesSyncMeeting(null); }}
       />
       <ActionItemCompletionDialog
         open={!!completionDialog}
