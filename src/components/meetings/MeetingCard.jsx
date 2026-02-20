@@ -2,8 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat, ClipboardCheck } from 'lucide-react';
 import CalendarInviteButton from './CalendarInviteButton';
+import ScorecardAggregateBadge, { getScorecardAggregates } from './ScorecardAggregateBadge';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
