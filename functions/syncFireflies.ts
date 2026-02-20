@@ -110,15 +110,25 @@ Deno.serve(async (req) => {
     const transcripts = await fetchRecentTranscripts();
     return Response.json({ 
       status: 'success', 
-      transcripts: transcripts.map(t => ({
-        id: t.id,
-        title: t.title,
-        date: t.date ? new Date(t.date * 1000).toISOString() : null,
-        duration: t.duration,
-        transcript_url: t.transcript_url,
-        has_summary: !!(t.summary?.overview || t.summary?.short_summary),
-        has_action_items: !!t.summary?.action_items,
-      }))
+      transcripts: transcripts.map(t => {
+        // Fireflies date could be epoch seconds or already a date string
+        let dateStr = null;
+        if (t.date) {
+          const d = typeof t.date === 'number' ? new Date(t.date * 1000) : new Date(t.date);
+          if (!isNaN(d.getTime()) && d.getFullYear() < 3000) {
+            dateStr = d.toISOString();
+          }
+        }
+        return {
+          id: t.id,
+          title: t.title,
+          date: dateStr,
+          duration: t.duration,
+          transcript_url: t.transcript_url,
+          has_summary: !!(t.summary?.overview || t.summary?.short_summary),
+          has_action_items: !!t.summary?.action_items,
+        };
+      })
     });
 
   } catch (error) {
