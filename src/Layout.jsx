@@ -40,6 +40,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Reports', icon: Settings, page: 'Reports' },
     { name: 'Meetings', icon: MessageSquare, page: 'Meetings' },
     { name: 'My Performance', icon: Target, page: 'MyKPIs' },
+    { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
   ];
 
   const isManager = user?.is_department_manager && user?.managed_departments?.length > 0;
