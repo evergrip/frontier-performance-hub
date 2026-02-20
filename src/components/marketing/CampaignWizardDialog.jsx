@@ -257,7 +257,7 @@ IMPORTANT: Generate content ONLY for the selected channels. If a channel isn't s
 
     setGeneratedCampaign(result);
     setGenerating(false);
-    setStep(3);
+    setStep(4);
   };
 
   const saveCampaign = async () => {
@@ -286,11 +286,14 @@ IMPORTANT: Generate content ONLY for the selected channels. If a channel isn't s
     setBrief({ name: '', objective: '', target_audience: '', budget: '', start_date: '', end_date: '', additional_context: '' });
     setSelectedChannels([]);
     setGeneratedCampaign(null);
+    setSuggestedTopics([]);
+    setSelectedTopic(null);
     onComplete();
   };
 
   const canProceedStep0 = brief.name && brief.objective;
-  const canProceedStep1 = selectedChannels.length > 0;
+  const canProceedStep1 = !!selectedTopic;
+  const canProceedStep2 = selectedChannels.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(o) => {
@@ -340,15 +343,84 @@ IMPORTANT: Generate content ONLY for the selected channels. If a channel isn't s
               <Textarea value={brief.additional_context} onChange={e => setBrief({ ...brief, additional_context: e.target.value })} placeholder="Any specific themes, promotions, company updates, recent projects to showcase, brand voice notes..." rows={3} />
             </div>
             <div className="flex justify-end">
-              <Button onClick={() => setStep(1)} disabled={!canProceedStep0}>
+              <Button onClick={() => { setStep(1); if (suggestedTopics.length === 0) generateTopics(); }} disabled={!canProceedStep0}>
                 Next <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 1: Channels */}
+        {/* Step 1: Focus Topic */}
         {step === 1 && (
+          <div className="space-y-4 mt-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-[#ea7924]" />
+                  Choose Your Campaign Focus
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">Pick ONE focused angle. Great campaigns tell one story, not ten.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={generateTopics} disabled={loadingTopics}>
+                <RefreshCw className={`w-3 h-3 mr-1 ${loadingTopics ? 'animate-spin' : ''}`} /> New Ideas
+              </Button>
+            </div>
+
+            {loadingTopics ? (
+              <div className="text-center py-12">
+                <Loader2 className="w-10 h-10 text-[#ea7924] mx-auto mb-3 animate-spin" />
+                <p className="text-slate-600">Brainstorming focused campaign angles...</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[450px] overflow-y-auto">
+                {suggestedTopics.map((topic, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedTopic(topic)}
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedTopic === topic
+                        ? 'border-[#ea7924] bg-orange-50 shadow-md'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 mt-0.5 ${
+                        selectedTopic === topic ? 'bg-[#ea7924] text-white' : 'bg-slate-200 text-slate-600'
+                      }`}>{i + 1}</div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-900">{topic.topic_title}</h4>
+                        <p className="text-sm text-[#ea7924] font-medium mt-1">🎯 {topic.hook}</p>
+                        <p className="text-sm text-slate-600 mt-2">{topic.narrative}</p>
+                        <div className="mt-3 p-2 bg-white rounded-lg border border-slate-100">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Key Message</p>
+                          <p className="text-sm font-medium text-slate-800">"{topic.key_message}"</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {(topic.content_pillars || []).map((pillar, j) => (
+                            <Badge key={j} variant="outline" className="text-xs bg-slate-50">{pillar}</Badge>
+                          ))}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-2 italic">💡 {topic.why_it_works}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-between pt-2">
+              <Button variant="outline" onClick={() => setStep(0)}>
+                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+              </Button>
+              <Button onClick={() => setStep(2)} disabled={!canProceedStep1}>
+                Next <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Channels */}
+        {step === 2 && (
           <div className="space-y-4 mt-4">
             <p className="text-slate-600">Select the marketing channels for this campaign:</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -368,18 +440,18 @@ IMPORTANT: Generate content ONLY for the selected channels. If a channel isn't s
               ))}
             </div>
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep(0)}>
+              <Button variant="outline" onClick={() => setStep(1)}>
                 <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              <Button onClick={() => setStep(2)} disabled={!canProceedStep1}>
+              <Button onClick={() => setStep(3)} disabled={!canProceedStep2}>
                 Next <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Step 2: AI Generation */}
-        {step === 2 && (
+        {/* Step 3: AI Generation */}
+        {step === 3 && (
           <div className="space-y-6 mt-4 text-center py-8">
             {!generating ? (
               <>
@@ -398,8 +470,20 @@ IMPORTANT: Generate content ONLY for the selected channels. If a channel isn't s
                     {(selectedChannels.includes('email') || selectedChannels.includes('mailing')) && <p>✅ Email & mailing plans</p>}
                   </div>
                 </div>
-                <div className="flex justify-center gap-3">
-                  <Button variant="outline" onClick={() => setStep(1)}>
+                {selectedTopic && (
+                  <div className="text-left bg-orange-50 border border-[#ea7924]/20 rounded-xl p-4 mt-4 max-w-md mx-auto">
+                    <p className="text-xs font-semibold text-[#ea7924] uppercase tracking-wide mb-1">Campaign Focus</p>
+                    <p className="font-semibold text-slate-900">{selectedTopic.topic_title}</p>
+                    <p className="text-sm text-slate-600 mt-1">"{selectedTopic.key_message}"</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(selectedTopic.content_pillars || []).map((p, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">{p}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-center gap-3 mt-4">
+                  <Button variant="outline" onClick={() => setStep(2)}>
                     <ChevronLeft className="w-4 h-4 mr-1" /> Back
                   </Button>
                   <Button onClick={generateCampaign} className="bg-gradient-to-r from-[#ea7924] to-[#d66a1f] px-8">
@@ -417,12 +501,12 @@ IMPORTANT: Generate content ONLY for the selected channels. If a channel isn't s
           </div>
         )}
 
-        {/* Step 3: Review & Launch */}
-        {step === 3 && generatedCampaign && (
+        {/* Step 4: Review & Launch */}
+        {step === 4 && generatedCampaign && (
           <div className="space-y-4 mt-4">
             <CampaignPreview campaign={generatedCampaign} brief={brief} channels={selectedChannels} />
             <div className="flex justify-between pt-4 border-t">
-              <Button variant="outline" onClick={() => { setStep(2); setGeneratedCampaign(null); }}>
+              <Button variant="outline" onClick={() => { setStep(3); setGeneratedCampaign(null); }}>
                 <Sparkles className="w-4 h-4 mr-1" /> Regenerate
               </Button>
               <Button onClick={saveCampaign} disabled={saving} className="bg-gradient-to-r from-[#ea7924] to-[#d66a1f] px-8">
