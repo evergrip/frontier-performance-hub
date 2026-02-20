@@ -135,6 +135,30 @@ export default function MeetingCard({ meeting, users, onEdit, onDelete }) {
           </div>
         )}
 
+        {/* Scorecard Summary */}
+        {(() => {
+          const agg = getScorecardAggregates(meeting);
+          if (!agg) return null;
+          const color = agg.avgScore >= 80 ? 'text-green-600' : agg.avgScore >= 60 ? 'text-amber-600' : 'text-red-600';
+          const bg = agg.avgScore >= 80 ? 'bg-green-50' : agg.avgScore >= 60 ? 'bg-amber-50' : 'bg-red-50';
+          return (
+            <div className="border-t pt-3 mt-3">
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="font-medium flex items-center gap-1.5">
+                  <ClipboardCheck className="w-4 h-4 text-[#ea7924]" />
+                  Effectiveness
+                </span>
+                <span className={`font-bold ${color}`}>{agg.avgScore}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2 mb-1">
+                <div className={`h-2 rounded-full transition-all ${agg.avgScore >= 80 ? 'bg-green-500' : agg.avgScore >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+                  style={{ width: `${agg.avgScore}%` }} />
+              </div>
+              <p className="text-xs text-slate-500">{agg.submittedCount}/{agg.totalExpected} scorecards submitted{agg.pendingUserIds.length > 0 ? ` • ${agg.pendingUserIds.length} pending` : ''}</p>
+            </div>
+          );
+        })()}
+
         {/* Outcome Summary */}
         {meeting.outcome_summary && (
           <div className="border-t pt-3 mt-3">
