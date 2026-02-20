@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar, Clock, MapPin, Users, CheckCircle2, AlertCircle, Target, FileText, ClipboardCheck, XCircle, Paperclip, History, Link2, Pencil } from 'lucide-react';
 import CalendarInviteButton from './CalendarInviteButton';
+import { getScorecardAggregates } from './ScorecardAggregateBadge';
 import { format } from 'date-fns';
 
 const TYPE_LABELS = {
