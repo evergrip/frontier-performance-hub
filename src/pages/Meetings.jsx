@@ -55,6 +55,12 @@ export default function Meetings() {
     initialData: [],
   });
 
+  const { data: meetingTypes = [] } = useQuery({
+    queryKey: ['meetingTypes'],
+    queryFn: () => base44.entities.MeetingType.list(),
+    initialData: [],
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Meeting.create(data),
     onSuccess: (createdMeeting, variables) => {
@@ -292,10 +298,9 @@ export default function Meetings() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="daily_operational">Daily Operational</SelectItem>
-            <SelectItem value="weekly_tactical">Weekly Tactical</SelectItem>
-            <SelectItem value="monthly_strategic">Monthly Strategic</SelectItem>
-            <SelectItem value="quarterly_reset">Quarterly Reset</SelectItem>
+            {meetingTypes.filter(t => t.is_active !== false).map(t => (
+              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -335,7 +340,7 @@ export default function Meetings() {
             <div className="grid gap-4 md:grid-cols-2">
               {upcoming.map(m => (
                 <div key={m.id} onClick={() => setDetailMeeting(m)} className="cursor-pointer">
-                  <MeetingCard meeting={m} users={users} onEdit={handleEdit} onDelete={handleDelete} />
+                  <MeetingCard meeting={m} users={users} meetingTypes={meetingTypes} onEdit={handleEdit} onDelete={handleDelete} />
                 </div>
               ))}
             </div>
@@ -352,7 +357,7 @@ export default function Meetings() {
             <div className="grid gap-4 md:grid-cols-2">
               {past.map(m => (
                 <div key={m.id} onClick={() => setDetailMeeting(m)} className="cursor-pointer">
-                  <MeetingCard meeting={m} users={users} onEdit={handleEdit} onDelete={handleDelete} />
+                  <MeetingCard meeting={m} users={users} meetingTypes={meetingTypes} onEdit={handleEdit} onDelete={handleDelete} />
                 </div>
               ))}
             </div>
@@ -369,7 +374,7 @@ export default function Meetings() {
             <div className="grid gap-4 md:grid-cols-2">
               {filtered.map(m => (
                 <div key={m.id} onClick={() => setDetailMeeting(m)} className="cursor-pointer">
-                  <MeetingCard meeting={m} users={users} onEdit={handleEdit} onDelete={handleDelete} />
+                  <MeetingCard meeting={m} users={users} meetingTypes={meetingTypes} onEdit={handleEdit} onDelete={handleDelete} />
                 </div>
               ))}
             </div>
@@ -387,7 +392,7 @@ export default function Meetings() {
               <div className="grid gap-4 md:grid-cols-2">
                 {noAgenda.map(m => (
                   <div key={m.id} onClick={() => setDetailMeeting(m)} className="cursor-pointer">
-                    <MeetingCard meeting={m} users={users} onEdit={handleEdit} onDelete={handleDelete} />
+                    <MeetingCard meeting={m} users={users} meetingTypes={meetingTypes} onEdit={handleEdit} onDelete={handleDelete} />
                   </div>
                 ))}
               </div>
@@ -422,6 +427,7 @@ export default function Meetings() {
         meeting={detailMeeting}
         users={users}
         kpis={kpis}
+        meetingTypes={meetingTypes}
         allMeetings={meetings}
         currentUser={currentUser}
         onToggleActionItem={handleToggleActionItem}
