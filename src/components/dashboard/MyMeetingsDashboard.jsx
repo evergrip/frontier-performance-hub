@@ -98,8 +98,8 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
       ...items[completingItem.actionIndex],
       is_completed: true,
       completed_date: new Date().toISOString().split('T')[0],
-      completion_notes: notes || items[completingItem.actionIndex].completion_notes,
-      file_urls: fileUrls?.length > 0 ? [...(items[completingItem.actionIndex].file_urls || []), ...fileUrls] : items[completingItem.actionIndex].file_urls,
+      completion_notes: notes || items[completingItem.actionIndex].completion_notes || '',
+      file_urls: fileUrls?.length > 0 ? [...(items[completingItem.actionIndex].file_urls || []), ...fileUrls] : (items[completingItem.actionIndex].file_urls || []),
     };
     if (followUp) {
       items.push({
@@ -110,7 +110,8 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
       });
     }
     await base44.entities.Meeting.update(completingItem.meetingId, { action_items: items });
-    onUpdateActionItem(completingItem.meetingId, completingItem.actionIndex, true);
+    // Trigger refresh via parent
+    onUpdateActionItem(completingItem.meetingId, completingItem.actionIndex, true, true);
     setCompletionDialogOpen(false);
     setCompletingItem(null);
   };
