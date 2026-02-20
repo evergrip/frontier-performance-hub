@@ -428,7 +428,10 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Related Client</Label>
-              <Select value={form.related_client_id || 'none'} onValueChange={v => updateField('related_client_id', v === 'none' ? '' : v)}>
+              <Select value={form.related_client_id || 'none'} onValueChange={v => {
+                updateField('related_client_id', v === 'none' ? '' : v);
+                updateField('related_project_id', '');
+              }}>
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
@@ -442,7 +445,7 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
                 <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+                  {(form.related_client_id ? projects.filter(p => p.client_id === form.related_client_id) : projects).map(p => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
