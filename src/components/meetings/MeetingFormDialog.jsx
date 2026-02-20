@@ -157,6 +157,34 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     }
   };
 
+  // Auto-inject scorecard action items when meeting goes to completed
+  const ensureScorecardTasks = (data) => {
+    const SCORECARD_DESCRIPTION = 'Fill out meeting effectiveness scorecard';
+    const items = [...(data.action_items || [])];
+    // Get all participant IDs (organizer + attendees)
+    const participantIds = [...new Set([data.organizer_id, ...(data.attendees || [])].filter(Boolean))];
+    
+    // Check which participants already have a scorecard task
+    const existingScorecardUserIds = items
+      .filter(a => a.description === SCORECARD_DESCRIPTION)
+      .map(a => a.assigned_to_user_id);
+    
+    // Add scorecard tasks for any participant who doesn't have one
+    const today = new Date().toISOString().split('T')[0];
+    const twoDaysOut = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    participantIds.forEach(userId => {
+      if (!existingScorecardUserIds.includes(userId)) {
+        items.push({
+          description: SCORECARD_DESCRIPTION,
+          assigned_to_user_id: userId,
+          due_date: twoDaysOut,
+          is_completed: false,
+        });
+      }
+    });
+    data.action_items = items;
+  };
+
   const handleSubmit = () => {
     const data = { ...form };
     if (data.start_date) data.start_date = new Date(data.start_date).toISOString();
@@ -182,6 +210,10 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
         }
         return cleaned;
       });
+    }
+    // Auto-add scorecard tasks when meeting is completed
+    if (data.status === 'completed') {
+      ensureScorecardTasks(data);
     }
     onSubmit(data);
   };
