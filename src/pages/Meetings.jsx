@@ -15,6 +15,7 @@ import ImportActionItemsDialog from '../components/meetings/ImportActionItemsDia
 import ActionItemCompletionDialog from '../components/meetings/ActionItemCompletionDialog';
 import FirefliesSyncDialog from '../components/meetings/FirefliesSyncDialog';
 import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
+import { getGoogleCalendarUrl } from '../components/meetings/CalendarInviteButton';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
@@ -56,10 +57,14 @@ export default function Meetings() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Meeting.create(data),
-    onSuccess: () => {
+    onSuccess: (createdMeeting, variables) => {
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setFormOpen(false);
       setEditingMeeting(null);
+      // Auto-open Google Calendar event creator
+      const meetingData = { ...variables, ...(createdMeeting || {}) };
+      const gcalUrl = getGoogleCalendarUrl(meetingData, users);
+      window.open(gcalUrl, '_blank');
     },
   });
 

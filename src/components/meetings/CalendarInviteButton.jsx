@@ -133,6 +133,8 @@ function downloadICS(meeting, users) {
   a.remove();
 }
 
+export { getGoogleCalendarUrl };
+
 export default function CalendarInviteButton({ meeting, users = [], variant = 'outline', size = 'sm' }) {
   const [copied, setCopied] = useState(false);
 
