@@ -84,7 +84,34 @@ export default function MyMeetingsDashboard({ meetings, users, currentUser, onUp
   };
 
   const handleMarkComplete = (item) => {
-    onUpdateActionItem(item.meetingId, item.actionIndex, true);
+    setCompletingItem(item);
+    setCompletionDialogOpen(true);
+  };
+
+  const handleCompletionConfirm = async ({ notes, fileUrls, followUp }) => {
+    if (!completingItem) return;
+    const meeting = meetings.find(m => m.id === completingItem.meetingId);
+    if (!meeting) return;
+    const items = [...(meeting.action_items || [])];
+    items[completingItem.actionIndex] = {
+      ...items[completingItem.actionIndex],
+      is_completed: true,
+      completed_date: new Date().toISOString().split('T')[0],
+      completion_notes: notes || items[completingItem.actionIndex].completion_notes,
+      file_urls: fileUrls?.length > 0 ? [...(items[completingItem.actionIndex].file_urls || []), ...fileUrls] : items[completingItem.actionIndex].file_urls,
+    };
+    if (followUp) {
+      items.push({
+        description: followUp.description,
+        assigned_to_user_id: followUp.assigned_to_user_id,
+        due_date: followUp.due_date,
+        is_completed: false,
+      });
+    }
+    await base44.entities.Meeting.update(completingItem.meetingId, { action_items: items });
+    onUpdateActionItem(completingItem.meetingId, completingItem.actionIndex, true);
+    setCompletionDialogOpen(false);
+    setCompletingItem(null);
   };
 
   const getDueBadge = (dueDate) => {
