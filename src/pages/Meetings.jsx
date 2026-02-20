@@ -110,6 +110,9 @@ export default function Meetings() {
 
       if (instances.length > 0) {
         await base44.entities.Meeting.bulkCreate(instances);
+        // Open Google Calendar for the first occurrence
+        const gcalUrl = getGoogleCalendarUrl(instances[0], users);
+        window.open(gcalUrl, '_blank');
       }
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setFormOpen(false);
