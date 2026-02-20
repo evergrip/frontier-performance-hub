@@ -98,8 +98,8 @@ export default function MeetingKPIStats({ meetings }) {
     },
     {
       title: 'Effectiveness',
-      value: meetingsWithScorecard.length > 0 ? `${avgScorecardPct}%` : '—',
-      subtitle: `${meetingsWithScorecard.length} scorecard${meetingsWithScorecard.length !== 1 ? 's' : ''} submitted`,
+      value: allScorecards.length > 0 ? `${avgScorecardPct}%` : '—',
+      subtitle: `${allScorecards.length} scorecard${allScorecards.length !== 1 ? 's' : ''} across ${meetingsWithScorecard.length} meeting${meetingsWithScorecard.length !== 1 ? 's' : ''}`,
       icon: ClipboardCheck,
       color: avgScorecardPct >= 80 ? 'text-green-600' : avgScorecardPct >= 60 ? 'text-amber-600' : 'text-red-600',
       bg: avgScorecardPct >= 80 ? 'bg-green-50' : avgScorecardPct >= 60 ? 'bg-amber-50' : 'bg-red-50',
