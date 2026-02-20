@@ -217,8 +217,9 @@ export default function Meetings() {
 
   const handleScorecardSubmit = (scorecardData) => {
     if (!scorecardMeeting) return;
+    // scorecardData now contains { attendee_scorecards: [...] }
     updateMutation.mutate(
-      { id: scorecardMeeting.id, data: { effectiveness_scorecard: scorecardData } },
+      { id: scorecardMeeting.id, data: scorecardData },
       { onSuccess: () => setScorecardMeeting(null) }
     );
   };
