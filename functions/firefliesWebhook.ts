@@ -160,6 +160,8 @@ Deno.serve(async (req) => {
       fireflies_action_items: summary.action_items || '',
       fireflies_minutes: summary.outline || '',
       fireflies_synced_at: new Date().toISOString(),
+      fireflies_recheck_attempts: 10, // Mark as done so daily recheck skips it
+      fireflies_recheck_last_date: new Date().toISOString(),
     };
 
     // If the meeting has no outcome_summary yet, fill it from Fireflies
