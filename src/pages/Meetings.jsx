@@ -413,6 +413,7 @@ export default function Meetings() {
         users={users}
         kpis={kpis}
         allMeetings={meetings}
+        currentUser={currentUser}
         onToggleActionItem={handleToggleActionItem}
         onOpenScorecard={(m) => { setDetailMeeting(null); setScorecardMeeting(m); }}
         onEdit={handleEdit}
