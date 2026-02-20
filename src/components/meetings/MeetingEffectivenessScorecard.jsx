@@ -27,8 +27,13 @@ export default function MeetingEffectivenessScorecard({ open, onOpenChange, meet
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (open && meeting) {
-      const existing = meeting.effectiveness_scorecard || {};
+    if (open && meeting && currentUser) {
+      // Check if this user already submitted a scorecard
+      const existingCards = meeting.attendee_scorecards || [];
+      const myCard = existingCards.find(sc => sc.user_id === currentUser.id);
+      // Fallback to legacy scorecard if same user
+      const legacy = meeting.effectiveness_scorecard;
+      const existing = myCard || (legacy?.submitted_by === currentUser.id ? legacy : {});
       const initial = {};
       SCORECARD_ITEMS.forEach(item => {
         initial[item.key] = existing[item.key] || false;
@@ -36,19 +41,29 @@ export default function MeetingEffectivenessScorecard({ open, onOpenChange, meet
       setScorecard(initial);
       setNotes(existing.notes || '');
     }
-  }, [open, meeting]);
+  }, [open, meeting, currentUser]);
 
   const score = SCORECARD_ITEMS.filter(item => scorecard[item.key]).length;
   const total = SCORECARD_ITEMS.length;
   const pct = Math.round((score / total) * 100);
 
   const handleSubmit = () => {
-    onSubmit({
+    // Build the per-attendee scorecard entry
+    const myEntry = {
       ...scorecard,
       notes,
-      submitted_by: currentUser?.id,
+      user_id: currentUser?.id,
       submitted_date: new Date().toISOString(),
-    });
+    };
+    // Merge into existing attendee_scorecards array
+    const existingCards = [...(meeting.attendee_scorecards || [])];
+    const existingIdx = existingCards.findIndex(sc => sc.user_id === currentUser?.id);
+    if (existingIdx >= 0) {
+      existingCards[existingIdx] = myEntry;
+    } else {
+      existingCards.push(myEntry);
+    }
+    onSubmit({ attendee_scorecards: existingCards });
   };
 
   const scoreColor = pct >= 80 ? 'text-green-600' : pct >= 60 ? 'text-amber-600' : 'text-red-600';
