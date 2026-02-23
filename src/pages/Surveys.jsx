@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import SurveyFormDialog from "../components/surveys/SurveyFormDialog";
@@ -53,9 +53,16 @@ export default function Surveys() {
     setShowForm(true);
   };
 
+  const [copiedId, setCopiedId] = useState(null);
+
+  const getSurveyLink = (survey) => {
+    return `${window.location.origin}${createPageUrl("SurveyPublic")}?token=${survey.share_token}`;
+  };
+
   const copyLink = (survey) => {
-    const url = `${window.location.origin}${createPageUrl("SurveyPublic")}?token=${survey.share_token}`;
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(getSurveyLink(survey));
+    setCopiedId(survey.id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -119,6 +126,19 @@ export default function Surveys() {
                   <span>•</span>
                   <span>{survey.total_responses || 0} responses</span>
                 </div>
+                {survey.share_token && (
+                  <div className="flex items-center gap-1 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                    <input
+                      readOnly
+                      value={getSurveyLink(survey)}
+                      className="flex-1 text-xs bg-transparent text-slate-600 truncate outline-none cursor-text"
+                      onClick={(e) => e.target.select()}
+                    />
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => copyLink(survey)}>
+                      {copiedId === survey.id ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
+                )}
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(survey)}>
                     <Pencil className="w-3.5 h-3.5" />
@@ -129,16 +149,11 @@ export default function Surveys() {
                     </Button>
                   </Link>
                   {survey.share_token && (
-                    <>
-                      <Button variant="ghost" size="sm" onClick={() => copyLink(survey)}>
-                        <Copy className="w-3.5 h-3.5" />
+                    <Link to={createPageUrl("SurveyPublic") + `?token=${survey.share_token}`} target="_blank">
+                      <Button variant="ghost" size="sm">
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
-                      <Link to={createPageUrl("SurveyPublic") + `?token=${survey.share_token}`} target="_blank">
-                        <Button variant="ghost" size="sm">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Button>
-                      </Link>
-                    </>
+                    </Link>
                   )}
                   <Link to={createPageUrl("SurveyResults") + `?id=${survey.id}`}>
                     <Button variant="ghost" size="sm">
