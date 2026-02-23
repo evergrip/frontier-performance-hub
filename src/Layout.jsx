@@ -8,19 +8,32 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const PUBLIC_PAGES = ['SurveyPublic'];
+
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [schedulerEnabled, setSchedulerEnabled] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
+        const isAuth = await base44.auth.isAuthenticated();
+        if (isAuth) {
+          const currentUser = await base44.auth.me();
+          setUser(currentUser);
+        } else if (!PUBLIC_PAGES.includes(currentPageName)) {
+          base44.auth.redirectToLogin();
+          return;
+        }
       } catch (error) {
-        console.error('Error loading user:', error);
+        if (!PUBLIC_PAGES.includes(currentPageName)) {
+          base44.auth.redirectToLogin();
+          return;
+        }
       }
+      setAuthChecked(true);
     };
     loadUser();
     base44.entities.CompanySettings.list().then(settings => {
@@ -28,7 +41,7 @@ export default function Layout({ children, currentPageName }) {
         setSchedulerEnabled(!!settings[0].scheduler_enabled);
       }
     }).catch(() => {});
-  }, []);
+  }, [currentPageName]);
 
   const navigation = [
     { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
