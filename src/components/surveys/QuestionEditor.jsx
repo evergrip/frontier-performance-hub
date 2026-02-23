@@ -116,9 +116,15 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
                     </Button>
                   </div>
                 ))}
-                <Button variant="outline" size="sm" onClick={addOption}>
-                  <Plus className="w-3 h-3 mr-1" /> Add Option
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" size="sm" onClick={addOption}>
+                    <Plus className="w-3 h-3 mr-1" /> Add Option
+                  </Button>
+                  <div className="flex items-center gap-2 ml-2">
+                    <Switch checked={question.allow_other || false} onCheckedChange={v => update("allow_other", v)} />
+                    <Label className="text-xs text-slate-500">Allow "Other" option</Label>
+                  </div>
+                </div>
               </div>
             )}
 

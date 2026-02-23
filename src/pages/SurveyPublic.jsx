@@ -178,48 +178,100 @@ function QuestionInput({ question, value, onChange, accentColor }) {
       return <Input type="date" value={value || ""} onChange={e => onChange(e.target.value)} required={question.required} />;
 
     case "radio":
+      const radioIsOther = value && !(question.options || []).includes(value);
       return (
-        <RadioGroup value={value || ""} onValueChange={onChange}>
-          {(question.options || []).map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <RadioGroupItem value={opt} id={`${question.id}-${i}`} />
-              <Label htmlFor={`${question.id}-${i}`} className="cursor-pointer">{opt}</Label>
-            </div>
-          ))}
-        </RadioGroup>
+        <div className="space-y-2">
+          <RadioGroup value={radioIsOther ? "__other__" : (value || "")} onValueChange={(v) => onChange(v === "__other__" ? "" : v)}>
+            {(question.options || []).map((opt, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <RadioGroupItem value={opt} id={`${question.id}-${i}`} />
+                <Label htmlFor={`${question.id}-${i}`} className="cursor-pointer">{opt}</Label>
+              </div>
+            ))}
+            {question.allow_other && (
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="__other__" id={`${question.id}-other`} />
+                <Label htmlFor={`${question.id}-other`} className="cursor-pointer">Other</Label>
+              </div>
+            )}
+          </RadioGroup>
+          {question.allow_other && radioIsOther && (
+            <Input placeholder="Please specify..." value={value || ""} onChange={e => onChange(e.target.value)} className="ml-6 max-w-xs" />
+          )}
+        </div>
       );
 
     case "checkbox":
+      const cbOptions = question.options || [];
+      const cbValues = value || [];
+      const cbOtherValues = cbValues.filter(v => !cbOptions.includes(v) && v !== "");
+      const cbOtherText = cbOtherValues.length > 0 ? cbOtherValues[0] : "";
+      const cbOtherChecked = cbOtherValues.length > 0 || (cbValues.includes("__other__"));
       return (
         <div className="space-y-2">
-          {(question.options || []).map((opt, i) => {
-            const checked = (value || []).includes(opt);
+          {cbOptions.map((opt, i) => {
+            const checked = cbValues.includes(opt);
             return (
               <label key={i} className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
                   checked={checked}
                   onCheckedChange={(c) => {
-                    const arr = value || [];
-                    onChange(c ? [...arr, opt] : arr.filter(v => v !== opt));
+                    onChange(c ? [...cbValues.filter(v => cbOptions.includes(v) || (v !== "" && !cbOptions.includes(v))), opt] : cbValues.filter(v => v !== opt));
                   }}
                 />
                 {opt}
               </label>
             );
           })}
+          {question.allow_other && (
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={cbOtherChecked}
+                  onCheckedChange={(c) => {
+                    if (c) {
+                      onChange([...cbValues.filter(v => cbOptions.includes(v)), ""]);
+                    } else {
+                      onChange(cbValues.filter(v => cbOptions.includes(v)));
+                    }
+                  }}
+                />
+                Other
+              </label>
+              {cbOtherChecked && (
+                <Input
+                  placeholder="Please specify..."
+                  value={cbOtherText}
+                  onChange={e => {
+                    const knownValues = cbValues.filter(v => cbOptions.includes(v));
+                    onChange(e.target.value ? [...knownValues, e.target.value] : [...knownValues, ""]);
+                  }}
+                  className="ml-6 max-w-xs mt-1"
+                />
+              )}
+            </div>
+          )}
         </div>
       );
 
     case "dropdown":
+      const ddIsOther = value && !(question.options || []).includes(value) && value !== "__other__";
+      const ddSelectValue = ddIsOther ? "__other__" : (value || "");
       return (
-        <Select value={value || ""} onValueChange={onChange}>
-          <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
-          <SelectContent>
-            {(question.options || []).map((opt, i) => (
-              <SelectItem key={i} value={opt}>{opt}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <Select value={ddSelectValue} onValueChange={(v) => onChange(v === "__other__" ? "" : v)}>
+            <SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger>
+            <SelectContent>
+              {(question.options || []).map((opt, i) => (
+                <SelectItem key={i} value={opt}>{opt}</SelectItem>
+              ))}
+              {question.allow_other && <SelectItem value="__other__">Other...</SelectItem>}
+            </SelectContent>
+          </Select>
+          {question.allow_other && (ddSelectValue === "__other__" || ddIsOther) && (
+            <Input placeholder="Please specify..." value={ddIsOther ? value : ""} onChange={e => onChange(e.target.value)} className="max-w-xs" />
+          )}
+        </div>
       );
 
     case "rating":
