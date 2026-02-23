@@ -24,8 +24,8 @@ export default function SurveyPublic() {
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
     queryFn: async () => {
-      const surveys = await base44.entities.Survey.filter({ share_token: token });
-      return surveys[0] || null;
+      const res = await base44.functions.invoke("publicSurvey", { action: "get", token });
+      return res.data?.survey || null;
     },
     enabled: !!token,
   });
@@ -45,23 +45,14 @@ export default function SurveyPublic() {
     e.preventDefault();
     setSubmitting(true);
 
-    let user = null;
-    try { user = await base44.auth.me(); } catch (e) {}
-
-    await base44.entities.SurveyResponse.create({
-      survey_id: survey.id,
-      respondent_user_id: user?.id || "",
-      respondent_email: user?.email || "",
-      respondent_name: user?.full_name || "",
-      responses: answers,
-      invitation_token: inviteToken || "",
-      submitted_at: new Date().toISOString(),
-      completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
-      is_complete: true,
-    });
-
-    await base44.entities.Survey.update(survey.id, {
-      total_responses: (survey.total_responses || 0) + 1,
+    await base44.functions.invoke("publicSurvey", {
+      action: "submit",
+      token,
+      invite: inviteToken || "",
+      responseData: {
+        responses: answers,
+        completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
+      },
     });
 
     setSubmitted(true);
