@@ -71,11 +71,11 @@ import Sales from './pages/Sales';
 import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import Subtrades from './pages/Subtrades';
-import UsersAdmin from './pages/UsersAdmin';
-import Surveys from './pages/Surveys';
 import SurveyBuilder from './pages/SurveyBuilder';
 import SurveyPublic from './pages/SurveyPublic';
 import SurveyResults from './pages/SurveyResults';
+import Surveys from './pages/Surveys';
+import UsersAdmin from './pages/UsersAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -104,11 +104,11 @@ export const PAGES = {
     "ScheduleView": ScheduleView,
     "Scheduler": Scheduler,
     "Subtrades": Subtrades,
-    "UsersAdmin": UsersAdmin,
-    "Surveys": Surveys,
     "SurveyBuilder": SurveyBuilder,
     "SurveyPublic": SurveyPublic,
     "SurveyResults": SurveyResults,
+    "Surveys": Surveys,
+    "UsersAdmin": UsersAdmin,
 }
 
 export const pagesConfig = {

@@ -38,7 +38,8 @@ export default function Dashboard() {
     conversionRate: true,
     preconRevenue: true,
     constructionRevenue: true,
-    winRate: true
+    winRate: true,
+    avgProjectSize: true
   });
 
   useEffect(() => {
@@ -251,6 +252,11 @@ export default function Dashboard() {
     });
     const marginPercent = totalProjectRevenue > 0 ? (totalGrossProfit / totalProjectRevenue) * 100 : 0;
 
+    const closedConstructionProjects = closedProjects.filter(p => p.project_type === 'construction');
+    const avgProjectSize = closedConstructionProjects.length > 0
+      ? closedConstructionProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0) / closedConstructionProjects.length
+      : 0;
+
     const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
     const totalLeadsForConversion = filteredLeads.filter(l => ['converted', 'disqualified'].includes(l.status)).length;
     const conversionRate = totalLeadsForConversion > 0 ? (convertedLeads / totalLeadsForConversion) * 100 : 0;
@@ -268,7 +274,8 @@ export default function Dashboard() {
       totalGrossProfit, marginPercent,
       convertedLeads, totalLeadsForConversion, conversionRate,
       proposalLeads, convertedAfterProposal, winRate,
-      activeRecognizedRevenue
+      activeRecognizedRevenue,
+      avgProjectSize, closedConstructionProjects
     };
   }, [filteredSales, filteredProjects, filteredLeads, projects, sales, leads, dateRange]);
 
@@ -485,6 +492,10 @@ export default function Dashboard() {
         {visibleMetrics.winRate && (
           <StatCard title="Win Rate (After Proposal)" value={`${metrics.winRate.toFixed(1)}%`} icon={CheckCircle2}
             subtitle={`${metrics.convertedAfterProposal}/${metrics.proposalLeads.length} won`} onClick={() => setDrilldownMetric('winRate')} />
+        )}
+        {visibleMetrics.avgProjectSize && (
+          <StatCard title="Avg Project Size" value={`$${(metrics.avgProjectSize / 1000).toFixed(0)}K`} icon={Building2}
+            subtitle={`${metrics.closedConstructionProjects.length} closed construction projects`} onClick={() => setDrilldownMetric('avgProjectSize')} />
         )}
       </div>
 
