@@ -127,16 +127,19 @@ export default function Surveys() {
                   <span>{survey.total_responses || 0} responses</span>
                 </div>
                 {survey.share_token && (
-                  <div className="flex items-center gap-1 mb-3 p-2 bg-slate-50 rounded-lg border border-slate-200">
-                    <input
-                      readOnly
-                      value={getSurveyLink(survey)}
-                      className="flex-1 text-xs bg-transparent text-slate-600 truncate outline-none cursor-text"
-                      onClick={(e) => e.target.select()}
-                    />
-                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => copyLink(survey)}>
-                      {copiedId === survey.id ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    </Button>
+                  <div className="mb-3">
+                    <p className="text-xs font-medium text-slate-500 mb-1">Public Link:</p>
+                    <div className="flex items-center gap-1 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <input
+                        readOnly
+                        value={getSurveyLink(survey)}
+                        className="flex-1 text-xs bg-transparent text-slate-600 truncate outline-none cursor-text"
+                        onClick={(e) => e.target.select()}
+                      />
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0" onClick={() => copyLink(survey)}>
+                        {copiedId === survey.id ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </Button>
+                    </div>
                   </div>
                 )}
                 <div className="flex gap-1">
