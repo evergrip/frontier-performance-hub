@@ -16,6 +16,81 @@ function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
 
+function StylingTab({ form, updateStyling }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerType, setPickerType] = useState("logo");
+  const [pickerTarget, setPickerTarget] = useState("logo_url");
+
+  const openPicker = (assetType, target) => {
+    setPickerType(assetType);
+    setPickerTarget(target);
+    setPickerOpen(true);
+  };
+
+  return (
+    <TabsContent value="styling" className="space-y-4 mt-4">
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { label: "Background Color", key: "background_color", default: "#ffffff" },
+          { label: "Text Color", key: "text_color", default: "#1e293b" },
+          { label: "Accent Color", key: "accent_color", default: "#ea7924" },
+          { label: "Button Color", key: "button_color", default: "#ea7924" },
+        ].map(c => (
+          <div key={c.key}>
+            <Label>{c.label}</Label>
+            <div className="flex gap-2 items-center">
+              <input type="color" value={form.styling[c.key] || c.default} onChange={e => updateStyling(c.key, e.target.value)} className="w-10 h-9 rounded cursor-pointer" />
+              <Input value={form.styling[c.key] || ""} onChange={e => updateStyling(c.key, e.target.value)} placeholder={c.default} className="flex-1" />
+              <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => openPicker("color", c.key)}>
+                <Image className="w-3 h-3 mr-1" /> Brand
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <Label>Logo</Label>
+        <div className="flex gap-2 items-center">
+          <Input value={form.styling.logo_url || ""} onChange={e => updateStyling("logo_url", e.target.value)} placeholder="https://..." className="flex-1" />
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => openPicker("logo", "logo_url")}>
+            <Image className="w-3.5 h-3.5 mr-1" /> Brand
+          </Button>
+        </div>
+        {form.styling.logo_url && <img src={form.styling.logo_url} alt="logo" className="h-10 mt-2 rounded" />}
+      </div>
+
+      <div>
+        <Label>Banner Image</Label>
+        <div className="flex gap-2 items-center">
+          <Input value={form.styling.banner_image_url || ""} onChange={e => updateStyling("banner_image_url", e.target.value)} placeholder="https://..." className="flex-1" />
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => openPicker("banner", "banner_image_url")}>
+            <Image className="w-3.5 h-3.5 mr-1" /> Brand
+          </Button>
+        </div>
+        {form.styling.banner_image_url && <img src={form.styling.banner_image_url} alt="banner" className="h-16 mt-2 rounded" />}
+      </div>
+
+      <div>
+        <Label>Font Family</Label>
+        <div className="flex gap-2 items-center">
+          <Input value={form.styling.font_family || ""} onChange={e => updateStyling("font_family", e.target.value)} placeholder="e.g. Work Sans" className="flex-1" />
+          <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => openPicker("font", "font_family")}>
+            <Image className="w-3.5 h-3.5 mr-1" /> Brand
+          </Button>
+        </div>
+      </div>
+
+      <BrandAssetPicker
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        assetType={pickerType}
+        onSelect={(value) => updateStyling(pickerTarget, value)}
+      />
+    </TabsContent>
+  );
+}
+
 export default function SurveyFormDialog({ open, onOpenChange, survey }) {
   const queryClient = useQueryClient();
   const isEditing = !!survey;
