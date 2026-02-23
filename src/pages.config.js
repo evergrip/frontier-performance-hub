@@ -60,6 +60,7 @@ import KPIAgentChat from './pages/KPIAgentChat';
 import KPIDashboard from './pages/KPIDashboard';
 import KPIDefinitions from './pages/KPIDefinitions';
 import Leads from './pages/Leads';
+import MarketingCampaigns from './pages/MarketingCampaigns';
 import Meetings from './pages/Meetings';
 import MyKPIs from './pages/MyKPIs';
 import Projects from './pages/Projects';
@@ -71,7 +72,10 @@ import ScheduleView from './pages/ScheduleView';
 import Scheduler from './pages/Scheduler';
 import Subtrades from './pages/Subtrades';
 import UsersAdmin from './pages/UsersAdmin';
-import MarketingCampaigns from './pages/MarketingCampaigns';
+import Surveys from './pages/Surveys';
+import SurveyBuilder from './pages/SurveyBuilder';
+import SurveyPublic from './pages/SurveyPublic';
+import SurveyResults from './pages/SurveyResults';
 import __Layout from './Layout.jsx';
 
 
@@ -89,6 +93,7 @@ export const PAGES = {
     "KPIDashboard": KPIDashboard,
     "KPIDefinitions": KPIDefinitions,
     "Leads": Leads,
+    "MarketingCampaigns": MarketingCampaigns,
     "Meetings": Meetings,
     "MyKPIs": MyKPIs,
     "Projects": Projects,
@@ -100,7 +105,10 @@ export const PAGES = {
     "Scheduler": Scheduler,
     "Subtrades": Subtrades,
     "UsersAdmin": UsersAdmin,
-    "MarketingCampaigns": MarketingCampaigns,
+    "Surveys": Surveys,
+    "SurveyBuilder": SurveyBuilder,
+    "SurveyPublic": SurveyPublic,
+    "SurveyResults": SurveyResults,
 }
 
 export const pagesConfig = {
