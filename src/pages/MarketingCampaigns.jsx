@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, Megaphone, Calendar, Eye, Trash2, 
-  Sparkles, Target, DollarSign, Play, Pause, CheckCircle2
+  Sparkles, Target, DollarSign, Play, Pause, CheckCircle2, Palette
 } from 'lucide-react';
 import CampaignWizardDialog from '../components/marketing/CampaignWizardDialog';
 import CampaignDetailDialog from '../components/marketing/CampaignDetailDialog';
+import BrandingRepository from '../components/marketing/BrandingRepository';
 import { format } from 'date-fns';
 
 const statusConfig = {
@@ -73,9 +75,23 @@ export default function MarketingCampaigns() {
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Marketing Campaigns</h1>
-          <p className="text-lg text-slate-500">AI-powered campaign creation and management</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Marketing</h1>
+          <p className="text-lg text-slate-500">Campaigns, branding, and creative assets</p>
         </div>
+      </div>
+
+      <Tabs defaultValue="campaigns">
+        <TabsList>
+          <TabsTrigger value="campaigns"><Megaphone className="w-4 h-4 mr-1.5" /> Campaigns</TabsTrigger>
+          <TabsTrigger value="branding"><Palette className="w-4 h-4 mr-1.5" /> Brand Assets</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="branding" className="mt-6">
+          <BrandingRepository />
+        </TabsContent>
+
+        <TabsContent value="campaigns" className="mt-6">
+      <div className="flex justify-end mb-4">
         <Button onClick={() => setWizardOpen(true)} className="bg-gradient-to-r from-[#ea7924] to-[#d66a1f] hover:from-[#d66a1f] hover:to-[#c55e1a]">
           <Sparkles className="w-4 h-4 mr-2" />
           New Campaign Wizard
@@ -173,6 +189,8 @@ export default function MarketingCampaigns() {
           onUpdate={() => queryClient.invalidateQueries({ queryKey: ['marketingCampaigns'] })}
         />
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
