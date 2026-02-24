@@ -228,8 +228,8 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     if (!data.related_client_id) delete data.related_client_id;
     if (!data.related_lead_id) delete data.related_lead_id;
     if (!data.related_project_id) delete data.related_project_id;
-    // Auto-set has_agenda based on whether agenda or description is filled
-    data.has_agenda = !!((data.agenda_html && data.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (data.description && data.description.trim().length > 0));
+    // Auto-set has_agenda based on whether agenda sections, agenda html, or description is filled
+    data.has_agenda = !!((data.agenda_sections && data.agenda_sections.length > 0) || (data.agenda_html && data.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (data.description && data.description.trim().length > 0));
     // Clean parent_meeting_id
     if (!data.parent_meeting_id) delete data.parent_meeting_id;
     // Clean KPI links on action items
