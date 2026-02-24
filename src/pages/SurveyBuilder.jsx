@@ -149,6 +149,7 @@ export default function SurveyBuilder() {
             onRemove={() => removeQuestion(index)}
             onMove={(dir) => moveQuestion(index, dir)}
             onDuplicate={() => duplicateQuestion(index)}
+            allQuestions={questions}
           />
         ))}
       </div>

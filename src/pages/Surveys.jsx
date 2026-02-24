@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import SurveyFormDialog from "../components/surveys/SurveyFormDialog";
+import SurveyTemplateLibrary, { SaveAsTemplateDialog } from "../components/surveys/SurveyTemplateLibrary";
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
@@ -27,6 +28,8 @@ export default function Surveys() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingSurvey, setEditingSurvey] = useState(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateSurvey, setTemplateSurvey] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: surveys = [], isLoading } = useQuery({
@@ -72,9 +75,14 @@ export default function Surveys() {
           <h1 className="text-2xl font-bold text-slate-800">Surveys</h1>
           <p className="text-sm text-slate-500">Create and manage surveys</p>
         </div>
-        <Button onClick={handleCreate} className="bg-[#ea7924] hover:bg-[#d66a1f]">
-          <Plus className="w-4 h-4 mr-2" /> New Survey
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowTemplates(true)}>
+            <BookOpen className="w-4 h-4 mr-2" /> Templates
+          </Button>
+          <Button onClick={handleCreate} className="bg-[#ea7924] hover:bg-[#d66a1f]">
+            <Plus className="w-4 h-4 mr-2" /> New Survey
+          </Button>
+        </div>
       </div>
 
       <div className="relative mb-6">
@@ -163,6 +171,9 @@ export default function Surveys() {
                       <BarChart3 className="w-3.5 h-3.5" />
                     </Button>
                   </Link>
+                  <Button variant="ghost" size="sm" onClick={() => setTemplateSurvey(survey)} title="Save as template">
+                    <Bookmark className="w-3.5 h-3.5" />
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(survey.id)} className="text-red-500 hover:text-red-700">
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
@@ -178,6 +189,20 @@ export default function Surveys() {
         onOpenChange={setShowForm}
         survey={editingSurvey}
       />
+
+      <SurveyTemplateLibrary
+        open={showTemplates}
+        onOpenChange={setShowTemplates}
+        onCreated={() => queryClient.invalidateQueries({ queryKey: ["surveys"] })}
+      />
+
+      {templateSurvey && (
+        <SaveAsTemplateDialog
+          open={!!templateSurvey}
+          onOpenChange={(open) => !open && setTemplateSurvey(null)}
+          survey={templateSurvey}
+        />
+      )}
     </div>
   );
 }

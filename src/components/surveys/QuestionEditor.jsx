@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Copy, ChevronUp, ChevronDown, Plus, X, Image, Video, Upload } from "lucide-react";
+import { Trash2, Copy, ChevronUp, ChevronDown, Plus, X, Image, Video, Upload, GitBranch } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import LogicRuleEditor from "./LogicRuleEditor";
 
 const FILE_TYPE_OPTIONS = [
   { value: "image", label: "Images" },
@@ -17,7 +18,7 @@ const FILE_TYPE_OPTIONS = [
   { value: "audio", label: "Audio" },
 ];
 
-export default function QuestionEditor({ question, index, totalCount, questionTypes, onChange, onRemove, onMove, onDuplicate }) {
+export default function QuestionEditor({ question, index, totalCount, questionTypes, onChange, onRemove, onMove, onDuplicate, allQuestions }) {
   const [uploading, setUploading] = useState(false);
 
   const update = (key, value) => {
@@ -205,6 +206,16 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
                 )}
               </div>
             </div>
+
+            {/* Logic rules */}
+            {allQuestions && (
+              <LogicRuleEditor
+                question={question}
+                allQuestions={allQuestions}
+                currentIndex={index}
+                onChange={onChange}
+              />
+            )}
 
             {/* Bottom row */}
             <div className="flex items-center justify-between pt-2 border-t">
