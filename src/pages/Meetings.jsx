@@ -33,6 +33,7 @@ export default function Meetings() {
   const [importTargetForm, setImportTargetForm] = useState(null);
   const [completionDialog, setCompletionDialog] = useState(null); // { meeting, actionIndex }
   const [firefliesSyncMeeting, setFirefliesSyncMeeting] = useState(null);
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
 
   useState(() => {
     base44.auth.me().then(u => setCurrentUser(u));
