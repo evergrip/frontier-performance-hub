@@ -475,6 +475,10 @@ export default function Meetings() {
         users={users}
         onConfirm={handleCompletionConfirm}
       />
+      <MeetingWalkthrough
+        open={walkthroughOpen}
+        onOpenChange={setWalkthroughOpen}
+      />
       <MeetingEffectivenessScorecard
         open={!!scorecardMeeting}
         onOpenChange={(open) => !open && setScorecardMeeting(null)}
