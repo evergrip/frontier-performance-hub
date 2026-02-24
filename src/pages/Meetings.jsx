@@ -17,7 +17,7 @@ import FirefliesSyncDialog from '../components/meetings/FirefliesSyncDialog';
 import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
 import { getGoogleCalendarUrl } from '../components/meetings/CalendarInviteButton';
 import AllActionItemsView from '../components/meetings/AllActionItemsView';
-import AgendaTemplatesTab from '../components/meetings/AgendaTemplatesTab';
+import AgendaTemplatesTab from '@/components/meetings/AgendaTemplatesTab';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
