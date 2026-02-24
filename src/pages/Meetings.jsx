@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, CalendarDays, AlertTriangle, ListChecks, ClipboardList } from 'lucide-react';
+import { Plus, Search, CalendarDays, AlertTriangle, ListChecks, ClipboardList, HelpCircle } from 'lucide-react';
 import MeetingFormDialog from '../components/meetings/MeetingFormDialog';
 import MeetingCard from '../components/meetings/MeetingCard';
 import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
