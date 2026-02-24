@@ -17,7 +17,7 @@ export default function MeetingKPIStats({ meetings }) {
   const completionRate = allActionItems.length > 0 ? (completedActionItems.length / allActionItems.length) * 100 : 0;
 
   // Agenda compliance
-  const meetingsWithAgenda = meetings.filter(m => m.has_agenda || (m.description && m.description.trim().length > 0));
+  const meetingsWithAgenda = meetings.filter(m => m.has_agenda || (m.agenda_html && m.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (m.description && m.description.trim().length > 0));
   const agendaRate = meetings.length > 0 ? (meetingsWithAgenda.length / meetings.length) * 100 : 0;
 
   // Punctuality
