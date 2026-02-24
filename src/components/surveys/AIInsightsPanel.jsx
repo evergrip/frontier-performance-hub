@@ -2,18 +2,19 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, MessageCircle, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import AIInsightsChat from "./AIInsightsChat";
 
 export default function AIInsightsPanel({ survey, responses }) {
   const [insights, setInsights] = useState(survey?.ai_insights || null);
   const [loading, setLoading] = useState(false);
+  const [activeView, setActiveView] = useState(survey?.ai_insights ? "report" : "report");
 
   const generateInsights = async () => {
     setLoading(true);
     const questions = survey.questions || [];
 
-    // Build a structured summary of responses for the AI
     const dataSummary = questions.map(q => {
       const answers = responses.map(r => r.responses?.[q.id]).filter(a => a !== undefined && a !== null && a !== "");
       let summary = { question: q.text, type: q.type, response_count: answers.length };
@@ -58,7 +59,6 @@ Use markdown formatting. Be specific and reference actual data points.`,
     setInsights(result);
     setLoading(false);
 
-    // Persist insights to the survey
     await base44.entities.Survey.update(survey.id, {
       ai_insights: result,
       ai_insights_generated_at: new Date().toISOString(),
@@ -73,7 +73,7 @@ Use markdown formatting. Be specific and reference actual data points.`,
           <Sparkles className="w-10 h-10 text-purple-400 mx-auto mb-3" />
           <h3 className="font-semibold text-slate-800 mb-2">AI-Powered Insights</h3>
           <p className="text-sm text-slate-500 mb-4">
-            Get theme analysis, correlations, and sentiment summary from your survey responses
+            Generate an analysis report, then ask follow-up questions in an interactive chat
           </p>
           <Button
             onClick={generateInsights}
@@ -105,19 +105,49 @@ Use markdown formatting. Be specific and reference actual data points.`,
 
   return (
     <Card className="border-purple-200">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-500" />
-            <h3 className="font-semibold text-slate-800">AI Insights</h3>
+      <CardContent className="p-0">
+        {/* View toggle header */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={() => setActiveView("report")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                activeView === "report" ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Report
+            </button>
+            <button
+              onClick={() => setActiveView("chat")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                activeView === "chat" ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Ask Questions
+            </button>
           </div>
-          <Button variant="outline" size="sm" onClick={generateInsights}>
-            <RefreshCw className="w-3.5 h-3.5 mr-1" /> Regenerate
-          </Button>
+          {activeView === "report" && (
+            <Button variant="outline" size="sm" onClick={generateInsights}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1" /> Regenerate
+            </Button>
+          )}
         </div>
-        <div className="prose prose-sm prose-slate max-w-none">
-          <ReactMarkdown>{insights}</ReactMarkdown>
-        </div>
+
+        {/* Report view */}
+        {activeView === "report" && (
+          <div className="p-6 pt-2">
+            <div className="prose prose-sm prose-slate max-w-none">
+              <ReactMarkdown>{insights}</ReactMarkdown>
+            </div>
+          </div>
+        )}
+
+        {/* Chat view */}
+        {activeView === "chat" && (
+          <AIInsightsChat survey={survey} responses={responses} initialInsights={insights} />
+        )}
       </CardContent>
     </Card>
   );
