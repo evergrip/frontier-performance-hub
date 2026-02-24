@@ -57,6 +57,13 @@ Use markdown formatting. Be specific and reference actual data points.`,
 
     setInsights(result);
     setLoading(false);
+
+    // Persist insights to the survey
+    await base44.entities.Survey.update(survey.id, {
+      ai_insights: result,
+      ai_insights_generated_at: new Date().toISOString(),
+      ai_insights_response_count: responses.length,
+    });
   };
 
   if (!insights && !loading) {
