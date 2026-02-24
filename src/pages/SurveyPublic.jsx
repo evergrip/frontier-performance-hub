@@ -41,6 +41,60 @@ export default function SurveyPublic() {
     setAnswers(prev => ({ ...prev, [qId]: value }));
   };
 
+  // Piped text: replace {{q_xxx}} with actual answer values
+  const pipedText = (text) => {
+    if (!text) return text;
+    return text.replace(/\{\{(q_[a-z0-9]+)\}\}/g, (match, qId) => {
+      const val = answers[qId];
+      if (val === undefined || val === null || val === "") return match;
+      return Array.isArray(val) ? val.join(", ") : String(val);
+    });
+  };
+
+  // Skip/show logic evaluation
+  const evaluateLogic = (question) => {
+    const rules = question.logic_rules;
+    if (!rules || rules.length === 0) return true; // no rules = always show
+
+    return rules.every(rule => {
+      const condAnswer = answers[rule.condition_question_id];
+      let conditionMet = false;
+
+      switch (rule.operator) {
+        case "equals":
+          conditionMet = String(condAnswer) === String(rule.value);
+          break;
+        case "not_equals":
+          conditionMet = String(condAnswer) !== String(rule.value);
+          break;
+        case "contains":
+          if (Array.isArray(condAnswer)) conditionMet = condAnswer.includes(rule.value);
+          else conditionMet = String(condAnswer || "").includes(rule.value);
+          break;
+        case "not_contains":
+          if (Array.isArray(condAnswer)) conditionMet = !condAnswer.includes(rule.value);
+          else conditionMet = !String(condAnswer || "").includes(rule.value);
+          break;
+        case "greater_than":
+          conditionMet = Number(condAnswer) > Number(rule.value);
+          break;
+        case "less_than":
+          conditionMet = Number(condAnswer) < Number(rule.value);
+          break;
+        case "is_answered":
+          conditionMet = condAnswer !== undefined && condAnswer !== null && condAnswer !== "" && (!Array.isArray(condAnswer) || condAnswer.length > 0);
+          break;
+        case "is_not_answered":
+          conditionMet = condAnswer === undefined || condAnswer === null || condAnswer === "" || (Array.isArray(condAnswer) && condAnswer.length === 0);
+          break;
+        default:
+          conditionMet = true;
+      }
+
+      return rule.logic_type === "show" ? conditionMet : !conditionMet;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -93,7 +147,7 @@ export default function SurveyPublic() {
         <div className="text-center max-w-md px-6">
           <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: accentColor }} />
           <h2 className="text-2xl font-bold mb-2" style={{ color: textColor }}>
-            {survey.success_message || "Thank you!"}
+            {pipedText(survey.success_message || "Thank you!")}
           </h2>
           {survey.redirect_url && <p className="text-sm text-slate-500">Redirecting...</p>}
         </div>
@@ -115,14 +169,14 @@ export default function SurveyPublic() {
         {survey.description && <p className="text-lg opacity-80 mb-8">{survey.description}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {(survey.questions || []).map((q, idx) => (
+          {(survey.questions || []).filter(q => evaluateLogic(q)).map((q, idx) => (
             <div key={q.id} className="bg-white rounded-xl p-6 shadow-sm border">
               <div className="mb-3">
                 <Label className="text-base font-medium">
-                  {q.text}
+                  {pipedText(q.text)}
                   {q.required && <span className="text-red-500 ml-1">*</span>}
                 </Label>
-                {q.description && <p className="text-sm opacity-60 mt-1">{q.description}</p>}
+                {q.description && <p className="text-sm opacity-60 mt-1">{pipedText(q.description)}</p>}
                 {q.image_url && <img src={q.image_url} alt="" className="mt-3 rounded-lg max-h-64 object-contain" />}
                 {q.video_url && <video src={q.video_url} controls className="mt-3 rounded-lg max-h-64 w-full" />}
               </div>
