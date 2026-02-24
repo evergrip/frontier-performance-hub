@@ -9,6 +9,7 @@ import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, M
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import moment from "moment";
+import AIInsightsPanel from "../components/surveys/AIInsightsPanel";
 
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -113,8 +114,13 @@ export default function SurveyResults() {
       <Tabs defaultValue="summary">
         <TabsList>
           <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="insights">AI Insights</TabsTrigger>
           <TabsTrigger value="individual">Individual Responses</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="insights" className="mt-4">
+          <AIInsightsPanel survey={survey} responses={responses} />
+        </TabsContent>
 
         <TabsContent value="summary" className="space-y-4 mt-4">
           {questions.map(q => (
