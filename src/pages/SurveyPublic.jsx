@@ -387,7 +387,7 @@ function QuestionInput({ question, value, onChange, accentColor }) {
       const min = question.min_value ?? 1;
       const max = question.max_value ?? 10;
       return (
-        <div>
+        <div className="inline-block">
           <div className="flex gap-1 flex-wrap">
             {Array.from({ length: max - min + 1 }, (_, i) => min + i).map(n => (
               <button
