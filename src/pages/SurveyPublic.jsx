@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, Upload, X, Star, Loader2 } from "lucide-react";
 import FileUploadField from "../components/surveys/FileUploadField";
+import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
+import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 
 export default function SurveyPublic() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -20,6 +22,7 @@ export default function SurveyPublic() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
@@ -166,16 +169,14 @@ export default function SurveyPublic() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor, fontFamily: bodyFont }}>
-        {fontImports.map((url, i) => <link key={i} href={url} rel="stylesheet" />)}
-        <div className="text-center max-w-md px-6">
-          <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: accentColor }} />
-          <h2 className="text-2xl font-bold mb-2" style={{ color: headingColor, fontFamily: headingFont }}>
-            {pipedText(survey.success_message || "Thank you!")}
-          </h2>
-          {survey.redirect_url && <p className="text-sm" style={{ color: descColor || "#64748b" }}>Redirecting...</p>}
-        </div>
-      </div>
+      <SurveyThankYouPage survey={survey} answers={answers} styling={styling} />
+    );
+  }
+
+  // Show welcome page if enabled and not yet dismissed
+  if (survey.welcome_page_enabled && showWelcome) {
+    return (
+      <SurveyWelcomePage survey={survey} styling={styling} onStart={() => setShowWelcome(false)} />
     );
   }
 
