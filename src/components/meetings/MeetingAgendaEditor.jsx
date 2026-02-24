@@ -53,6 +53,52 @@ Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise an
     setAiLoading(false);
   };
 
+  const agendaContent = (
+    <div className="space-y-3">
+      {/* Template picker + AI button */}
+      <div className="flex gap-2">
+        <Select value={agendaTemplateId || ''} onValueChange={handleApplyTemplate}>
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Apply a template..." />
+          </SelectTrigger>
+          <SelectContent>
+            {relevantTemplates.map(t => (
+              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            ))}
+            {relevantTemplates.length === 0 && (
+              <div className="px-3 py-2 text-xs text-slate-400">No templates available</div>
+            )}
+          </SelectContent>
+        </Select>
+        <Button type="button" variant="outline" size="sm" onClick={handleAIGenerate} disabled={aiLoading} className="gap-1.5 shrink-0">
+          {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
+          {aiLoading ? 'Generating...' : 'AI Agenda'}
+        </Button>
+      </div>
+
+      <div className="bg-white rounded-md border">
+        <ReactQuill
+          value={agendaHtml || ''}
+          onChange={onAgendaChange}
+          placeholder="Write your meeting agenda here..."
+          theme="snow"
+          modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+        />
+      </div>
+    </div>
+  );
+
+  if (!showMinutes) {
+    return (
+      <div className="space-y-2">
+        <Label className="text-base font-semibold flex items-center gap-1.5">
+          <FileText className="w-4 h-4" /> Agenda
+        </Label>
+        {agendaContent}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <Tabs defaultValue="agenda">
@@ -60,59 +106,26 @@ Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise an
           <TabsTrigger value="agenda" className="flex-1 gap-1.5">
             <FileText className="w-3.5 h-3.5" /> Agenda
           </TabsTrigger>
-          {showMinutes && (
-            <TabsTrigger value="minutes" className="flex-1 gap-1.5">
-              <ClipboardList className="w-3.5 h-3.5" /> Minutes
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="minutes" className="flex-1 gap-1.5">
+            <ClipboardList className="w-3.5 h-3.5" /> Minutes
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="agenda" className="mt-3 space-y-3">
-          {/* Template picker + AI button */}
-          <div className="flex gap-2">
-            <Select value={agendaTemplateId || ''} onValueChange={handleApplyTemplate}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Apply a template..." />
-              </SelectTrigger>
-              <SelectContent>
-                {relevantTemplates.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-                {relevantTemplates.length === 0 && (
-                  <div className="px-3 py-2 text-xs text-slate-400">No templates available</div>
-                )}
-              </SelectContent>
-            </Select>
-            <Button type="button" variant="outline" size="sm" onClick={handleAIGenerate} disabled={aiLoading} className="gap-1.5 shrink-0">
-              {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
-              {aiLoading ? 'Generating...' : 'AI Agenda'}
-            </Button>
-          </div>
+        <TabsContent value="agenda" className="mt-3">
+          {agendaContent}
+        </TabsContent>
 
+        <TabsContent value="minutes" className="mt-3">
           <div className="bg-white rounded-md border">
             <ReactQuill
-              value={agendaHtml || ''}
-              onChange={onAgendaChange}
-              placeholder="Write your meeting agenda here..."
+              value={minutesHtml || ''}
+              onChange={onMinutesChange}
+              placeholder="Record meeting minutes here..."
               theme="snow"
               modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
             />
           </div>
         </TabsContent>
-
-        {showMinutes && (
-          <TabsContent value="minutes" className="mt-3">
-            <div className="bg-white rounded-md border">
-              <ReactQuill
-                value={minutesHtml || ''}
-                onChange={onMinutesChange}
-                placeholder="Record meeting minutes here..."
-                theme="snow"
-                modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
-              />
-            </div>
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
