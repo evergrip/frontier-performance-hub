@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, FileText, Loader2 } from 'lucide-react';
-import ReactQuill from 'react-quill';
+import { Plus, Pencil, Trash2, FileText, Loader2, Clock } from 'lucide-react';
+import AgendaSectionBuilder, { SECTION_TYPES, SectionTypeIcon } from '../components/meetings/AgendaSectionBuilder';
 
 export default function AgendaTemplates() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', meeting_type: '', content_html: '', is_active: true, display_order: 0 });
+  const [form, setForm] = useState({ name: '', meeting_type: '', sections: [], is_active: true, display_order: 0 });
   const queryClient = useQueryClient();
 
   const { data: templates = [], isLoading } = useQuery({
@@ -46,13 +46,19 @@ export default function AgendaTemplates() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: '', meeting_type: '', content_html: '', is_active: true, display_order: 0 });
+    setForm({ name: '', meeting_type: '', sections: [], is_active: true, display_order: 0 });
     setFormOpen(true);
   };
 
   const openEdit = (template) => {
     setEditing(template);
-    setForm({ name: template.name, meeting_type: template.meeting_type || '', content_html: template.content_html || '', is_active: template.is_active !== false, display_order: template.display_order || 0 });
+    setForm({
+      name: template.name,
+      meeting_type: template.meeting_type || '',
+      sections: template.sections || [],
+      is_active: template.is_active !== false,
+      display_order: template.display_order || 0,
+    });
     setFormOpen(true);
   };
 
@@ -80,7 +86,7 @@ export default function AgendaTemplates() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Agenda Templates</h1>
-          <p className="text-slate-500">Create reusable agenda templates for different meeting types</p>
+          <p className="text-slate-500">Build structured agenda templates with sections, checklists, and fillable fields</p>
         </div>
         <Button onClick={openNew}>
           <Plus className="w-4 h-4 mr-2" /> New Template
@@ -98,38 +104,65 @@ export default function AgendaTemplates() {
         <div className="grid gap-4 md:grid-cols-2">
           {templates
             .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-            .map(t => (
-              <Card key={t.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{t.name}</CardTitle>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline">{getTypeLabel(t.meeting_type)}</Badge>
-                        {t.is_active === false && <Badge className="bg-red-100 text-red-700">Inactive</Badge>}
+            .map(t => {
+              const sections = t.sections || [];
+              const totalMin = sections.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+              return (
+                <Card key={t.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{t.name}</CardTitle>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          <Badge variant="outline">{getTypeLabel(t.meeting_type)}</Badge>
+                          {sections.length > 0 && (
+                            <Badge variant="secondary" className="gap-1">
+                              {sections.length} section{sections.length !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          {totalMin > 0 && (
+                            <Badge variant="secondary" className="gap-1">
+                              <Clock className="w-3 h-3" /> {totalMin}m
+                            </Badge>
+                          )}
+                          {t.is_active === false && <Badge className="bg-red-100 text-red-700">Inactive</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(t)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(t)}><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(t)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose prose-sm max-w-none text-slate-600 max-h-32 overflow-hidden" dangerouslySetInnerHTML={{ __html: t.content_html || '<p class="text-slate-400 italic">No content</p>' }} />
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent>
+                    {sections.length > 0 ? (
+                      <div className="space-y-1">
+                        {sections.map((s, idx) => (
+                          <div key={s.id || idx} className="flex items-center gap-2 text-sm text-slate-600">
+                            <SectionTypeIcon type={s.type} className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{s.title || 'Untitled'}</span>
+                            {s.duration_minutes > 0 && <span className="text-xs text-slate-400">({s.duration_minutes}m)</span>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic">No sections defined</p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
         </div>
       )}
 
       {/* Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Template' : 'New Agenda Template'}</DialogTitle>
+            <DialogDescription>Define the structure and sections for your meeting agenda</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Template Name *</Label>
@@ -148,16 +181,11 @@ export default function AgendaTemplates() {
                 </Select>
               </div>
             </div>
-            <div>
-              <Label>Agenda Content</Label>
-              <ReactQuill
-                value={form.content_html || ''}
-                onChange={v => setForm(prev => ({ ...prev, content_html: v }))}
-                placeholder="Write the agenda template content here..."
-                theme="snow"
-                style={{ minHeight: 200 }}
-              />
-            </div>
+
+            <AgendaSectionBuilder
+              sections={form.sections || []}
+              onChange={sections => setForm(prev => ({ ...prev, sections }))}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>

@@ -7,8 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, FileText, ClipboardList, Loader2 } from 'lucide-react';
+import AgendaSectionFiller from './AgendaSectionFiller';
 
-export default function MeetingAgendaEditor({ agendaHtml, minutesHtml, agendaTemplateId, meetingType, meetingTitle, onAgendaChange, onMinutesChange, onTemplateSelect, showMinutes = false }) {
+export default function MeetingAgendaEditor({
+  agendaHtml, minutesHtml, agendaTemplateId, agendaSections,
+  meetingType, meetingTitle,
+  onAgendaChange, onMinutesChange, onTemplateSelect, onAgendaSectionsChange,
+  showMinutes = false
+}) {
   const [aiLoading, setAiLoading] = useState(false);
 
   const { data: templates = [] } = useQuery({
@@ -21,14 +27,31 @@ export default function MeetingAgendaEditor({ agendaHtml, minutesHtml, agendaTem
     .filter(t => t.is_active !== false)
     .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
-  // Filter templates: show matching meeting type first, then general ones
   const relevantTemplates = activeTemplates.filter(t => !t.meeting_type || t.meeting_type === meetingType);
 
   const handleApplyTemplate = (templateId) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
       onTemplateSelect?.(templateId);
-      onAgendaChange?.(template.content_html || '');
+
+      // Apply structured sections
+      if (template.sections && template.sections.length > 0) {
+        const filledSections = template.sections.map(s => ({
+          id: s.id,
+          title: s.title,
+          type: s.type,
+          description: s.description || '',
+          duration_minutes: s.duration_minutes || 0,
+          content: '',
+          items: (s.default_items || []).map(text => ({ text, checked: false })),
+        }));
+        onAgendaSectionsChange?.(filledSections);
+      }
+
+      // Also set legacy HTML if template has it
+      if (template.content_html) {
+        onAgendaChange?.(template.content_html);
+      }
     }
   };
 
@@ -53,38 +76,53 @@ Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise an
     setAiLoading(false);
   };
 
+  const hasStructuredSections = agendaSections && agendaSections.length > 0;
+
+  const templatePicker = (
+    <div className="flex gap-2">
+      <Select value={agendaTemplateId || ''} onValueChange={handleApplyTemplate}>
+        <SelectTrigger className="flex-1">
+          <SelectValue placeholder="Apply a template..." />
+        </SelectTrigger>
+        <SelectContent>
+          {relevantTemplates.map(t => (
+            <SelectItem key={t.id} value={t.id}>
+              {t.name}
+              {(t.sections || []).length > 0 && ` (${t.sections.length} sections)`}
+            </SelectItem>
+          ))}
+          {relevantTemplates.length === 0 && (
+            <div className="px-3 py-2 text-xs text-slate-400">No templates available</div>
+          )}
+        </SelectContent>
+      </Select>
+      <Button type="button" variant="outline" size="sm" onClick={handleAIGenerate} disabled={aiLoading} className="gap-1.5 shrink-0">
+        {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
+        {aiLoading ? 'Generating...' : 'AI Agenda'}
+      </Button>
+    </div>
+  );
+
   const agendaContent = (
     <div className="space-y-3">
-      {/* Template picker + AI button */}
-      <div className="flex gap-2">
-        <Select value={agendaTemplateId || ''} onValueChange={handleApplyTemplate}>
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Apply a template..." />
-          </SelectTrigger>
-          <SelectContent>
-            {relevantTemplates.map(t => (
-              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-            ))}
-            {relevantTemplates.length === 0 && (
-              <div className="px-3 py-2 text-xs text-slate-400">No templates available</div>
-            )}
-          </SelectContent>
-        </Select>
-        <Button type="button" variant="outline" size="sm" onClick={handleAIGenerate} disabled={aiLoading} className="gap-1.5 shrink-0">
-          {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
-          {aiLoading ? 'Generating...' : 'AI Agenda'}
-        </Button>
-      </div>
+      {templatePicker}
 
-      <div className="bg-white rounded-md border">
-        <ReactQuill
-          value={agendaHtml || ''}
-          onChange={onAgendaChange}
-          placeholder="Write your meeting agenda here..."
-          theme="snow"
-          modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+      {hasStructuredSections ? (
+        <AgendaSectionFiller
+          sections={agendaSections}
+          onChange={onAgendaSectionsChange}
         />
-      </div>
+      ) : (
+        <div className="bg-white rounded-md border">
+          <ReactQuill
+            value={agendaHtml || ''}
+            onChange={onAgendaChange}
+            placeholder="Write your meeting agenda here, or apply a template above..."
+            theme="snow"
+            modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+          />
+        </div>
+      )}
     </div>
   );
 
