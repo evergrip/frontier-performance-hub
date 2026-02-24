@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GripVertical, Trash2, ArrowLeft, Copy, ChevronUp, ChevronDown, Image, Video, Save } from "lucide-react";
+import { Plus, GripVertical, Trash2, ArrowLeft, Copy, ChevronUp, ChevronDown, Image, Video, Save, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import QuestionEditor from "../components/surveys/QuestionEditor";
+import ImportQuestionsDialog from "../components/surveys/ImportQuestionsDialog";
 
 const QUESTION_TYPES = [
   { value: "text", label: "Short Text" },
@@ -50,6 +51,7 @@ export default function SurveyBuilder() {
 
   const [questions, setQuestions] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     if (survey?.questions) {
@@ -131,10 +133,15 @@ export default function SurveyBuilder() {
             <p className="text-sm text-slate-500">{questions.length} questions</p>
           </div>
         </div>
-        <Button onClick={handleSave} className="bg-[#ea7924] hover:bg-[#d66a1f]" disabled={!hasChanges || saveMutation.isPending}>
-          <Save className="w-4 h-4 mr-2" />
-          {saveMutation.isPending ? "Saving..." : "Save Questions"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="w-4 h-4 mr-2" /> Import
+          </Button>
+          <Button onClick={handleSave} className="bg-[#ea7924] hover:bg-[#d66a1f]" disabled={!hasChanges || saveMutation.isPending}>
+            <Save className="w-4 h-4 mr-2" />
+            {saveMutation.isPending ? "Saving..." : "Save Questions"}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4 mb-6">
@@ -173,6 +180,15 @@ export default function SurveyBuilder() {
           </div>
         </CardContent>
       </Card>
+
+      <ImportQuestionsDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        onImport={(imported) => {
+          setQuestions(prev => [...prev, ...imported]);
+          setHasChanges(true);
+        }}
+      />
     </div>
   );
 }
