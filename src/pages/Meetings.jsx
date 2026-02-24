@@ -263,7 +263,7 @@ export default function Meetings() {
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   const past = filtered.filter(m => m.status === 'completed' || m.status === 'cancelled' || m.status === 'rescheduled')
     .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
-  const noAgenda = filtered.filter(m => !(m.has_agenda || (m.description && m.description.trim())))
+  const noAgenda = filtered.filter(m => !(m.has_agenda || (m.agenda_html && m.agenda_html.replace(/<[^>]*>/g, '').trim()) || (m.description && m.description.trim())))
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 
   return (

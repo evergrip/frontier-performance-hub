@@ -56,7 +56,7 @@ export default function MeetingCard({ meeting, users, meetingTypes = [], onEdit,
                   <Lock className="w-3 h-3" /> Private
                 </Badge>
               )}
-              {!(meeting.has_agenda || (meeting.description && meeting.description.trim())) && (
+              {!(meeting.has_agenda || (meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim()) || (meeting.description && meeting.description.trim())) && (
                 <Badge className="bg-red-100 text-red-700 gap-1">
                   <FileText className="w-3 h-3" /> No Agenda
                 </Badge>
