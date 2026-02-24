@@ -387,20 +387,28 @@ function QuestionInput({ question, value, onChange, accentColor }) {
       const min = question.min_value ?? 1;
       const max = question.max_value ?? 10;
       return (
-        <div className="flex gap-1 flex-wrap">
-          {Array.from({ length: max - min + 1 }, (_, i) => min + i).map(n => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => onChange(n)}
-              className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
-                value === n ? "text-white" : "bg-white hover:bg-slate-50"
-              }`}
-              style={value === n ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
-            >
-              {n}
-            </button>
-          ))}
+        <div>
+          <div className="flex gap-1 flex-wrap">
+            {Array.from({ length: max - min + 1 }, (_, i) => min + i).map(n => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => onChange(n)}
+                className={`w-10 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                  value === n ? "text-white" : "bg-white hover:bg-slate-50"
+                }`}
+                style={value === n ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {(question.min_label || question.max_label) && (
+            <div className="flex justify-between mt-1.5 text-xs text-slate-500">
+              <span>{question.min_label || ""}</span>
+              <span>{question.max_label || ""}</span>
+            </div>
+          )}
         </div>
       );
 
