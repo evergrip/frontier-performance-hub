@@ -13,6 +13,7 @@ import moment from "moment";
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
   const surveyId = urlParams.get("id");
+  const [exporting, setExporting] = useState(false);
 
   const { data: survey } = useQuery({
     queryKey: ["survey", surveyId],
@@ -40,14 +41,37 @@ export default function SurveyResults() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Link to={createPageUrl("Surveys")}>
-          <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">{survey.title} — Results</h1>
-          <p className="text-sm text-slate-500">{responses.length} responses</p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Link to={createPageUrl("Surveys")}>
+            <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">{survey.title} — Results</h1>
+            <p className="text-sm text-slate-500">{responses.length} responses</p>
+          </div>
         </div>
+        <Button
+          variant="outline"
+          disabled={exporting || responses.length === 0}
+          onClick={async () => {
+            setExporting(true);
+            const res = await base44.functions.invoke('exportSurveyResultsPdf', { survey_id: surveyId });
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(survey.title || 'survey').replace(/[^a-zA-Z0-9]/g, '_')}_results.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            setExporting(false);
+          }}
+        >
+          {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+          Export PDF
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
