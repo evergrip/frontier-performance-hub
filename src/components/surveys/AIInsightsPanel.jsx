@@ -6,7 +6,7 @@ import { Sparkles, Loader2, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 export default function AIInsightsPanel({ survey, responses }) {
-  const [insights, setInsights] = useState(null);
+  const [insights, setInsights] = useState(survey?.ai_insights || null);
   const [loading, setLoading] = useState(false);
 
   const generateInsights = async () => {
