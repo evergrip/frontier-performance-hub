@@ -391,11 +391,13 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
             agendaHtml={form.agenda_html || ''}
             minutesHtml={form.minutes_html || ''}
             agendaTemplateId={form.agenda_template_id || ''}
+            agendaSections={form.agenda_sections || []}
             meetingType={form.meeting_type}
             meetingTitle={form.title}
             onAgendaChange={v => updateField('agenda_html', v)}
             onMinutesChange={v => updateField('minutes_html', v)}
             onTemplateSelect={v => updateField('agenda_template_id', v)}
+            onAgendaSectionsChange={v => updateField('agenda_sections', v)}
             showMinutes={form.status === 'completed' || form.status === 'in_progress' || !!meeting}
           />
 
