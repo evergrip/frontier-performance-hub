@@ -277,9 +277,14 @@ export default function Meetings() {
           <h1 className="text-3xl font-bold text-slate-900">Meetings</h1>
           <p className="text-slate-500">Track meetings, action items, and outcomes</p>
         </div>
-        <Button onClick={() => { setEditingMeeting(null); setFormOpen(true); }}>
-          <Plus className="w-4 h-4 mr-2" /> Schedule Meeting
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setWalkthroughOpen(true)}>
+            <HelpCircle className="w-4 h-4 mr-2" /> How It Works
+          </Button>
+          <Button onClick={() => { setEditingMeeting(null); setFormOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" /> Schedule Meeting
+          </Button>
+        </div>
       </div>
 
       {/* KPI Stats */}
