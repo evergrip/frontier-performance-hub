@@ -33,7 +33,7 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
   const organizer = users.find(u => u.id === meeting.organizer_id);
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || 'Unknown';
   const getKPIName = (id) => kpis.find(k => k.id === id)?.name || '';
-  const hasAgenda = meeting.has_agenda || (meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (meeting.description && meeting.description.trim().length > 0);
+  const hasAgenda = meeting.has_agenda || (meeting.agenda_sections && meeting.agenda_sections.length > 0) || (meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (meeting.description && meeting.description.trim().length > 0);
   const parentMeeting = meeting.parent_meeting_id ? allMeetings.find(m => m.id === meeting.parent_meeting_id) : null;
   const getFileName = (url) => { try { return decodeURIComponent(url.split('/').pop().split('?')[0]); } catch { return 'File'; } };
 
@@ -174,8 +174,45 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             <MeetingMaterials materials={meeting.materials} readOnly />
           )}
 
-          {/* Rich Agenda */}
-          {meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim() && (
+          {/* Structured Agenda Sections */}
+          {(meeting.agenda_sections || []).length > 0 && (
+            <div>
+              <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-500" /> Agenda
+              </h4>
+              <div className="space-y-2">
+                {meeting.agenda_sections.map((section, sIdx) => (
+                  <div key={section.id || sIdx} className="border rounded-lg p-3 bg-slate-50">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm">{section.title}</span>
+                      {section.duration_minutes > 0 && (
+                        <Badge variant="outline" className="text-xs gap-1"><Clock className="w-3 h-3" /> {section.duration_minutes}m</Badge>
+                      )}
+                    </div>
+                    {section.description && <p className="text-xs text-slate-400 italic mb-1">{section.description}</p>}
+                    {section.content && <p className="text-sm text-slate-600 whitespace-pre-wrap">{section.content}</p>}
+                    {(section.items || []).length > 0 && (
+                      <div className="space-y-1 mt-1">
+                        {section.items.map((item, iIdx) => (
+                          <div key={iIdx} className="flex items-center gap-2 text-sm">
+                            {section.type === 'checklist' ? (
+                              <span className={item.checked ? 'text-green-600' : 'text-slate-400'}>{item.checked ? '☑' : '☐'}</span>
+                            ) : (
+                              <span className="text-slate-400 text-xs">{iIdx + 1}.</span>
+                            )}
+                            <span className={item.checked ? 'line-through text-slate-400' : ''}>{item.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Rich Agenda (legacy HTML) */}
+          {meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim() && !(meeting.agenda_sections || []).length && (
             <div>
               <h4 className="font-medium text-sm mb-1 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-500" /> Agenda
