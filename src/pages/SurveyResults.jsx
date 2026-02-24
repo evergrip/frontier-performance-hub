@@ -14,6 +14,12 @@ export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
   const surveyId = urlParams.get("id");
   const [exporting, setExporting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.SurveyResponse.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["survey-responses", surveyId] }),
+  });
 
   const { data: survey } = useQuery({
     queryKey: ["survey", surveyId],
@@ -126,7 +132,12 @@ export default function SurveyResults() {
                     {r.respondent_name && ` — ${r.respondent_name}`}
                     {!r.respondent_name && r.respondent_email && ` — ${r.respondent_email}`}
                   </CardTitle>
-                  <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-400 hover:text-red-600" onClick={() => { if (confirm("Delete this response? This cannot be undone.")) deleteMutation.mutate(r.id); }}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
