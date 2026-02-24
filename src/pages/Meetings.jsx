@@ -18,6 +18,7 @@ import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
 import { getGoogleCalendarUrl } from '../components/meetings/CalendarInviteButton';
 import AllActionItemsView from '../components/meetings/AllActionItemsView';
 import AgendaTemplatesTab from '@/components/meetings/AgendaTemplatesTab';
+import MeetingWalkthrough from '@/components/meetings/MeetingWalkthrough';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
