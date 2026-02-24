@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, CalendarDays, AlertTriangle, ListChecks } from 'lucide-react';
+import { Plus, Search, CalendarDays, AlertTriangle, ListChecks, ClipboardList } from 'lucide-react';
 import MeetingFormDialog from '../components/meetings/MeetingFormDialog';
 import MeetingCard from '../components/meetings/MeetingCard';
 import MeetingDetailDialog from '../components/meetings/MeetingDetailDialog';
@@ -17,6 +17,7 @@ import FirefliesSyncDialog from '../components/meetings/FirefliesSyncDialog';
 import { generateOccurrences } from '../components/meetings/RecurrenceConfig';
 import { getGoogleCalendarUrl } from '../components/meetings/CalendarInviteButton';
 import AllActionItemsView from '../components/meetings/AllActionItemsView';
+import AgendaTemplatesTab from '../components/meetings/AgendaTemplatesTab';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
@@ -327,6 +328,9 @@ export default function Meetings() {
             <ListChecks className="w-3 h-3" /> Action Items
           </TabsTrigger>
           <TabsTrigger value="all">All ({filtered.length})</TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1">
+            <ClipboardList className="w-3 h-3" /> Templates
+          </TabsTrigger>
           {currentUser?.role === 'admin' && (
             <TabsTrigger value="no_agenda" className="text-red-600">
               <AlertTriangle className="w-3 h-3 mr-1" /> No Agenda ({noAgenda.length})
@@ -391,6 +395,10 @@ export default function Meetings() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-4">
+          <AgendaTemplatesTab />
         </TabsContent>
 
         {currentUser?.role === 'admin' && (
