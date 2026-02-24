@@ -52,6 +52,7 @@ export default function Layout({ children, currentPageName }) {
     ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
     { name: 'Reports', icon: Settings, page: 'Reports' },
     { name: 'Meetings', icon: MessageSquare, page: 'Meetings' },
+    { name: 'Agenda Templates', icon: ClipboardList, page: 'AgendaTemplates' },
     { name: 'My Performance', icon: Target, page: 'MyKPIs' },
     { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
     { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },

@@ -33,7 +33,7 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
   const organizer = users.find(u => u.id === meeting.organizer_id);
   const getUserName = (id) => users.find(u => u.id === id)?.full_name || 'Unknown';
   const getKPIName = (id) => kpis.find(k => k.id === id)?.name || '';
-  const hasAgenda = meeting.has_agenda || (meeting.description && meeting.description.trim().length > 0);
+  const hasAgenda = meeting.has_agenda || (meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (meeting.description && meeting.description.trim().length > 0);
   const parentMeeting = meeting.parent_meeting_id ? allMeetings.find(m => m.id === meeting.parent_meeting_id) : null;
   const getFileName = (url) => { try { return decodeURIComponent(url.split('/').pop().split('?')[0]); } catch { return 'File'; } };
 
@@ -174,11 +174,31 @@ export default function MeetingDetailDialog({ open, onOpenChange, meeting, users
             <MeetingMaterials materials={meeting.materials} readOnly />
           )}
 
+          {/* Rich Agenda */}
+          {meeting.agenda_html && meeting.agenda_html.replace(/<[^>]*>/g, '').trim() && (
+            <div>
+              <h4 className="font-medium text-sm mb-1 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-500" /> Agenda
+              </h4>
+              <div className="prose prose-sm max-w-none text-slate-600 bg-slate-50 rounded-lg p-3 border" dangerouslySetInnerHTML={{ __html: meeting.agenda_html }} />
+            </div>
+          )}
+
           {/* Description */}
           {meeting.description && (
             <div>
-              <h4 className="font-medium text-sm mb-1">Agenda / Description</h4>
+              <h4 className="font-medium text-sm mb-1">Description</h4>
               <p className="text-sm text-slate-600 whitespace-pre-wrap">{meeting.description}</p>
+            </div>
+          )}
+
+          {/* Meeting Minutes */}
+          {meeting.minutes_html && meeting.minutes_html.replace(/<[^>]*>/g, '').trim() && (
+            <div>
+              <h4 className="font-medium text-sm mb-1 flex items-center gap-2">
+                <ClipboardCheck className="w-4 h-4 text-green-500" /> Meeting Minutes
+              </h4>
+              <div className="prose prose-sm max-w-none text-slate-600 bg-green-50 rounded-lg p-3 border border-green-200" dangerouslySetInnerHTML={{ __html: meeting.minutes_html }} />
             </div>
           )}
 

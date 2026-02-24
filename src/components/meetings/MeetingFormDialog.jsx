@@ -14,6 +14,7 @@ import RecurrenceConfig from './RecurrenceConfig';
 import ParentMeetingPicker from './ParentMeetingPicker';
 import PreviousBusinessSection from './PreviousBusinessSection';
 import MeetingMaterials from './MeetingMaterials';
+import MeetingAgendaEditor from './MeetingAgendaEditor';
 
 const EMPTY_ACTION_ITEM = { description: '', assigned_to_user_id: '', due_date: '', is_completed: false, linked_kpi_id: '', kpi_impact_value: 1 };
 
@@ -227,8 +228,8 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
     if (!data.related_client_id) delete data.related_client_id;
     if (!data.related_lead_id) delete data.related_lead_id;
     if (!data.related_project_id) delete data.related_project_id;
-    // Auto-set has_agenda based on whether description is filled
-    data.has_agenda = !!(data.description && data.description.trim().length > 0);
+    // Auto-set has_agenda based on whether agenda or description is filled
+    data.has_agenda = !!((data.agenda_html && data.agenda_html.replace(/<[^>]*>/g, '').trim().length > 0) || (data.description && data.description.trim().length > 0));
     // Clean parent_meeting_id
     if (!data.parent_meeting_id) delete data.parent_meeting_id;
     // Clean KPI links on action items
@@ -385,10 +386,23 @@ export default function MeetingFormDialog({ open, onOpenChange, meeting, onSubmi
             </Select>
           </div>
 
-          {/* Description */}
+          {/* Rich Agenda & Minutes Editor */}
+          <MeetingAgendaEditor
+            agendaHtml={form.agenda_html || ''}
+            minutesHtml={form.minutes_html || ''}
+            agendaTemplateId={form.agenda_template_id || ''}
+            meetingType={form.meeting_type}
+            meetingTitle={form.title}
+            onAgendaChange={v => updateField('agenda_html', v)}
+            onMinutesChange={v => updateField('minutes_html', v)}
+            onTemplateSelect={v => updateField('agenda_template_id', v)}
+            showMinutes={form.status === 'completed' || form.status === 'in_progress' || !!meeting}
+          />
+
+          {/* Plain text description (kept for backward compat / quick notes) */}
           <div>
-            <Label>Agenda / Description</Label>
-            <Textarea value={form.description || ''} onChange={e => updateField('description', e.target.value)} placeholder="Meeting agenda or purpose" rows={3} />
+            <Label>Quick Description / Notes</Label>
+            <Textarea value={form.description || ''} onChange={e => updateField('description', e.target.value)} placeholder="Optional plain-text summary" rows={2} />
           </div>
 
           {/* Attendees */}
