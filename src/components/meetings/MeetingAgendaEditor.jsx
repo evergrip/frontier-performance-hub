@@ -89,24 +89,28 @@ Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise an
             </Button>
           </div>
 
-          <ReactQuill
-            value={agendaHtml || ''}
-            onChange={onAgendaChange}
-            placeholder="Write your meeting agenda here..."
-            theme="snow"
-            style={{ minHeight: 150 }}
-          />
+          <div className="bg-white rounded-md border">
+            <ReactQuill
+              value={agendaHtml || ''}
+              onChange={onAgendaChange}
+              placeholder="Write your meeting agenda here..."
+              theme="snow"
+              modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+            />
+          </div>
         </TabsContent>
 
         {showMinutes && (
           <TabsContent value="minutes" className="mt-3">
-            <ReactQuill
-              value={minutesHtml || ''}
-              onChange={onMinutesChange}
-              placeholder="Record meeting minutes here..."
-              theme="snow"
-              style={{ minHeight: 200 }}
-            />
+            <div className="bg-white rounded-md border">
+              <ReactQuill
+                value={minutesHtml || ''}
+                onChange={onMinutesChange}
+                placeholder="Record meeting minutes here..."
+                theme="snow"
+                modules={{ toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link'], ['clean']] }}
+              />
+            </div>
           </TabsContent>
         )}
       </Tabs>
