@@ -36,6 +36,19 @@ export default function SurveyPublic() {
   const accentColor = styling.accent_color || "#ea7924";
   const buttonColor = styling.button_color || "#ea7924";
   const buttonTextColor = styling.button_text_color || "#ffffff";
+  const headingColor = styling.heading_color || textColor;
+  const descColor = styling.description_color || undefined;
+  const cardBg = styling.card_background_color || "#ffffff";
+  const cardBorder = styling.card_border_color || "#e2e8f0";
+  const inputBg = styling.input_background_color || "#ffffff";
+  const inputBorder = styling.input_border_color || "#e2e8f0";
+  const inputText = styling.input_text_color || textColor;
+  const borderRadius = styling.border_radius || "12px";
+  const btnRadius = styling.button_border_radius || "12px";
+  const btnHover = styling.button_hover_color || undefined;
+  const bodyFont = styling.font_family || undefined;
+  const headingFont = styling.heading_font_family || styling.font_family || undefined;
+  const [btnHovered, setBtnHovered] = useState(false);
 
   const setAnswer = (qId, value) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
@@ -141,44 +154,78 @@ export default function SurveyPublic() {
     );
   }
 
+  const visibleQuestions = (survey.questions || []).filter(q => evaluateLogic(q));
+  const totalQuestions = visibleQuestions.length;
+  const answeredCount = visibleQuestions.filter(q => {
+    const a = answers[q.id];
+    return a !== undefined && a !== null && a !== "" && (!Array.isArray(a) || a.length > 0);
+  }).length;
+  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+
+  const fontImports = [styling.font_url, styling.heading_font_url].filter(Boolean);
+
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor, fontFamily: bodyFont }}>
+        {fontImports.map((url, i) => <link key={i} href={url} rel="stylesheet" />)}
         <div className="text-center max-w-md px-6">
           <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: accentColor }} />
-          <h2 className="text-2xl font-bold mb-2" style={{ color: textColor }}>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: headingColor, fontFamily: headingFont }}>
             {pipedText(survey.success_message || "Thank you!")}
           </h2>
-          {survey.redirect_url && <p className="text-sm text-slate-500">Redirecting...</p>}
+          {survey.redirect_url && <p className="text-sm" style={{ color: descColor || "#64748b" }}>Redirecting...</p>}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: bgColor, color: textColor }}>
+    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: bgColor, color: textColor, fontFamily: bodyFont }}>
+      {fontImports.map((url, i) => <link key={i} href={url} rel="stylesheet" />)}
+      <style>{`
+        .survey-input input, .survey-input textarea, .survey-input select, .survey-input [role="combobox"] {
+          background-color: ${inputBg} !important;
+          border-color: ${inputBorder} !important;
+          color: ${inputText} !important;
+        }
+        .survey-input input:focus, .survey-input textarea:focus {
+          border-color: ${accentColor} !important;
+          box-shadow: 0 0 0 1px ${accentColor}40 !important;
+        }
+      `}</style>
       <div className="max-w-2xl mx-auto">
         {styling.logo_url && (
           <img src={styling.logo_url} alt="Logo" className="h-12 mb-4" />
         )}
         {styling.banner_image_url && (
-          <img src={styling.banner_image_url} alt="Banner" className="w-full rounded-xl mb-6 max-h-48 object-cover" />
+          <img src={styling.banner_image_url} alt="Banner" className="w-full mb-6 max-h-48 object-cover" style={{ borderRadius }} />
         )}
 
-        <h1 className="text-3xl font-bold mb-2">{survey.title}</h1>
-        {survey.description && <p className="text-lg opacity-80 mb-8">{survey.description}</p>}
+        <h1 className="text-3xl font-bold mb-2" style={{ color: headingColor, fontFamily: headingFont }}>{survey.title}</h1>
+        {survey.description && <p className="text-lg mb-6" style={{ color: descColor || `${textColor}cc` }}>{survey.description}</p>}
+
+        {/* Progress bar */}
+        <div className="mb-6">
+          <div className="flex justify-between text-xs mb-1" style={{ color: descColor || "#64748b" }}>
+            <span>{answeredCount} of {totalQuestions} answered</span>
+            <span>{progressPct}%</span>
+          </div>
+          <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${styling.progress_bar_color || accentColor}20` }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progressPct}%`, backgroundColor: styling.progress_bar_color || accentColor }} />
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {(survey.questions || []).filter(q => evaluateLogic(q)).map((q, idx) => (
-            <div key={q.id} className="bg-white rounded-xl p-6 shadow-sm border">
+          {visibleQuestions.map((q, idx) => (
+            <div key={q.id} className="p-6 shadow-sm survey-input" style={{ backgroundColor: cardBg, borderRadius, border: `1px solid ${cardBorder}` }}>
               <div className="mb-3">
-                <Label className="text-base font-medium">
+                <Label className="text-base font-medium" style={{ color: headingColor, fontFamily: headingFont }}>
                   {pipedText(q.text)}
                   {q.required && <span className="text-red-500 ml-1">*</span>}
                 </Label>
-                {q.description && <p className="text-sm opacity-60 mt-1">{pipedText(q.description)}</p>}
-                {q.image_url && <img src={q.image_url} alt="" className="mt-3 rounded-lg max-h-64 object-contain" />}
-                {q.video_url && <video src={q.video_url} controls className="mt-3 rounded-lg max-h-64 w-full" />}
+                {q.description && <p className="text-sm mt-1" style={{ color: descColor || `${textColor}99` }}>{pipedText(q.description)}</p>}
+                {q.image_url && <img src={q.image_url} alt="" className="mt-3 max-h-64 object-contain" style={{ borderRadius }} />}
+                {q.video_url && <video src={q.video_url} controls className="mt-3 max-h-64 w-full" style={{ borderRadius }} />}
               </div>
 
               <QuestionInput
@@ -190,15 +237,21 @@ export default function SurveyPublic() {
             </div>
           ))}
 
-          <Button
+          <button
             type="submit"
-            className="w-full py-6 text-lg font-semibold rounded-xl"
-            style={{ backgroundColor: buttonColor, color: buttonTextColor }}
+            className="w-full py-4 text-lg font-semibold transition-colors"
+            style={{
+              backgroundColor: btnHovered && btnHover ? btnHover : buttonColor,
+              color: buttonTextColor,
+              borderRadius: btnRadius,
+            }}
+            onMouseEnter={() => setBtnHovered(true)}
+            onMouseLeave={() => setBtnHovered(false)}
             disabled={submitting}
           >
-            {submitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
+            {submitting ? <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> : null}
             {submitting ? "Submitting..." : "Submit Survey"}
-          </Button>
+          </button>
         </form>
       </div>
     </div>
