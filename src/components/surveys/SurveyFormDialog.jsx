@@ -11,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Image } from "lucide-react";
 import BrandAssetPicker from "../common/BrandAssetPicker";
+import WelcomePageEditor from "./WelcomePageEditor";
+import ThankYouPageEditor from "./ThankYouPageEditor";
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -219,7 +221,7 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
   const queryClient = useQueryClient();
   const isEditing = !!survey;
 
-  const [form, setForm] = useState({
+  const defaultForm = {
     title: "",
     description: "",
     status: "draft",
@@ -229,7 +231,14 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
     success_message: "Thank you for completing this survey!",
     redirect_url: "",
     styling: {},
-  });
+    welcome_page_enabled: false,
+    welcome_page_content: "",
+    welcome_page_button_text: "Start Survey",
+    thank_you_page_content: "",
+    thank_you_show_social_share: false,
+  };
+
+  const [form, setForm] = useState(defaultForm);
 
   useEffect(() => {
     if (survey) {
@@ -243,19 +252,14 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
         success_message: survey.success_message || "Thank you for completing this survey!",
         redirect_url: survey.redirect_url || "",
         styling: survey.styling || {},
+        welcome_page_enabled: survey.welcome_page_enabled || false,
+        welcome_page_content: survey.welcome_page_content || "",
+        welcome_page_button_text: survey.welcome_page_button_text || "Start Survey",
+        thank_you_page_content: survey.thank_you_page_content || "",
+        thank_you_show_social_share: survey.thank_you_show_social_share || false,
       });
     } else {
-      setForm({
-        title: "",
-        description: "",
-        status: "draft",
-        access_type: "link_only",
-        allow_anonymous_responses: false,
-        allow_multiple_responses: false,
-        success_message: "Thank you for completing this survey!",
-        redirect_url: "",
-        styling: {},
-      });
+      setForm(defaultForm);
     }
   }, [survey, open]);
 
@@ -283,7 +287,7 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Survey" : "Create New Survey"}</DialogTitle>
         </DialogHeader>
@@ -291,6 +295,8 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
           <Tabs defaultValue="general">
             <TabsList className="w-full">
               <TabsTrigger value="general" className="flex-1">General</TabsTrigger>
+              <TabsTrigger value="welcome" className="flex-1">Welcome</TabsTrigger>
+              <TabsTrigger value="thankyou" className="flex-1">Thank You</TabsTrigger>
               <TabsTrigger value="access" className="flex-1">Access</TabsTrigger>
               <TabsTrigger value="styling" className="flex-1">Styling</TabsTrigger>
             </TabsList>
@@ -316,14 +322,14 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Success Message</Label>
-                <Textarea value={form.success_message} onChange={e => setForm(p => ({ ...p, success_message: e.target.value }))} rows={2} />
-              </div>
-              <div>
-                <Label>Redirect URL (optional)</Label>
-                <Input value={form.redirect_url} onChange={e => setForm(p => ({ ...p, redirect_url: e.target.value }))} placeholder="https://..." />
-              </div>
+            </TabsContent>
+
+            <TabsContent value="welcome" className="mt-4">
+              <WelcomePageEditor form={form} setForm={setForm} />
+            </TabsContent>
+
+            <TabsContent value="thankyou" className="mt-4">
+              <ThankYouPageEditor form={form} setForm={setForm} />
             </TabsContent>
 
             <TabsContent value="access" className="space-y-4 mt-4">
