@@ -174,6 +174,20 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
               </div>
             )}
 
+            {/* Scale labels */}
+            {question.type === "scale" && (
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label className="text-xs">Min Label</Label>
+                  <Input value={question.min_label || ""} onChange={e => update("min_label", e.target.value)} placeholder="e.g. Not at all likely" className="text-sm" />
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs">Max Label</Label>
+                  <Input value={question.max_label || ""} onChange={e => update("max_label", e.target.value)} placeholder="e.g. Extremely likely" className="text-sm" />
+                </div>
+              </div>
+            )}
+
             {/* Question-level media */}
             <div className="flex gap-2">
               <div>
