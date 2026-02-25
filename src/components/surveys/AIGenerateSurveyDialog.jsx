@@ -20,7 +20,7 @@ const QUESTION_TYPES = [
 export default function AIGenerateSurveyDialog({ open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState("");
-  const [questionCount, setQuestionCount] = useState("8");
+  const [questionCount, setQuestionCount] = useState("auto");
   const [generating, setGenerating] = useState(false);
 
   const createMutation = useMutation({
@@ -41,7 +41,7 @@ export default function AIGenerateSurveyDialog({ open, onOpenChange }) {
 
 "${prompt.trim()}"
 
-Generate exactly ${questionCount} questions. Mix question types for a good survey experience.
+${questionCount === 'auto' ? 'Generate as many questions as you think are needed to thoroughly cover the topic — no more, no less. Use your judgment on the optimal number.' : `Generate exactly ${questionCount} questions.`} Mix question types for a good survey experience.
 
 Return a JSON object with:
 - title: a clear survey title
@@ -144,6 +144,7 @@ Guidelines:
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="auto">AI Optimized</SelectItem>
                 <SelectItem value="5">5 questions</SelectItem>
                 <SelectItem value="8">8 questions</SelectItem>
                 <SelectItem value="10">10 questions</SelectItem>
