@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import FileAuditChecklist, { getChecks } from '../components/common/FileAuditChecklist';
+import AuditItemFixer from '../components/common/AuditItemFixer';
 
 export default function Sales() {
   const queryClient = useQueryClient();
