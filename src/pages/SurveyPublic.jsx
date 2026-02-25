@@ -31,6 +31,9 @@ export default function SurveyPublic() {
       return res.data?.survey || null;
     },
     enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
   });
 
   const styling = survey?.styling || {};
@@ -135,8 +138,9 @@ export default function SurveyPublic() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-[#ea7924]" />
+        <p className="text-sm text-slate-400">Loading survey...</p>
       </div>
     );
   }

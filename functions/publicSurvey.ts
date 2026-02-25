@@ -7,12 +7,14 @@ Deno.serve(async (req) => {
 
     if (action === "get") {
       // Fetch survey by share_token using service role (no auth needed)
-      const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token });
+      const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token }, '-created_date', 1);
       const survey = surveys[0] || null;
       if (!survey) {
         return Response.json({ error: "Survey not found" }, { status: 404 });
       }
-      return Response.json({ survey });
+      // Return only fields needed for rendering, strip heavy analytics
+      const { ai_insights, ai_insights_generated_at, ai_insights_response_count, ...surveyData } = survey;
+      return Response.json({ survey: surveyData });
     }
 
     if (action === "submit") {
