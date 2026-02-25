@@ -103,7 +103,7 @@ export default function Layout({ children, currentPageName }) {
       <style>{`
         :root {
           --navy: #333645;
-          --orange: #ea7924;
+          --orange: ${branding.primary_color};
           --slate-dark: #333333;
           --slate-light: #CBD5E1;
           --slate-bg: #F1F5F9;
@@ -135,11 +135,15 @@ export default function Layout({ children, currentPageName }) {
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#ea7924] to-[#d66a1f] flex items-center justify-center shadow-lg shadow-[#ea7924]/20">
-                  <Building2 className="w-6 h-6 text-white" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden" style={{ background: `linear-gradient(135deg, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` }}>
+                  {branding.logo_url ? (
+                    <img src={branding.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <Building2 className="w-6 h-6 text-white" />
+                  )}
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold text-[#333645]">Frontier Building Group</h1>
+                  <h1 className="text-lg font-bold text-[#333645]">{branding.company_name}</h1>
                   <p className="text-xs text-[#333333]">Performance Hub</p>
                 </div>
               </div>
@@ -167,13 +171,14 @@ export default function Layout({ children, currentPageName }) {
                     flex items-center gap-3 px-4 py-3 rounded-xl
                     transition-all duration-200 group
                     ${active 
-                      ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                      ? 'text-white shadow-lg' 
                       : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                     }
                   `}
+                  style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
+                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} style={!active ? {} : {}} />
                   <span className="font-medium">{item.name}</span>
                   {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                 </Link>
@@ -195,13 +200,14 @@ export default function Layout({ children, currentPageName }) {
                         flex items-center gap-3 px-4 py-3 rounded-xl
                         transition-all duration-200 group
                         ${active 
-                          ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                          ? 'text-white shadow-lg' 
                           : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                         }
                       `}
+                      style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} />
                       <span className="font-medium">{item.name}</span>
                       {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                     </Link>
