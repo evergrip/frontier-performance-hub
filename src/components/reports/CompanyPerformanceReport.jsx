@@ -13,6 +13,8 @@ import { format, eachMonthOfInterval, endOfMonth } from 'date-fns';
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function CompanyPerformanceReport({ dateRange, staffId }) {
+  const [drilldown, setDrilldown] = useState(null);
+
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
