@@ -73,6 +73,34 @@ function ImageUploadSection({ styling, updateStyling, openPicker }) {
     <div className="space-y-3">
       <ImageUploadField label="Logo" fieldKey="logo_url" styling={styling} updateStyling={updateStyling} openPicker={openPicker} pickerType="logo" previewClassName="h-10" />
       <ImageUploadField label="Banner Image" fieldKey="banner_image_url" styling={styling} updateStyling={updateStyling} openPicker={openPicker} pickerType="banner" previewClassName="h-16 w-full object-cover" />
+      {styling.banner_image_url && (
+        <div>
+          <Label className="text-xs">Banner Display Mode</Label>
+          <Select value={styling.banner_fit || "cover"} onValueChange={v => updateStyling("banner_fit", v)}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Cover (fills area, may crop)</SelectItem>
+              <SelectItem value="contain">Contain (fits entire image)</SelectItem>
+              <SelectItem value="auto">Original Size</SelectItem>
+            </SelectContent>
+          </Select>
+          {styling.banner_fit !== "auto" && (
+            <div className="mt-2">
+              <Label className="text-xs">Banner Height</Label>
+              <Select value={styling.banner_height || "200px"} onValueChange={v => updateStyling("banner_height", v)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="120px">Small (120px)</SelectItem>
+                  <SelectItem value="160px">Medium (160px)</SelectItem>
+                  <SelectItem value="200px">Large (200px)</SelectItem>
+                  <SelectItem value="280px">Extra Large (280px)</SelectItem>
+                  <SelectItem value="360px">Full (360px)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

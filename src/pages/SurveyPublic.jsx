@@ -199,7 +199,20 @@ export default function SurveyPublic() {
           <img src={styling.logo_url} alt="Logo" className="h-12 mb-4" />
         )}
         {styling.banner_image_url && (
-          <img src={styling.banner_image_url} alt="Banner" className="w-full mb-6 max-h-48 object-cover" style={{ borderRadius }} />
+          <div className="w-full mb-6 overflow-hidden" style={{ 
+            borderRadius,
+            height: styling.banner_fit === "auto" ? "auto" : (styling.banner_height || "200px"),
+          }}>
+            <img 
+              src={styling.banner_image_url} 
+              alt="Banner" 
+              className="w-full"
+              style={{ 
+                objectFit: styling.banner_fit || "cover",
+                height: styling.banner_fit === "auto" ? "auto" : "100%",
+              }} 
+            />
+          </div>
         )}
 
         <h1 className="text-3xl font-bold mb-2" style={{ color: headingColor, fontFamily: headingFont }}>{survey.title}</h1>
