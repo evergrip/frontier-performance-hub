@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Image } from "lucide-react";
+import { Image, Upload, Loader2, X } from "lucide-react";
 import BrandAssetPicker from "../common/BrandAssetPicker";
 import WelcomePageEditor from "./WelcomePageEditor";
 import ThankYouPageEditor from "./ThankYouPageEditor";
@@ -180,24 +180,7 @@ function StylingTab({ form, updateStyling, setForm }) {
 
       {/* Images section */}
       {section === "images" && (
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Logo</Label>
-            <div className="flex gap-2 items-center">
-              <Input value={s.logo_url || ""} onChange={e => updateStyling("logo_url", e.target.value)} placeholder="https://..." className="flex-1" />
-              <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => openPicker("logo", "logo_url")}>Brand</Button>
-            </div>
-            {s.logo_url && <img src={s.logo_url} alt="logo" className="h-10 mt-2 rounded" />}
-          </div>
-          <div>
-            <Label className="text-xs">Banner Image</Label>
-            <div className="flex gap-2 items-center">
-              <Input value={s.banner_image_url || ""} onChange={e => updateStyling("banner_image_url", e.target.value)} placeholder="https://..." className="flex-1" />
-              <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => openPicker("banner", "banner_image_url")}>Brand</Button>
-            </div>
-            {s.banner_image_url && <img src={s.banner_image_url} alt="banner" className="h-16 mt-2 rounded w-full object-cover" />}
-          </div>
-        </div>
+        <ImageUploadSection styling={s} updateStyling={updateStyling} openPicker={openPicker} />
       )}
 
       {/* Shape section */}
