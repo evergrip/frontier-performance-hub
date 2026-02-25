@@ -18,36 +18,43 @@ export default function Layout({ children, currentPageName }) {
   const [branding, setBranding] = useState({ company_name: 'Frontier Building Group', logo_url: '', primary_color: '#ea7924', accent_color: '#d66a1f' });
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) {
-          const currentUser = await base44.auth.me();
-          setUser(currentUser);
-        } else if (!PUBLIC_PAGES.includes(currentPageName)) {
-          base44.auth.redirectToLogin();
-          return;
-        }
-      } catch (error) {
-        if (!PUBLIC_PAGES.includes(currentPageName)) {
-          base44.auth.redirectToLogin();
-          return;
-        }
-      }
-      setAuthChecked(true);
-    };
-    loadUser();
-    base44.entities.CompanySettings.list().then(settings => {
-      if (settings.length > 0) {
-        setSchedulerEnabled(!!settings[0].scheduler_enabled);
+    const init = async () => {
+      // Load branding and auth in parallel
+      const [, settingsResult] = await Promise.allSettled([
+        (async () => {
+          try {
+            const isAuth = await base44.auth.isAuthenticated();
+            if (isAuth) {
+              const currentUser = await base44.auth.me();
+              setUser(currentUser);
+            } else if (!PUBLIC_PAGES.includes(currentPageName)) {
+              base44.auth.redirectToLogin();
+              return;
+            }
+          } catch (error) {
+            if (!PUBLIC_PAGES.includes(currentPageName)) {
+              base44.auth.redirectToLogin();
+              return;
+            }
+          }
+        })(),
+        base44.entities.CompanySettings.list().catch(() => [])
+      ]);
+
+      if (settingsResult.status === 'fulfilled' && settingsResult.value?.length > 0) {
+        const s = settingsResult.value[0];
+        setSchedulerEnabled(!!s.scheduler_enabled);
         setBranding({
-          company_name: settings[0].company_name || 'Frontier Building Group',
-          logo_url: settings[0].logo_url || '',
-          primary_color: settings[0].primary_color || '#ea7924',
-          accent_color: settings[0].accent_color || '#d66a1f',
+          company_name: s.company_name || 'Frontier Building Group',
+          logo_url: s.logo_url || '',
+          primary_color: s.primary_color || '#ea7924',
+          accent_color: s.accent_color || '#d66a1f',
         });
       }
-    }).catch(() => {});
+
+      setAuthChecked(true);
+    };
+    init();
   }, [currentPageName]);
 
   const navigation = [
