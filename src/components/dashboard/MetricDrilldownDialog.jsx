@@ -407,6 +407,30 @@ export default function MetricDrilldownDialog({
         };
       }
 
+      case 'avgProjectSize': {
+        const closedCon = projects.filter(p => p.project_type === 'construction' && p.status === 'closed')
+          .filter(p => { if (!dateRange.start || !dateRange.end) return true; const d = getProjectEffectiveDate(p); return d >= dateRange.start && d <= dateRange.end; })
+          .sort((a, b) => (b.contract_value || 0) - (a.contract_value || 0));
+        const totalVal = closedCon.reduce((s, p) => s + (p.contract_value || 0), 0);
+        const avg = closedCon.length > 0 ? totalVal / closedCon.length : 0;
+        return {
+          title: 'Average Project Size',
+          formula: `Sum of contract_value / count of closed construction projects in date range. $${(totalVal/1000).toFixed(0)}K / ${closedCon.length} projects = $${(avg/1000).toFixed(0)}K avg`,
+          items: closedCon,
+          columns: ['Project', 'Client', 'Contract Value', 'Margin %', 'Closed Date'],
+          renderRow: (p) => (
+            <TableRow key={p.id}>
+              <TableCell className="font-medium">{p.title}</TableCell>
+              <TableCell>{getClientName(p.client_id)}</TableCell>
+              <TableCell className="font-semibold">${((p.contract_value || 0) / 1000).toFixed(0)}K</TableCell>
+              <TableCell>{(p.actual_margin || 0).toFixed(1)}%</TableCell>
+              <TableCell>{p.actual_completion_date ? format(new Date(p.actual_completion_date), 'MMM d, yyyy') : '-'}</TableCell>
+            </TableRow>
+          ),
+          total: totalVal
+        };
+      }
+
       default:
         return null;
     }
@@ -420,6 +444,14 @@ export default function MetricDrilldownDialog({
         <DialogHeader>
           <DialogTitle>{config.title}</DialogTitle>
         </DialogHeader>
+
+        {/* Formula / Calculation Explanation */}
+        {config.formula && (
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-2">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">How this is calculated</p>
+            <p className="text-xs text-slate-700 leading-relaxed">{config.formula}</p>
+          </div>
+        )}
 
         {config.total !== null && config.total !== undefined && (
           <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-100 rounded-lg border border-amber-200 mb-2">
