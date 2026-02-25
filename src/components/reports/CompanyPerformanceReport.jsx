@@ -229,6 +229,83 @@ export default function CompanyPerformanceReport({ dateRange, staffId }) {
     ].filter(d => d.value > 0);
   }, [companyKPIs]);
 
+  // Drilldown configurations
+  const drilldownConfigs = useMemo(() => {
+    if (!companyKPIs) return {};
+
+    const closedConstruction = projects.filter(p => {
+      if (p.project_type !== 'construction' || p.status !== 'closed') return false;
+      const history = p.status_history || [];
+      const closedEntry = [...history].reverse().find(h => h.status === 'closed');
+      const closedDate = closedEntry ? new Date(closedEntry.entered_date) : (p.actual_completion_date ? new Date(p.actual_completion_date) : null);
+      if (!closedDate) return false;
+      return closedDate >= dateRange.start && closedDate <= dateRange.end;
+    });
+
+    const closedPrecon = sales.filter(s => {
+      if (s.sale_type !== 'preconstruction' || s.status !== 'closed_won') return false;
+      const history = s.phase_history || [];
+      const closedEntry = [...history].reverse().find(h => h.status === 'closed_won');
+      const closedDate = closedEntry ? new Date(closedEntry.entered_date) : (s.close_date ? new Date(s.close_date) : null);
+      if (!closedDate) return false;
+      return closedDate >= dateRange.start && closedDate <= dateRange.end;
+    });
+
+    return {
+      totalRevenue: {
+        title: 'Total Revenue Breakdown',
+        formula: `Construction revenue (contract_value of ${closedConstruction.length} closed projects) + Pre-construction revenue (contract_value of ${closedPrecon.length} closed_won precon sales). Construction: $${(companyKPIs.conRevenue/1000).toFixed(0)}K + Precon: $${(companyKPIs.preconRevenue/1000).toFixed(0)}K = $${(companyKPIs.totalRevenue/1000).toFixed(0)}K`,
+        items: [
+          ...closedConstruction.map(p => ({ ...p, _type: 'construction', _value: p.contract_value || 0 })),
+          ...closedPrecon.map(s => ({ ...s, _type: 'precon', _value: s.contract_value || 0 })),
+        ],
+        columns: ['Name', 'Type', 'Client', 'Value'],
+      },
+      grossMargin: {
+        title: 'Gross Margin Breakdown',
+        formula: `(Total Revenue - Construction Costs) / Total Revenue. ($${(companyKPIs.totalRevenue/1000).toFixed(0)}K - $${(companyKPIs.conCosts/1000).toFixed(0)}K) / $${(companyKPIs.totalRevenue/1000).toFixed(0)}K = ${companyKPIs.grossMargin.toFixed(1)}%. Note: precon costs are not tracked separately, so precon revenue is treated as 100% margin.`,
+        items: closedConstruction.map(p => ({ ...p, _type: 'construction', _value: p.contract_value || 0, _cost: p.actual_costs || 0, _margin: p.contract_value ? ((p.contract_value - (p.actual_costs || 0)) / p.contract_value * 100) : 0 })),
+        columns: ['Project', 'Client', 'Contract', 'Costs', 'Margin %'],
+      },
+      grossProfit: {
+        title: 'Gross Profit Breakdown',
+        formula: `Total Revenue ($${(companyKPIs.totalRevenue/1000).toFixed(0)}K) - Construction Costs ($${(companyKPIs.conCosts/1000).toFixed(0)}K) = $${(companyKPIs.totalGrossProfit/1000).toFixed(0)}K gross profit.`,
+        items: closedConstruction,
+        columns: ['Project', 'Client', 'Contract', 'Costs', 'Profit'],
+      },
+      activePipeline: {
+        title: 'Active Pipeline',
+        formula: `Sum of contract_value for all construction projects where status ≠ "closed". ${companyKPIs.activeProjectCount} active projects.`,
+        items: projects.filter(p => p.project_type === 'construction' && p.status !== 'closed'),
+        columns: ['Project', 'Client', 'Status', 'Contract Value'],
+      },
+      activeLeads: {
+        title: 'Active Leads',
+        formula: `Count of leads where status is NOT "converted" or "disqualified".`,
+        items: leads.filter(l => !['converted', 'disqualified'].includes(l.status)),
+        columns: ['Lead', 'Client', 'Status', 'Source'],
+      },
+      activeSales: {
+        title: 'Active Pre-Construction Sales',
+        formula: `Count of preconstruction sales not closed_won or closed_lost.`,
+        items: sales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status)),
+        columns: ['Sale', 'Client', 'Status', 'Contract Value'],
+      },
+      leadConversion: {
+        title: 'Lead Conversion Rate',
+        formula: `Converted leads / Total leads (all time). ${companyKPIs.convertedLeads} / ${companyKPIs.totalLeads} = ${companyKPIs.leadConversion.toFixed(1)}%`,
+        items: leads.filter(l => ['converted', 'disqualified'].includes(l.status)),
+        columns: ['Lead', 'Client', 'Status', 'Source'],
+      },
+      preconWinRate: {
+        title: 'Pre-Con Win Rate',
+        formula: `Won precon sales / Total precon sales (all time). ${companyKPIs.wonPreconSales} / ${companyKPIs.totalPreconSales} = ${companyKPIs.preconWinRate.toFixed(1)}%`,
+        items: sales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status)),
+        columns: ['Sale', 'Client', 'Status', 'Contract Value'],
+      },
+    };
+  }, [companyKPIs, projects, sales, leads, dateRange]);
+
   if (!dateRange.start || !dateRange.end) {
     return (
       <Card>
