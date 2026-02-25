@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Copy, ChevronUp, ChevronDown, Plus, X, Image, Video, Upload, GitBranch } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import LogicRuleEditor from "./LogicRuleEditor";
+import AIQuestionEditor from "./AIQuestionEditor";
 
 const FILE_TYPE_OPTIONS = [
   { value: "image", label: "Images" },
@@ -237,7 +238,8 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
                 <Switch checked={question.required || false} onCheckedChange={v => update("required", v)} />
                 <Label className="text-xs">Required</Label>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 items-center">
+                <AIQuestionEditor question={question} onApply={onChange} />
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onDuplicate}>
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
