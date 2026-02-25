@@ -1,20 +1,8 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import ReactQuill from "react-quill";
-
-const QUILL_MODULES = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ color: [] }, { background: [] }],
-    [{ list: "ordered" }, { list: "bullet" }],
-    [{ align: [] }],
-    ["link", "image", "video"],
-    ["clean"],
-  ],
-};
 
 export default function WelcomePageEditor({ form, setForm }) {
   return (
@@ -33,18 +21,23 @@ export default function WelcomePageEditor({ form, setForm }) {
       {form.welcome_page_enabled && (
         <>
           <div>
-            <Label className="text-xs">Welcome Page Content</Label>
+            <Label className="text-xs">Welcome Page Content (HTML)</Label>
             <p className="text-[10px] text-slate-400 mb-1">
-              Add instructions, images, or videos to greet respondents
+              Add instructions, images, or formatted text to greet respondents. Supports HTML.
             </p>
-            <ReactQuill
-              theme="snow"
+            <Textarea
               value={form.welcome_page_content || ""}
-              onChange={v => setForm(p => ({ ...p, welcome_page_content: v }))}
-              modules={QUILL_MODULES}
-              placeholder="Welcome to our survey! Here's what you need to know..."
-              className="bg-white rounded"
+              onChange={e => setForm(p => ({ ...p, welcome_page_content: e.target.value }))}
+              placeholder="<h2>Welcome!</h2><p>Thank you for taking the time to complete our survey.</p>"
+              rows={6}
+              className="font-mono text-xs"
             />
+            {form.welcome_page_content && (
+              <div className="mt-2 p-3 border rounded-lg bg-slate-50">
+                <p className="text-[10px] text-slate-400 mb-1">Preview:</p>
+                <div className="prose prose-sm max-w-none text-sm" dangerouslySetInnerHTML={{ __html: form.welcome_page_content }} />
+              </div>
+            )}
           </div>
           <div>
             <Label className="text-xs">Start Button Text</Label>
