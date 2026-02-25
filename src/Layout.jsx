@@ -15,6 +15,7 @@ export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [schedulerEnabled, setSchedulerEnabled] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [branding, setBranding] = useState({ company_name: 'Frontier Building Group', logo_url: '', primary_color: '#ea7924', accent_color: '#d66a1f' });
 
   useEffect(() => {
     const loadUser = async () => {
@@ -39,6 +40,12 @@ export default function Layout({ children, currentPageName }) {
     base44.entities.CompanySettings.list().then(settings => {
       if (settings.length > 0) {
         setSchedulerEnabled(!!settings[0].scheduler_enabled);
+        setBranding({
+          company_name: settings[0].company_name || 'Frontier Building Group',
+          logo_url: settings[0].logo_url || '',
+          primary_color: settings[0].primary_color || '#ea7924',
+          accent_color: settings[0].accent_color || '#d66a1f',
+        });
       }
     }).catch(() => {});
   }, [currentPageName]);

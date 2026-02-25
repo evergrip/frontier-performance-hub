@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Building2, Save, TrendingUp, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import MonthlyCapacitySchedule from '../components/admin/MonthlyCapacitySchedule';
+import BrandingSettingsSection from '../components/admin/BrandingSettingsSection';
 
 export default function CompanySettings() {
   const queryClient = useQueryClient();
@@ -172,6 +173,12 @@ export default function CompanySettings() {
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Company Settings</h1>
         <p className="text-lg text-slate-500">Manage company information and configuration</p>
       </div>
+
+      <BrandingSettingsSection
+        settings={settings[0] || null}
+        settingsId={settingsId}
+        onSaved={() => queryClient.invalidateQueries(['companySettings'])}
+      />
 
       <Card>
         <CardHeader>
