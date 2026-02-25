@@ -1289,13 +1289,19 @@ export default function Sales() {
 
       {/* Close Pre-Con Only Dialog */}
       <Dialog open={closePreconDialogOpen} onOpenChange={setClosePreconDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           {(() => {
             const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
             const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
             const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
             const auditChecks = selectedSale ? getChecks({ sale: selectedSale, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'finalize_precon' }) : [];
             const auditPassed = auditChecks.every(c => c.pass);
+            const refreshData = () => {
+              queryClient.invalidateQueries(['sales']);
+              queryClient.invalidateQueries(['clients']);
+              queryClient.invalidateQueries(['leads']);
+              queryClient.invalidateQueries(['commission-transactions']);
+            };
             return (<>
           <DialogHeader>
             <DialogTitle>Finalize Pre-Construction Only</DialogTitle>
@@ -1313,13 +1319,14 @@ export default function Sales() {
               <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
             </div>
 
-            <FileAuditChecklist
+            <AuditItemFixer
               sale={selectedSale}
               lead={linkedLead}
               client={linkedClient}
               users={users}
               commissionTransactions={saleTxns}
               mode="finalize_precon"
+              onDataUpdated={refreshData}
             />
             
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
