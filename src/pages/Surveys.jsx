@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark } from "lucide-react";
+import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import SurveyFormDialog from "../components/surveys/SurveyFormDialog";
