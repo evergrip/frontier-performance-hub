@@ -201,6 +201,11 @@ export default function Surveys() {
         onCreated={() => queryClient.invalidateQueries({ queryKey: ["surveys"] })}
       />
 
+      <AIGenerateSurveyDialog
+        open={showAIGenerate}
+        onOpenChange={setShowAIGenerate}
+      />
+
       {templateSurvey && (
         <SaveAsTemplateDialog
           open={!!templateSurvey}
