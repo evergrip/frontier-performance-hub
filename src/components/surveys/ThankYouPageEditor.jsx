@@ -2,39 +2,30 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import ReactQuill from "react-quill";
-
-const QUILL_MODULES = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ color: [] }, { background: [] }],
-    [{ list: "ordered" }, { list: "bullet" }],
-    [{ align: [] }],
-    ["link", "image", "video"],
-    ["clean"],
-  ],
-};
+import { Textarea } from "@/components/ui/textarea";
 
 export default function ThankYouPageEditor({ form, setForm }) {
-  const hasRichContent = !!form.thank_you_page_content;
-
   return (
     <div className="space-y-4">
       <div>
-        <Label className="font-medium">Thank You Page Content</Label>
+        <Label className="font-medium">Thank You Page Content (HTML)</Label>
         <p className="text-[10px] text-slate-400 mb-1">
-          Create a rich thank you page with links, images, and piped text (e.g. {"{{q_xxx}}"} to show answers).
+          Create a thank you page with HTML. Use {"{{q_xxx}}"} to pipe in answers.
           Leave empty to use the simple success message instead.
         </p>
-        <ReactQuill
-          theme="snow"
+        <Textarea
           value={form.thank_you_page_content || ""}
-          onChange={v => setForm(p => ({ ...p, thank_you_page_content: v }))}
-          modules={QUILL_MODULES}
-          placeholder="Thank you for your feedback! Here's a summary of your responses..."
-          className="bg-white rounded"
+          onChange={e => setForm(p => ({ ...p, thank_you_page_content: e.target.value }))}
+          placeholder="<h2>Thank you!</h2><p>We appreciate your feedback.</p>"
+          rows={6}
+          className="font-mono text-xs"
         />
+        {form.thank_you_page_content && (
+          <div className="mt-2 p-3 border rounded-lg bg-slate-50">
+            <p className="text-[10px] text-slate-400 mb-1">Preview:</p>
+            <div className="prose prose-sm max-w-none text-sm" dangerouslySetInnerHTML={{ __html: form.thank_you_page_content }} />
+          </div>
+        )}
       </div>
 
       <div>
