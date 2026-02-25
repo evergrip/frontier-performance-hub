@@ -393,7 +393,7 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
               </div>
             </TabsContent>
 
-            <StylingTab form={form} updateStyling={updateStyling} />
+            <StylingTab form={form} updateStyling={updateStyling} setForm={setForm} />
           </Tabs>
 
           <div className="flex justify-end gap-2 pt-2">
