@@ -31,6 +31,7 @@ export default function Surveys() {
   const [editingSurvey, setEditingSurvey] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSurvey, setTemplateSurvey] = useState(null);
+  const [showAIGenerate, setShowAIGenerate] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: surveys = [], isLoading } = useQuery({
