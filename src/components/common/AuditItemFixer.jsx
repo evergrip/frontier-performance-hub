@@ -187,15 +187,19 @@ export default function AuditItemFixer({ sale, lead, client, users, commissionTr
     }
 
     if (config.type === 'contributor_add') {
+      const selectedUser = (users || []).find(u => u.id === fixValues.contributor_user_id);
       return (
         <div className="mt-2 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
           <p className="text-xs font-medium text-slate-600">Add a sale contributor</p>
-          <Select value={fixValues.contributor_user_id || ''} onValueChange={(v) => setFixValues(prev => ({ ...prev, contributor_user_id: v }))}>
-            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select team member..." /></SelectTrigger>
-            <SelectContent>
-              {(users || []).map(u => <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <select
+            className="flex h-8 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            value={fixValues.contributor_user_id || ''}
+            onChange={(e) => setFixValues(prev => ({ ...prev, contributor_user_id: e.target.value }))}
+          >
+            <option value="">Select team member...</option>
+            {(users || []).map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+          </select>
+          {selectedUser && <p className="text-xs text-emerald-600">Selected: {selectedUser.full_name}</p>}
           <div>
             <Label className="text-xs">Commission Split %</Label>
             <Input
@@ -208,7 +212,7 @@ export default function AuditItemFixer({ sale, lead, client, users, commissionTr
           </div>
           <div className="flex gap-2 justify-end">
             <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setFixingItem(null); setFixValues({}); }}>Cancel</Button>
-            <Button size="sm" className="h-7 text-xs" disabled={saving} onClick={() => handleSave(check)}>
+            <Button size="sm" className="h-7 text-xs" disabled={saving || !fixValues.contributor_user_id} onClick={() => handleSave(check)}>
               {saving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Save className="w-3 h-3 mr-1" />} Save
             </Button>
           </div>
