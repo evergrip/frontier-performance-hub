@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import SurveyFormDialog from "../components/surveys/SurveyFormDialog";
 import SurveyTemplateLibrary, { SaveAsTemplateDialog } from "../components/surveys/SurveyTemplateLibrary";
+import AIGenerateSurveyDialog from "../components/surveys/AIGenerateSurveyDialog";
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
