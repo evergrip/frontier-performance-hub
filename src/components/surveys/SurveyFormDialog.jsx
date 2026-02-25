@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Image, Upload, Loader2, X } from "lucide-react";
+import { Upload, Loader2, X } from "lucide-react";
 import BrandAssetPicker from "../common/BrandAssetPicker";
 import WelcomePageEditor from "./WelcomePageEditor";
 import ThankYouPageEditor from "./ThankYouPageEditor";
