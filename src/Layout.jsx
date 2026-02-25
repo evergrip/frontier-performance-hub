@@ -234,13 +234,14 @@ export default function Layout({ children, currentPageName }) {
                         flex items-center gap-3 px-4 py-3 rounded-xl
                         transition-all duration-200 group
                         ${active 
-                          ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                          ? 'text-white shadow-lg' 
                           : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                         }
                       `}
+                      style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} />
                       <span className="font-medium">{item.name}</span>
                       {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                     </Link>
@@ -267,13 +268,14 @@ export default function Layout({ children, currentPageName }) {
                         flex items-center gap-3 px-4 py-3 rounded-xl
                         transition-all duration-200 group
                         ${active 
-                          ? 'bg-gradient-to-r from-[#ea7924] to-[#d66a1f] text-white shadow-lg shadow-[#ea7924]/20' 
+                          ? 'text-white shadow-lg' 
                           : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
                         }
                       `}
+                      style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
                       onClick={() => setSidebarOpen(false)}
                     >
-                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400 group-hover:text-[#ea7924]'}`} />
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} />
                       <span className="font-medium">{item.name}</span>
                       {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                     </Link>
@@ -323,8 +325,12 @@ export default function Layout({ children, currentPageName }) {
               <Menu className="w-6 h-6" />
             </Button>
             <div className="flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-[#ea7924]" />
-              <span className="font-bold text-[#333645]">Frontier</span>
+              {branding.logo_url ? (
+                <img src={branding.logo_url} alt="Logo" className="w-6 h-6 object-contain" />
+              ) : (
+                <Building2 className="w-6 h-6" style={{ color: branding.primary_color }} />
+              )}
+              <span className="font-bold text-[#333645]">{branding.company_name?.split(' ')[0] || 'Frontier'}</span>
             </div>
             <div className="w-10" />
           </div>
