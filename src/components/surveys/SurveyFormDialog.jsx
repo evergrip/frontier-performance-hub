@@ -33,6 +33,50 @@ function ColorField({ label, fieldKey, defaultVal, styling, updateStyling, openP
   );
 }
 
+function ImageUploadField({ label, fieldKey, styling, updateStyling, openPicker, pickerType, previewClassName }) {
+  const [uploading, setUploading] = useState(false);
+  const value = styling[fieldKey] || "";
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    updateStyling(fieldKey, file_url);
+    setUploading(false);
+  };
+
+  return (
+    <div>
+      <Label className="text-xs">{label}</Label>
+      <div className="flex gap-2 items-center mt-1">
+        <label className="cursor-pointer">
+          <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+          <Button type="button" variant="outline" size="sm" className="text-xs pointer-events-none" asChild={false}>
+            {uploading ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Uploading...</> : <><Upload className="w-3 h-3 mr-1" /> Upload</>}
+          </Button>
+        </label>
+        <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => openPicker(pickerType, fieldKey)}>Brand</Button>
+        {value && (
+          <Button type="button" variant="ghost" size="sm" className="text-red-500 text-xs h-7 px-2" onClick={() => updateStyling(fieldKey, "")}>
+            <X className="w-3 h-3 mr-1" /> Remove
+          </Button>
+        )}
+      </div>
+      {value && <img src={value} alt={label} className={`mt-2 rounded ${previewClassName || "h-10"}`} />}
+    </div>
+  );
+}
+
+function ImageUploadSection({ styling, updateStyling, openPicker }) {
+  return (
+    <div className="space-y-3">
+      <ImageUploadField label="Logo" fieldKey="logo_url" styling={styling} updateStyling={updateStyling} openPicker={openPicker} pickerType="logo" previewClassName="h-10" />
+      <ImageUploadField label="Banner Image" fieldKey="banner_image_url" styling={styling} updateStyling={updateStyling} openPicker={openPicker} pickerType="banner" previewClassName="h-16 w-full object-cover" />
+    </div>
+  );
+}
+
 const STANDARD_BRANDING = {
   background_color: "#f8fafc",
   text_color: "#333645",
