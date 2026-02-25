@@ -175,6 +175,7 @@ export default function MetricDrilldownDialog({
 
         return {
           title: 'Pre-Construction Revenue Breakdown',
+          formula: 'Sum of contract_value for all preconstruction sales with status "closed_won" whose phase_history start date falls within the selected date range.',
           items: closedPrecon,
           columns: ['Sale', 'Client', 'Contract Value', 'Close Date'],
           renderRow: (s) => (
@@ -212,6 +213,7 @@ export default function MetricDrilldownDialog({
 
         return {
           title: 'Total Revenue Breakdown',
+          formula: 'Pre-Construction Revenue (closed_won precon sale contract values) + Construction Revenue (closed project actual_costs/contract_value + active project recognized revenue from monthly allocations). Does NOT include active precon sales.',
           items: allItems,
           columns: ['Name', 'Type', 'Client', 'Revenue', 'Date'],
           renderRow: (item) => (
@@ -238,6 +240,7 @@ export default function MetricDrilldownDialog({
         const active = projects.filter(p => !['closed'].includes(p.status));
         return {
           title: 'Active Projects',
+          formula: 'Count of all projects where status is NOT "closed". Not date-range filtered — shows current active state.',
           items: active,
           columns: ['Project', 'Client', 'Status', 'Contract Value', 'Start Date'],
           renderRow: (p) => (
@@ -257,6 +260,7 @@ export default function MetricDrilldownDialog({
         const active = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status));
         return {
           title: 'Active Pre-Construction Sales',
+          formula: 'Count of sales in statuses: feasibility, design_material_selections, engineering_permits, or pending_construction_sale. Not date-range filtered.',
           items: active,
           columns: ['Sale', 'Client', 'Status', 'Contract Value', 'Est. Construction'],
           renderRow: (s) => (
@@ -276,6 +280,7 @@ export default function MetricDrilldownDialog({
         const active = leads.filter(l => !['converted', 'disqualified'].includes(l.status));
         return {
           title: 'Active Leads',
+          formula: 'Count of leads where status is NOT "converted" or "disqualified". Not date-range filtered.',
           items: active,
           columns: ['Lead', 'Client', 'Status', 'Source', 'Est. Precon Value'],
           renderRow: (l) => (
@@ -298,6 +303,7 @@ export default function MetricDrilldownDialog({
 
         return {
           title: 'Gross Profit by Project',
+          formula: 'For each closed project in date range: contract_value × (actual_margin / 100). Summed for total gross profit. Only uses projects with status "closed".',
           items: closedP,
           columns: ['Project', 'Client', 'Contract Value', 'Margin %', 'Gross Profit'],
           renderRow: (p) => {
@@ -321,8 +327,13 @@ export default function MetricDrilldownDialog({
           .filter(p => { if (!dateRange.start || !dateRange.end) return true; const d = getProjectEffectiveDate(p); return d >= dateRange.start && d <= dateRange.end; })
           .sort((a, b) => (b.actual_margin || 0) - (a.actual_margin || 0));
 
+        const totalRev = closedP.reduce((s, p) => s + (p.contract_value || 0), 0);
+        const totalProfit = closedP.reduce((s, p) => s + (p.contract_value || 0) * ((p.actual_margin || 0) / 100), 0);
+        const weightedMargin = totalRev > 0 ? (totalProfit / totalRev) * 100 : 0;
+
         return {
-          title: 'Margin by Project',
+          title: 'Gross Margin % by Project',
+          formula: `Weighted average: Sum(contract_value × actual_margin%) / Sum(contract_value) for all closed projects in date range. Total revenue: $${(totalRev/1000).toFixed(0)}K, Total profit: $${(totalProfit/1000).toFixed(0)}K → ${weightedMargin.toFixed(1)}%`,
           items: closedP,
           columns: ['Project', 'Client', 'Contract Value', 'Actual Costs', 'Margin %'],
           renderRow: (p) => (
@@ -344,8 +355,10 @@ export default function MetricDrilldownDialog({
           return new Date(l.created_date) >= dateRange.start && new Date(l.created_date) <= dateRange.end;
         });
         const resolved = filteredL.filter(l => ['converted', 'disqualified'].includes(l.status));
+        const converted = resolved.filter(l => l.status === 'converted').length;
         return {
           title: 'Lead Conversion Details',
+          formula: `Converted leads / (Converted + Disqualified leads) in date range. ${converted} converted / ${resolved.length} resolved = ${resolved.length > 0 ? ((converted/resolved.length)*100).toFixed(1) : 0}%`,
           items: resolved,
           columns: ['Lead', 'Client', 'Status', 'Source', 'Created'],
           renderRow: (l) => (
@@ -371,8 +384,10 @@ export default function MetricDrilldownDialog({
           return new Date(l.created_date) >= dateRange.start && new Date(l.created_date) <= dateRange.end;
         });
         const proposals = filteredL.filter(l => (l.status_history || []).some(h => h.status === 'preconstruction_proposal'));
+        const won = proposals.filter(l => l.status === 'converted').length;
         return {
           title: 'Win Rate Details (After Proposal)',
+          formula: `Leads that reached "preconstruction_proposal" stage and then converted / total that reached proposal. ${won} won / ${proposals.length} proposals = ${proposals.length > 0 ? ((won/proposals.length)*100).toFixed(1) : 0}%`,
           items: proposals,
           columns: ['Lead', 'Client', 'Status', 'Source', 'Created'],
           renderRow: (l) => (
