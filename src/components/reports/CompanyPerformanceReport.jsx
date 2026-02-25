@@ -322,15 +322,17 @@ export default function CompanyPerformanceReport({ dateRange, staffId }) {
     <div className="space-y-6">
       {/* Company KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('totalRevenue')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <DollarSign className="w-6 h-6 mx-auto text-emerald-500 mb-2" />
             <p className="text-sm text-slate-600">Total Revenue</p>
             <p className="text-3xl font-bold text-emerald-600">${(companyKPIs.totalRevenue / 1000).toFixed(0)}K</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('grossMargin')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <TrendingUp className="w-6 h-6 mx-auto text-blue-500 mb-2" />
             <p className="text-sm text-slate-600">Gross Margin</p>
             <p className={`text-3xl font-bold ${companyKPIs.grossMargin >= 20 ? 'text-emerald-600' : 'text-amber-600'}`}>
@@ -338,15 +340,17 @@ export default function CompanyPerformanceReport({ dateRange, staffId }) {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('grossProfit')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <DollarSign className="w-6 h-6 mx-auto text-blue-500 mb-2" />
             <p className="text-sm text-slate-600">Gross Profit</p>
             <p className="text-3xl font-bold text-blue-600">${(companyKPIs.totalGrossProfit / 1000).toFixed(0)}K</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('activePipeline')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <Building2 className="w-6 h-6 mx-auto text-amber-500 mb-2" />
             <p className="text-sm text-slate-600">Active Pipeline</p>
             <p className="text-3xl font-bold text-amber-600">${(companyKPIs.activePipelineValue / 1000).toFixed(0)}K</p>
@@ -355,32 +359,37 @@ export default function CompanyPerformanceReport({ dateRange, staffId }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('activeLeads')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <p className="text-sm text-slate-600">Active Leads</p>
             <p className="text-2xl font-bold text-slate-900">{companyKPIs.activeLeads}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('activeSales')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <p className="text-sm text-slate-600">Active Sales</p>
             <p className="text-2xl font-bold text-slate-900">{companyKPIs.activeSales}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('activePipeline')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <p className="text-sm text-slate-600">Active Projects</p>
             <p className="text-2xl font-bold text-slate-900">{companyKPIs.activeProjectCount}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('leadConversion')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <p className="text-sm text-slate-600">Lead Conversion</p>
             <p className="text-2xl font-bold text-slate-900">{companyKPIs.leadConversion.toFixed(1)}%</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDrilldown('preconWinRate')}>
+          <CardContent className="pt-6 text-center relative">
+            <Info className="w-3.5 h-3.5 absolute top-2 right-2 text-slate-300" />
             <p className="text-sm text-slate-600">Precon Win Rate</p>
             <p className="text-2xl font-bold text-slate-900">{companyKPIs.preconWinRate.toFixed(1)}%</p>
           </CardContent>
