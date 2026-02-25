@@ -564,6 +564,120 @@ export default function CompanyPerformanceReport({ dateRange, staffId }) {
           </CardContent>
         </Card>
       )}
+      {/* Drilldown Dialog */}
+      {drilldown && drilldownConfigs[drilldown] && (
+        <Dialog open={!!drilldown} onOpenChange={(open) => !open && setDrilldown(null)}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{drilldownConfigs[drilldown].title}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 mb-3">
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">How this is calculated</p>
+              <p className="text-xs text-slate-700 leading-relaxed">{drilldownConfigs[drilldown].formula}</p>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-2">{drilldownConfigs[drilldown].items.length} items</p>
+
+            {drilldownConfigs[drilldown].items.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {drilldownConfigs[drilldown].columns.map(col => (
+                        <TableHead key={col}>{col}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {drilldownConfigs[drilldown].items.map(item => {
+                      const config = drilldownConfigs[drilldown];
+                      if (config.title.includes('Revenue Breakdown')) {
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell>
+                              <Badge className={item._type === 'precon' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}>
+                                {item._type === 'precon' ? 'Pre-Con' : 'Construction'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{getClientName(item.client_id)}</TableCell>
+                            <TableCell className="font-semibold">${((item._value || 0) / 1000).toFixed(0)}K</TableCell>
+                          </TableRow>
+                        );
+                      }
+                      if (config.title.includes('Gross Margin')) {
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell>{getClientName(item.client_id)}</TableCell>
+                            <TableCell>${((item._value || 0) / 1000).toFixed(0)}K</TableCell>
+                            <TableCell>${((item._cost || 0) / 1000).toFixed(0)}K</TableCell>
+                            <TableCell className={`font-semibold ${(item._margin || 0) >= 20 ? 'text-emerald-600' : 'text-amber-600'}`}>{(item._margin || 0).toFixed(1)}%</TableCell>
+                          </TableRow>
+                        );
+                      }
+                      if (config.title.includes('Gross Profit')) {
+                        const profit = (item.contract_value || 0) - (item.actual_costs || 0);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell>{getClientName(item.client_id)}</TableCell>
+                            <TableCell>${((item.contract_value || 0) / 1000).toFixed(0)}K</TableCell>
+                            <TableCell>${((item.actual_costs || 0) / 1000).toFixed(0)}K</TableCell>
+                            <TableCell className="font-semibold">${(profit / 1000).toFixed(0)}K</TableCell>
+                          </TableRow>
+                        );
+                      }
+                      if (config.title.includes('Pipeline') || config.title.includes('Active Pre-Construction')) {
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell>{getClientName(item.client_id)}</TableCell>
+                            <TableCell><Badge variant="outline" className="text-xs">{(item.status || '').replace(/_/g, ' ')}</Badge></TableCell>
+                            <TableCell className="font-semibold">${((item.contract_value || 0) / 1000).toFixed(0)}K</TableCell>
+                          </TableRow>
+                        );
+                      }
+                      if (config.title.includes('Lead')) {
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell>{getClientName(item.client_id)}</TableCell>
+                            <TableCell>
+                              <Badge className={item.status === 'converted' ? 'bg-emerald-100 text-emerald-700' : item.status === 'disqualified' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}>
+                                {(item.status || '').replace(/_/g, ' ')}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="capitalize">{(item.source || '').replace(/_/g, ' ')}</TableCell>
+                          </TableRow>
+                        );
+                      }
+                      if (config.title.includes('Win Rate')) {
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell>{getClientName(item.client_id)}</TableCell>
+                            <TableCell>
+                              <Badge className={item.status === 'closed_won' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}>
+                                {item.status === 'closed_won' ? 'Won' : 'Lost'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-semibold">${((item.contract_value || 0) / 1000).toFixed(0)}K</TableCell>
+                          </TableRow>
+                        );
+                      }
+                      return null;
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <p className="text-center text-slate-400 py-8">No data for this metric</p>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
