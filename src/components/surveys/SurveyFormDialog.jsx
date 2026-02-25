@@ -33,7 +33,30 @@ function ColorField({ label, fieldKey, defaultVal, styling, updateStyling, openP
   );
 }
 
-function StylingTab({ form, updateStyling }) {
+const STANDARD_BRANDING = {
+  background_color: "#f8fafc",
+  text_color: "#333645",
+  heading_color: "#333645",
+  description_color: "#64748b",
+  accent_color: "#ea7924",
+  progress_bar_color: "#ea7924",
+  card_background_color: "#ffffff",
+  card_border_color: "#e2e8f0",
+  input_background_color: "#ffffff",
+  input_border_color: "#e2e8f0",
+  input_text_color: "#333645",
+  button_color: "#ea7924",
+  button_text_color: "#ffffff",
+  button_hover_color: "#d66a1f",
+  border_radius: "12px",
+  button_border_radius: "12px",
+  font_family: "'Work Sans', Helvetica, Arial, sans-serif",
+  heading_font_family: "'Work Sans', Helvetica, Arial, sans-serif",
+  font_url: "https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap",
+  heading_font_url: "",
+};
+
+function StylingTab({ form, updateStyling, setForm }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerType, setPickerType] = useState("logo");
   const [pickerTarget, setPickerTarget] = useState("logo_url");
@@ -45,10 +68,26 @@ function StylingTab({ form, updateStyling }) {
     setPickerOpen(true);
   };
 
+  const applyStandardBranding = () => {
+    setForm(prev => ({ ...prev, styling: { ...prev.styling, ...STANDARD_BRANDING } }));
+  };
+
   const s = form.styling;
 
   return (
     <TabsContent value="styling" className="space-y-3 mt-4">
+      {/* Apply standard branding */}
+      <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#333645] to-[#ea7924] rounded-lg">
+        <div>
+          <p className="text-sm font-semibold text-white">Frontier Standard Branding</p>
+          <p className="text-[10px] text-white/70">Apply company colors, fonts, and styling</p>
+        </div>
+        <Button type="button" size="sm" className="bg-white text-[#333645] hover:bg-white/90 text-xs h-7"
+          onClick={applyStandardBranding}>
+          Apply Standard
+        </Button>
+      </div>
+
       {/* Section tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
         {[
