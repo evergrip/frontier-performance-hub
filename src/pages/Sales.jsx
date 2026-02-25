@@ -947,13 +947,19 @@ export default function Sales() {
 
       {/* Convert to Construction Dialog */}
       <Dialog open={constructionDialogOpen} onOpenChange={setConstructionDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           {(() => {
             const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
             const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
             const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
             const auditChecks = selectedSale ? getChecks({ sale: selectedSale, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'convert_to_construction' }) : [];
             const auditPassed = auditChecks.every(c => c.pass);
+            const refreshData = () => {
+              queryClient.invalidateQueries(['sales']);
+              queryClient.invalidateQueries(['clients']);
+              queryClient.invalidateQueries(['leads']);
+              queryClient.invalidateQueries(['commission-transactions']);
+            };
             return (<>
           <DialogHeader>
             <DialogTitle>Convert to Construction Sale</DialogTitle>
@@ -964,13 +970,14 @@ export default function Sales() {
               <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
             </div>
 
-            <FileAuditChecklist
+            <AuditItemFixer
               sale={selectedSale}
               lead={linkedLead}
               client={linkedClient}
               users={users}
               commissionTransactions={saleTxns}
               mode="convert_to_construction"
+              onDataUpdated={refreshData}
             />
 
             <div>
