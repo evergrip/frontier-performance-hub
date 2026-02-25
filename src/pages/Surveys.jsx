@@ -81,6 +81,9 @@ export default function Surveys() {
           <Button variant="outline" onClick={() => setShowTemplates(true)}>
             <BookOpen className="w-4 h-4 mr-2" /> Templates
           </Button>
+          <Button variant="outline" onClick={() => setShowAIGenerate(true)}>
+            <Sparkles className="w-4 h-4 mr-2" /> AI Generate
+          </Button>
           <Button onClick={handleCreate} className="bg-[#ea7924] hover:bg-[#d66a1f]">
             <Plus className="w-4 h-4 mr-2" /> New Survey
           </Button>
