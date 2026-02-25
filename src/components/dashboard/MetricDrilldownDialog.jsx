@@ -88,12 +88,8 @@ export default function MetricDrilldownDialog({
                 aMonth = parseInt(parts[1]);
               }
               if (!aYear || !aMonth) return false;
-              
-              // Must be strictly before the current month
               const isPast = (aYear < currentYear) || (aYear === currentYear && aMonth < currentMonth);
               if (!isPast) return false;
-              
-              // Must fall within the selected date range
               if (dateRange.start && dateRange.end) {
                 const allocDate = new Date(aYear, aMonth - 1, 1);
                 if (allocDate < dateRange.start || allocDate > dateRange.end) return false;
@@ -118,7 +114,6 @@ export default function MetricDrilldownDialog({
           return { month: format(month, 'MMM yy'), revenue: monthRevenue / 1000 };
         }) : [];
 
-        // Combine closed and active items with a _source tag
         const allItems = [
           ...closedConstruction.map(p => ({ ...p, _source: 'closed', _displayRevenue: p.actual_costs || p.contract_value || 0 })),
           ...activeWithRevenue.map(p => ({ ...p, _source: 'active', _displayRevenue: p._recognizedRevenue })),
@@ -126,6 +121,7 @@ export default function MetricDrilldownDialog({
 
         return {
           title: 'Construction Revenue Breakdown',
+          formula: 'Sum of (actual_costs or contract_value) for closed construction projects in date range, plus recognized revenue from active projects based on past monthly_revenue_allocations percentages applied to (actual_costs or contract_value).',
           items: allItems,
           columns: ['Project', 'Client', 'Status', 'Contract Value', 'Recognized Revenue', 'Margin', 'Closed Date'],
           renderRow: (p) => (
