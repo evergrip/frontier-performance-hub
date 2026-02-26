@@ -1,15 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, RefreshCw, MessageCircle, FileText } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, MessageCircle, FileText, Pencil, Save, X, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import ReactQuill from "react-quill";
 import AIInsightsChat from "./AIInsightsChat";
 
-export default function AIInsightsPanel({ survey, responses }) {
+export default function AIInsightsPanel({ survey, responses, onExportPdf }) {
   const [insights, setInsights] = useState(survey?.ai_insights || null);
   const [loading, setLoading] = useState(false);
   const [activeView, setActiveView] = useState(survey?.ai_insights ? "report" : "report");
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const generateInsights = async () => {
     setLoading(true);
@@ -64,6 +68,28 @@ Use markdown formatting. Be specific and reference actual data points.`,
       ai_insights_generated_at: new Date().toISOString(),
       ai_insights_response_count: responses.length,
     });
+  };
+
+  const startEditing = () => {
+    // Convert markdown to basic HTML for rich editor
+    const html = markdownToHtml(insights || "");
+    setEditContent(html);
+    setEditing(true);
+  };
+
+  const saveEdits = async () => {
+    setSaving(true);
+    // Convert HTML back to markdown-ish text for storage
+    const cleaned = htmlToMarkdown(editContent);
+    setInsights(cleaned);
+    await base44.entities.Survey.update(survey.id, { ai_insights: cleaned });
+    setEditing(false);
+    setSaving(false);
+  };
+
+  const cancelEditing = () => {
+    setEditing(false);
+    setEditContent("");
   };
 
   if (!insights && !loading) {
@@ -129,18 +155,64 @@ Use markdown formatting. Be specific and reference actual data points.`,
             </button>
           </div>
           {activeView === "report" && (
-            <Button variant="outline" size="sm" onClick={generateInsights}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1" /> Regenerate
-            </Button>
+            <div className="flex items-center gap-2">
+              {!editing && (
+                <>
+                  <Button variant="outline" size="sm" onClick={startEditing}>
+                    <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={generateInsights}>
+                    <RefreshCw className="w-3.5 h-3.5 mr-1" /> Regenerate
+                  </Button>
+                  {onExportPdf && (
+                    <Button variant="outline" size="sm" onClick={onExportPdf}>
+                      <Download className="w-3.5 h-3.5 mr-1" /> PDF
+                    </Button>
+                  )}
+                </>
+              )}
+              {editing && (
+                <>
+                  <Button variant="outline" size="sm" onClick={cancelEditing}>
+                    <X className="w-3.5 h-3.5 mr-1" /> Cancel
+                  </Button>
+                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={saveEdits} disabled={saving}>
+                    {saving ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1" />}
+                    Save
+                  </Button>
+                </>
+              )}
+            </div>
           )}
         </div>
 
         {/* Report view */}
-        {activeView === "report" && (
+        {activeView === "report" && !editing && (
           <div className="p-6 pt-2">
             <div className="prose prose-sm prose-slate max-w-none">
               <ReactMarkdown>{insights}</ReactMarkdown>
             </div>
+          </div>
+        )}
+
+        {/* Edit view */}
+        {activeView === "report" && editing && (
+          <div className="p-4 pt-2">
+            <ReactQuill
+              value={editContent}
+              onChange={setEditContent}
+              theme="snow"
+              modules={{
+                toolbar: [
+                  [{ header: [1, 2, 3, false] }],
+                  ["bold", "italic", "underline"],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                  ["blockquote"],
+                  ["clean"],
+                ],
+              }}
+              style={{ minHeight: "300px" }}
+            />
           </div>
         )}
 
@@ -151,4 +223,58 @@ Use markdown formatting. Be specific and reference actual data points.`,
       </CardContent>
     </Card>
   );
+}
+
+// Simple markdown -> HTML converter for the editor
+function markdownToHtml(md) {
+  if (!md) return "";
+  let html = md
+    .replace(/^### (.+)$/gm, "<h3>$1</h3>")
+    .replace(/^## (.+)$/gm, "<h2>$1</h2>")
+    .replace(/^# (.+)$/gm, "<h1>$1</h1>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>")
+    .replace(/^- (.+)$/gm, "<li>$1</li>")
+    .replace(/^(\d+)\. (.+)$/gm, "<li>$2</li>");
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, "<ul>$1</ul>");
+  // Convert remaining newlines to <p>
+  html = html.split("\n\n").map(p => {
+    if (p.startsWith("<h") || p.startsWith("<ul") || p.startsWith("<blockquote")) return p;
+    return `<p>${p.replace(/\n/g, "<br>")}</p>`;
+  }).join("");
+  return html;
+}
+
+// Simple HTML -> markdown converter for storage
+function htmlToMarkdown(html) {
+  if (!html) return "";
+  let md = html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/g, "# $1\n\n")
+    .replace(/<h2[^>]*>(.*?)<\/h2>/g, "## $1\n\n")
+    .replace(/<h3[^>]*>(.*?)<\/h3>/g, "### $1\n\n")
+    .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
+    .replace(/<b>(.*?)<\/b>/g, "**$1**")
+    .replace(/<em>(.*?)<\/em>/g, "*$1*")
+    .replace(/<i>(.*?)<\/i>/g, "*$1*")
+    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/g, "> $1\n")
+    .replace(/<ul[^>]*>(.*?)<\/ul>/gs, (_, inner) => {
+      return inner.replace(/<li[^>]*>(.*?)<\/li>/g, "- $1\n") + "\n";
+    })
+    .replace(/<ol[^>]*>(.*?)<\/ol>/gs, (_, inner) => {
+      let i = 0;
+      return inner.replace(/<li[^>]*>(.*?)<\/li>/g, () => { i++; return `${i}. ` + arguments[1] + "\n"; }) + "\n";
+    })
+    .replace(/<li[^>]*>(.*?)<\/li>/g, "- $1\n")
+    .replace(/<br\s*\/?>/g, "\n")
+    .replace(/<p[^>]*>(.*?)<\/p>/gs, "$1\n\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return md;
 }
