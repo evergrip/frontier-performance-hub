@@ -262,9 +262,9 @@ function htmlToMarkdown(html) {
     .replace(/<ul[^>]*>(.*?)<\/ul>/gs, (_, inner) => {
       return inner.replace(/<li[^>]*>(.*?)<\/li>/g, "- $1\n") + "\n";
     })
-    .replace(/<ol[^>]*>(.*?)<\/ol>/gs, (_, inner) => {
+    .replace(/<ol[^>]*>(.*?)<\/ol>/gs, function(_, inner) {
       let i = 0;
-      return inner.replace(/<li[^>]*>(.*?)<\/li>/g, () => { i++; return `${i}. ` + arguments[1] + "\n"; }) + "\n";
+      return inner.replace(/<li[^>]*>(.*?)<\/li>/g, function(__, content) { i++; return `${i}. ${content}\n`; }) + "\n";
     })
     .replace(/<li[^>]*>(.*?)<\/li>/g, "- $1\n")
     .replace(/<br\s*\/?>/g, "\n")
