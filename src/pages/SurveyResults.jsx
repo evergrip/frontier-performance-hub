@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import moment from "moment";
@@ -119,7 +120,20 @@ export default function SurveyResults() {
         </TabsList>
 
         <TabsContent value="insights" className="mt-4">
-          <AIInsightsPanel survey={survey} responses={responses} />
+          <AIInsightsPanel survey={survey} responses={responses} onExportPdf={async () => {
+            setExporting(true);
+            const res = await base44.functions.invoke('exportSurveyResultsPdf', { survey_id: surveyId });
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${(survey.title || 'survey').replace(/[^a-zA-Z0-9]/g, '_')}_report.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            setExporting(false);
+          }} />
         </TabsContent>
 
         <TabsContent value="summary" className="space-y-4 mt-4">

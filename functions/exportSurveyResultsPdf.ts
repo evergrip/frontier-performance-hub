@@ -46,6 +46,79 @@ Deno.serve(async (req) => {
   doc.text(`Average completion time: ${avgTime > 60 ? Math.round(avgTime / 60) + ' min' : avgTime + ' sec'}`, margin, y);
   y += 12;
 
+  // AI Insights section (if available)
+  if (survey.ai_insights) {
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AI Analysis', margin, y);
+    y += 8;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    
+    // Parse markdown-ish text into lines for PDF
+    const insightLines = (survey.ai_insights || '').split('\n');
+    for (const line of insightLines) {
+      const trimmed = line.trim();
+      if (!trimmed) { y += 3; continue; }
+
+      checkPage(8);
+
+      if (trimmed.startsWith('# ')) {
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        const wrapped = doc.splitTextToSize(trimmed.replace(/^# /, ''), contentWidth);
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * 6 + 2;
+      } else if (trimmed.startsWith('## ')) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        const wrapped = doc.splitTextToSize(trimmed.replace(/^## /, ''), contentWidth);
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * 5 + 2;
+      } else if (trimmed.startsWith('### ')) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        const wrapped = doc.splitTextToSize(trimmed.replace(/^### /, ''), contentWidth);
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * 4.5 + 2;
+      } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const bullet = trimmed.replace(/^[-*] /, '').replace(/\*\*(.+?)\*\*/g, '$1');
+        const wrapped = doc.splitTextToSize('• ' + bullet, contentWidth - 8);
+        doc.text(wrapped, margin + 4, y);
+        y += wrapped.length * 4 + 1;
+      } else if (/^\d+\. /.test(trimmed)) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const cleaned = trimmed.replace(/\*\*(.+?)\*\*/g, '$1');
+        const wrapped = doc.splitTextToSize(cleaned, contentWidth - 8);
+        doc.text(wrapped, margin + 4, y);
+        y += wrapped.length * 4 + 1;
+      } else {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const cleaned = trimmed.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1');
+        const wrapped = doc.splitTextToSize(cleaned, contentWidth);
+        doc.text(wrapped, margin, y);
+        y += wrapped.length * 4 + 1;
+      }
+    }
+
+    y += 6;
+    doc.setDrawColor(200);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+  }
+
+  // Section header for question breakdown
+  checkPage(20);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Results Breakdown', margin, y);
+  y += 10;
+
   // Divider
   doc.setDrawColor(200);
   doc.line(margin, y, pageWidth - margin, y);
