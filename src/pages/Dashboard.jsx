@@ -14,6 +14,7 @@ import FiscalGoalProgress from '../components/dashboard/FiscalGoalProgress';
 import RevenueTrendChart from '../components/dashboard/RevenueTrendChart';
 import CustomizeMetricsDialog from '../components/dashboard/CustomizeMetricsDialog';
 import MyMeetingsDashboard from '../components/dashboard/MyMeetingsDashboard';
+import GettingStartedChecklist from '../components/dashboard/GettingStartedChecklist';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -420,14 +421,25 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Company Health Overview</h1>
-          <p className="text-lg text-slate-500">Real-time snapshot of company performance</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Dashboard</h1>
+          <p className="text-lg text-slate-500">Real-time snapshot of revenue, pipeline, and project performance</p>
         </div>
         <Button onClick={() => setCustomizeDialogOpen(true)} variant="outline">
           <Settings2 className="w-4 h-4 mr-2" />
           Customize
         </Button>
       </div>
+
+      {/* Getting Started Checklist - for new companies */}
+      <GettingStartedChecklist
+        clientCount={clients.length}
+        leadCount={leads.length}
+        saleCount={sales.length}
+        projectCount={projects.length}
+        hasCompanySettings={!!(settings.company_name)}
+        userCount={allUsers.length}
+        isAdmin={user?.role === 'admin'}
+      />
 
       {/* Meetings & Action Items - Top of Dashboard */}
       <MyMeetingsDashboard

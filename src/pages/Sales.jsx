@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
+import { createPageUrl } from '../utils';
 import FileAuditChecklist, { getChecks } from '../components/common/FileAuditChecklist';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 
@@ -690,7 +691,7 @@ export default function Sales() {
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Pre-Construction Sales</h1>
-        <p className="text-lg text-slate-500">Track preconstruction sales through design, engineering, and permitting phases</p>
+        <p className="text-lg text-slate-500">Converted leads appear here — track them through feasibility, design, engineering & permits before converting to construction</p>
       </div>
 
       {/* Summary Stats */}
@@ -808,7 +809,9 @@ export default function Sales() {
             <EmptyState
               icon={Briefcase}
               title="No active pre-construction sales"
-              description="Convert qualified leads to preconstruction sales to start this pipeline"
+              description="Pre-construction sales are created when you convert a lead. Go to Leads → click a lead → Convert to Sale. The sale will then appear here for tracking through design, engineering, and permitting."
+              actionLabel="Go to Leads"
+              onAction={() => window.location.href = createPageUrl('Leads')}
             />
           </CardContent>
         </Card>

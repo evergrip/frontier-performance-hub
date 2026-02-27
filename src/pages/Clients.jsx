@@ -188,7 +188,7 @@ export default function Clients() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Clients</h1>
-          <p className="text-lg text-slate-500">Manage client relationships and create leads</p>
+          <p className="text-lg text-slate-500">Your client directory — add clients here first, then create leads from them</p>
         </div>
         <Button onClick={() => setClientDialogOpen(true)} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30">
           <Plus className="w-5 h-5 mr-2" />
@@ -290,9 +290,9 @@ export default function Clients() {
           <CardContent className="p-0">
             <EmptyState
               icon={Users}
-              title="No clients found"
-              description={searchQuery ? "Try adjusting your search" : "Get started by adding your first client"}
-              actionLabel={!searchQuery ? "Add Client" : undefined}
+              title="No clients yet"
+              description={searchQuery ? "Try adjusting your search" : "Clients are the foundation of your pipeline. Add a client, then create a lead from their profile to start tracking a potential project."}
+              actionLabel={!searchQuery ? "Add Your First Client" : undefined}
               onAction={!searchQuery ? () => setClientDialogOpen(true) : undefined}
             />
           </CardContent>

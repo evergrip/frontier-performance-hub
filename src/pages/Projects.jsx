@@ -562,8 +562,8 @@ export default function Projects() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Projects</h1>
-        <p className="text-lg text-slate-500">Track construction projects through mobilization, construction, and closeout</p>
+        <h1 className="text-4xl font-bold text-slate-900 mb-2">Construction Projects</h1>
+        <p className="text-lg text-slate-500">Active construction projects — created when a pre-construction sale is converted. Drag cards to advance through stages.</p>
       </div>
 
       {/* Summary Stats */}
@@ -676,7 +676,9 @@ export default function Projects() {
             <EmptyState
               icon={Building2}
               title="No active projects"
-              description="Convert construction sales to projects to start tracking construction work"
+              description="Construction projects are created from the Pre-Construction page. When a sale reaches 'Pending Construction', click Convert to Construction. The project will then appear here."
+              actionLabel="Go to Pre-Construction"
+              onAction={() => navigate(createPageUrl('Sales'))}
             />
           </CardContent>
         </Card>

@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import EditLeadDialog from '../components/leads/EditLeadDialog';
+import { createPageUrl } from '../utils';
 
 export default function Leads() {
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
@@ -240,7 +241,7 @@ export default function Leads() {
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Lead Pipeline</h1>
-        <p className="text-lg text-slate-500">Track leads through consultation and proposal stages</p>
+        <p className="text-lg text-slate-500">Track potential projects from first contact through proposal — drag cards to advance stages</p>
       </div>
 
       {/* Salesperson Filter */}
@@ -349,7 +350,9 @@ export default function Leads() {
             <EmptyState
               icon={Target}
               title="No leads yet"
-              description="Create leads from clients to start your pipeline"
+              description="Leads are created from the Clients page. Go to Clients → click a client → Create Lead. Once created, leads appear here and can be dragged between stages."
+              actionLabel="Go to Clients"
+              onAction={() => window.location.href = createPageUrl('Clients')}
             />
           </CardContent>
         </Card>
