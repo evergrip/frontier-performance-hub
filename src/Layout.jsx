@@ -59,10 +59,10 @@ export default function Layout({ children, currentPageName }) {
 
   const navigation = [
     { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
-    { name: 'Clients', icon: Users, page: 'Clients' },
-    { name: 'Leads', icon: Target, page: 'Leads' },
-    { name: 'Pre-Construction', icon: Briefcase, page: 'Sales' },
-    { name: 'Projects', icon: Building2, page: 'Projects' },
+    { name: '1. Clients', icon: Users, page: 'Clients' },
+    { name: '2. Leads', icon: Target, page: 'Leads' },
+    { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales' },
+    { name: '4. Projects', icon: Building2, page: 'Projects' },
     ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
     { name: 'Reports', icon: Settings, page: 'Reports' },
     { name: 'Meetings', icon: MessageSquare, page: 'Meetings' },

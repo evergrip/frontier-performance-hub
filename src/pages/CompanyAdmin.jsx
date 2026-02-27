@@ -62,7 +62,7 @@ export default function CompanyAdmin() {
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Company Admin</h1>
-        <p className="text-lg text-slate-500">Manage company-wide settings and data</p>
+        <p className="text-lg text-slate-500">Configure your company profile, commission rules, team members, and meeting types — start here when setting up a new company</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
