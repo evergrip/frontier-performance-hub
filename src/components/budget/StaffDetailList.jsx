@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Pencil, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
-const EMPTY = { name: '', role: '', salary: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', cost_category: 'overhead', notes: '' };
+const EMPTY = { name: '', role: '', salary: '', commission_amount: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', cost_category: 'overhead', notes: '' };
 
 // Canadian employer withholding rates (approximate)
 const EMPLOYER_RATES = {
@@ -53,21 +53,35 @@ export default function StaffDetailList({ budgetId, items }) {
   });
 
   const close = () => { setShowDialog(false); setEditing(null); setForm(EMPTY); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
   const openCreate = () => { setForm(EMPTY); setShowDialog(true); };
 
-  const withholdings = calcEmployerWithholdings(form.salary);
+  const totalCompForWithholdings = (Number(form.salary) || 0) + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
+  const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department, employment_type: form.employment_type, cost_category: form.cost_category, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department, employment_type: form.employment_type, cost_category: form.cost_category, notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
 
   const fmt = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—';
-  const totalCost = items.reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0), 0);
-  const overheadCost = items.filter(i => (i.cost_category || 'overhead') === 'overhead').reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0), 0);
-  const cogsCost = items.filter(i => i.cost_category === 'cogs').reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0), 0);
+  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0);
+  const totalCost = items.reduce((s, i) => s + getItemTotal(i), 0);
+  
+  // Calculate overhead vs COGS portions
+  const overheadCost = items.reduce((s, i) => {
+    const cat = i.cost_category || 'overhead';
+    if (cat === 'overhead') return s + getItemTotal(i);
+    if (cat === 'split') return s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0); // salary+benefits+taxes → overhead
+    return s;
+  }, 0);
+  const cogsCost = items.reduce((s, i) => {
+    const cat = i.cost_category || 'overhead';
+    if (cat === 'cogs') return s + getItemTotal(i);
+    if (cat === 'split') return s + (i.commission_amount || 0); // commission → COGS
+    return s;
+  }, 0);
 
   return (
     <>
@@ -91,6 +105,7 @@ export default function StaffDetailList({ budgetId, items }) {
                     <TableHead>Role</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Salary</TableHead>
+                    <TableHead className="text-right">Commission</TableHead>
                     <TableHead className="text-right">Benefits</TableHead>
                     <TableHead className="text-right">Withholdings</TableHead>
                     <TableHead className="text-right">Total</TableHead>
@@ -103,14 +118,19 @@ export default function StaffDetailList({ budgetId, items }) {
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.role || '—'}</TableCell>
                       <TableCell>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${(item.cost_category || 'overhead') === 'overhead' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {(item.cost_category || 'overhead') === 'overhead' ? 'Overhead' : 'COGS'}
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          (item.cost_category || 'overhead') === 'overhead' ? 'bg-amber-100 text-amber-700' : 
+                          item.cost_category === 'split' ? 'bg-purple-100 text-purple-700' : 
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {(item.cost_category || 'overhead') === 'overhead' ? 'Overhead' : item.cost_category === 'split' ? 'Split' : 'COGS'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">{fmt(item.salary)}</TableCell>
+                      <TableCell className="text-right">{item.cost_category === 'split' && item.commission_amount ? fmt(item.commission_amount) : '—'}</TableCell>
                       <TableCell className="text-right">{fmt(item.benefits_cost)}</TableCell>
                       <TableCell className="text-right">{fmt(item.taxes_cost)}</TableCell>
-                      <TableCell className="text-right font-semibold">{fmt((item.salary || 0) + (item.benefits_cost || 0) + (item.taxes_cost || 0))}</TableCell>
+                      <TableCell className="text-right font-semibold">{fmt(getItemTotal(item))}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(item)}><Pencil className="w-3 h-3" /></Button>
@@ -154,14 +174,23 @@ export default function StaffDetailList({ budgetId, items }) {
                   <SelectContent>
                     <SelectItem value="overhead">Overhead</SelectItem>
                     <SelectItem value="cogs">Cost of Goods Sold</SelectItem>
+                    <SelectItem value="split">Split (Salary→OH, Commission→COGS)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid gap-3 ${form.cost_category === 'split' ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div><Label>Salary ($)</Label><Input type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} /></div>
+              {form.cost_category === 'split' && (
+                <div><Label>Commission ($)</Label><Input type="number" value={form.commission_amount} onChange={e => setForm({...form, commission_amount: e.target.value})} placeholder="Projected annual" /></div>
+              )}
               <div><Label>Benefits ($)</Label><Input type="number" value={form.benefits_cost} onChange={e => setForm({...form, benefits_cost: e.target.value})} /></div>
             </div>
+            {form.cost_category === 'split' && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-700">
+                <strong>Split allocation:</strong> Salary + Benefits + Withholdings → Overhead | Commission → COGS
+              </div>
+            )}
             {Number(form.salary) > 0 && (
               <div className="bg-slate-50 border rounded-lg p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-slate-700 mb-2">Employer Withholdings (auto-calculated)</p>
