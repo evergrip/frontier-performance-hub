@@ -358,6 +358,50 @@ export default function Leads() {
         </Card>
       )}
 
+      {/* Disqualified Leads Section */}
+      {disqualifiedLeads.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-slate-700">Disqualified Leads</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {disqualifiedLeads.map(lead => (
+              <Card key={lead.id} className="border border-red-100 bg-red-50/50">
+                <CardContent className="p-4">
+                  <p className="font-medium text-slate-900 text-sm">{lead.title}</p>
+                  <p className="text-xs text-slate-500">{getClientName(lead.client_id)}</p>
+                  {lead.disqualification_reason && (
+                    <p className="text-xs text-red-600 mt-1 line-clamp-2">Reason: {lead.disqualification_reason}</p>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="text-xs bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => {
+                        updateLeadStatusMutation.mutate({
+                          leadId: lead.id,
+                          status: 'new_project_lead',
+                          currentLead: lead
+                        });
+                        toast.success('Lead reactivated');
+                      }}
+                    >
+                      Reactivate
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Convert to Sale Dialog */}
       <Dialog open={saleDialogOpen} onOpenChange={setSaleDialogOpen}>
         <DialogContent>

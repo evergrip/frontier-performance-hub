@@ -48,6 +48,8 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AgendaTemplates from './pages/AgendaTemplates';
+import BudgetDetail from './pages/BudgetDetail';
+import Budgets from './pages/Budgets';
 import Clients from './pages/Clients';
 import CommissionRules from './pages/CommissionRules';
 import Commissions from './pages/Commissions';
@@ -77,13 +79,13 @@ import SurveyPublic from './pages/SurveyPublic';
 import SurveyResults from './pages/SurveyResults';
 import Surveys from './pages/Surveys';
 import UsersAdmin from './pages/UsersAdmin';
-import Budgets from './pages/Budgets';
-import BudgetDetail from './pages/BudgetDetail';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AgendaTemplates": AgendaTemplates,
+    "BudgetDetail": BudgetDetail,
+    "Budgets": Budgets,
     "Clients": Clients,
     "CommissionRules": CommissionRules,
     "Commissions": Commissions,
@@ -113,8 +115,6 @@ export const PAGES = {
     "SurveyResults": SurveyResults,
     "Surveys": Surveys,
     "UsersAdmin": UsersAdmin,
-    "Budgets": Budgets,
-    "BudgetDetail": BudgetDetail,
 }
 
 export const pagesConfig = {
