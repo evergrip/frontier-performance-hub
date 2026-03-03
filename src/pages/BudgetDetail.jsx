@@ -6,7 +6,7 @@ import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, DollarSign, Users, Wrench, CreditCard, Car } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, Users, Wrench, CreditCard, Car, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 import BudgetSummaryForm from '../components/budget/BudgetSummaryForm';
@@ -16,6 +16,7 @@ import AssetDetailList from '../components/budget/AssetDetailList';
 import LiabilityDetailList from '../components/budget/LiabilityDetailList';
 import VehicleDetailList from '../components/budget/VehicleDetailList';
 import BudgetLineItems from '../components/budget/BudgetLineItems';
+import BudgetVersionHistory from '../components/budget/BudgetVersionHistory';
 
 const STATUS_COLORS = {
   draft: 'bg-slate-100 text-slate-700',
@@ -27,6 +28,11 @@ export default function BudgetDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const budgetId = urlParams.get('id');
   const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   const { data: budget, isLoading } = useQuery({
     queryKey: ['budget', budgetId],
@@ -58,14 +64,65 @@ export default function BudgetDetail() {
     enabled: !!budgetId,
   });
 
+  const createVersionSnapshot = (changeSummary) => {
+    const snapshot = {
+      name: budget.name,
+      status: budget.status,
+      net_profit_target_amount: budget.net_profit_target_amount,
+      net_profit_target_percentage: budget.net_profit_target_percentage,
+      gross_revenue_projection: budget.gross_revenue_projection,
+      cost_of_goods_sold_projection: budget.cost_of_goods_sold_projection,
+      total_overhead_projection: budget.total_overhead_projection,
+      line_items: budget.line_items || [],
+    };
+    const currentVersion = budget.current_version || 1;
+    const newVersion = currentVersion + 1;
+    const versionEntry = {
+      version: currentVersion,
+      timestamp: new Date().toISOString(),
+      changed_by: currentUser?.email || 'unknown',
+      changed_by_name: currentUser?.full_name || 'Unknown',
+      change_summary: changeSummary || 'Budget updated',
+      snapshot,
+    };
+    const existingHistory = budget.version_history || [];
+    return { newVersion, history: [...existingHistory, versionEntry] };
+  };
+
   const updateBudgetMutation = useMutation({
-    mutationFn: (data) => base44.entities.Budget.update(budgetId, data),
+    mutationFn: (data) => {
+      const { _skipVersioning, _changeSummary, ...updateData } = data;
+      if (_skipVersioning) {
+        return base44.entities.Budget.update(budgetId, updateData);
+      }
+      const { newVersion, history } = createVersionSnapshot(_changeSummary || 'Budget updated');
+      return base44.entities.Budget.update(budgetId, {
+        ...updateData,
+        current_version: newVersion,
+        version_history: history,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       toast.success('Budget updated');
     },
   });
+
+  const handleRevert = (versionEntry) => {
+    if (!versionEntry?.snapshot) return;
+    const { newVersion, history } = createVersionSnapshot(`Reverted to v${versionEntry.version}`);
+    const revertData = {
+      ...versionEntry.snapshot,
+      current_version: newVersion,
+      version_history: history,
+    };
+    base44.entities.Budget.update(budgetId, revertData).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      toast.success(`Reverted to version ${versionEntry.version}`);
+    });
+  };
 
   const totals = useMemo(() => {
     const totalStaffCost = staffItems.reduce((sum, s) => sum + (s.salary || 0) + (s.benefits_cost || 0) + (s.taxes_cost || 0), 0);
@@ -143,6 +200,7 @@ export default function BudgetDetail() {
           <TabsTrigger value="liabilities"><CreditCard className="w-4 h-4 mr-1" /> Liabilities ({liabilityItems.length})</TabsTrigger>
           <TabsTrigger value="vehicles"><Car className="w-4 h-4 mr-1" /> Vehicles ({vehicleItems.length})</TabsTrigger>
           <TabsTrigger value="line_items">Line Items</TabsTrigger>
+          <TabsTrigger value="history"><History className="w-4 h-4 mr-1" /> History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pl">
@@ -150,7 +208,7 @@ export default function BudgetDetail() {
         </TabsContent>
 
         <TabsContent value="summary">
-          <BudgetSummaryForm budget={budget} onSave={(data) => updateBudgetMutation.mutate(data)} isSaving={updateBudgetMutation.isPending} />
+          <BudgetSummaryForm budget={budget} onSave={(data) => updateBudgetMutation.mutate({ ...data, _changeSummary: 'Summary & targets updated' })} isSaving={updateBudgetMutation.isPending} />
         </TabsContent>
 
         <TabsContent value="staff">
@@ -170,7 +228,11 @@ export default function BudgetDetail() {
         </TabsContent>
 
         <TabsContent value="line_items">
-          <BudgetLineItems budget={budget} onSave={(data) => updateBudgetMutation.mutate(data)} isSaving={updateBudgetMutation.isPending} />
+          <BudgetLineItems budget={budget} onSave={(data) => updateBudgetMutation.mutate({ ...data, _changeSummary: 'Line items updated' })} isSaving={updateBudgetMutation.isPending} />
+        </TabsContent>
+
+        <TabsContent value="history">
+          <BudgetVersionHistory budget={budget} onRevert={handleRevert} />
         </TabsContent>
       </Tabs>
     </div>
