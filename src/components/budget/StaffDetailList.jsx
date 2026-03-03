@@ -13,6 +13,26 @@ import { toast } from 'sonner';
 
 const EMPTY = { name: '', role: '', salary: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', notes: '' };
 
+// Canadian employer withholding rates (approximate)
+const EMPLOYER_RATES = {
+  cpp: 0.0595,   // CPP employer portion ~5.95%
+  ei: 0.0232,    // EI employer portion ~2.32% (1.4x employee rate)
+  wsib: 0.015,   // WSIB ~1.5% (varies by industry)
+  eht: 0.0195,   // Employer Health Tax ~1.95%
+};
+const TOTAL_EMPLOYER_RATE = Object.values(EMPLOYER_RATES).reduce((s, r) => s + r, 0);
+
+const calcEmployerWithholdings = (salary) => {
+  const s = Number(salary) || 0;
+  return {
+    cpp: Math.round(s * EMPLOYER_RATES.cpp * 100) / 100,
+    ei: Math.round(s * EMPLOYER_RATES.ei * 100) / 100,
+    wsib: Math.round(s * EMPLOYER_RATES.wsib * 100) / 100,
+    eht: Math.round(s * EMPLOYER_RATES.eht * 100) / 100,
+    total: Math.round(s * TOTAL_EMPLOYER_RATE * 100) / 100,
+  };
+};
+
 export default function StaffDetailList({ budgetId, items }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -36,8 +56,10 @@ export default function StaffDetailList({ budgetId, items }) {
   const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', notes: item.notes || '' }); setShowDialog(true); };
   const openCreate = () => { setForm(EMPTY); setShowDialog(true); };
 
+  const withholdings = calcEmployerWithholdings(form.salary);
+
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: Number(form.taxes_cost) || 0, department: form.department, employment_type: form.employment_type, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department, employment_type: form.employment_type, notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
@@ -68,7 +90,7 @@ export default function StaffDetailList({ budgetId, items }) {
                     <TableHead>Department</TableHead>
                     <TableHead className="text-right">Salary</TableHead>
                     <TableHead className="text-right">Benefits</TableHead>
-                    <TableHead className="text-right">Taxes</TableHead>
+                    <TableHead className="text-right">Withholdings</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -120,11 +142,29 @@ export default function StaffDetailList({ budgetId, items }) {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div><Label>Salary ($)</Label><Input type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} /></div>
               <div><Label>Benefits ($)</Label><Input type="number" value={form.benefits_cost} onChange={e => setForm({...form, benefits_cost: e.target.value})} /></div>
-              <div><Label>Taxes ($)</Label><Input type="number" value={form.taxes_cost} onChange={e => setForm({...form, taxes_cost: e.target.value})} /></div>
             </div>
+            {Number(form.salary) > 0 && (
+              <div className="bg-slate-50 border rounded-lg p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-slate-700 mb-2">Employer Withholdings (auto-calculated)</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <span className="text-slate-500">CPP ({(EMPLOYER_RATES.cpp * 100).toFixed(2)}%)</span>
+                  <span className="text-right font-medium">${withholdings.cpp.toLocaleString()}</span>
+                  <span className="text-slate-500">EI ({(EMPLOYER_RATES.ei * 100).toFixed(2)}%)</span>
+                  <span className="text-right font-medium">${withholdings.ei.toLocaleString()}</span>
+                  <span className="text-slate-500">WSIB ({(EMPLOYER_RATES.wsib * 100).toFixed(2)}%)</span>
+                  <span className="text-right font-medium">${withholdings.wsib.toLocaleString()}</span>
+                  <span className="text-slate-500">EHT ({(EMPLOYER_RATES.eht * 100).toFixed(2)}%)</span>
+                  <span className="text-right font-medium">${withholdings.eht.toLocaleString()}</span>
+                </div>
+                <div className="border-t pt-1.5 mt-1.5 flex justify-between text-sm font-semibold">
+                  <span>Total Withholdings</span>
+                  <span>${withholdings.total.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={close}>Cancel</Button>
