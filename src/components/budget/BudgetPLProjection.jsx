@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target } from 'lucide-react';
 
 function Row({ label, value, bold, indent, variant }) {
   const fmt = (v) => {
@@ -28,8 +28,38 @@ export default function BudgetPLProjection({ budget, totals }) {
     lineItemOverhead, lineItemCogs, totalOverhead, netProfit, netProfitPct
   } = totals;
 
-  const targetMet = budget?.net_profit_target_amount != null && netProfit >= budget.net_profit_target_amount;
-  const targetPctMet = budget?.net_profit_target_percentage != null && netProfitPct >= budget.net_profit_target_percentage;
+  const targetAmt = budget?.net_profit_target_amount;
+  const targetPct = budget?.net_profit_target_percentage;
+  const hasTarget = targetAmt != null || targetPct != null;
+  const targetMet = targetAmt != null && netProfit >= targetAmt;
+  const targetPctMet = targetPct != null && netProfitPct >= targetPct;
+
+  // Reverse-calculate required gross revenue to meet targets
+  // Net Profit = Gross Revenue - Total COGS - Total Overhead
+  // Since COGS are entered as fixed amounts: Required Revenue = Target + Overhead + COGS
+  // For % target: Net Profit = Revenue * (targetPct/100), so Revenue = (Overhead + COGS) / (1 - targetPct/100)
+  const fixedCosts = totalOverhead + totalCogs;
+  let requiredRevenueByAmt = null;
+  let requiredRevenueByPct = null;
+  let requiredRevenue = null;
+
+  if (targetAmt != null && targetAmt > 0) {
+    requiredRevenueByAmt = targetAmt + fixedCosts;
+  }
+  if (targetPct != null && targetPct > 0 && targetPct < 100) {
+    requiredRevenueByPct = fixedCosts / (1 - targetPct / 100);
+  }
+
+  // Use whichever requires more revenue (the stricter target)
+  if (requiredRevenueByAmt != null && requiredRevenueByPct != null) {
+    requiredRevenue = Math.max(requiredRevenueByAmt, requiredRevenueByPct);
+  } else {
+    requiredRevenue = requiredRevenueByAmt || requiredRevenueByPct;
+  }
+
+  const revenueGap = requiredRevenue != null ? requiredRevenue - grossRevenue : null;
+
+  const fmt$ = (v) => `$${Math.abs(v || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
   return (
     <div className="space-y-6">
@@ -41,15 +71,60 @@ export default function BudgetPLProjection({ budget, totals }) {
         <SummaryCard label="Net Profit" value={netProfit} icon={netProfit >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />} color={netProfit >= 0 ? 'emerald' : 'red'} subtitle={`${netProfitPct.toFixed(1)}% margin`} />
       </div>
 
+      {/* Required Revenue to Meet Goal */}
+      {hasTarget && requiredRevenue != null && (
+        <Card className={revenueGap <= 0 ? 'border-emerald-300 bg-emerald-50' : 'border-blue-300 bg-blue-50'}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${revenueGap <= 0 ? 'bg-emerald-100' : 'bg-blue-100'}`}>
+                <Target className={`w-5 h-5 ${revenueGap <= 0 ? 'text-emerald-600' : 'text-blue-600'}`} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-slate-800">
+                  {revenueGap <= 0 ? 'Revenue target met!' : 'Revenue Required to Hit Net Profit Goal'}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
+                  <div>
+                    <p className="text-xs text-slate-500">Required Revenue</p>
+                    <p className="text-sm font-bold text-slate-900">{fmt$(requiredRevenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Current Projection</p>
+                    <p className="text-sm font-bold text-slate-900">{fmt$(grossRevenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">{revenueGap > 0 ? 'Gap' : 'Surplus'}</p>
+                    <p className={`text-sm font-bold ${revenueGap > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {revenueGap > 0 ? '+' : '-'}{fmt$(Math.abs(revenueGap))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Net Profit Target</p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {targetAmt != null ? fmt$(targetAmt) : ''}{targetAmt != null && targetPct != null ? ' / ' : ''}{targetPct != null ? `${targetPct}%` : ''}
+                    </p>
+                  </div>
+                </div>
+                {revenueGap > 0 && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    Based on your current fixed costs ({fmt$(fixedCosts)}), you need {fmt$(requiredRevenue)} in gross revenue to achieve your net profit goal.
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Target Status */}
-      {(budget?.net_profit_target_amount != null || budget?.net_profit_target_percentage != null) && (
+      {hasTarget && (
         <Card className={targetMet && targetPctMet ? 'border-emerald-300 bg-emerald-50' : 'border-amber-300 bg-amber-50'}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className={`w-3 h-3 rounded-full ${targetMet && targetPctMet ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             <div>
               <p className="text-sm font-semibold">{targetMet && targetPctMet ? 'On track to meet targets' : 'Below target'}</p>
               <p className="text-xs text-slate-600">
-                Target: ${(budget.net_profit_target_amount || 0).toLocaleString()} ({budget.net_profit_target_percentage || 0}%) | 
+                Target: ${(targetAmt || 0).toLocaleString()} ({targetPct || 0}%) | 
                 Projected: ${netProfit.toLocaleString()} ({netProfitPct.toFixed(1)}%)
               </p>
             </div>
