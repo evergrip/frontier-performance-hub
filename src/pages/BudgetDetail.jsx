@@ -125,11 +125,21 @@ export default function BudgetDetail() {
   };
 
   const totals = useMemo(() => {
-    const staffCostFn = (s) => (s.salary || 0) + (s.benefits_cost || 0) + (s.taxes_cost || 0);
-    const overheadStaff = staffItems.filter(s => (s.cost_category || 'overhead') === 'overhead');
-    const cogsStaff = staffItems.filter(s => s.cost_category === 'cogs');
-    const staffOverheadCost = overheadStaff.reduce((sum, s) => sum + staffCostFn(s), 0);
-    const staffCogsCost = cogsStaff.reduce((sum, s) => sum + staffCostFn(s), 0);
+    const staffBaseCost = (s) => (s.salary || 0) + (s.benefits_cost || 0) + (s.taxes_cost || 0);
+    let staffOverheadCost = 0;
+    let staffCogsCost = 0;
+    staffItems.forEach(s => {
+      const cat = s.cost_category || 'overhead';
+      if (cat === 'overhead') {
+        staffOverheadCost += staffBaseCost(s);
+      } else if (cat === 'cogs') {
+        staffCogsCost += staffBaseCost(s) + (s.commission_amount || 0);
+      } else if (cat === 'split') {
+        // Split: salary+benefits+taxes → overhead, commission → COGS
+        staffOverheadCost += staffBaseCost(s);
+        staffCogsCost += (s.commission_amount || 0);
+      }
+    });
     const totalStaffCost = staffOverheadCost + staffCogsCost;
 
     const totalAssetCost = assetItems.reduce((sum, a) => sum + (a.monthly_maintenance_cost || 0) * 12, 0);
