@@ -77,6 +77,8 @@ import SurveyPublic from './pages/SurveyPublic';
 import SurveyResults from './pages/SurveyResults';
 import Surveys from './pages/Surveys';
 import UsersAdmin from './pages/UsersAdmin';
+import Budgets from './pages/Budgets';
+import BudgetDetail from './pages/BudgetDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -111,6 +113,8 @@ export const PAGES = {
     "SurveyResults": SurveyResults,
     "Surveys": Surveys,
     "UsersAdmin": UsersAdmin,
+    "Budgets": Budgets,
+    "BudgetDetail": BudgetDetail,
 }
 
 export const pagesConfig = {
