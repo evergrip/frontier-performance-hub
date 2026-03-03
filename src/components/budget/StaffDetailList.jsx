@@ -147,7 +147,7 @@ export default function StaffDetailList({ budgetId, items }) {
       </Card>
 
       <Dialog open={showDialog} onOpenChange={close}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? 'Edit Staff' : 'Add Staff'}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
