@@ -69,6 +69,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'My Performance', icon: Target, page: 'MyKPIs' },
     { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
     { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },
+    { name: 'Budgets', icon: Wallet, page: 'Budgets' },
   ];
 
   const isManager = user?.is_department_manager && user?.managed_departments?.length > 0;
