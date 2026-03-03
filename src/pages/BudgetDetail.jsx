@@ -125,7 +125,13 @@ export default function BudgetDetail() {
   };
 
   const totals = useMemo(() => {
-    const totalStaffCost = staffItems.reduce((sum, s) => sum + (s.salary || 0) + (s.benefits_cost || 0) + (s.taxes_cost || 0), 0);
+    const staffCostFn = (s) => (s.salary || 0) + (s.benefits_cost || 0) + (s.taxes_cost || 0);
+    const overheadStaff = staffItems.filter(s => (s.cost_category || 'overhead') === 'overhead');
+    const cogsStaff = staffItems.filter(s => s.cost_category === 'cogs');
+    const staffOverheadCost = overheadStaff.reduce((sum, s) => sum + staffCostFn(s), 0);
+    const staffCogsCost = cogsStaff.reduce((sum, s) => sum + staffCostFn(s), 0);
+    const totalStaffCost = staffOverheadCost + staffCogsCost;
+
     const totalAssetCost = assetItems.reduce((sum, a) => sum + (a.monthly_maintenance_cost || 0) * 12, 0);
     const totalAssetDepreciation = assetItems.reduce((sum, a) => {
       if (!a.useful_life_years || a.useful_life_years <= 0) return sum;
@@ -141,14 +147,14 @@ export default function BudgetDetail() {
     const lineItemOverhead = (budget?.line_items || []).filter(i => i.type === 'overhead').reduce((sum, i) => sum + (i.amount || 0), 0);
     const lineItemCogs = (budget?.line_items || []).filter(i => i.type === 'cogs').reduce((sum, i) => sum + (i.amount || 0), 0);
 
-    const totalOverhead = totalStaffCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead;
-    const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs;
+    const totalOverhead = staffOverheadCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead;
+    const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs + staffCogsCost;
     const grossRevenue = budget?.gross_revenue_projection || 0;
     const grossProfit = grossRevenue - totalCogs;
     const netProfit = grossProfit - totalOverhead;
     const netProfitPct = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
 
-    return { totalStaffCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct };
+    return { totalStaffCost, staffOverheadCost, staffCogsCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, lineItemCogs, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct };
   }, [budget, staffItems, assetItems, liabilityItems, vehicleItems]);
 
   if (isLoading) {

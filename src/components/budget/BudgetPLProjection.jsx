@@ -22,9 +22,10 @@ function Row({ label, value, bold, indent, variant }) {
 export default function BudgetPLProjection({ budget, totals }) {
   const {
     grossRevenue, totalCogs, grossProfit, 
-    totalStaffCost, totalAssetCost, totalAssetDepreciation,
+    staffOverheadCost, staffCogsCost,
+    totalAssetCost, totalAssetDepreciation,
     totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation,
-    lineItemOverhead, totalOverhead, netProfit, netProfitPct
+    lineItemOverhead, lineItemCogs, totalOverhead, netProfit, netProfitPct
   } = totals;
 
   const targetMet = budget?.net_profit_target_amount != null && netProfit >= budget.net_profit_target_amount;
@@ -61,13 +62,20 @@ export default function BudgetPLProjection({ budget, totals }) {
         <CardHeader><CardTitle>Profit & Loss Projection</CardTitle></CardHeader>
         <CardContent className="divide-y divide-slate-100">
           <Row label="Gross Revenue" value={grossRevenue} bold />
-          <Row label="Cost of Goods Sold" value={-totalCogs} variant="negative" />
+          
+          <div className="py-2">
+            <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Cost of Goods Sold Breakdown</p>
+          </div>
+          <Row label="Base COGS Projection" value={budget?.cost_of_goods_sold_projection || 0} indent />
+          {staffCogsCost > 0 && <Row label="Staff — COGS" value={staffCogsCost} indent />}
+          {lineItemCogs > 0 && <Row label="Line Item COGS" value={lineItemCogs} indent />}
+          <Row label="Total Cost of Goods Sold" value={totalCogs} bold />
           <Row label="Gross Profit" value={grossProfit} bold variant={grossProfit >= 0 ? 'positive' : 'negative'} />
 
           <div className="py-2">
             <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Overhead Breakdown</p>
           </div>
-          <Row label="Staff Costs (Salary + Benefits + Taxes)" value={totalStaffCost} indent />
+          <Row label="Staff — Overhead" value={staffOverheadCost} indent />
           <Row label="Asset Maintenance" value={totalAssetCost} indent />
           <Row label="Asset Depreciation" value={totalAssetDepreciation} indent />
           <Row label="Liability Payments" value={totalLiabilityCost} indent />
