@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Pencil, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
-const EMPTY = { name: '', role: '', salary: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', notes: '' };
+const EMPTY = { name: '', role: '', salary: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', cost_category: 'overhead', notes: '' };
 
 // Canadian employer withholding rates (approximate)
 const EMPLOYER_RATES = {
@@ -53,19 +53,21 @@ export default function StaffDetailList({ budgetId, items }) {
   });
 
   const close = () => { setShowDialog(false); setEditing(null); setForm(EMPTY); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', notes: item.notes || '' }); setShowDialog(true); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
   const openCreate = () => { setForm(EMPTY); setShowDialog(true); };
 
   const withholdings = calcEmployerWithholdings(form.salary);
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department, employment_type: form.employment_type, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department, employment_type: form.employment_type, cost_category: form.cost_category, notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
 
   const fmt = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—';
   const totalCost = items.reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0), 0);
+  const overheadCost = items.filter(i => (i.cost_category || 'overhead') === 'overhead').reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0), 0);
+  const cogsCost = items.filter(i => i.cost_category === 'cogs').reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0), 0);
 
   return (
     <>
@@ -73,7 +75,7 @@ export default function StaffDetailList({ budgetId, items }) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Staff Details</CardTitle>
-            <p className="text-sm text-slate-500 mt-1">Total annual cost: <strong>{fmt(totalCost)}</strong></p>
+            <p className="text-sm text-slate-500 mt-1">Total: <strong>{fmt(totalCost)}</strong> <span className="text-xs ml-2">(<span className="text-amber-600">Overhead: {fmt(overheadCost)}</span> | <span className="text-blue-600">COGS: {fmt(cogsCost)}</span>)</span></p>
           </div>
           <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Staff</Button>
         </CardHeader>
@@ -87,7 +89,7 @@ export default function StaffDetailList({ budgetId, items }) {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead className="text-right">Salary</TableHead>
                     <TableHead className="text-right">Benefits</TableHead>
                     <TableHead className="text-right">Withholdings</TableHead>
@@ -100,7 +102,11 @@ export default function StaffDetailList({ budgetId, items }) {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.role || '—'}</TableCell>
-                      <TableCell>{item.department || '—'}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${(item.cost_category || 'overhead') === 'overhead' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {(item.cost_category || 'overhead') === 'overhead' ? 'Overhead' : 'COGS'}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right">{fmt(item.salary)}</TableCell>
                       <TableCell className="text-right">{fmt(item.benefits_cost)}</TableCell>
                       <TableCell className="text-right">{fmt(item.taxes_cost)}</TableCell>
@@ -128,7 +134,7 @@ export default function StaffDetailList({ budgetId, items }) {
               <div><Label>Name</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
               <div><Label>Role</Label><Input value={form.role} onChange={e => setForm({...form, role: e.target.value})} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><Label>Department</Label><Input value={form.department} onChange={e => setForm({...form, department: e.target.value})} /></div>
               <div>
                 <Label>Employment Type</Label>
@@ -138,6 +144,16 @@ export default function StaffDetailList({ budgetId, items }) {
                     <SelectItem value="full_time">Full Time</SelectItem>
                     <SelectItem value="part_time">Part Time</SelectItem>
                     <SelectItem value="contract">Contract</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Cost Category</Label>
+                <Select value={form.cost_category} onValueChange={v => setForm({...form, cost_category: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="overhead">Overhead</SelectItem>
+                    <SelectItem value="cogs">Cost of Goods Sold</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
