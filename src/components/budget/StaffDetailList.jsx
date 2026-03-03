@@ -154,7 +154,7 @@ export default function StaffDetailList({ budgetId, items }) {
               <div><Label>Name</Label><Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} /></div>
               <div><Label>Role</Label><Input value={form.role} onChange={e => setForm({...form, role: e.target.value})} /></div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div><Label>Department</Label><Input value={form.department} onChange={e => setForm({...form, department: e.target.value})} /></div>
               <div>
                 <Label>Employment Type</Label>
@@ -167,17 +167,17 @@ export default function StaffDetailList({ budgetId, items }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Cost Category</Label>
-                <Select value={form.cost_category} onValueChange={v => setForm({...form, cost_category: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="overhead">Overhead</SelectItem>
-                    <SelectItem value="cogs">Cost of Goods Sold</SelectItem>
-                    <SelectItem value="split">Split (Salary→OH, Commission→COGS)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            </div>
+            <div>
+              <Label>Cost Category</Label>
+              <Select value={form.cost_category} onValueChange={v => setForm({...form, cost_category: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="overhead">Overhead</SelectItem>
+                  <SelectItem value="cogs">Cost of Goods Sold</SelectItem>
+                  <SelectItem value="split">Split — Salary → Overhead, Commission → COGS</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className={`grid gap-3 ${form.cost_category === 'split' ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <div><Label>Salary ($)</Label><Input type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} /></div>
