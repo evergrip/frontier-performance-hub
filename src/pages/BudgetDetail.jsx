@@ -9,13 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Save, DollarSign, Users, Wrench, CreditCard, Car } from 'lucide-react';
 import { toast } from 'sonner';
 
-import BudgetSummaryForm from '@/components/budget/BudgetSummaryForm';
-import BudgetPLProjection from '@/components/budget/BudgetPLProjection';
-import StaffDetailList from '@/components/budget/StaffDetailList';
-import AssetDetailList from '@/components/budget/AssetDetailList';
-import LiabilityDetailList from '@/components/budget/LiabilityDetailList';
-import VehicleDetailList from '@/components/budget/VehicleDetailList';
-import BudgetLineItems from '@/components/budget/BudgetLineItems';
+import BudgetSummaryForm from '../components/budget/BudgetSummaryForm';
+import BudgetPLProjection from '../components/budget/BudgetPLProjection';
+import StaffDetailList from '../components/budget/StaffDetailList';
+import AssetDetailList from '../components/budget/AssetDetailList';
+import LiabilityDetailList from '../components/budget/LiabilityDetailList';
+import VehicleDetailList from '../components/budget/VehicleDetailList';
+import BudgetLineItems from '../components/budget/BudgetLineItems';
 
 const STATUS_COLORS = {
   draft: 'bg-slate-100 text-slate-700',
