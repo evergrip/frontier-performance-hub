@@ -126,12 +126,13 @@ export default function Clients() {
       client.phone?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  const handleCreateClient = (e) => {
+  const handleCreateClient = (e, alsoCreateLead = false) => {
     e.preventDefault();
     if (!clientForm.contact_name) {
       toast.error('Contact Name is required.');
       return;
     }
+    setPendingLeadAfterCreate(alsoCreateLead);
     createClientMutation.mutate(clientForm);
   };
 
