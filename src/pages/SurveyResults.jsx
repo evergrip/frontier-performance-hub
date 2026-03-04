@@ -59,27 +59,66 @@ export default function SurveyResults() {
             <p className="text-sm text-slate-500">{responses.length} responses</p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          disabled={exporting || responses.length === 0}
-          onClick={async () => {
-            setExporting(true);
-            const res = await base44.functions.invoke('exportSurveyResultsPdf', { survey_id: surveyId });
-            const blob = new Blob([res.data], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${(survey.title || 'survey').replace(/[^a-zA-Z0-9]/g, '_')}_results.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            a.remove();
-            setExporting(false);
-          }}
-        >
-          {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-          Export PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={responses.length === 0}
+            onClick={() => {
+              const qs = survey.questions || [];
+              const headers = ["Response #", "Respondent", "Email", "Submitted At", ...qs.map(q => q.text)];
+              const rows = responses.map((r, i) => {
+                const row = [
+                  responses.length - i,
+                  r.respondent_name || "",
+                  r.respondent_email || "",
+                  r.submitted_at || r.created_date || "",
+                  ...qs.map(q => {
+                    const val = r.responses?.[q.id];
+                    if (val === undefined || val === null) return "";
+                    if (Array.isArray(val)) return val.join("; ");
+                    return String(val);
+                  })
+                ];
+                return row;
+              });
+              const escape = (v) => `"${String(v).replace(/"/g, '""')}"`;
+              const csv = [headers.map(escape).join(","), ...rows.map(r => r.map(escape).join(","))].join("\n");
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${(survey.title || "survey").replace(/[^a-zA-Z0-9]/g, "_")}_results.csv`;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              a.remove();
+            }}
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button
+            variant="outline"
+            disabled={exporting || responses.length === 0}
+            onClick={async () => {
+              setExporting(true);
+              const res = await base44.functions.invoke('exportSurveyResultsPdf', { survey_id: surveyId });
+              const blob = new Blob([res.data], { type: 'application/pdf' });
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${(survey.title || 'survey').replace(/[^a-zA-Z0-9]/g, '_')}_results.pdf`;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              a.remove();
+              setExporting(false);
+            }}
+          >
+            {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            Export PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
