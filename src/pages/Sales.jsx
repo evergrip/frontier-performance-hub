@@ -989,7 +989,29 @@ export default function Sales() {
               <p className="text-xs text-slate-500 mb-2">
                 Lock in the final preconstruction revenue
               </p>
-...
+              <Input
+                type="number"
+                value={constructionForm.final_precon_value}
+                onChange={(e) => setConstructionForm({...constructionForm, final_precon_value: e.target.value})}
+                placeholder="125000"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>Construction Budget *</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Pre-filled with latest estimate. Override as needed.
+              </p>
+              <Input
+                type="number"
+                value={constructionForm.construction_budget}
+                onChange={(e) => setConstructionForm({...constructionForm, construction_budget: e.target.value})}
+                placeholder="750000"
+                required
+              />
+            </div>
+
             <div className="flex gap-2 justify-end pt-4">
               <Button type="button" variant="outline" onClick={() => setConstructionDialogOpen(false)}>
                 Cancel
