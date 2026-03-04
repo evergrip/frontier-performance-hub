@@ -364,7 +364,7 @@ export default function Leads() {
         <div className="text-center pt-2">
           <Link to={createPageUrl('DisqualifiedLeads')}>
             <Button variant="ghost" className="text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
-              View {disqualifiedLeads.length} Disqualified Lead{disqualifiedLeads.length !== 1 ? 's' : ''}
+              View Disqualified Lead{disqualifiedLeads.length !== 1 ? 's' : ''}
             </Button>
           </Link>
         </div>
