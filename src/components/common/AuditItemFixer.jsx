@@ -12,7 +12,7 @@ import { getChecks } from './FileAuditChecklist';
  * Renders the audit checklist with inline fix buttons for failing items.
  * After a fix is saved, it re-runs checks to update the UI.
  */
-export default function AuditItemFixer({ sale, lead, client, users, commissionTransactions, mode, onDataUpdated }) {
+export default function AuditItemFixer({ sale, project, lead, client, users, commissionTransactions, mode, onDataUpdated }) {
   const [fixingItem, setFixingItem] = useState(null);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -20,7 +20,7 @@ export default function AuditItemFixer({ sale, lead, client, users, commissionTr
   // Local editable state for quick fixes
   const [fixValues, setFixValues] = useState({});
 
-  const checks = getChecks({ sale, lead, client, users, commissionTransactions, mode });
+  const checks = getChecks({ sale, project, lead, client, users, commissionTransactions, mode });
   const failCount = checks.filter(c => !c.pass).length;
   const allPass = failCount === 0;
 
