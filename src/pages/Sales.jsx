@@ -953,9 +953,10 @@ export default function Sales() {
       <Dialog open={constructionDialogOpen} onOpenChange={setConstructionDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           {(() => {
-            const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
-            const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
-            const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
+            const freshSale = selectedSale ? sales.find(s => s.id === selectedSale.id) || selectedSale : null;
+            const linkedLead = freshSale ? leads.find(l => l.id === freshSale.lead_id) : null;
+            const linkedClient = freshSale ? clients.find(c => c.id === freshSale.client_id) : null;
+            const saleTxns = freshSale ? commissionTransactions.filter(t => t.sale_id === freshSale.id) : [];
             const refreshData = () => {
               queryClient.invalidateQueries(['sales']);
               queryClient.invalidateQueries(['clients']);
@@ -968,12 +969,12 @@ export default function Sales() {
           </DialogHeader>
           <form onSubmit={handleConvertToConstruction} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
-              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+              <p className="text-sm font-medium text-slate-900">{freshSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(freshSale?.client_id)}</p>
             </div>
 
             <AuditItemFixer
-              sale={selectedSale}
+              sale={freshSale}
               lead={linkedLead}
               client={linkedClient}
               users={users}
@@ -1279,9 +1280,10 @@ export default function Sales() {
       <Dialog open={closePreconDialogOpen} onOpenChange={setClosePreconDialogOpen}>
         <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           {(() => {
-            const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
-            const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
-            const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
+            const freshSale = selectedSale ? sales.find(s => s.id === selectedSale.id) || selectedSale : null;
+            const linkedLead = freshSale ? leads.find(l => l.id === freshSale.lead_id) : null;
+            const linkedClient = freshSale ? clients.find(c => c.id === freshSale.client_id) : null;
+            const saleTxns = freshSale ? commissionTransactions.filter(t => t.sale_id === freshSale.id) : [];
             const refreshData = () => {
               queryClient.invalidateQueries(['sales']);
               queryClient.invalidateQueries(['clients']);
@@ -1301,12 +1303,12 @@ export default function Sales() {
             closePreconMutation.mutate({ preconSale: selectedSale, finalValue: finalPreconValue });
           }} className="space-y-4">
             <div className="p-3 bg-slate-50 rounded-lg">
-              <p className="text-sm font-medium text-slate-900">{selectedSale?.title}</p>
-              <p className="text-xs text-slate-500">{getClientName(selectedSale?.client_id)}</p>
+              <p className="text-sm font-medium text-slate-900">{freshSale?.title}</p>
+              <p className="text-xs text-slate-500">{getClientName(freshSale?.client_id)}</p>
             </div>
 
             <AuditItemFixer
-              sale={selectedSale}
+              sale={freshSale}
               lead={linkedLead}
               client={linkedClient}
               users={users}
