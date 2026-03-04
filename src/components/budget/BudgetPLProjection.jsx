@@ -157,27 +157,27 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue }) {
           <div className="py-2">
             <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Cost of Goods Sold Breakdown</p>
           </div>
-          <Row label="Base COGS Projection" value={budget?.cost_of_goods_sold_projection || 0} indent />
-          {staffCogsCost > 0 && <Row label="Staff — COGS" value={staffCogsCost} indent />}
-          {(expenseCogs || 0) > 0 && <Row label="Expenses — COGS" value={expenseCogs} indent />}
-          {lineItemCogs > 0 && <Row label="Line Item COGS" value={lineItemCogs} indent />}
-          <Row label="Total Cost of Goods Sold" value={totalCogs} bold />
-          <Row label="Gross Profit" value={grossProfit} bold variant={grossProfit >= 0 ? 'positive' : 'negative'} />
+          <Row label="Base COGS Projection" value={budget?.cost_of_goods_sold_projection || 0} indent pctOfRevenue={grossRevenue > 0 ? (budget?.cost_of_goods_sold_projection || 0) / grossRevenue * 100 : null} />
+          {staffCogsCost > 0 && <Row label="Staff — COGS" value={staffCogsCost} indent pctOfRevenue={grossRevenue > 0 ? staffCogsCost / grossRevenue * 100 : null} />}
+          {(expenseCogs || 0) > 0 && <Row label="Expenses — COGS" value={expenseCogs} indent pctOfRevenue={grossRevenue > 0 ? expenseCogs / grossRevenue * 100 : null} />}
+          {lineItemCogs > 0 && <Row label="Line Item COGS" value={lineItemCogs} indent pctOfRevenue={grossRevenue > 0 ? lineItemCogs / grossRevenue * 100 : null} />}
+          <Row label="Total Cost of Goods Sold" value={totalCogs} bold pctOfRevenue={grossRevenue > 0 ? totalCogs / grossRevenue * 100 : null} />
+          <Row label="Gross Profit" value={grossProfit} bold variant={grossProfit >= 0 ? 'positive' : 'negative'} pctOfRevenue={grossRevenue > 0 ? grossProfit / grossRevenue * 100 : null} />
 
           <div className="py-2">
             <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Overhead Breakdown</p>
           </div>
-          <Row label="Staff — Overhead" value={staffOverheadCost} indent />
-          <Row label="Asset Maintenance" value={totalAssetCost} indent />
-          <Row label="Asset Depreciation" value={totalAssetDepreciation} indent />
-          <Row label="Liability Payments" value={totalLiabilityCost} indent />
-          <Row label="Vehicle Operating Costs" value={totalVehicleCost} indent />
-          <Row label="Vehicle Depreciation" value={totalVehicleDepreciation} indent />
-          {(expenseOverhead || 0) > 0 && <Row label="Expenses — Overhead" value={expenseOverhead} indent />}
-          <Row label="Other Overhead (Line Items)" value={lineItemOverhead} indent />
-          <Row label="Total Overhead" value={totalOverhead} bold />
+          <Row label="Staff — Overhead" value={staffOverheadCost} indent pctOfRevenue={grossRevenue > 0 ? staffOverheadCost / grossRevenue * 100 : null} />
+          <Row label="Asset Maintenance" value={totalAssetCost} indent pctOfRevenue={grossRevenue > 0 ? totalAssetCost / grossRevenue * 100 : null} />
+          <Row label="Asset Depreciation" value={totalAssetDepreciation} indent pctOfRevenue={grossRevenue > 0 ? totalAssetDepreciation / grossRevenue * 100 : null} />
+          <Row label="Liability Payments" value={totalLiabilityCost} indent pctOfRevenue={grossRevenue > 0 ? totalLiabilityCost / grossRevenue * 100 : null} />
+          <Row label="Vehicle Operating Costs" value={totalVehicleCost} indent pctOfRevenue={grossRevenue > 0 ? totalVehicleCost / grossRevenue * 100 : null} />
+          <Row label="Vehicle Depreciation" value={totalVehicleDepreciation} indent pctOfRevenue={grossRevenue > 0 ? totalVehicleDepreciation / grossRevenue * 100 : null} />
+          {(expenseOverhead || 0) > 0 && <Row label="Expenses — Overhead" value={expenseOverhead} indent pctOfRevenue={grossRevenue > 0 ? expenseOverhead / grossRevenue * 100 : null} />}
+          <Row label="Other Overhead (Line Items)" value={lineItemOverhead} indent pctOfRevenue={grossRevenue > 0 ? lineItemOverhead / grossRevenue * 100 : null} />
+          <Row label="Total Overhead" value={totalOverhead} bold pctOfRevenue={grossRevenue > 0 ? totalOverhead / grossRevenue * 100 : null} />
 
-          <Row label="Net Profit" value={netProfit} bold variant={netProfit >= 0 ? 'positive' : 'negative'} />
+          <Row label="Net Profit" value={netProfit} bold variant={netProfit >= 0 ? 'positive' : 'negative'} pctOfRevenue={grossRevenue > 0 ? netProfit / grossRevenue * 100 : null} />
           <Row label="Net Profit Margin" value={null} />
           <div className="flex justify-between py-2 font-semibold">
             <span className="text-slate-700">Net Profit Margin</span>
