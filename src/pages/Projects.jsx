@@ -16,7 +16,8 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
-import FileAuditChecklist, { getChecks } from '../components/common/FileAuditChecklist';
+import AuditItemFixer from '../components/common/AuditItemFixer';
+import { getChecks } from '../components/common/FileAuditChecklist';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
@@ -1179,7 +1180,7 @@ export default function Projects() {
               <p className="text-xs text-amber-600 mt-2">Finalizing this project will remove it from the scheduler and active projects</p>
             </div>
 
-            <FileAuditChecklist
+            <AuditItemFixer
               sale={linkedSale}
               project={selectedProject}
               lead={linkedLead}
@@ -1187,6 +1188,13 @@ export default function Projects() {
               users={users}
               commissionTransactions={saleTxns}
               mode="construction_closeout"
+              onDataUpdated={() => {
+                queryClient.invalidateQueries(['projects']);
+                queryClient.invalidateQueries(['clients']);
+                queryClient.invalidateQueries(['sales']);
+                queryClient.invalidateQueries(['leads']);
+                queryClient.invalidateQueries(['commission-transactions']);
+              }}
             />
 
             <div>
