@@ -70,13 +70,20 @@ export default function Clients() {
     initialData: [],
   });
 
+  const [pendingLeadAfterCreate, setPendingLeadAfterCreate] = useState(false);
+
   const createClientMutation = useMutation({
     mutationFn: (data) => base44.entities.Client.create(data),
-    onSuccess: () => {
+    onSuccess: (newClient) => {
       queryClient.invalidateQueries(['clients']);
       setClientDialogOpen(false);
       setClientForm({ company_name: '', contact_name: '', email: '', phone: '', address: '', notes: '' });
       toast.success('Client created successfully');
+      if (pendingLeadAfterCreate) {
+        setPendingLeadAfterCreate(false);
+        setSelectedClient(newClient);
+        setLeadDialogOpen(true);
+      }
     },
     onError: () => toast.error('Failed to create client')
   });
