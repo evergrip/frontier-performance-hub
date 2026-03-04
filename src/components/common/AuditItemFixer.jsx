@@ -27,7 +27,7 @@ export default function AuditItemFixer({ sale, project, lead, client, users, com
 
   React.useEffect(() => {
     onAuditStatusChange?.(allPass);
-  }, [allPass, onAuditStatusChange]);
+  }, [allPass, checks.length, skippedItems.size]);
 
   // Determine which checks can be fixed inline
   const getFixConfig = (check) => {
