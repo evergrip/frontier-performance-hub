@@ -6,7 +6,7 @@ import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, DollarSign, Users, Wrench, CreditCard, Car, History } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, Users, Wrench, CreditCard, Car, History, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 
 import BudgetSummaryForm from '../components/budget/BudgetSummaryForm';
@@ -16,6 +16,7 @@ import AssetDetailList from '../components/budget/AssetDetailList';
 import LiabilityDetailList from '../components/budget/LiabilityDetailList';
 import VehicleDetailList from '../components/budget/VehicleDetailList';
 import BudgetLineItems from '../components/budget/BudgetLineItems';
+import ExpenseDetailList from '../components/budget/ExpenseDetailList';
 import BudgetVersionHistory from '../components/budget/BudgetVersionHistory';
 
 const STATUS_COLORS = {
@@ -61,6 +62,12 @@ export default function BudgetDetail() {
   const { data: vehicleItems = [] } = useQuery({
     queryKey: ['vehicles', budgetId],
     queryFn: () => base44.entities.VehicleDetail.filter({ budget_id: budgetId }),
+    enabled: !!budgetId,
+  });
+
+  const { data: expenseItems = [] } = useQuery({
+    queryKey: ['expenses', budgetId],
+    queryFn: () => base44.entities.ExpenseDetail.filter({ budget_id: budgetId }),
     enabled: !!budgetId,
   });
 
@@ -157,15 +164,24 @@ export default function BudgetDetail() {
     const lineItemOverhead = (budget?.line_items || []).filter(i => i.type === 'overhead').reduce((sum, i) => sum + (i.amount || 0), 0);
     const lineItemCogs = (budget?.line_items || []).filter(i => i.type === 'cogs').reduce((sum, i) => sum + (i.amount || 0), 0);
 
-    const totalOverhead = staffOverheadCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead;
-    const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs + staffCogsCost;
+    const annualize = (amount, period) => {
+      const a = Number(amount) || 0;
+      if (period === 'monthly') return a * 12;
+      if (period === 'quarterly') return a * 4;
+      return a;
+    };
+    const expenseOverhead = expenseItems.filter(e => (e.cost_type || 'overhead') === 'overhead').reduce((s, e) => s + annualize(e.amount, e.period), 0);
+    const expenseCogs = expenseItems.filter(e => e.cost_type === 'cogs').reduce((s, e) => s + annualize(e.amount, e.period), 0);
+
+    const totalOverhead = staffOverheadCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead + expenseOverhead;
+    const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs + staffCogsCost + expenseCogs;
     const grossRevenue = budget?.gross_revenue_projection || 0;
     const grossProfit = grossRevenue - totalCogs;
     const netProfit = grossProfit - totalOverhead;
     const netProfitPct = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
 
-    return { totalStaffCost, staffOverheadCost, staffCogsCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, lineItemCogs, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct };
-  }, [budget, staffItems, assetItems, liabilityItems, vehicleItems]);
+    return { totalStaffCost, staffOverheadCost, staffCogsCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, lineItemCogs, expenseOverhead, expenseCogs, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct };
+  }, [budget, staffItems, assetItems, liabilityItems, vehicleItems, expenseItems]);
 
   if (isLoading) {
     return <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" /></div>;
@@ -215,12 +231,13 @@ export default function BudgetDetail() {
           <TabsTrigger value="assets"><Wrench className="w-4 h-4 mr-1" /> Assets ({assetItems.length})</TabsTrigger>
           <TabsTrigger value="liabilities"><CreditCard className="w-4 h-4 mr-1" /> Liabilities ({liabilityItems.length})</TabsTrigger>
           <TabsTrigger value="vehicles"><Car className="w-4 h-4 mr-1" /> Vehicles ({vehicleItems.length})</TabsTrigger>
+          <TabsTrigger value="expenses"><Receipt className="w-4 h-4 mr-1" /> Expenses ({expenseItems.length})</TabsTrigger>
           <TabsTrigger value="line_items">Line Items</TabsTrigger>
           <TabsTrigger value="history"><History className="w-4 h-4 mr-1" /> History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pl">
-          <BudgetPLProjection budget={budget} totals={totals} />
+          <BudgetPLProjection budget={budget} totals={totals} onSetRevenue={(rev) => updateBudgetMutation.mutate({ gross_revenue_projection: rev, _changeSummary: 'Set gross revenue to required amount' })} />
         </TabsContent>
 
         <TabsContent value="summary">
@@ -241,6 +258,10 @@ export default function BudgetDetail() {
 
         <TabsContent value="vehicles">
           <VehicleDetailList budgetId={budgetId} items={vehicleItems} />
+        </TabsContent>
+
+        <TabsContent value="expenses">
+          <ExpenseDetailList budgetId={budgetId} items={expenseItems} />
         </TabsContent>
 
         <TabsContent value="line_items">
