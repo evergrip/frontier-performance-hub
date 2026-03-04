@@ -16,12 +16,13 @@ export default function AuditItemFixer({ sale, project, lead, client, users, com
   const [fixingItem, setFixingItem] = useState(null);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(true);
+  const [skippedItems, setSkippedItems] = useState(new Set());
 
   // Local editable state for quick fixes
   const [fixValues, setFixValues] = useState({});
 
   const checks = getChecks({ sale, project, lead, client, users, commissionTransactions, mode });
-  const failCount = checks.filter(c => !c.pass).length;
+  const failCount = checks.filter(c => !c.pass && !skippedItems.has(c.label)).length;
   const allPass = failCount === 0;
 
   // Determine which checks can be fixed inline
@@ -268,7 +269,9 @@ export default function AuditItemFixer({ sale, project, lead, client, users, com
         <div className="space-y-1 max-h-[300px] overflow-y-auto">
           {checks.map((check, idx) => {
             const fixConfig = getFixConfig(check);
-            const canFix = !check.pass && fixConfig;
+            const isSkipped = skippedItems.has(check.label);
+            const canFix = !check.pass && fixConfig && !isSkipped;
+            const canSkip = !check.pass && !isSkipped;
             const isFixing = fixingItem === check.label;
 
             return (
@@ -276,11 +279,13 @@ export default function AuditItemFixer({ sale, project, lead, client, users, com
                 <div className="flex items-center gap-2 px-3 py-1.5 text-xs">
                   {check.pass ? (
                     <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                  ) : isSkipped ? (
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                   ) : (
                     <XCircle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                   )}
-                  <span className={`font-medium ${check.pass ? 'text-slate-700' : 'text-red-700'}`}>{check.label}</span>
-                  <span className="text-slate-400 ml-auto truncate max-w-[140px]">{check.detail}</span>
+                  <span className={`font-medium ${check.pass ? 'text-slate-700' : isSkipped ? 'text-amber-600 line-through' : 'text-red-700'}`}>{check.label}</span>
+                  <span className="text-slate-400 ml-auto truncate max-w-[140px]">{isSkipped ? 'Skipped' : check.detail}</span>
                   {canFix && !isFixing && (
                     <Button
                       variant="ghost" size="sm"
@@ -288,6 +293,24 @@ export default function AuditItemFixer({ sale, project, lead, client, users, com
                       onClick={() => { setFixingItem(check.label); setFixValues({}); }}
                     >
                       <Pencil className="w-3 h-3 mr-1" /> Fix
+                    </Button>
+                  )}
+                  {canSkip && !isFixing && (
+                    <Button
+                      variant="ghost" size="sm"
+                      className="h-6 px-2 text-[10px] text-amber-600 hover:text-amber-800 hover:bg-amber-50 shrink-0"
+                      onClick={() => setSkippedItems(prev => new Set([...prev, check.label]))}
+                    >
+                      Skip
+                    </Button>
+                  )}
+                  {isSkipped && (
+                    <Button
+                      variant="ghost" size="sm"
+                      className="h-6 px-2 text-[10px] text-slate-500 hover:text-slate-700 hover:bg-slate-50 shrink-0"
+                      onClick={() => setSkippedItems(prev => { const n = new Set(prev); n.delete(check.label); return n; })}
+                    >
+                      Undo
                     </Button>
                   )}
                 </div>
