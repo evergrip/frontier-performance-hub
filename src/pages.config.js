@@ -58,6 +58,7 @@ import CompanyAdmin from './pages/CompanyAdmin';
 import CompanySettings from './pages/CompanySettings';
 import Dashboard from './pages/Dashboard';
 import DataQuality from './pages/DataQuality';
+import DisqualifiedLeads from './pages/DisqualifiedLeads';
 import ImportHistoricalData from './pages/ImportHistoricalData';
 import KPIAgentChat from './pages/KPIAgentChat';
 import KPIDashboard from './pages/KPIDashboard';
@@ -79,7 +80,6 @@ import SurveyPublic from './pages/SurveyPublic';
 import SurveyResults from './pages/SurveyResults';
 import Surveys from './pages/Surveys';
 import UsersAdmin from './pages/UsersAdmin';
-import DisqualifiedLeads from './pages/DisqualifiedLeads';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +95,7 @@ export const PAGES = {
     "CompanySettings": CompanySettings,
     "Dashboard": Dashboard,
     "DataQuality": DataQuality,
+    "DisqualifiedLeads": DisqualifiedLeads,
     "ImportHistoricalData": ImportHistoricalData,
     "KPIAgentChat": KPIAgentChat,
     "KPIDashboard": KPIDashboard,
@@ -116,7 +117,6 @@ export const PAGES = {
     "SurveyResults": SurveyResults,
     "Surveys": Surveys,
     "UsersAdmin": UsersAdmin,
-    "DisqualifiedLeads": DisqualifiedLeads,
 }
 
 export const pagesConfig = {

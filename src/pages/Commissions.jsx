@@ -211,9 +211,12 @@ export default function Commissions() {
     : null;
 
   const progressToNextTier = nextTier 
-    ? (ytdConstructionSales - (currentTier?.min_volume || 0)) / 
-      (nextTier.min_volume - (currentTier?.min_volume || 0)) * 100
-    : 100;
+    ? ((ytdConstructionSales - (currentTier?.min_volume || 0)) / 
+      (nextTier.min_volume - (currentTier?.min_volume || 0)) * 100)
+    : (currentTier ? 100 : 0);
+
+  // Clamp progress: if ytdConstructionSales is below current tier min (e.g. after reset), show 0
+  const clampedProgress = Math.max(0, Math.min(progressToNextTier, 100));
 
   const { data: payouts = [] } = useQuery({
     queryKey: ['commissionPayouts', displayUserId, isCompanyWide],
