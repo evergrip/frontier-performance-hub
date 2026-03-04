@@ -115,6 +115,12 @@ export default function Commissions() {
     initialData: [],
   });
 
+  const { data: leads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: () => base44.entities.Lead.list(),
+    initialData: [],
+  });
+
   const getFilteredTransactions = () => {
     const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
     const today = new Date();
@@ -474,7 +480,7 @@ export default function Commissions() {
                       <div className="w-full bg-slate-200 rounded-full h-2.5">
                         <div 
                           className="bg-gradient-to-r from-amber-400 to-amber-600 h-2.5 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(progressToNextTier, 100)}%` }}
+                          style={{ width: `${clampedProgress}%` }}
                         />
                       </div>
                       <p className="text-xs text-slate-500 mt-1">
