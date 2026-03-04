@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Target } from 'lucide-react';
 
-function Row({ label, value, bold, indent, variant }) {
+function Row({ label, value, bold, indent, variant, pctOfRevenue }) {
   const fmt = (v) => {
     if (v == null) return '—';
     const neg = v < 0;
@@ -15,7 +15,10 @@ function Row({ label, value, bold, indent, variant }) {
   return (
     <div className={`flex justify-between py-2 ${bold ? 'font-semibold border-t border-slate-300' : ''} ${indent ? 'pl-6' : ''}`}>
       <span className="text-slate-700">{label}</span>
-      <span className={colorClass}>{fmt(value)}</span>
+      <div className="flex items-center gap-3">
+        {pctOfRevenue != null && <span className="text-xs text-slate-400">{pctOfRevenue.toFixed(1)}%</span>}
+        <span className={`${colorClass} min-w-[100px] text-right`}>{fmt(value)}</span>
+      </div>
     </div>
   );
 }
