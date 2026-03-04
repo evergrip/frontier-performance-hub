@@ -360,45 +360,58 @@ export default function Leads() {
 
       {/* Disqualified Leads Section */}
       {disqualifiedLeads.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <h2 className="text-lg font-semibold text-slate-700">Disqualified Leads</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {disqualifiedLeads.map(lead => (
-              <Card key={lead.id} className="border border-red-100 bg-red-50/50">
-                <CardContent className="p-4">
-                  <p className="font-medium text-slate-900 text-sm">{lead.title}</p>
-                  <p className="text-xs text-slate-500">{getClientName(lead.client_id)}</p>
-                  {lead.disqualification_reason && (
-                    <p className="text-xs text-red-600 mt-1 line-clamp-2">Reason: {lead.disqualification_reason}</p>
-                  )}
-                  <div className="flex gap-2 mt-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs"
-                      onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="text-xs bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => {
-                        updateLeadStatusMutation.mutate({
-                          leadId: lead.id,
-                          status: 'new_project_lead',
-                          currentLead: lead
-                        });
-                        toast.success('Lead reactivated');
-                      }}
-                    >
-                      Reactivate
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="border border-red-100">
+            <CardContent className="p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-red-100 bg-red-50/50">
+                    <th className="text-left px-4 py-2 font-medium text-slate-600">Lead</th>
+                    <th className="text-left px-4 py-2 font-medium text-slate-600">Client</th>
+                    <th className="text-left px-4 py-2 font-medium text-slate-600">Reason</th>
+                    <th className="text-right px-4 py-2 font-medium text-slate-600"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {disqualifiedLeads.map(lead => (
+                    <tr key={lead.id} className="border-b border-red-50 last:border-0 hover:bg-red-50/30">
+                      <td className="px-4 py-2 font-medium text-slate-900">{lead.title}</td>
+                      <td className="px-4 py-2 text-slate-500">{getClientName(lead.client_id)}</td>
+                      <td className="px-4 py-2 text-red-600 text-xs max-w-xs truncate">{lead.disqualification_reason || '—'}</td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs h-7"
+                            onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs h-7 text-emerald-600 hover:text-emerald-700"
+                            onClick={() => {
+                              updateLeadStatusMutation.mutate({
+                                leadId: lead.id,
+                                status: 'new_project_lead',
+                                currentLead: lead
+                              });
+                              toast.success('Lead reactivated');
+                            }}
+                          >
+                            Reactivate
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
         </div>
       )}
 
