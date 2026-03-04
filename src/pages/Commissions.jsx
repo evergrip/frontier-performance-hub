@@ -457,15 +457,20 @@ export default function Commissions() {
                     )}
                   </div>
                   
+                  {commissionStartDateStr && (
+                    <p className="text-xs text-slate-500">
+                      Commission year: {commissionYearStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — present
+                    </p>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-xs text-slate-600 mb-1">YTD Pre-Construction</p>
+                      <p className="text-xs text-slate-600 mb-1">Pre-Construction (This Year)</p>
                       <p className="text-lg font-bold text-blue-600">
                         ${ytdPreconSales.toLocaleString()}
                       </p>
                     </div>
                     <div className="p-3 bg-emerald-50 rounded-lg">
-                      <p className="text-xs text-slate-600 mb-1">YTD Construction</p>
+                      <p className="text-xs text-slate-600 mb-1">Construction (This Year)</p>
                       <p className="text-lg font-bold text-emerald-600">
                         ${ytdConstructionSales.toLocaleString()}
                       </p>
@@ -473,12 +478,12 @@ export default function Commissions() {
                   </div>
 
                   <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-600 mb-1">YTD Construction (Tier Calc)</p>
+                    <p className="text-xs text-slate-600 mb-1">Construction (Tier Calc — This Year)</p>
                     <p className="text-xl font-bold text-slate-900">
                       ${ytdConstructionSales.toLocaleString()}
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
-                      Total YTD (all sales): ${(commissionBank.ytd_sales_volume || 0).toLocaleString()}
+                      Total this year (all sales): ${(ytdPreconSales + ytdConstructionSales).toLocaleString()}
                     </p>
                   </div>
 
