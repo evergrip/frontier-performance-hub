@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Target } from 'lucide-react';
 
 function Row({ label, value, bold, indent, variant }) {
@@ -19,13 +20,14 @@ function Row({ label, value, bold, indent, variant }) {
   );
 }
 
-export default function BudgetPLProjection({ budget, totals }) {
+export default function BudgetPLProjection({ budget, totals, onSetRevenue }) {
   const {
     grossRevenue, totalCogs, grossProfit, 
     staffOverheadCost, staffCogsCost,
     totalAssetCost, totalAssetDepreciation,
     totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation,
-    lineItemOverhead, lineItemCogs, totalOverhead, netProfit, netProfitPct
+    lineItemOverhead, lineItemCogs, expenseOverhead, expenseCogs,
+    totalOverhead, netProfit, netProfitPct
   } = totals;
 
   const targetAmt = budget?.net_profit_target_amount;
@@ -106,9 +108,20 @@ export default function BudgetPLProjection({ budget, totals }) {
                   </div>
                 </div>
                 {revenueGap > 0 && (
-                  <p className="text-xs text-slate-500 mt-2">
-                    Based on your current fixed costs ({fmt$(fixedCosts)}), you need {fmt$(requiredRevenue)} in gross revenue to achieve your net profit goal.
-                  </p>
+                  <div className="mt-2 flex items-center gap-3">
+                    <p className="text-xs text-slate-500 flex-1">
+                      Based on your current fixed costs ({fmt$(fixedCosts)}), you need {fmt$(requiredRevenue)} in gross revenue to achieve your net profit goal.
+                    </p>
+                    {onSetRevenue && (
+                      <Button
+                        size="sm"
+                        className="text-xs shrink-0"
+                        onClick={() => onSetRevenue(Math.ceil(requiredRevenue))}
+                      >
+                        Set as Gross Revenue
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -143,6 +156,7 @@ export default function BudgetPLProjection({ budget, totals }) {
           </div>
           <Row label="Base COGS Projection" value={budget?.cost_of_goods_sold_projection || 0} indent />
           {staffCogsCost > 0 && <Row label="Staff — COGS" value={staffCogsCost} indent />}
+          {(expenseCogs || 0) > 0 && <Row label="Expenses — COGS" value={expenseCogs} indent />}
           {lineItemCogs > 0 && <Row label="Line Item COGS" value={lineItemCogs} indent />}
           <Row label="Total Cost of Goods Sold" value={totalCogs} bold />
           <Row label="Gross Profit" value={grossProfit} bold variant={grossProfit >= 0 ? 'positive' : 'negative'} />
@@ -156,6 +170,7 @@ export default function BudgetPLProjection({ budget, totals }) {
           <Row label="Liability Payments" value={totalLiabilityCost} indent />
           <Row label="Vehicle Operating Costs" value={totalVehicleCost} indent />
           <Row label="Vehicle Depreciation" value={totalVehicleDepreciation} indent />
+          {(expenseOverhead || 0) > 0 && <Row label="Expenses — Overhead" value={expenseOverhead} indent />}
           <Row label="Other Overhead (Line Items)" value={lineItemOverhead} indent />
           <Row label="Total Overhead" value={totalOverhead} bold />
 
