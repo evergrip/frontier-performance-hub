@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import { createPageUrl } from '../utils';
-import FileAuditChecklist, { getChecks } from '../components/common/FileAuditChecklist';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 
 export default function Sales() {
@@ -31,6 +30,8 @@ export default function Sales() {
   const [sendBackLeadPhase, setSendBackLeadPhase] = useState('');
   const [reopenPreconDialogOpen, setReopenPreconDialogOpen] = useState(false);
   const [reopenAction, setReopenAction] = useState('reopen'); // 'reopen' or 'convert'
+  const [convertAuditPassed, setConvertAuditPassed] = useState(false);
+  const [finalizeAuditPassed, setFinalizeAuditPassed] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [constructionBudget, setConstructionBudget] = useState('');
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
@@ -955,8 +956,6 @@ export default function Sales() {
             const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
             const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
             const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
-            const auditChecks = selectedSale ? getChecks({ sale: selectedSale, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'convert_to_construction' }) : [];
-            const auditPassed = auditChecks.every(c => c.pass);
             const refreshData = () => {
               queryClient.invalidateQueries(['sales']);
               queryClient.invalidateQueries(['clients']);
@@ -980,6 +979,7 @@ export default function Sales() {
               users={users}
               commissionTransactions={saleTxns}
               mode="convert_to_construction"
+              onAuditStatusChange={setConvertAuditPassed}
               onDataUpdated={refreshData}
             />
 
@@ -988,39 +988,17 @@ export default function Sales() {
               <p className="text-xs text-slate-500 mb-2">
                 Lock in the final preconstruction revenue
               </p>
-              <Input
-                type="number"
-                value={constructionForm.final_precon_value}
-                onChange={(e) => setConstructionForm({...constructionForm, final_precon_value: e.target.value})}
-                placeholder="125000"
-                required
-              />
-            </div>
-
-            <div>
-              <Label>Construction Budget *</Label>
-              <p className="text-xs text-slate-500 mb-2">
-                Pre-filled with latest estimate. Override as needed.
-              </p>
-              <Input
-                type="number"
-                value={constructionForm.construction_budget}
-                onChange={(e) => setConstructionForm({...constructionForm, construction_budget: e.target.value})}
-                placeholder="750000"
-                required
-              />
-            </div>
-
+...
             <div className="flex gap-2 justify-end pt-4">
               <Button type="button" variant="outline" onClick={() => setConstructionDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={convertToConstructionMutation.isPending || !auditPassed} className="bg-amber-600 hover:bg-amber-700">
+              <Button type="submit" disabled={convertToConstructionMutation.isPending || !convertAuditPassed} className="bg-amber-600 hover:bg-amber-700">
                 <Building2 className="w-4 h-4 mr-2" />
                 Convert to Construction
               </Button>
-              {!auditPassed && (
-                <p className="text-xs text-red-600 mt-1">Resolve all audit items before converting</p>
+              {!convertAuditPassed && (
+                <p className="text-xs text-red-600 mt-1">Resolve or skip all audit items before converting</p>
               )}
             </div>
           </form>
@@ -1304,8 +1282,6 @@ export default function Sales() {
             const linkedLead = selectedSale ? leads.find(l => l.id === selectedSale.lead_id) : null;
             const linkedClient = selectedSale ? clients.find(c => c.id === selectedSale.client_id) : null;
             const saleTxns = selectedSale ? commissionTransactions.filter(t => t.sale_id === selectedSale.id) : [];
-            const auditChecks = selectedSale ? getChecks({ sale: selectedSale, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'finalize_precon' }) : [];
-            const auditPassed = auditChecks.every(c => c.pass);
             const refreshData = () => {
               queryClient.invalidateQueries(['sales']);
               queryClient.invalidateQueries(['clients']);
@@ -1336,6 +1312,7 @@ export default function Sales() {
               users={users}
               commissionTransactions={saleTxns}
               mode="finalize_precon"
+              onAuditStatusChange={setFinalizeAuditPassed}
               onDataUpdated={refreshData}
             />
             
@@ -1368,13 +1345,13 @@ export default function Sales() {
               </Button>
               <Button 
                 type="submit"
-                disabled={closePreconMutation.isPending || !auditPassed}
+                disabled={closePreconMutation.isPending || !finalizeAuditPassed}
                 className="bg-green-600 hover:bg-green-700"
               >
                 Finalize Pre-Construction
               </Button>
-              {!auditPassed && (
-                <p className="text-xs text-red-600 mt-1">Resolve all audit items before finalizing</p>
+              {!finalizeAuditPassed && (
+                <p className="text-xs text-red-600 mt-1">Resolve or skip all audit items before finalizing</p>
               )}
             </div>
           </form>
