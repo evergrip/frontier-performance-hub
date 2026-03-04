@@ -302,6 +302,7 @@ export default function Commissions() {
       sale_amount: transaction.sale_amount || 0,
       user_id: transaction.user_id,
       status: transaction.status,
+      created_date: transaction.created_date ? format(new Date(transaction.created_date), 'yyyy-MM-dd') : '',
     });
     setEditNote('');
     setEditTransactionOpen(true);
@@ -346,6 +347,9 @@ export default function Commissions() {
     }
     if (editFormData.status !== selectedTransaction.status) {
       updates.status = editFormData.status;
+    }
+    if (editFormData.created_date && editFormData.created_date !== format(new Date(selectedTransaction.created_date), 'yyyy-MM-dd')) {
+      updates.created_date = new Date(editFormData.created_date).toISOString();
     }
 
     if (Object.keys(updates).length === 0) {
@@ -880,6 +884,15 @@ export default function Commissions() {
                           ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Transaction Date</Label>
+                    <Input
+                      type="date"
+                      value={editFormData.created_date}
+                      onChange={(e) => setEditFormData({ ...editFormData, created_date: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
