@@ -33,7 +33,7 @@ const calcEmployerWithholdings = (salary) => {
   };
 };
 
-export default function StaffDetailList({ budgetId, items }) {
+export default function StaffDetailList({ budgetId, items, grossRevenue = 0 }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -89,7 +89,7 @@ export default function StaffDetailList({ budgetId, items }) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Staff Details</CardTitle>
-            <p className="text-sm text-slate-500 mt-1">Total: <strong>{fmt(totalCost)}</strong> <span className="text-xs ml-2">(<span className="text-amber-600">Overhead: {fmt(overheadCost)}</span> | <span className="text-blue-600">COGS: {fmt(cogsCost)}</span>)</span></p>
+            <p className="text-sm text-slate-500 mt-1">Total: <strong>{fmt(totalCost)}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalCost / grossRevenue * 100).toFixed(1)}% of revenue)</span>} <span className="text-xs ml-2">(<span className="text-amber-600">Overhead: {fmt(overheadCost)}</span> | <span className="text-blue-600">COGS: {fmt(cogsCost)}</span>)</span></p>
           </div>
           <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Staff</Button>
         </CardHeader>

@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 const EMPTY = { make: '', model: '', year: '', purchase_cost: '', depreciation_method: 'straight_line', useful_life_years: '', salvage_value: '', monthly_insurance_cost: '', monthly_fuel_cost: '', monthly_maintenance_cost: '', notes: '' };
 
-export default function VehicleDetailList({ budgetId, items }) {
+export default function VehicleDetailList({ budgetId, items, grossRevenue = 0 }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -48,7 +48,13 @@ export default function VehicleDetailList({ budgetId, items }) {
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2"><Car className="w-5 h-5" /> Vehicles</CardTitle>
+          <div>
+            <CardTitle className="flex items-center gap-2"><Car className="w-5 h-5" /> Vehicles</CardTitle>
+            {items.length > 0 && (() => {
+              const totalAnnual = items.reduce((s, v) => s + ((v.monthly_insurance_cost || 0) + (v.monthly_fuel_cost || 0) + (v.monthly_maintenance_cost || 0)) * 12 + (v.useful_life_years > 0 ? ((v.purchase_cost || 0) - (v.salvage_value || 0)) / v.useful_life_years : 0), 0);
+              return <p className="text-sm text-slate-500 mt-1">Annual Total: <strong>${Number(totalAnnual).toLocaleString()}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalAnnual / grossRevenue * 100).toFixed(1)}% of revenue)</span>}</p>;
+            })()}
+          </div>
           <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Vehicle</Button>
         </CardHeader>
         <CardContent>

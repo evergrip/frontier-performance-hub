@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Save } from 'lucide-react';
 
-export default function BudgetLineItems({ budget, onSave, isSaving }) {
+export default function BudgetLineItems({ budget, onSave, isSaving, grossRevenue = 0 }) {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
@@ -37,7 +37,13 @@ export default function BudgetLineItems({ budget, onSave, isSaving }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>General Line Items</CardTitle>
+        <div>
+          <CardTitle>General Line Items</CardTitle>
+          {items.length > 0 && (() => {
+            const totalAmount = items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+            return <p className="text-sm text-slate-500 mt-1">Total: <strong>${Number(totalAmount).toLocaleString()}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalAmount / grossRevenue * 100).toFixed(1)}% of revenue)</span>}</p>;
+          })()}
+        </div>
         <div className="flex gap-2">
           <Button onClick={addItem} size="sm" variant="outline"><Plus className="w-4 h-4 mr-1" /> Add Item</Button>
           <Button onClick={handleSave} size="sm" disabled={isSaving}><Save className="w-4 h-4 mr-1" /> {isSaving ? 'Saving...' : 'Save'}</Button>

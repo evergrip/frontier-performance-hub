@@ -33,7 +33,7 @@ const annualize = (amount, period) => {
   return a;
 };
 
-export default function ExpenseDetailList({ budgetId, items }) {
+export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0 }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
@@ -79,7 +79,7 @@ export default function ExpenseDetailList({ budgetId, items }) {
           <div>
             <CardTitle className="flex items-center gap-2"><Receipt className="w-5 h-5" /> Expenses</CardTitle>
             <p className="text-sm text-slate-500 mt-1">
-              Annual Total: <strong>{fmt(totalAnnual)}</strong>
+              Annual Total: <strong>{fmt(totalAnnual)}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalAnnual / grossRevenue * 100).toFixed(1)}% of revenue)</span>}
               <span className="text-xs ml-2">
                 (<span className="text-amber-600">Overhead: {fmt(overheadTotal)}</span> | <span className="text-blue-600">COGS: {fmt(cogsTotal)}</span>)
               </span>
