@@ -360,7 +360,15 @@ export default function Clients() {
                 Cancel
               </Button>
               <Button type="submit" className="bg-gradient-to-r from-amber-500 to-amber-600">
-                Create Client
+                Save Client
+              </Button>
+              <Button
+                type="button"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white gap-2"
+                onClick={(e) => handleCreateClient(e, true)}
+              >
+                Save & Create Lead
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </form>
