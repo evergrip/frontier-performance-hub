@@ -577,6 +577,64 @@ export default function Commissions() {
         </Card>
       )}
 
+      {/* Pipeline Revenue */}
+      {!isCompanyWide && displayUserId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+              My Pipeline Revenue
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              // Leads assigned to this user (not converted/disqualified)
+              const myLeads = leads.filter(l => l.assigned_to === displayUserId && l.status !== 'converted' && l.status !== 'disqualified');
+              const leadPreconRevenue = myLeads.reduce((s, l) => s + (l.estimated_precon_value || 0), 0);
+              const leadConstructionRevenue = myLeads.reduce((s, l) => s + (l.estimated_construction_value || 0), 0);
+              const leadTotal = leadPreconRevenue + leadConstructionRevenue;
+
+              // Active precon sales assigned to this user (not closed)
+              const myPreconSales = sales.filter(s => s.assigned_to === displayUserId && s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
+              const preconRevenue = myPreconSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
+
+              // Active construction sales assigned to this user (not closed)
+              const myConstructionSales = sales.filter(s => s.assigned_to === displayUserId && s.sale_type === 'construction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
+              const constructionRevenue = myConstructionSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
+
+              const totalPipeline = leadTotal + preconRevenue + constructionRevenue;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-4 bg-purple-50 rounded-lg">
+                      <p className="text-xs text-slate-600 mb-1">Leads ({myLeads.length})</p>
+                      <p className="text-lg font-bold text-purple-600">${leadTotal.toLocaleString()}</p>
+                      <div className="text-xs text-slate-500 mt-1 space-y-0.5">
+                        <p>Precon: ${leadPreconRevenue.toLocaleString()}</p>
+                        <p>Construction: ${leadConstructionRevenue.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-slate-600 mb-1">Pre-Construction ({myPreconSales.length})</p>
+                      <p className="text-lg font-bold text-blue-600">${preconRevenue.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-emerald-50 rounded-lg">
+                      <p className="text-xs text-slate-600 mb-1">Construction ({myConstructionSales.length})</p>
+                      <p className="text-lg font-bold text-emerald-600">${constructionRevenue.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-lg flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-700">Total Pipeline Revenue</p>
+                    <p className="text-xl font-bold text-slate-900">${totalPipeline.toLocaleString()}</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Pending Requests */}
       {pendingPayouts.length > 0 && (
         <Card>
