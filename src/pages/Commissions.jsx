@@ -159,19 +159,34 @@ export default function Commissions() {
 
   const filteredTransactions = getFilteredTransactions();
 
-  // Calculate YTD sales by type for current fiscal year (filtered to the selected user)
-  const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
-  const today = new Date();
-  const currentMonth = today.getMonth() + 1;
-  const currentYear = today.getFullYear();
-  const currentFiscalYear = fiscalStartMonth === 1 ? currentYear : (currentMonth >= fiscalStartMonth ? currentYear + 1 : currentYear);
-  const { startDate: fiscalYearStart } = getFiscalYearDates(currentFiscalYear, fiscalStartMonth);
+  // Calculate the commission anniversary window based on the user's commission_start_date
+  const commissionStartDateStr = displayUser?.commission_start_date;
+  const commissionYearStart = (() => {
+    if (!commissionStartDateStr) {
+      // Fallback to fiscal year if no commission_start_date
+      const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+      const now = new Date();
+      const cm = now.getMonth() + 1;
+      const cy = now.getFullYear();
+      const cfy = fiscalStartMonth === 1 ? cy : (cm >= fiscalStartMonth ? cy + 1 : cy);
+      return getFiscalYearDates(cfy, fiscalStartMonth).startDate;
+    }
+    const start = new Date(commissionStartDateStr);
+    const now = new Date();
+    // Find the most recent anniversary date
+    const anniversaryThisYear = new Date(now.getFullYear(), start.getMonth(), start.getDate());
+    if (anniversaryThisYear <= now) {
+      return anniversaryThisYear;
+    } else {
+      return new Date(now.getFullYear() - 1, start.getMonth(), start.getDate());
+    }
+  })();
   
   const ytdPreconSales = transactions
     .filter(t => 
       t.transaction_type === 'sale_commission' && 
       t.sale_type === 'preconstruction' &&
-      new Date(t.created_date) >= fiscalYearStart &&
+      new Date(t.created_date) >= commissionYearStart &&
       (!displayUserId || t.user_id === displayUserId)
     )
     .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
@@ -180,7 +195,7 @@ export default function Commissions() {
     .filter(t => 
       t.transaction_type === 'sale_commission' && 
       t.sale_type === 'construction' &&
-      new Date(t.created_date) >= fiscalYearStart &&
+      new Date(t.created_date) >= commissionYearStart &&
       (!displayUserId || t.user_id === displayUserId)
     )
     .reduce((sum, t) => sum + (t.sale_amount || 0), 0);
@@ -594,12 +609,13 @@ export default function Commissions() {
               const leadConstructionRevenue = myLeads.reduce((s, l) => s + (l.estimated_construction_value || 0), 0);
               const leadTotal = leadPreconRevenue + leadConstructionRevenue;
 
-              // Active precon sales assigned to this user (not closed)
-              const myPreconSales = sales.filter(s => s.assigned_to === displayUserId && s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
+              // Active precon sales assigned to this user OR where they are a contributor (not closed)
+              const isUserOnSale = (s) => s.assigned_to === displayUserId || (s.sale_contributors || []).some(c => c.user_id === displayUserId);
+              const myPreconSales = sales.filter(s => isUserOnSale(s) && s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
               const preconRevenue = myPreconSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
 
-              // Active construction sales assigned to this user (not closed)
-              const myConstructionSales = sales.filter(s => s.assigned_to === displayUserId && s.sale_type === 'construction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
+              // Active construction sales assigned to this user OR where they are a contributor (not closed)
+              const myConstructionSales = sales.filter(s => isUserOnSale(s) && s.sale_type === 'construction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
               const constructionRevenue = myConstructionSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
 
               const totalPipeline = leadTotal + preconRevenue + constructionRevenue;
