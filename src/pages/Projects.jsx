@@ -40,6 +40,7 @@ export default function Projects() {
   const [sendBackDialogOpen, setSendBackDialogOpen] = useState(false);
   const [sendBackPhase, setSendBackPhase] = useState('');
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+  const [closeoutAuditPassed, setCloseoutAuditPassed] = useState(false);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -1167,8 +1168,6 @@ export default function Projects() {
             const linkedLead = linkedSale ? leads.find(l => l.id === linkedSale.lead_id) : null;
             const linkedClient = selectedProject ? clients.find(c => c.id === selectedProject.client_id) : null;
             const saleTxns = linkedSale ? commissionTransactions.filter(t => t.sale_id === linkedSale.id) : [];
-            const auditChecks = linkedSale ? getChecks({ sale: linkedSale, project: selectedProject, lead: linkedLead, client: linkedClient, users, commissionTransactions: saleTxns, mode: 'construction_closeout' }) : [];
-            const auditPassed = auditChecks.every(c => c.pass);
             return (<>
           <DialogHeader>
             <DialogTitle>Close Out Project</DialogTitle>
@@ -1188,6 +1187,7 @@ export default function Projects() {
               users={users}
               commissionTransactions={saleTxns}
               mode="construction_closeout"
+              onAuditStatusChange={setCloseoutAuditPassed}
               onDataUpdated={() => {
                 queryClient.invalidateQueries(['projects']);
                 queryClient.invalidateQueries(['clients']);
@@ -1381,12 +1381,12 @@ export default function Projects() {
               <Button type="button" variant="outline" onClick={() => setCloseoutDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={updateProjectStatusMutation.isPending || !auditPassed} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button type="submit" disabled={updateProjectStatusMutation.isPending || !closeoutAuditPassed} className="bg-emerald-600 hover:bg-emerald-700">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Close Out Project
               </Button>
-              {!auditPassed && (
-                <p className="text-xs text-red-600 mt-1">Resolve all audit items before closing</p>
+              {!closeoutAuditPassed && (
+                <p className="text-xs text-red-600 mt-1">Resolve or skip all audit items before closing</p>
               )}
             </div>
           </form>
