@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
