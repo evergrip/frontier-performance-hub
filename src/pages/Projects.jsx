@@ -17,7 +17,6 @@ import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import AuditItemFixer from '../components/common/AuditItemFixer';
-import { getChecks } from '../components/common/FileAuditChecklist';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
