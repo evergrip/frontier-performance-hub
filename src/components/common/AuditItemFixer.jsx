@@ -25,9 +25,13 @@ export default function AuditItemFixer({ sale, project, lead, client, users, com
   const failCount = checks.filter(c => !c.pass && !skippedItems.has(c.label)).length;
   const allPass = failCount === 0;
 
+  // Use a ref to always have the latest callback without triggering re-renders
+  const auditStatusRef = React.useRef(onAuditStatusChange);
+  auditStatusRef.current = onAuditStatusChange;
+
   React.useEffect(() => {
-    onAuditStatusChange?.(allPass);
-  }, [allPass, checks.length, skippedItems.size]);
+    auditStatusRef.current?.(allPass);
+  }, [allPass, failCount]);
 
   // Determine which checks can be fixed inline
   const getFixConfig = (check) => {
