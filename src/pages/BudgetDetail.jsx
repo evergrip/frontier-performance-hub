@@ -245,27 +245,27 @@ export default function BudgetDetail() {
         </TabsContent>
 
         <TabsContent value="staff">
-          <StaffDetailList budgetId={budgetId} items={staffItems} />
+          <StaffDetailList budgetId={budgetId} items={staffItems} grossRevenue={totals.grossRevenue} />
         </TabsContent>
 
         <TabsContent value="assets">
-          <AssetDetailList budgetId={budgetId} items={assetItems} />
+          <AssetDetailList budgetId={budgetId} items={assetItems} grossRevenue={totals.grossRevenue} />
         </TabsContent>
 
         <TabsContent value="liabilities">
-          <LiabilityDetailList budgetId={budgetId} items={liabilityItems} />
+          <LiabilityDetailList budgetId={budgetId} items={liabilityItems} grossRevenue={totals.grossRevenue} />
         </TabsContent>
 
         <TabsContent value="vehicles">
-          <VehicleDetailList budgetId={budgetId} items={vehicleItems} />
+          <VehicleDetailList budgetId={budgetId} items={vehicleItems} grossRevenue={totals.grossRevenue} />
         </TabsContent>
 
         <TabsContent value="expenses">
-          <ExpenseDetailList budgetId={budgetId} items={expenseItems} />
+          <ExpenseDetailList budgetId={budgetId} items={expenseItems} grossRevenue={totals.grossRevenue} />
         </TabsContent>
 
         <TabsContent value="line_items">
-          <BudgetLineItems budget={budget} onSave={(data) => updateBudgetMutation.mutate({ ...data, _changeSummary: 'Line items updated' })} isSaving={updateBudgetMutation.isPending} />
+          <BudgetLineItems budget={budget} onSave={(data) => updateBudgetMutation.mutate({ ...data, _changeSummary: 'Line items updated' })} isSaving={updateBudgetMutation.isPending} grossRevenue={totals.grossRevenue} />
         </TabsContent>
 
         <TabsContent value="history">
