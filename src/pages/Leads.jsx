@@ -358,60 +358,14 @@ export default function Leads() {
         </Card>
       )}
 
-      {/* Disqualified Leads Section */}
+      {/* Disqualified Leads Link */}
       {disqualifiedLeads.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-700">Disqualified Leads</h2>
-          <Card className="border border-red-100">
-            <CardContent className="p-0">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-red-100 bg-red-50/50">
-                    <th className="text-left px-4 py-2 font-medium text-slate-600">Lead</th>
-                    <th className="text-left px-4 py-2 font-medium text-slate-600">Client</th>
-                    <th className="text-left px-4 py-2 font-medium text-slate-600">Reason</th>
-                    <th className="text-right px-4 py-2 font-medium text-slate-600"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {disqualifiedLeads.map(lead => (
-                    <tr key={lead.id} className="border-b border-red-50 last:border-0 hover:bg-red-50/30">
-                      <td className="px-4 py-2 font-medium text-slate-900">{lead.title}</td>
-                      <td className="px-4 py-2 text-slate-500">{getClientName(lead.client_id)}</td>
-                      <td className="px-4 py-2 text-red-600 text-xs max-w-xs truncate">{lead.disqualification_reason || '—'}</td>
-                      <td className="px-4 py-2 text-right">
-                        <div className="flex gap-1 justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs h-7"
-                            onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs h-7 text-emerald-600 hover:text-emerald-700"
-                            onClick={() => {
-                              updateLeadStatusMutation.mutate({
-                                leadId: lead.id,
-                                status: 'new_project_lead',
-                                currentLead: lead
-                              });
-                              toast.success('Lead reactivated');
-                            }}
-                          >
-                            Reactivate
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+        <div className="text-center pt-2">
+          <Link to={createPageUrl('DisqualifiedLeads')}>
+            <Button variant="ghost" className="text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
+              View {disqualifiedLeads.length} Disqualified Lead{disqualifiedLeads.length !== 1 ? 's' : ''}
+            </Button>
+          </Link>
         </div>
       )}
 
