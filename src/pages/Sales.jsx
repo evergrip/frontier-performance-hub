@@ -608,7 +608,11 @@ export default function Sales() {
 
   const totalPreconValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
   const totalConstructionValue = preconstructionSales.reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
-  const constructionProjects = projects.filter(p => p.project_type === 'construction');
+  const scopedProjects = isAdmin ? projects : projects.filter(p => {
+    const sale = sales.find(s => s.id === p.sale_id);
+    return sale?.assigned_to === currentUser?.id;
+  });
+  const constructionProjects = scopedProjects.filter(p => p.project_type === 'construction');
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
