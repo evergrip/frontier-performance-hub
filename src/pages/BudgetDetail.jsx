@@ -6,17 +6,15 @@ import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, DollarSign, Users, Wrench, CreditCard, Car, History, Receipt } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, Building2, Globe, TrendingUp, History, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 
 import BudgetSummaryForm from '../components/budget/BudgetSummaryForm';
 import BudgetPLProjection from '../components/budget/BudgetPLProjection';
-import StaffDetailList from '../components/budget/StaffDetailList';
-import AssetDetailList from '../components/budget/AssetDetailList';
-import LiabilityDetailList from '../components/budget/LiabilityDetailList';
-import VehicleDetailList from '../components/budget/VehicleDetailList';
+import BudgetDepartmentView from '../components/budget/BudgetDepartmentView';
+import BudgetCompanyWideView from '../components/budget/BudgetCompanyWideView';
+import BudgetProfitSharingView from '../components/budget/BudgetProfitSharingView';
 import BudgetLineItems from '../components/budget/BudgetLineItems';
-import ExpenseDetailList from '../components/budget/ExpenseDetailList';
 import BudgetVersionHistory from '../components/budget/BudgetVersionHistory';
 
 const STATUS_COLORS = {
@@ -142,7 +140,6 @@ export default function BudgetDetail() {
       } else if (cat === 'cogs') {
         staffCogsCost += staffBaseCost(s) + (s.commission_amount || 0);
       } else if (cat === 'split') {
-        // Split: salary+benefits+taxes → overhead, commission → COGS
         staffOverheadCost += staffBaseCost(s);
         staffCogsCost += (s.commission_amount || 0);
       }
@@ -196,6 +193,8 @@ export default function BudgetDetail() {
     );
   }
 
+  const departments = budget.departments || [];
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -226,13 +225,15 @@ export default function BudgetDetail() {
       <Tabs defaultValue="pl">
         <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="pl"><DollarSign className="w-4 h-4 mr-1" /> P/L Projection</TabsTrigger>
-          <TabsTrigger value="summary"><Save className="w-4 h-4 mr-1" /> Summary & Targets</TabsTrigger>
-          <TabsTrigger value="staff"><Users className="w-4 h-4 mr-1" /> Staff ({staffItems.length})</TabsTrigger>
-          <TabsTrigger value="assets"><Wrench className="w-4 h-4 mr-1" /> Assets ({assetItems.length})</TabsTrigger>
-          <TabsTrigger value="liabilities"><CreditCard className="w-4 h-4 mr-1" /> Liabilities ({liabilityItems.length})</TabsTrigger>
-          <TabsTrigger value="vehicles"><Car className="w-4 h-4 mr-1" /> Vehicles ({vehicleItems.length})</TabsTrigger>
-          <TabsTrigger value="expenses"><Receipt className="w-4 h-4 mr-1" /> Expenses ({expenseItems.length})</TabsTrigger>
-          <TabsTrigger value="line_items">Line Items</TabsTrigger>
+          <TabsTrigger value="basics"><Save className="w-4 h-4 mr-1" /> Basics</TabsTrigger>
+          {departments.map(dept => (
+            <TabsTrigger key={dept} value={`dept_${dept}`}>
+              <Building2 className="w-4 h-4 mr-1" /> {dept}
+            </TabsTrigger>
+          ))}
+          <TabsTrigger value="company_wide"><Globe className="w-4 h-4 mr-1" /> Company-Wide</TabsTrigger>
+          <TabsTrigger value="profit_sharing"><TrendingUp className="w-4 h-4 mr-1" /> Profit Sharing</TabsTrigger>
+          <TabsTrigger value="line_items"><Receipt className="w-4 h-4 mr-1" /> Line Items</TabsTrigger>
           <TabsTrigger value="history"><History className="w-4 h-4 mr-1" /> History</TabsTrigger>
         </TabsList>
 
@@ -240,28 +241,40 @@ export default function BudgetDetail() {
           <BudgetPLProjection budget={budget} totals={totals} onSetRevenue={(rev) => updateBudgetMutation.mutate({ gross_revenue_projection: rev, _changeSummary: 'Set gross revenue to required amount' })} />
         </TabsContent>
 
-        <TabsContent value="summary">
+        <TabsContent value="basics">
           <BudgetSummaryForm budget={budget} onSave={(data) => updateBudgetMutation.mutate({ ...data, _changeSummary: 'Summary & targets updated' })} isSaving={updateBudgetMutation.isPending} />
         </TabsContent>
 
-        <TabsContent value="staff">
-          <StaffDetailList budgetId={budgetId} items={staffItems} grossRevenue={totals.grossRevenue} />
+        {departments.map(dept => (
+          <TabsContent key={dept} value={`dept_${dept}`}>
+            <BudgetDepartmentView
+              budgetId={budgetId}
+              department={dept}
+              staffItems={staffItems}
+              expenseItems={expenseItems}
+              assetItems={assetItems}
+              liabilityItems={liabilityItems}
+              vehicleItems={vehicleItems}
+              grossRevenue={totals.grossRevenue}
+            />
+          </TabsContent>
+        ))}
+
+        <TabsContent value="company_wide">
+          <BudgetCompanyWideView
+            budgetId={budgetId}
+            departments={departments}
+            staffItems={staffItems}
+            expenseItems={expenseItems}
+            assetItems={assetItems}
+            liabilityItems={liabilityItems}
+            vehicleItems={vehicleItems}
+            grossRevenue={totals.grossRevenue}
+          />
         </TabsContent>
 
-        <TabsContent value="assets">
-          <AssetDetailList budgetId={budgetId} items={assetItems} grossRevenue={totals.grossRevenue} />
-        </TabsContent>
-
-        <TabsContent value="liabilities">
-          <LiabilityDetailList budgetId={budgetId} items={liabilityItems} grossRevenue={totals.grossRevenue} />
-        </TabsContent>
-
-        <TabsContent value="vehicles">
-          <VehicleDetailList budgetId={budgetId} items={vehicleItems} grossRevenue={totals.grossRevenue} />
-        </TabsContent>
-
-        <TabsContent value="expenses">
-          <ExpenseDetailList budgetId={budgetId} items={expenseItems} grossRevenue={totals.grossRevenue} />
+        <TabsContent value="profit_sharing">
+          <BudgetProfitSharingView budgetId={budgetId} netProfit={totals.netProfit} />
         </TabsContent>
 
         <TabsContent value="line_items">
