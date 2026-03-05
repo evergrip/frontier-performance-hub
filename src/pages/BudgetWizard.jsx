@@ -204,6 +204,7 @@ export default function BudgetWizard() {
 
     await Promise.all(bulkOps);
 
+    clearDraft();
     toast.success('Budget created successfully!');
     navigate(createPageUrl(`BudgetDetail?id=${budgetId}`));
   };
