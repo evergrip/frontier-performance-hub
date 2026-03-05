@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2, Receipt, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const makeEmpty = (dept = '') => ({ name: '', category: 'other', amount: '', period: 'monthly', cost_type: 'overhead', department: dept, notes: '' });
+const makeEmpty = (dept = '') => ({ name: '', category: 'other', amount_mode: 'fixed', amount: '', percent_of_revenue: '', period: 'monthly', cost_type: 'overhead', department: dept, notes: '' });
 
 const CATEGORY_LABELS = {
   insurance: 'Insurance',
@@ -32,6 +32,13 @@ const annualize = (amount, period) => {
   if (period === 'monthly') return a * 12;
   if (period === 'quarterly') return a * 4;
   return a;
+};
+
+const getAnnualCost = (item, grossRevenue) => {
+  if (item.amount_mode === 'percent_of_revenue') {
+    return (Number(item.percent_of_revenue) || 0) / 100 * (grossRevenue || 0);
+  }
+  return annualize(item.amount, item.period);
 };
 
 export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
@@ -57,22 +64,30 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0, d
   const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
   const openEdit = (item) => {
     setEditing(item);
-    setForm({ name: item.name || '', category: item.category || 'other', amount: item.amount ?? '', period: item.period || 'monthly', cost_type: item.cost_type || 'overhead', department: item.department || '', notes: item.notes || '' });
+    setForm({ name: item.name || '', category: item.category || 'other', amount_mode: item.amount_mode || 'fixed', amount: item.amount ?? '', percent_of_revenue: item.percent_of_revenue ?? '', period: item.period || 'monthly', cost_type: item.cost_type || 'overhead', department: item.department || '', notes: item.notes || '' });
     setShowDialog(true);
   };
   const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, category: form.category, amount: Number(form.amount) || 0, period: form.period, cost_type: form.cost_type, department: form.department || '', notes: form.notes };
+    const mode = form.amount_mode || 'fixed';
+    const data = {
+      budget_id: budgetId, name: form.name, category: form.category,
+      amount_mode: mode,
+      amount: mode === 'fixed' ? (Number(form.amount) || 0) : 0,
+      percent_of_revenue: mode === 'percent_of_revenue' ? (Number(form.percent_of_revenue) || 0) : 0,
+      period: mode === 'fixed' ? form.period : 'annual',
+      cost_type: form.cost_type, department: form.department || '', notes: form.notes,
+    };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
 
   const fmt = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—';
 
-  const totalAnnual = items.reduce((s, i) => s + annualize(i.amount, i.period), 0);
-  const overheadTotal = items.filter(i => (i.cost_type || 'overhead') === 'overhead').reduce((s, i) => s + annualize(i.amount, i.period), 0);
-  const cogsTotal = items.filter(i => i.cost_type === 'cogs').reduce((s, i) => s + annualize(i.amount, i.period), 0);
+  const totalAnnual = items.reduce((s, i) => s + getAnnualCost(i, grossRevenue), 0);
+  const overheadTotal = items.filter(i => (i.cost_type || 'overhead') === 'overhead').reduce((s, i) => s + getAnnualCost(i, grossRevenue), 0);
+  const cogsTotal = items.filter(i => i.cost_type === 'cogs').reduce((s, i) => s + getAnnualCost(i, grossRevenue), 0);
 
   return (
     <>
@@ -101,12 +116,11 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0, d
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead className="text-right">Annual Cost</TableHead>
-                    <TableHead></TableHead>
+                     <TableHead>Category</TableHead>
+                     <TableHead>Type</TableHead>
+                     <TableHead className="text-right">Amount</TableHead>
+                     <TableHead className="text-right">Annual Cost</TableHead>
+                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -121,9 +135,13 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0, d
                           {(item.cost_type || 'overhead') === 'overhead' ? 'Overhead' : 'COGS'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">{fmt(item.amount)}</TableCell>
-                      <TableCell className="capitalize">{item.period}</TableCell>
-                      <TableCell className="text-right font-semibold">{fmt(annualize(item.amount, item.period))}</TableCell>
+                      <TableCell className="text-right">
+                         {item.amount_mode === 'percent_of_revenue'
+                           ? <span className="text-purple-700 font-medium">{item.percent_of_revenue}% of rev</span>
+                           : <span>{fmt(item.amount)}<span className="text-xs text-slate-400 ml-1">/{item.period === 'monthly' ? 'mo' : item.period === 'quarterly' ? 'qtr' : 'yr'}</span></span>
+                         }
+                       </TableCell>
+                       <TableCell className="text-right font-semibold">{fmt(getAnnualCost(item, grossRevenue))}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(item)}><Pencil className="w-3 h-3" /></Button>
@@ -180,24 +198,48 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0, d
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Amount ($)</Label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
-              <div>
-                <Label>Period</Label>
-                <Select value={form.period} onValueChange={v => setForm({ ...form, period: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="annual">Annual</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label>Amount Mode</Label>
+              <Select value={form.amount_mode || 'fixed'} onValueChange={v => setForm({ ...form, amount_mode: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Fixed Dollar Amount</SelectItem>
+                  <SelectItem value="percent_of_revenue">% of Gross Revenue</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            {Number(form.amount) > 0 && (
+            {(form.amount_mode || 'fixed') === 'fixed' ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Amount ($)</Label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} /></div>
+                <div>
+                  <Label>Period</Label>
+                  <Select value={form.period} onValueChange={v => setForm({ ...form, period: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="annual">Annual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <Label>Percentage of Gross Revenue (%)</Label>
+                <Input type="number" value={form.percent_of_revenue} onChange={e => setForm({ ...form, percent_of_revenue: e.target.value })} placeholder="e.g. 5 for 5%" />
+              </div>
+            )}
+            {((form.amount_mode || 'fixed') === 'fixed' ? Number(form.amount) > 0 : Number(form.percent_of_revenue) > 0) && (
               <div className="bg-slate-50 border rounded-lg p-3 text-sm">
                 <span className="text-slate-500">Annual cost: </span>
-                <span className="font-semibold">{fmt(annualize(form.amount, form.period))}</span>
+                <span className="font-semibold">
+                  {(form.amount_mode || 'fixed') === 'fixed'
+                    ? fmt(annualize(form.amount, form.period))
+                    : grossRevenue > 0
+                      ? <>{fmt((Number(form.percent_of_revenue) || 0) / 100 * grossRevenue)} <span className="text-slate-400 text-xs">({form.percent_of_revenue}% × {fmt(grossRevenue)})</span></>
+                      : <span className="text-amber-600">Set gross revenue to see calculated amount</span>
+                  }
+                </span>
               </div>
             )}
             <div><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
