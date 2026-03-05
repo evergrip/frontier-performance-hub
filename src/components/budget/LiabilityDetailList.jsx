@@ -12,12 +12,12 @@ import { Plus, Pencil, Trash2, CreditCard, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const EMPTY = { name: '', type: 'loan', principal_amount: '', interest_rate: '', monthly_payment: '', notes: '' };
+const makeEmpty = (dept = '') => ({ name: '', type: 'loan', principal_amount: '', interest_rate: '', monthly_payment: '', department: dept, notes: '' });
 
-export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0 }) {
+export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(makeEmpty(defaultDepartment));
   const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
@@ -34,11 +34,11 @@ export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0 
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['liabilities', budgetId] }); toast.success('Liability removed'); },
   });
 
-  const close = () => { setShowDialog(false); setEditing(null); setForm(EMPTY); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', type: item.type || 'loan', principal_amount: item.principal_amount ?? '', interest_rate: item.interest_rate ?? '', monthly_payment: item.monthly_payment ?? '', notes: item.notes || '' }); setShowDialog(true); };
+  const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', type: item.type || 'loan', principal_amount: item.principal_amount ?? '', interest_rate: item.interest_rate ?? '', monthly_payment: item.monthly_payment ?? '', department: item.department || '', notes: item.notes || '' }); setShowDialog(true); };
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, type: form.type, principal_amount: Number(form.principal_amount) || 0, interest_rate: Number(form.interest_rate) || 0, monthly_payment: Number(form.monthly_payment) || 0, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, type: form.type, principal_amount: Number(form.principal_amount) || 0, interest_rate: Number(form.interest_rate) || 0, monthly_payment: Number(form.monthly_payment) || 0, department: form.department || '', notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
@@ -56,7 +56,7 @@ export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0 
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowPrefill(true)} size="sm" variant="outline"><Package className="w-4 h-4 mr-1" /> Prefill</Button>
-            <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Liability</Button>
+            <Button onClick={() => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Liability</Button>
           </div>
         </CardHeader>
         <CardContent>

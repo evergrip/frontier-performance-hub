@@ -12,12 +12,12 @@ import { Plus, Pencil, Trash2, Wrench, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const EMPTY = { name: '', type: 'equipment', purchase_cost: '', depreciation_method: 'straight_line', useful_life_years: '', salvage_value: '', monthly_maintenance_cost: '', notes: '' };
+const makeEmpty = (dept = '') => ({ name: '', type: 'equipment', purchase_cost: '', depreciation_method: 'straight_line', useful_life_years: '', salvage_value: '', monthly_maintenance_cost: '', department: dept, notes: '' });
 
-export default function AssetDetailList({ budgetId, items, grossRevenue = 0 }) {
+export default function AssetDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(makeEmpty(defaultDepartment));
   const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
@@ -34,11 +34,11 @@ export default function AssetDetailList({ budgetId, items, grossRevenue = 0 }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets', budgetId] }); toast.success('Asset removed'); },
   });
 
-  const close = () => { setShowDialog(false); setEditing(null); setForm(EMPTY); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', type: item.type || 'equipment', purchase_cost: item.purchase_cost ?? '', depreciation_method: item.depreciation_method || 'straight_line', useful_life_years: item.useful_life_years ?? '', salvage_value: item.salvage_value ?? '', monthly_maintenance_cost: item.monthly_maintenance_cost ?? '', notes: item.notes || '' }); setShowDialog(true); };
+  const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', type: item.type || 'equipment', purchase_cost: item.purchase_cost ?? '', depreciation_method: item.depreciation_method || 'straight_line', useful_life_years: item.useful_life_years ?? '', salvage_value: item.salvage_value ?? '', monthly_maintenance_cost: item.monthly_maintenance_cost ?? '', department: item.department || '', notes: item.notes || '' }); setShowDialog(true); };
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, type: form.type, purchase_cost: Number(form.purchase_cost) || 0, depreciation_method: form.depreciation_method, useful_life_years: Number(form.useful_life_years) || 0, salvage_value: Number(form.salvage_value) || 0, monthly_maintenance_cost: Number(form.monthly_maintenance_cost) || 0, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, type: form.type, purchase_cost: Number(form.purchase_cost) || 0, depreciation_method: form.depreciation_method, useful_life_years: Number(form.useful_life_years) || 0, salvage_value: Number(form.salvage_value) || 0, monthly_maintenance_cost: Number(form.monthly_maintenance_cost) || 0, department: form.department || '', notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
@@ -59,7 +59,7 @@ export default function AssetDetailList({ budgetId, items, grossRevenue = 0 }) {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowPrefill(true)} size="sm" variant="outline"><Package className="w-4 h-4 mr-1" /> Prefill</Button>
-            <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Asset</Button>
+            <Button onClick={() => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Asset</Button>
           </div>
         </CardHeader>
         <CardContent>

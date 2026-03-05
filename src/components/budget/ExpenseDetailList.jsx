@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2, Receipt, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const EMPTY = { name: '', category: 'other', amount: '', period: 'monthly', cost_type: 'overhead', notes: '' };
+const makeEmpty = (dept = '') => ({ name: '', category: 'other', amount: '', period: 'monthly', cost_type: 'overhead', department: dept, notes: '' });
 
 const CATEGORY_LABELS = {
   insurance: 'Insurance',
@@ -34,10 +34,10 @@ const annualize = (amount, period) => {
   return a;
 };
 
-export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0 }) {
+export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(makeEmpty(defaultDepartment));
   const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
@@ -54,16 +54,16 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0 })
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['expenses', budgetId] }); toast.success('Expense removed'); },
   });
 
-  const close = () => { setShowDialog(false); setEditing(null); setForm(EMPTY); };
+  const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
   const openEdit = (item) => {
     setEditing(item);
-    setForm({ name: item.name || '', category: item.category || 'other', amount: item.amount ?? '', period: item.period || 'monthly', cost_type: item.cost_type || 'overhead', notes: item.notes || '' });
+    setForm({ name: item.name || '', category: item.category || 'other', amount: item.amount ?? '', period: item.period || 'monthly', cost_type: item.cost_type || 'overhead', department: item.department || '', notes: item.notes || '' });
     setShowDialog(true);
   };
-  const openCreate = () => { setForm(EMPTY); setShowDialog(true); };
+  const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, category: form.category, amount: Number(form.amount) || 0, period: form.period, cost_type: form.cost_type, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, category: form.category, amount: Number(form.amount) || 0, period: form.period, cost_type: form.cost_type, department: form.department || '', notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };

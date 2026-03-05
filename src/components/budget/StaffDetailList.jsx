@@ -12,7 +12,7 @@ import { Plus, Pencil, Trash2, Users, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const EMPTY = { name: '', role: '', salary: '', commission_amount: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', cost_category: 'overhead', notes: '' };
+const makeEmpty = (dept = '') => ({ name: '', role: '', salary: '', commission_amount: '', benefits_cost: '', taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
 
 // Canadian employer withholding rates (approximate)
 const EMPLOYER_RATES = {
@@ -34,10 +34,10 @@ const calcEmployerWithholdings = (salary) => {
   };
 };
 
-export default function StaffDetailList({ budgetId, items, grossRevenue = 0 }) {
+export default function StaffDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(EMPTY);
+  const [form, setForm] = useState(makeEmpty(defaultDepartment));
   const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
@@ -54,9 +54,9 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0 }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['staff', budgetId] }); toast.success('Staff removed'); },
   });
 
-  const close = () => { setShowDialog(false); setEditing(null); setForm(EMPTY); };
+  const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
   const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
-  const openCreate = () => { setForm(EMPTY); setShowDialog(true); };
+  const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
   const totalCompForWithholdings = (Number(form.salary) || 0) + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
   const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
