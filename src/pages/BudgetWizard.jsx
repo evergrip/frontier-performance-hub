@@ -10,19 +10,9 @@ import { toast } from 'sonner';
 import WizardStepNav from '../components/budget/wizard/WizardStepNav';
 import WizardBasicsStep from '../components/budget/wizard/WizardBasicsStep';
 import WizardPrefillStep from '../components/budget/wizard/WizardPrefillStep';
+import WizardDepartmentStep from '../components/budget/wizard/WizardDepartmentStep';
 import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
 import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSharingStep';
-
-const STEPS = [
-  { key: 'basics', label: 'Basics' },
-  { key: 'staff', label: 'Staff' },
-  { key: 'expenses', label: 'Expenses' },
-  { key: 'assets', label: 'Assets' },
-  { key: 'liabilities', label: 'Liabilities' },
-  { key: 'vehicles', label: 'Vehicles' },
-  { key: 'profit_sharing', label: 'Profit Sharing' },
-  { key: 'review', label: 'Review' },
-];
 
 const EMPLOYER_TAX_RATE = 0.1222; // CPP + EI + WSIB + EHT
 
