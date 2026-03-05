@@ -132,6 +132,7 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
   const [existingItems, setExistingItems] = useState([]);
   const [loadingBudgets, setLoadingBudgets] = useState(false);
   const [loadingItems, setLoadingItems] = useState(false);
+  const [editingFullItem, setEditingFullItem] = useState(null);
 
   const config = CATEGORY_CONFIG[category];
   const items = source === 'templates' ? (PRESET_DATA[category] || []) : existingItems;
@@ -324,7 +325,10 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
                       <>
                         <span className="text-sm font-medium text-slate-600">{config.getDetail(displayItem)}</span>
                         {selected && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(idx)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            const selItem = selectedItems.find(s => s._presetIdx === idx);
+                            if (selItem) setEditingFullItem(selItem);
+                          }}>
                             <Pencil className="w-3 h-3 text-slate-400" />
                           </Button>
                         )}
@@ -355,6 +359,9 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
                   </div>
                 </div>
                 <span className="text-sm font-medium text-slate-600 shrink-0">{config.getDetail(item)}</span>
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setEditingFullItem(item)}>
+                  <Pencil className="w-3 h-3 text-slate-400" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
                   setSelectedItems(prev => prev.filter(s => !(s._source === 'custom' && s._customIdx === item._customIdx)));
                 }}>
@@ -366,13 +373,27 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
         </div>
       )}
 
-      {/* Add custom item form */}
+      {/* Add / Edit item form */}
       <CustomItemForm
         category={category}
+        editingItem={editingFullItem}
         onAdd={(newItem) => {
           const customIdx = Date.now() + Math.random();
           setSelectedItems(prev => [...prev, { ...newItem, _source: 'custom', _customIdx: customIdx }]);
         }}
+        onSaveEdit={(updatedFields) => {
+          setSelectedItems(prev => prev.map(s => {
+            if (editingFullItem._customIdx && s._source === 'custom' && s._customIdx === editingFullItem._customIdx) {
+              return { ...s, ...updatedFields };
+            }
+            if (editingFullItem._presetIdx !== undefined && s._presetIdx === editingFullItem._presetIdx && s._source === editingFullItem._source) {
+              return { ...s, ...updatedFields };
+            }
+            return s;
+          }));
+          setEditingFullItem(null);
+        }}
+        onCancelEdit={() => setEditingFullItem(null)}
       />
     </div>
   );
