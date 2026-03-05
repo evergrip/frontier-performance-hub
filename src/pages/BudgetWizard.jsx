@@ -11,6 +11,7 @@ import WizardStepNav from '../components/budget/wizard/WizardStepNav';
 import WizardBasicsStep from '../components/budget/wizard/WizardBasicsStep';
 import WizardPrefillStep from '../components/budget/wizard/WizardPrefillStep';
 import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
+import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSharingStep';
 
 const STEPS = [
   { key: 'basics', label: 'Basics' },
@@ -19,6 +20,7 @@ const STEPS = [
   { key: 'assets', label: 'Assets' },
   { key: 'liabilities', label: 'Liabilities' },
   { key: 'vehicles', label: 'Vehicles' },
+  { key: 'profit_sharing', label: 'Profit Sharing' },
   { key: 'review', label: 'Review' },
 ];
 
@@ -43,6 +45,12 @@ export default function BudgetWizard() {
     assets: [],
     liabilities: [],
     vehicles: [],
+  });
+
+  const [profitSharingConfig, setProfitSharingConfig] = useState({
+    company_retention_amount: '',
+    distribution_tiers: [],
+    notes: '',
   });
 
   const stepKey = STEPS[currentStep].key;
@@ -91,6 +99,24 @@ export default function BudgetWizard() {
     if (liabilityItems.length) bulkOps.push(base44.entities.LiabilityDetail.bulkCreate(liabilityItems));
     if (vehicleItems.length) bulkOps.push(base44.entities.VehicleDetail.bulkCreate(vehicleItems));
 
+    // Save profit sharing plan if configured
+    if (Number(profitSharingConfig.company_retention_amount) > 0 || (profitSharingConfig.distribution_tiers || []).length > 0) {
+      bulkOps.push(base44.entities.ProfitSharingPlan.create({
+        budget_id: budgetId,
+        company_retention_amount: Number(profitSharingConfig.company_retention_amount) || 0,
+        distribution_tiers: (profitSharingConfig.distribution_tiers || []).map(t => ({
+          ...t,
+          value: Number(t.value) || 0,
+          recipients: (t.recipients || []).map(r => ({
+            ...r,
+            weight: Number(r.weight) || 0,
+            cap_amount: r.cap_amount ? Number(r.cap_amount) : null,
+          })),
+        })),
+        notes: profitSharingConfig.notes || '',
+      }));
+    }
+
     await Promise.all(bulkOps);
 
     toast.success('Budget created successfully!');
@@ -135,8 +161,27 @@ export default function BudgetWizard() {
             />
           )}
 
+          {stepKey === 'profit_sharing' && (
+            <WizardProfitSharingStep
+              config={profitSharingConfig}
+              setConfig={setProfitSharingConfig}
+              netProfitEstimate={(() => {
+                const revenue = Number(form.gross_revenue_projection) || 0;
+                const staffTotal = selections.staff.reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.commission_amount || 0), 0);
+                const expenseTotal = selections.expenses.reduce((s, i) => {
+                  const a = Number(i.amount) || 0;
+                  if (i.period === 'monthly') return s + a * 12;
+                  if (i.period === 'quarterly') return s + a * 4;
+                  return s + a;
+                }, 0);
+                const liabilityTotal = selections.liabilities.reduce((s, i) => s + (i.monthly_payment || 0) * 12, 0);
+                return Math.max(0, revenue - staffTotal - expenseTotal - liabilityTotal);
+              })()}
+            />
+          )}
+
           {stepKey === 'review' && (
-            <WizardReviewStep form={form} selections={selections} />
+            <WizardReviewStep form={form} selections={selections} profitSharingConfig={profitSharingConfig} />
           )}
         </CardContent>
       </Card>
