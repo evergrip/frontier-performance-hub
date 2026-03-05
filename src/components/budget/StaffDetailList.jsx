@@ -12,7 +12,23 @@ import { Plus, Pencil, Trash2, Users, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits_cost: '', hsa_cost: '', rrsp_match_cost: '', taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
+const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits: [], taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
+
+// Migrate legacy fields to benefits array
+const migrateBenefits = (item) => {
+  if (item.benefits && item.benefits.length > 0) return item.benefits;
+  const arr = [];
+  if (item.benefits_cost) arr.push({ name: 'Benefits / Insurance', amount: item.benefits_cost });
+  if (item.hsa_cost) arr.push({ name: 'Health Spending (HSA)', amount: item.hsa_cost });
+  if (item.rrsp_match_cost) arr.push({ name: 'RRSP Match', amount: item.rrsp_match_cost });
+  return arr;
+};
+
+const getBenefitsTotal = (item) => {
+  const benefits = item.benefits || [];
+  if (benefits.length > 0) return benefits.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+  return (item.benefits_cost || 0) + (item.hsa_cost || 0) + (item.rrsp_match_cost || 0);
+};
 
 // Canadian employer withholding rates (approximate)
 const EMPLOYER_RATES = {
@@ -55,7 +71,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   });
 
   const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', hsa_cost: item.hsa_cost ?? '', rrsp_match_cost: item.rrsp_match_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits: migrateBenefits(item), taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
   const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
   const computedAnnualSalary = form.pay_type === 'hourly'
@@ -64,7 +80,10 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   const totalCompForWithholdings = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
   const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
 
+  const formBenefitsTotal = (form.benefits || []).reduce((s, b) => s + (Number(b.amount) || 0), 0);
+
   const handleSave = () => {
+    const cleanBenefits = (form.benefits || []).filter(b => b.name && Number(b.amount) > 0).map(b => ({ name: b.name, amount: Number(b.amount) }));
     const data = {
       budget_id: budgetId, name: form.name, role: form.role,
       pay_type: form.pay_type || 'salary',
@@ -72,9 +91,10 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
       hourly_rate: form.pay_type === 'hourly' ? (Number(form.hourly_rate) || 0) : null,
       hours_per_week: form.pay_type === 'hourly' ? (Number(form.hours_per_week) || 0) : null,
       commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0,
-      benefits_cost: Number(form.benefits_cost) || 0,
-      hsa_cost: Number(form.hsa_cost) || 0,
-      rrsp_match_cost: Number(form.rrsp_match_cost) || 0,
+      benefits: cleanBenefits,
+      benefits_cost: cleanBenefits.reduce((s, b) => s + b.amount, 0),
+      hsa_cost: 0,
+      rrsp_match_cost: 0,
       taxes_cost: withholdings.total,
       department: form.department || '', employment_type: form.employment_type,
       cost_category: form.cost_category, notes: form.notes,
@@ -84,15 +104,14 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   };
 
   const fmt = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—';
-  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0) + (i.taxes_cost || 0);
-  const getItemBenefitsTotal = (i) => (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0);
+  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + getBenefitsTotal(i) + (i.taxes_cost || 0);
   const totalCost = items.reduce((s, i) => s + getItemTotal(i), 0);
   
   // Calculate overhead vs COGS portions
   const overheadCost = items.reduce((s, i) => {
     const cat = i.cost_category || 'overhead';
     if (cat === 'overhead') return s + getItemTotal(i);
-    if (cat === 'split') return s + (i.salary || 0) + (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0) + (i.taxes_cost || 0); // salary+benefits+taxes → overhead
+    if (cat === 'split') return s + (i.salary || 0) + getBenefitsTotal(i) + (i.taxes_cost || 0); // salary+benefits+taxes → overhead
     return s;
   }, 0);
   const cogsCost = items.reduce((s, i) => {
@@ -158,14 +177,10 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                       </TableCell>
                       <TableCell className="text-right">{item.cost_category === 'split' && item.commission_amount ? fmt(item.commission_amount) : '—'}</TableCell>
                       <TableCell className="text-right">
-                        {fmt(getItemBenefitsTotal(item))}
-                        {((item.hsa_cost || 0) > 0 || (item.rrsp_match_cost || 0) > 0) && (
+                        {fmt(getBenefitsTotal(item))}
+                        {(item.benefits || []).length > 0 && (
                           <span className="block text-[10px] text-slate-400">
-                            {[
-                              item.benefits_cost ? `Ins: ${fmt(item.benefits_cost)}` : null,
-                              item.hsa_cost ? `HSA: ${fmt(item.hsa_cost)}` : null,
-                              item.rrsp_match_cost ? `RRSP: ${fmt(item.rrsp_match_cost)}` : null,
-                            ].filter(Boolean).join(' · ')}
+                            {item.benefits.map(b => `${b.name}: ${fmt(b.amount)}`).join(' · ')}
                           </span>
                         )}
                       </TableCell>
@@ -258,10 +273,31 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
             {form.cost_category === 'split' && (
               <div><Label>Commission ($)</Label><Input type="number" value={form.commission_amount} onChange={e => setForm({...form, commission_amount: e.target.value})} placeholder="Projected annual" /></div>
             )}
-            <div className="grid grid-cols-3 gap-3">
-              <div><Label>Benefits / Insurance ($)</Label><Input type="number" value={form.benefits_cost} onChange={e => setForm({...form, benefits_cost: e.target.value})} placeholder="Annual" /></div>
-              <div><Label>Health Spending (HSA) ($)</Label><Input type="number" value={form.hsa_cost} onChange={e => setForm({...form, hsa_cost: e.target.value})} placeholder="Annual" /></div>
-              <div><Label>RRSP Match ($)</Label><Input type="number" value={form.rrsp_match_cost} onChange={e => setForm({...form, rrsp_match_cost: e.target.value})} placeholder="Annual" /></div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Benefits {formBenefitsTotal > 0 && <span className="text-slate-400 font-normal ml-1">(Total: {fmt(formBenefitsTotal)})</span>}</Label>
+                <Button type="button" variant="outline" size="sm" onClick={() => setForm({...form, benefits: [...(form.benefits || []), { name: '', amount: '' }]})}>
+                  <Plus className="w-3 h-3 mr-1" /> Add Benefit
+                </Button>
+              </div>
+              {(form.benefits || []).length === 0 && (
+                <p className="text-xs text-slate-400 py-2 text-center">No benefits added yet. Click "Add Benefit" to create one.</p>
+              )}
+              {(form.benefits || []).map((b, idx) => (
+                <div key={idx} className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    {idx === 0 && <Label className="text-xs text-slate-500">Name</Label>}
+                    <Input value={b.name} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], name: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="e.g. Dental Plan, HSA, RRSP Match" />
+                  </div>
+                  <div className="w-36">
+                    {idx === 0 && <Label className="text-xs text-slate-500">Annual ($)</Label>}
+                    <Input type="number" value={b.amount} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], amount: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="0" />
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { const arr = [...form.benefits]; arr.splice(idx, 1); setForm({...form, benefits: arr}); }}>
+                    <Trash2 className="w-3 h-3 text-slate-400" />
+                  </Button>
+                </div>
+              ))}
             </div>
             {form.cost_category === 'split' && (
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-700">
