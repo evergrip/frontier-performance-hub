@@ -144,7 +144,14 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                           {(item.cost_category || 'overhead') === 'overhead' ? 'Overhead' : item.cost_category === 'split' ? 'Split' : 'COGS'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">{fmt(item.salary)}</TableCell>
+                      <TableCell className="text-right">
+                        {item.pay_type === 'hourly' ? (
+                          <span title={`$${item.hourly_rate}/hr × ${item.hours_per_week}hrs × 52wks`}>
+                            {fmt(item.salary)}
+                            <span className="block text-[10px] text-slate-400">${item.hourly_rate}/hr</span>
+                          </span>
+                        ) : fmt(item.salary)}
+                      </TableCell>
                       <TableCell className="text-right">{item.cost_category === 'split' && item.commission_amount ? fmt(item.commission_amount) : '—'}</TableCell>
                       <TableCell className="text-right">{fmt(item.benefits_cost)}</TableCell>
                       <TableCell className="text-right">{fmt(item.taxes_cost)}</TableCell>
@@ -210,8 +217,30 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                 </SelectContent>
               </Select>
             </div>
-            <div className={`grid gap-3 ${form.cost_category === 'split' ? 'grid-cols-3' : 'grid-cols-2'}`}>
-              <div><Label>Salary ($)</Label><Input type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} /></div>
+            <div>
+              <Label>Pay Type</Label>
+              <Select value={form.pay_type || 'salary'} onValueChange={v => setForm({...form, pay_type: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="salary">Annual Salary</SelectItem>
+                  <SelectItem value="hourly">Hourly Wage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {form.pay_type === 'hourly' ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Hourly Rate ($)</Label><Input type="number" value={form.hourly_rate} onChange={e => setForm({...form, hourly_rate: e.target.value})} placeholder="e.g. 25" /></div>
+                <div><Label>Hours / Week</Label><Input type="number" value={form.hours_per_week} onChange={e => setForm({...form, hours_per_week: e.target.value})} placeholder="e.g. 40" /></div>
+              </div>
+            ) : (
+              <div><Label>Annual Salary ($)</Label><Input type="number" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} /></div>
+            )}
+            {form.pay_type === 'hourly' && computedAnnualSalary > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-700">
+                Annualized: <strong>${computedAnnualSalary.toLocaleString()}</strong> ({form.hourly_rate}/hr × {form.hours_per_week} hrs × 52 wks)
+              </div>
+            )}
+            <div className={`grid gap-3 ${form.cost_category === 'split' ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {form.cost_category === 'split' && (
                 <div><Label>Commission ($)</Label><Input type="number" value={form.commission_amount} onChange={e => setForm({...form, commission_amount: e.target.value})} placeholder="Projected annual" /></div>
               )}
@@ -222,7 +251,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                 <strong>Split allocation:</strong> Salary + Benefits + Withholdings → Overhead | Commission → COGS
               </div>
             )}
-            {Number(form.salary) > 0 && (
+            {computedAnnualSalary > 0 && (
               <div className="bg-slate-50 border rounded-lg p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-slate-700 mb-2">Employer Withholdings (auto-calculated)</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
