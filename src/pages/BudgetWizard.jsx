@@ -192,20 +192,9 @@ export default function BudgetWizard() {
           )}
 
           {stepKey === 'company_wide' && (
-            <WizardPrefillStep
-              category="expenses"
-              selectedItems={companySelections.expenses}
-              setSelectedItems={(updater) => {
-                setCompanySelections(prev => ({
-                  ...prev,
-                  expenses: typeof updater === 'function' ? updater(prev.expenses) : updater,
-                }));
-              }}
-              title="Company-Wide Items"
-              description="Add shared expenses, assets, liabilities, and vehicles that don't belong to a specific department."
-              showAllCategories
-              companySelections={companySelections}
-              setCompanySelections={setCompanySelections}
+            <WizardCompanyWideStep
+              selections={companySelections}
+              setSelections={setCompanySelections}
             />
           )}
 
