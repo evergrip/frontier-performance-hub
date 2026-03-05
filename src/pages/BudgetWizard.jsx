@@ -1,0 +1,176 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowLeft, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+
+import WizardStepNav from '../components/budget/wizard/WizardStepNav';
+import WizardBasicsStep from '../components/budget/wizard/WizardBasicsStep';
+import WizardPrefillStep from '../components/budget/wizard/WizardPrefillStep';
+import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
+
+const STEPS = [
+  { key: 'basics', label: 'Basics' },
+  { key: 'staff', label: 'Staff' },
+  { key: 'expenses', label: 'Expenses' },
+  { key: 'assets', label: 'Assets' },
+  { key: 'liabilities', label: 'Liabilities' },
+  { key: 'vehicles', label: 'Vehicles' },
+  { key: 'review', label: 'Review' },
+];
+
+const EMPLOYER_TAX_RATE = 0.1222; // CPP + EI + WSIB + EHT
+
+export default function BudgetWizard() {
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const [form, setForm] = useState({
+    name: '',
+    fiscal_year: new Date().getFullYear() + 1,
+    description: '',
+    gross_revenue_projection: '',
+    net_profit_target_percentage: '',
+  });
+
+  const [selections, setSelections] = useState({
+    staff: [],
+    expenses: [],
+    assets: [],
+    liabilities: [],
+    vehicles: [],
+  });
+
+  const stepKey = STEPS[currentStep].key;
+  const canProceedFromBasics = form.name && form.fiscal_year;
+  const isLastStep = currentStep === STEPS.length - 1;
+
+  const goNext = () => {
+    if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
+  };
+
+  const goBack = () => {
+    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  const handleCreate = async () => {
+    setIsCreating(true);
+
+    const budget = await base44.entities.Budget.create({
+      name: form.name,
+      fiscal_year: Number(form.fiscal_year),
+      description: form.description,
+      status: 'draft',
+      gross_revenue_projection: Number(form.gross_revenue_projection) || 0,
+      net_profit_target_percentage: Number(form.net_profit_target_percentage) || 0,
+      net_profit_target_amount: Math.round((Number(form.gross_revenue_projection) || 0) * (Number(form.net_profit_target_percentage) || 0) / 100),
+    });
+
+    const budgetId = budget.id;
+
+    // Prepare bulk items, stripping internal marker fields
+    const staffItems = selections.staff.map(({ _presetIdx, ...rest }) => {
+      const salary = rest.salary || 0;
+      const commissionForTax = rest.cost_category === 'split' ? (rest.commission_amount || 0) : 0;
+      const taxBase = salary + commissionForTax;
+      return { ...rest, budget_id: budgetId, taxes_cost: Math.round(taxBase * EMPLOYER_TAX_RATE * 100) / 100 };
+    });
+    const expenseItems = selections.expenses.map(({ _presetIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const assetItems = selections.assets.map(({ _presetIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const liabilityItems = selections.liabilities.map(({ _presetIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const vehicleItems = selections.vehicles.map(({ _presetIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+
+    const bulkOps = [];
+    if (staffItems.length) bulkOps.push(base44.entities.StaffDetail.bulkCreate(staffItems));
+    if (expenseItems.length) bulkOps.push(base44.entities.ExpenseDetail.bulkCreate(expenseItems));
+    if (assetItems.length) bulkOps.push(base44.entities.AssetDetail.bulkCreate(assetItems));
+    if (liabilityItems.length) bulkOps.push(base44.entities.LiabilityDetail.bulkCreate(liabilityItems));
+    if (vehicleItems.length) bulkOps.push(base44.entities.VehicleDetail.bulkCreate(vehicleItems));
+
+    await Promise.all(bulkOps);
+
+    toast.success('Budget created successfully!');
+    navigate(createPageUrl(`BudgetDetail?id=${budgetId}`));
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl('Budgets'))}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-amber-500" />
+            New Budget Wizard
+          </h1>
+          <p className="text-sm text-slate-500">Step {currentStep + 1} of {STEPS.length}</p>
+        </div>
+      </div>
+
+      <WizardStepNav steps={STEPS} currentStep={currentStep} onStepClick={(idx) => {
+        if (idx === 0 || canProceedFromBasics) setCurrentStep(idx);
+      }} />
+
+      <Card className="mt-6">
+        <CardContent className="p-6">
+          {stepKey === 'basics' && (
+            <WizardBasicsStep form={form} setForm={setForm} />
+          )}
+
+          {['staff', 'expenses', 'assets', 'liabilities', 'vehicles'].includes(stepKey) && (
+            <WizardPrefillStep
+              category={stepKey}
+              selectedItems={selections[stepKey]}
+              setSelectedItems={(updater) => {
+                setSelections(prev => ({
+                  ...prev,
+                  [stepKey]: typeof updater === 'function' ? updater(prev[stepKey]) : updater,
+                }));
+              }}
+            />
+          )}
+
+          {stepKey === 'review' && (
+            <WizardReviewStep form={form} selections={selections} />
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-between mt-6">
+        <Button
+          variant="outline"
+          onClick={goBack}
+          disabled={currentStep === 0}
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+        </Button>
+
+        {isLastStep ? (
+          <Button
+            onClick={handleCreate}
+            disabled={!canProceedFromBasics || isCreating}
+            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+          >
+            {isCreating ? (
+              <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Creating...</>
+            ) : (
+              <><Sparkles className="w-4 h-4 mr-1" /> Create Budget</>
+            )}
+          </Button>
+        ) : (
+          <Button
+            onClick={goNext}
+            disabled={currentStep === 0 && !canProceedFromBasics}
+          >
+            {currentStep === 0 && !canProceedFromBasics ? 'Fill in basics first' : 'Next'} <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
