@@ -37,6 +37,7 @@ export default function BudgetWizard() {
     description: '',
     gross_revenue_projection: '',
     net_profit_target_percentage: '',
+    departments: [],
   });
 
   const [selections, setSelections] = useState({
@@ -73,6 +74,7 @@ export default function BudgetWizard() {
       fiscal_year: Number(form.fiscal_year),
       description: form.description,
       status: 'draft',
+      departments: form.departments || [],
       gross_revenue_projection: Number(form.gross_revenue_projection) || 0,
       net_profit_target_percentage: Number(form.net_profit_target_percentage) || 0,
       net_profit_target_amount: Math.round((Number(form.gross_revenue_projection) || 0) * (Number(form.net_profit_target_percentage) || 0) / 100),
