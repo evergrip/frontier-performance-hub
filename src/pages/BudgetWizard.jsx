@@ -183,16 +183,29 @@ export default function BudgetWizard() {
             <WizardBasicsStep form={form} setForm={setForm} />
           )}
 
-          {['staff', 'expenses', 'assets', 'liabilities', 'vehicles'].includes(stepKey) && (
+          {currentStepDef.isDepartment && (
+            <WizardDepartmentStep
+              department={currentStepDef.department}
+              selections={deptSelections}
+              setSelections={setDeptSelections}
+            />
+          )}
+
+          {stepKey === 'company_wide' && (
             <WizardPrefillStep
-              category={stepKey}
-              selectedItems={selections[stepKey]}
+              category="expenses"
+              selectedItems={companySelections.expenses}
               setSelectedItems={(updater) => {
-                setSelections(prev => ({
+                setCompanySelections(prev => ({
                   ...prev,
-                  [stepKey]: typeof updater === 'function' ? updater(prev[stepKey]) : updater,
+                  expenses: typeof updater === 'function' ? updater(prev.expenses) : updater,
                 }));
               }}
+              title="Company-Wide Items"
+              description="Add shared expenses, assets, liabilities, and vehicles that don't belong to a specific department."
+              showAllCategories
+              companySelections={companySelections}
+              setCompanySelections={setCompanySelections}
             />
           )}
 
@@ -201,22 +214,23 @@ export default function BudgetWizard() {
               config={profitSharingConfig}
               setConfig={setProfitSharingConfig}
               netProfitEstimate={(() => {
+                const allSel = getAllSelections();
                 const revenue = Number(form.gross_revenue_projection) || 0;
-                const staffTotal = selections.staff.reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.commission_amount || 0), 0);
-                const expenseTotal = selections.expenses.reduce((s, i) => {
+                const staffTotal = allSel.staff.reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.commission_amount || 0), 0);
+                const expenseTotal = allSel.expenses.reduce((s, i) => {
                   const a = Number(i.amount) || 0;
                   if (i.period === 'monthly') return s + a * 12;
                   if (i.period === 'quarterly') return s + a * 4;
                   return s + a;
                 }, 0);
-                const liabilityTotal = selections.liabilities.reduce((s, i) => s + (i.monthly_payment || 0) * 12, 0);
+                const liabilityTotal = allSel.liabilities.reduce((s, i) => s + (i.monthly_payment || 0) * 12, 0);
                 return Math.max(0, revenue - staffTotal - expenseTotal - liabilityTotal);
               })()}
             />
           )}
 
           {stepKey === 'review' && (
-            <WizardReviewStep form={form} selections={selections} profitSharingConfig={profitSharingConfig} />
+            <WizardReviewStep form={form} selections={getAllSelections()} profitSharingConfig={profitSharingConfig} />
           )}
         </CardContent>
       </Card>
