@@ -285,10 +285,14 @@ export default function Sales() {
     return client?.company_name || client?.contact_name || 'Unknown Client';
   };
 
-  // Non-admin users only see sales assigned to them
+  // Non-admin users only see sales assigned to them; admins can filter
   const scopedSales = isAdmin ? sales : sales.filter(s => s.assigned_to === currentUser?.id);
-  const preconstructionSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
-  const closedPreconSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status));
+  const filteredSales = isAdmin && filterSalesperson !== 'all'
+    ? scopedSales.filter(s => s.assigned_to === filterSalesperson)
+    : scopedSales;
+  const preconstructionSales = filteredSales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
+  const closedPreconSales = filteredSales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status));
+  const salespeopleWithSales = [...new Set(sales.filter(s => s.sale_type === 'preconstruction').map(s => s.assigned_to).filter(Boolean))];
 
   const statusColumns = [
     { status: 'feasibility', label: 'Feasibility', color: 'bg-blue-100 border-blue-200', description: 'Initial assessment' },

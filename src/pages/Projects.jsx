@@ -160,8 +160,18 @@ export default function Projects() {
     const sale = sales.find(s => s.id === p.sale_id);
     return sale?.assigned_to === currentUser?.id;
   });
-  const activeProjects = scopedProjects.filter(p => !['closed'].includes(p.status));
-  const closedProjects = scopedProjects.filter(p => p.status === 'closed');
+  const filteredProjects = isAdmin && filterSalesperson !== 'all'
+    ? scopedProjects.filter(p => {
+        const sale = sales.find(s => s.id === p.sale_id);
+        return sale?.assigned_to === filterSalesperson || p.project_manager_id === filterSalesperson;
+      })
+    : scopedProjects;
+  const activeProjects = filteredProjects.filter(p => !['closed'].includes(p.status));
+  const closedProjects = filteredProjects.filter(p => p.status === 'closed');
+  const salespeopleWithProjects = [...new Set(projects.map(p => {
+    const sale = sales.find(s => s.id === p.sale_id);
+    return sale?.assigned_to || p.project_manager_id;
+  }).filter(Boolean))];
 
   const statusColumns = [
     { status: 'awaiting_to_be_scheduled', label: 'Awaiting to be Scheduled', color: 'bg-slate-100 border-slate-200', description: 'New projects' },
