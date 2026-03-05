@@ -23,7 +23,7 @@ function Row({ label, value, bold, indent, variant, pctOfRevenue }) {
   );
 }
 
-export default function BudgetPLProjection({ budget, totals, onSetRevenue }) {
+export default function BudgetPLProjection({ budget, totals, onSetRevenue, profitSharingPlan }) {
   const {
     grossRevenue, totalCogs, grossProfit, 
     staffOverheadCost, staffCogsCost,
@@ -178,11 +178,54 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue }) {
           <Row label="Total Overhead" value={totalOverhead} bold pctOfRevenue={grossRevenue > 0 ? totalOverhead / grossRevenue * 100 : null} />
 
           <Row label="Net Profit" value={netProfit} bold variant={netProfit >= 0 ? 'positive' : 'negative'} pctOfRevenue={grossRevenue > 0 ? netProfit / grossRevenue * 100 : null} />
-          <Row label="Net Profit Margin" value={null} />
           <div className="flex justify-between py-2 font-semibold">
             <span className="text-slate-700">Net Profit Margin</span>
             <span className={netProfitPct >= 0 ? 'text-emerald-600' : 'text-red-600'}>{netProfitPct.toFixed(1)}%</span>
           </div>
+
+          {profitSharingPlan && (
+            <>
+              <div className="py-2">
+                <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Profit Sharing Distribution</p>
+              </div>
+              {(() => {
+                const retention = profitSharingPlan.company_retention_amount || 0;
+                const distributable = Math.max(0, netProfit - retention);
+                const psTiers = profitSharingPlan.distribution_tiers || [];
+                
+                // Same allocation logic as the profit sharing view
+                const allocations = new Array(psTiers.length).fill(0);
+                let psRemaining = distributable;
+                const remainderIndices = [];
+                for (let i = 0; i < psTiers.length; i++) {
+                  const t = psTiers[i];
+                  if (t.type === 'percentage_of_remainder') { remainderIndices.push(i); }
+                  else if (t.type === 'fixed_amount') { const a = Math.min(Number(t.value) || 0, psRemaining); allocations[i] = a; psRemaining = Math.max(0, psRemaining - a); }
+                  else if (t.type === 'percentage_of_net_profit') { let a = netProfit * (Number(t.value) || 0) / 100; a = Math.min(a, psRemaining); allocations[i] = a; psRemaining = Math.max(0, psRemaining - a); }
+                }
+                const totalPct = remainderIndices.reduce((s, i) => s + (Number(psTiers[i].value) || 0), 0);
+                if (totalPct > 0 && psRemaining > 0) {
+                  const pool = psRemaining;
+                  for (const i of remainderIndices) allocations[i] = pool * (Number(psTiers[i].value) || 0) / totalPct;
+                  psRemaining = totalPct >= 100 ? 0 : pool * (1 - totalPct / 100);
+                }
+                const totalDistributed = allocations.reduce((s, a) => s + a, 0);
+                const retainedByCompany = netProfit - totalDistributed;
+
+                return (
+                  <>
+                    <Row label="Company Retention" value={retention} indent pctOfRevenue={grossRevenue > 0 ? retention / grossRevenue * 100 : null} />
+                    <Row label="Available for Distribution" value={distributable} indent />
+                    {psTiers.map((t, i) => (
+                      <Row key={t.id || i} label={`${t.name || 'Tier ' + (i + 1)}`} value={allocations[i]} indent pctOfRevenue={grossRevenue > 0 ? allocations[i] / grossRevenue * 100 : null} />
+                    ))}
+                    <Row label="Total Profit Sharing" value={totalDistributed} bold pctOfRevenue={grossRevenue > 0 ? totalDistributed / grossRevenue * 100 : null} />
+                    <Row label="Retained After Distribution" value={retainedByCompany} bold variant={retainedByCompany >= 0 ? 'positive' : 'negative'} pctOfRevenue={grossRevenue > 0 ? retainedByCompany / grossRevenue * 100 : null} />
+                  </>
+                );
+              })()}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
