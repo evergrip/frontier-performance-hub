@@ -253,26 +253,28 @@ export default function Leads() {
         <p className="text-lg text-slate-500">Track potential projects from first contact through proposal — drag cards to advance stages</p>
       </div>
 
-      {/* Salesperson Filter */}
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-slate-600">Filter by Salesperson:</span>
-        <Select value={filterSalesperson} onValueChange={setFilterSalesperson}>
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="All Salespeople" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Salespeople</SelectItem>
-            {salespeopleWithLeads.map(userId => {
-              const user = users.find(u => u.id === userId);
-              return (
-                <SelectItem key={userId} value={userId}>
-                  {user?.full_name || 'Unknown'}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Salesperson Filter - admin only */}
+      {isAdmin && (
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-slate-600">Filter by Salesperson:</span>
+          <Select value={filterSalesperson} onValueChange={setFilterSalesperson}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All Salespeople" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Salespeople</SelectItem>
+              {salespeopleWithLeads.map(userId => {
+                const u = users.find(u => u.id === userId);
+                return (
+                  <SelectItem key={userId} value={userId}>
+                    {u?.full_name || 'Unknown'}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
