@@ -66,12 +66,36 @@ export default function BudgetWizard() {
   const canProceedFromBasics = form.name && form.fiscal_year;
   const isLastStep = currentStep === STEPS.length - 1;
 
+  // Keep step in bounds when departments change
+  const safeStep = Math.min(currentStep, STEPS.length - 1);
+  if (safeStep !== currentStep) setCurrentStep(safeStep);
+
   const goNext = () => {
     if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
   };
 
   const goBack = () => {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
+  };
+
+  // Helper to flatten all selections across departments + company-wide
+  const getAllSelections = () => {
+    const all = { staff: [], expenses: [], assets: [], liabilities: [], vehicles: [] };
+    // Department items
+    Object.entries(deptSelections).forEach(([dept, cats]) => {
+      Object.keys(all).forEach(cat => {
+        (cats[cat] || []).forEach(item => {
+          all[cat].push({ ...item, department: dept });
+        });
+      });
+    });
+    // Company-wide items
+    Object.keys(all).forEach(cat => {
+      companySelections[cat].forEach(item => {
+        all[cat].push({ ...item });
+      });
+    });
+    return all;
   };
 
   const handleCreate = async () => {
