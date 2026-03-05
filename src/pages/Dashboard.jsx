@@ -235,7 +235,7 @@ export default function Dashboard() {
       .filter(p => p.project_type === 'construction')
       .reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
 
-    const activeRecognizedRevenue = projects
+    const activeRecognizedRevenue = scopedProjects
       .filter(p => 
         p.project_type === 'construction' && 
         ['active_construction', 'substantial_completion_closeout'].includes(p.status) &&
@@ -267,9 +267,9 @@ export default function Dashboard() {
     const constructionRevenue = closedConstructionRevenue + activeRecognizedRevenue;
     const totalRevenue = preconRevenue + constructionRevenue;
     
-    const activeProjectsCount = projects.filter(p => !['closed', 'completion'].includes(p.status)).length;
-    const activeSalesCount = sales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
-    const activeLeadsCount = leads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
+    const activeProjectsCount = scopedProjects.filter(p => !['closed', 'completion'].includes(p.status)).length;
+    const activeSalesCount = scopedSales.filter(s => ['feasibility', 'design_material_selections', 'engineering_permits', 'pending_construction_sale'].includes(s.status)).length;
+    const activeLeadsCount = scopedLeads.filter(l => !['converted', 'disqualified'].includes(l.status)).length;
     
     let totalProjectRevenue = 0;
     let totalGrossProfit = 0;
@@ -306,7 +306,7 @@ export default function Dashboard() {
       activeRecognizedRevenue,
       avgProjectSize, closedConstructionProjects
     };
-  }, [filteredSales, filteredProjects, filteredLeads, projects, sales, leads, dateRange]);
+  }, [filteredSales, filteredProjects, filteredLeads, scopedProjects, scopedSales, scopedLeads, dateRange]);
 
   const currentFiscalGoal = useMemo(() => fiscalGoals.find(g => g.fiscal_year === fiscalYear), [fiscalGoals, fiscalYear]);
 
@@ -506,7 +506,7 @@ export default function Dashboard() {
         )}
         {visibleMetrics.activeProjects && (
           <StatCard title="Active Projects" value={metrics.activeProjectsCount} icon={Activity}
-            subtitle={`${projects.length} total projects`} onClick={() => setDrilldownMetric('activeProjects')} />
+            subtitle={`${scopedProjects.length} total projects`} onClick={() => setDrilldownMetric('activeProjects')} />
         )}
         {visibleMetrics.activeSales && (
           <StatCard title="Active Pre-Con Sales" value={metrics.activeSalesCount} icon={Briefcase}
@@ -514,7 +514,7 @@ export default function Dashboard() {
         )}
         {visibleMetrics.activeLeads && (
           <StatCard title="Active Leads" value={metrics.activeLeadsCount} icon={Target}
-            subtitle={`${leads.length} total leads`} onClick={() => setDrilldownMetric('activeLeads')} />
+            subtitle={`${scopedLeads.length} total leads`} onClick={() => setDrilldownMetric('activeLeads')} />
         )}
         {visibleMetrics.grossProfit && (
           <StatCard title="Total Gross Profit" value={`$${(metrics.totalGrossProfit / 1000).toFixed(0)}K`} icon={DollarSign}
