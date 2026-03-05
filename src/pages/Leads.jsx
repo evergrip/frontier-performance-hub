@@ -216,9 +216,11 @@ export default function Leads() {
     { status: 'followup', label: 'Follow-up', color: 'bg-emerald-100 border-emerald-200' },
   ];
 
-  const filteredLeads = filterSalesperson === 'all'
-    ? leads
-    : leads.filter(l => l.assigned_to === filterSalesperson);
+  // Non-admin users only see their own leads; admins can filter
+  const scopedLeads = isAdmin ? leads : leads.filter(l => l.assigned_to === currentUser?.id);
+  const filteredLeads = isAdmin && filterSalesperson !== 'all'
+    ? scopedLeads.filter(l => l.assigned_to === filterSalesperson)
+    : scopedLeads;
 
   const activeLeads = filteredLeads.filter(l => !['converted', 'disqualified'].includes(l.status));
   const convertedLeads = filteredLeads.filter(l => l.status === 'converted');
