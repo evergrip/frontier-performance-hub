@@ -340,7 +340,7 @@ export default function Dashboard() {
     const nextYearMonthlyCapacity = nextYearCapacity || (settings.next_year_revenue_target ? settings.next_year_revenue_target / 12 : currentYearMonthlyCapacity);
     const hasManualCapacity = !!currentCapacity;
 
-    const activeProjectsValue = projects
+    const activeProjectsValue = scopedProjects
       .filter(p => p.status !== 'closed')
       .reduce((sum, p) => {
         const contractVal = p.contract_value || 0;
@@ -356,7 +356,7 @@ export default function Dashboard() {
         return sum + contractVal - (contractVal * pastAllocPct / 100);
       }, 0);
 
-    const preconPipelineValue = sales
+    const preconPipelineValue = scopedSales
       .filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost')
       .reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
 
@@ -379,7 +379,7 @@ export default function Dashboard() {
       usingGrowthForecast: !!settings.next_year_revenue_target || !!nextYearCapacity,
       hasManualCapacity
     };
-  }, [currentFiscalGoal, projects, sales, settings, fiscalYear, fiscalYearStartMonth]);
+  }, [currentFiscalGoal, scopedProjects, scopedSales, settings, fiscalYear, fiscalYearStartMonth]);
 
   // Monthly trend data
   const monthlyTrendData = useMemo(() => {
@@ -390,7 +390,7 @@ export default function Dashboard() {
       const monthNum = month.getMonth() + 1;
       const yearNum = month.getFullYear();
       
-      const monthPrecon = sales.filter(s => {
+      const monthPrecon = scopedSales.filter(s => {
         if (s.sale_type !== 'preconstruction' || s.status !== 'closed_won') return false;
         const d = getSaleEffectiveDate(s);
         return d >= mStart && d <= mEnd;
@@ -398,7 +398,7 @@ export default function Dashboard() {
       
       let monthConstruction = 0;
       const targetPeriod = `${yearNum}-${String(monthNum).padStart(2, '0')}`;
-      projects.filter(p => p.project_type === 'construction').forEach(p => {
+      scopedProjects.filter(p => p.project_type === 'construction').forEach(p => {
         const allocations = p.monthly_revenue_allocations || [];
         const alloc = allocations.find(a => {
           if (a.period === targetPeriod) return true;
@@ -412,7 +412,7 @@ export default function Dashboard() {
         }
       });
 
-      projects.filter(p => {
+      scopedProjects.filter(p => {
         if (p.project_type !== 'construction' || p.status !== 'closed') return false;
         if (p.monthly_revenue_allocations?.length > 0) return false;
         const d = getProjectEffectiveDate(p);
@@ -423,7 +423,7 @@ export default function Dashboard() {
       
       return { month: format(month, 'MMM yy'), revenue: (monthPrecon + monthConstruction) / 1000 };
     });
-  }, [dateRange, sales, projects]);
+  }, [dateRange, scopedSales, scopedProjects]);
 
   // Loading skeleton
   if (isLoading) {
