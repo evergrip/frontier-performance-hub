@@ -9,7 +9,13 @@ const FIELDS_BY_CATEGORY = {
   staff: [
     { key: 'name', label: 'Name', type: 'text', required: true },
     { key: 'role', label: 'Role', type: 'text' },
-    { key: 'salary', label: 'Annual Salary', type: 'number', required: true },
+    { key: 'pay_type', label: 'Pay Type', type: 'select', options: [
+      { value: 'salary', label: 'Annual Salary' },
+      { value: 'hourly', label: 'Hourly Wage' },
+    ], default: 'salary' },
+    { key: 'salary', label: 'Annual Salary', type: 'number', required: true, showWhen: { key: 'pay_type', value: 'salary' } },
+    { key: 'hourly_rate', label: 'Hourly Rate ($)', type: 'number', showWhen: { key: 'pay_type', value: 'hourly' } },
+    { key: 'hours_per_week', label: 'Hours / Week', type: 'number', default: '40', showWhen: { key: 'pay_type', value: 'hourly' } },
     { key: 'commission_amount', label: 'Commission', type: 'number' },
     { key: 'benefits_cost', label: 'Benefits Cost', type: 'number' },
     { key: 'cost_category', label: 'Cost Category', type: 'select', options: [
@@ -123,15 +129,23 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
   }, [editingItem]);
 
   const fields = FIELDS_BY_CATEGORY[category] || [];
-  const requiredFields = fields.filter(f => f.required);
-  const canSubmit = requiredFields.every(f => form[f.key] !== '' && form[f.key] !== undefined);
+  const visibleFields = fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value);
+  const requiredFields = visibleFields.filter(f => f.required);
+  const canSubmit = requiredFields.every(f => form[f.key] !== '' && form[f.key] !== undefined) &&
+    (category !== 'staff' || form.pay_type !== 'hourly' || (Number(form.hourly_rate) > 0));
 
   const handleSubmit = () => {
     const item = {};
     fields.forEach(f => {
+      if (f.showWhen && form[f.showWhen.key] !== f.showWhen.value) return;
       if (f.type === 'number') item[f.key] = Number(form[f.key]) || 0;
       else item[f.key] = form[f.key] || (f.default || '');
     });
+    // For hourly staff, compute annualized salary
+    if (category === 'staff' && form.pay_type === 'hourly') {
+      item.pay_type = 'hourly';
+      item.salary = (Number(form.hourly_rate) || 0) * (Number(form.hours_per_week) || 0) * 52;
+    }
     if (isEditing) {
       onSaveEdit(item);
     } else {
@@ -166,10 +180,10 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {fields.map(f => (
+        {fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value).map(f => (
           <div key={f.key} className={f.type === 'text' && f.required ? 'col-span-2 sm:col-span-1' : ''}>
             <Label className="text-[11px] text-slate-600">
-              {f.label}{f.required && <span className="text-red-500 ml-0.5">*</span>}
+              {f.label}{f.required && !f.showWhen && <span className="text-red-500 ml-0.5">*</span>}
             </Label>
             {f.type === 'select' ? (
               <Select value={form[f.key] || f.default} onValueChange={v => setForm(prev => ({ ...prev, [f.key]: v }))}>
