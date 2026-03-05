@@ -88,7 +88,11 @@ const TAB_CONFIG = {
     label: 'Staff',
     getLabel: i => i.name,
     getSub: i => i.role,
-    getDetail: i => i.pay_type === 'hourly' ? `$${(i.hourly_rate || 0)}/hr` : `$${(i.salary || 0).toLocaleString()}/yr`,
+    getDetail: i => {
+      const benTotal = (i.benefits || []).reduce((s, b) => s + (Number(b.amount) || 0), 0) || (i.benefits_cost || 0);
+      const salaryStr = i.pay_type === 'hourly' ? `$${(i.hourly_rate || 0)}/hr` : `$${(i.salary || 0).toLocaleString()}/yr`;
+      return benTotal > 0 ? `${salaryStr} + $${benTotal.toLocaleString()} ben` : salaryStr;
+    },
     editableField: 'salary',
   },
   expenses: {
