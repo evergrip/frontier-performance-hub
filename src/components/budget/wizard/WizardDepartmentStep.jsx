@@ -290,31 +290,14 @@ function CategoryTab({ category, department, items, setItems }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {editingIdx === idx ? (
-                      <>
-                        <Input
-                          type="number"
-                          value={editValue}
-                          onChange={e => setEditValue(e.target.value)}
-                          className="w-24 h-7 text-xs"
-                          autoFocus
-                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingIdx(null); }}
-                        />
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={saveEdit}><Check className="w-3 h-3 text-emerald-600" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingIdx(null)}><X className="w-3 h-3 text-slate-400" /></Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-xs font-medium text-slate-600">{config.getDetail(displayItem)}</span>
-                        {selected && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
-                            const selItem = items.find(s => s._presetIdx === idx && s._source === source);
-                            if (selItem) setEditingFullItem(selItem);
-                          }}>
-                            <Pencil className="w-3 h-3 text-slate-400" />
-                          </Button>
-                        )}
-                      </>
+                    <span className="text-xs font-medium text-slate-600">{config.getDetail(displayItem)}</span>
+                    {selected && (
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                        const selItem = items.find(s => s._presetIdx === idx && s._source === source);
+                        if (selItem) setEditingFullItem(selItem);
+                      }}>
+                        <Pencil className="w-3 h-3 text-slate-400" />
+                      </Button>
                     )}
                   </div>
                 </div>

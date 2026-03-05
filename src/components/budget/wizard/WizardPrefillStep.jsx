@@ -308,31 +308,14 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {editingIdx === idx ? (
-                      <>
-                        <Input
-                          type="number"
-                          value={editValue}
-                          onChange={e => setEditValue(e.target.value)}
-                          className="w-28 h-8 text-sm"
-                          autoFocus
-                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingIdx(null); }}
-                        />
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}><Check className="w-3.5 h-3.5 text-emerald-600" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingIdx(null)}><X className="w-3.5 h-3.5 text-slate-400" /></Button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-sm font-medium text-slate-600">{config.getDetail(displayItem)}</span>
-                        {selected && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                            const selItem = selectedItems.find(s => s._presetIdx === idx);
-                            if (selItem) setEditingFullItem(selItem);
-                          }}>
-                            <Pencil className="w-3 h-3 text-slate-400" />
-                          </Button>
-                        )}
-                      </>
+                    <span className="text-sm font-medium text-slate-600">{config.getDetail(displayItem)}</span>
+                    {selected && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                        const selItem = selectedItems.find(s => s._presetIdx === idx);
+                        if (selItem) setEditingFullItem(selItem);
+                      }}>
+                        <Pencil className="w-3 h-3 text-slate-400" />
+                      </Button>
                     )}
                   </div>
                 </div>
