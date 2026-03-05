@@ -31,12 +31,17 @@ const FIELDS_BY_CATEGORY = {
   ],
   expenses: [
     { key: 'name', label: 'Name', type: 'text', required: true },
-    { key: 'amount', label: 'Amount', type: 'number', required: true },
+    { key: 'amount_mode', label: 'Amount Mode', type: 'select', options: [
+      { value: 'fixed', label: 'Fixed Dollar Amount' },
+      { value: 'percent_of_revenue', label: '% of Gross Revenue' },
+    ], default: 'fixed' },
+    { key: 'amount', label: 'Amount ($)', type: 'number', required: true, showWhen: { key: 'amount_mode', value: 'fixed' } },
     { key: 'period', label: 'Period', type: 'select', options: [
       { value: 'monthly', label: 'Monthly' },
       { value: 'quarterly', label: 'Quarterly' },
       { value: 'annual', label: 'Annual' },
-    ], default: 'monthly' },
+    ], default: 'monthly', showWhen: { key: 'amount_mode', value: 'fixed' } },
+    { key: 'percent_of_revenue', label: '% of Revenue', type: 'number', showWhen: { key: 'amount_mode', value: 'percent_of_revenue' } },
     { key: 'category', label: 'Category', type: 'select', options: [
       { value: 'insurance', label: 'Insurance' },
       { value: 'utilities', label: 'Utilities' },
@@ -137,7 +142,8 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
   const visibleFields = fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value);
   const requiredFields = visibleFields.filter(f => f.required);
   const canSubmit = requiredFields.every(f => form[f.key] !== '' && form[f.key] !== undefined) &&
-    (category !== 'staff' || form.pay_type !== 'hourly' || (Number(form.hourly_rate) > 0));
+    (category !== 'staff' || form.pay_type !== 'hourly' || (Number(form.hourly_rate) > 0)) &&
+    (category !== 'expenses' || (form.amount_mode || 'fixed') !== 'percent_of_revenue' || Number(form.percent_of_revenue) > 0);
 
   const handleSubmit = () => {
     const item = {};
