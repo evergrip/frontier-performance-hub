@@ -137,7 +137,7 @@ export default function BudgetDetail() {
   };
 
   const totals = useMemo(() => {
-    const staffBaseCost = (s) => (s.salary || 0) + (s.benefits_cost || 0) + (s.taxes_cost || 0);
+    const staffBaseCost = (s) => (s.salary || 0) + (s.benefits_cost || 0) + (s.hsa_cost || 0) + (s.rrsp_match_cost || 0) + (s.taxes_cost || 0);
     let staffOverheadCost = 0;
     let staffCogsCost = 0;
     staffItems.forEach(s => {
