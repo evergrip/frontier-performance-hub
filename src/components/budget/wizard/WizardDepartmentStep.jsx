@@ -137,6 +137,7 @@ function CategoryTab({ category, department, items, setItems }) {
   const [loadingItems, setLoadingItems] = useState(false);
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [editingFullItem, setEditingFullItem] = useState(null);
 
   const presetItems = PRESET_DATA[category] || [];
 
@@ -349,6 +350,9 @@ function CategoryTab({ category, department, items, setItems }) {
                   </div>
                 </div>
                 <span className="text-xs font-medium text-slate-600 shrink-0">{config.getDetail(item)}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setEditingFullItem(item)}>
+                  <Pencil className="w-3 h-3 text-slate-400" />
+                </Button>
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => {
                   setItems(items.filter(s => !(s._source === 'custom' && s._customIdx === item._customIdx)));
                 }}>
@@ -360,13 +364,25 @@ function CategoryTab({ category, department, items, setItems }) {
         </div>
       )}
 
-      {/* Add custom item form */}
+      {/* Add / Edit custom item form */}
       <CustomItemForm
         category={category}
+        editingItem={editingFullItem}
         onAdd={(newItem) => {
           const customIdx = Date.now() + Math.random();
           setItems([...items, { ...newItem, _source: 'custom', _customIdx: customIdx, department }]);
         }}
+        onSaveEdit={(updatedFields) => {
+          setItems(items.map(s =>
+            (s._customIdx === editingFullItem._customIdx && s._source === editingFullItem._source)
+              ? { ...s, ...updatedFields }
+              : (s._presetIdx === editingFullItem._presetIdx && s._source === editingFullItem._source)
+              ? { ...s, ...updatedFields }
+              : s
+          ));
+          setEditingFullItem(null);
+        }}
+        onCancelEdit={() => setEditingFullItem(null)}
       />
     </div>
   );
