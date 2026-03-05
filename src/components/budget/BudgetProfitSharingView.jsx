@@ -62,6 +62,18 @@ function computeTierAllocations(tiers, distributable, netProfit) {
   return allocations;
 }
 
+function WaterfallRow({ label, amount, bold, indent, accent }) {
+  const isNeg = amount < 0;
+  return (
+    <div className={`flex items-center justify-between text-sm ${indent ? 'pl-4' : ''}`}>
+      <span className={`${bold ? 'font-semibold text-slate-900' : 'text-slate-600'}`}>{label}</span>
+      <span className={`font-mono ${bold ? 'font-bold' : 'font-medium'} ${accent ? 'text-emerald-700' : isNeg ? 'text-red-600' : 'text-slate-900'}`}>
+        {isNeg ? `(${fmt(Math.abs(amount))})` : fmt(amount)}
+      </span>
+    </div>
+  );
+}
+
 export default function BudgetProfitSharingView({ budgetId, netProfit }) {
   const qc = useQueryClient();
 
