@@ -179,8 +179,12 @@ export default function BudgetDetail() {
       if (period === 'quarterly') return a * 4;
       return a;
     };
-    const expenseOverhead = expenseItems.filter(e => (e.cost_type || 'overhead') === 'overhead').reduce((s, e) => s + annualize(e.amount, e.period), 0);
-    const expenseCogs = expenseItems.filter(e => e.cost_type === 'cogs').reduce((s, e) => s + annualize(e.amount, e.period), 0);
+    const getExpenseAnnual = (e) => {
+      if (e.amount_mode === 'percent_of_revenue') return (Number(e.percent_of_revenue) || 0) / 100 * grossRevenue;
+      return annualize(e.amount, e.period);
+    };
+    const expenseOverhead = expenseItems.filter(e => (e.cost_type || 'overhead') === 'overhead').reduce((s, e) => s + getExpenseAnnual(e), 0);
+    const expenseCogs = expenseItems.filter(e => e.cost_type === 'cogs').reduce((s, e) => s + getExpenseAnnual(e), 0);
 
     const totalOverhead = staffOverheadCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead + expenseOverhead;
     const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs + staffCogsCost + expenseCogs;
