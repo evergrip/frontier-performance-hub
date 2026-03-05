@@ -25,7 +25,13 @@ export default function Leads() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState(null);
 
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser);
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
   const [filterSalesperson, setFilterSalesperson] = useState('all');
 
   const [saleForm, setSaleForm] = useState({
