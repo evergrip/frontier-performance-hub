@@ -62,7 +62,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department, employment_type: form.employment_type, cost_category: form.cost_category, notes: form.notes };
+    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department || '', employment_type: form.employment_type, cost_category: form.cost_category, notes: form.notes };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
