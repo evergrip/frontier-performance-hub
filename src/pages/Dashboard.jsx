@@ -173,24 +173,52 @@ export default function Dashboard() {
     return new Date(project.created_date);
   };
 
-  // Memoized filtered data
-  const filteredSales = useMemo(() => sales.filter(sale => {
+  // For non-admin users, scope data to their own records
+  const isAdmin = user?.role === 'admin';
+
+  const isUserSale = (sale) => {
+    if (!user) return false;
+    if (sale.assigned_to === user.id) return true;
+    if ((sale.sale_contributors || []).some(c => c.user_id === user.id)) return true;
+    return false;
+  };
+
+  const isUserProject = (project) => {
+    if (!user) return false;
+    if (project.project_manager_id === user.id) return true;
+    // Check if user was on the originating sale
+    const originatingSale = sales.find(s => s.id === project.sale_id);
+    if (originatingSale && isUserSale(originatingSale)) return true;
+    return false;
+  };
+
+  const isUserLead = (lead) => {
+    if (!user) return false;
+    return lead.assigned_to === user.id;
+  };
+
+  const scopedSales = useMemo(() => isAdmin ? sales : sales.filter(isUserSale), [sales, user, isAdmin]);
+  const scopedProjects = useMemo(() => isAdmin ? projects : projects.filter(isUserProject), [projects, sales, user, isAdmin]);
+  const scopedLeads = useMemo(() => isAdmin ? leads : leads.filter(isUserLead), [leads, user, isAdmin]);
+
+  // Memoized filtered data (date range applied on top of scoped data)
+  const filteredSales = useMemo(() => scopedSales.filter(sale => {
     if (!dateRange.start || !dateRange.end) return true;
     const effectiveDate = getSaleEffectiveDate(sale);
     return effectiveDate >= dateRange.start && effectiveDate <= dateRange.end;
-  }), [sales, dateRange]);
+  }), [scopedSales, dateRange]);
 
-  const filteredProjects = useMemo(() => projects.filter(project => {
+  const filteredProjects = useMemo(() => scopedProjects.filter(project => {
     if (!dateRange.start || !dateRange.end) return true;
     const effectiveDate = getProjectEffectiveDate(project);
     return effectiveDate >= dateRange.start && effectiveDate <= dateRange.end;
-  }), [projects, dateRange]);
+  }), [scopedProjects, dateRange]);
 
-  const filteredLeads = useMemo(() => leads.filter(lead => {
+  const filteredLeads = useMemo(() => scopedLeads.filter(lead => {
     if (!dateRange.start || !dateRange.end) return true;
     const leadDate = new Date(lead.created_date);
     return leadDate >= dateRange.start && leadDate <= dateRange.end;
-  }), [leads, dateRange]);
+  }), [scopedLeads, dateRange]);
 
   // Memoized metrics calculations
   const metrics = useMemo(() => {
