@@ -23,6 +23,13 @@ import { createPageUrl } from '../utils';
 export default function Projects() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser);
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [closeoutDialogOpen, setCloseoutDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);

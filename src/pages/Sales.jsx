@@ -20,6 +20,13 @@ import AuditItemFixer from '../components/common/AuditItemFixer';
 
 export default function Sales() {
   const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser);
+  }, []);
+
+  const isAdmin = currentUser?.role === 'admin';
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
   const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
