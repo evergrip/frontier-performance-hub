@@ -16,6 +16,18 @@ import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSha
 
 const EMPLOYER_TAX_RATE = 0.1222; // CPP + EI + WSIB + EHT
 
+function buildSteps(departments) {
+  const steps = [{ key: 'basics', label: 'Basics' }];
+  (departments || []).forEach(dept => {
+    steps.push({ key: `dept_${dept}`, label: dept, isDepartment: true, department: dept });
+  });
+  // Company-wide items for things not tied to a department
+  steps.push({ key: 'company_wide', label: 'Company-Wide' });
+  steps.push({ key: 'profit_sharing', label: 'Profit Sharing' });
+  steps.push({ key: 'review', label: 'Review' });
+  return steps;
+}
+
 export default function BudgetWizard() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -30,7 +42,11 @@ export default function BudgetWizard() {
     departments: [],
   });
 
-  const [selections, setSelections] = useState({
+  // Department-keyed selections: { "Sales": { staff: [], expenses: [], ... }, ... }
+  const [deptSelections, setDeptSelections] = useState({});
+
+  // Company-wide selections (not department-specific)
+  const [companySelections, setCompanySelections] = useState({
     staff: [],
     expenses: [],
     assets: [],
@@ -44,7 +60,9 @@ export default function BudgetWizard() {
     notes: '',
   });
 
-  const stepKey = STEPS[currentStep].key;
+  const STEPS = buildSteps(form.departments);
+  const stepKey = STEPS[currentStep]?.key || 'basics';
+  const currentStepDef = STEPS[currentStep] || STEPS[0];
   const canProceedFromBasics = form.name && form.fiscal_year;
   const isLastStep = currentStep === STEPS.length - 1;
 
