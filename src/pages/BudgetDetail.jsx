@@ -173,6 +173,8 @@ export default function BudgetDetail() {
     const lineItemOverhead = (budget?.line_items || []).filter(i => i.type === 'overhead').reduce((sum, i) => sum + (i.amount || 0), 0);
     const lineItemCogs = (budget?.line_items || []).filter(i => i.type === 'cogs').reduce((sum, i) => sum + (i.amount || 0), 0);
 
+    const grossRevenue = budget?.gross_revenue_projection || 0;
+
     const annualize = (amount, period) => {
       const a = Number(amount) || 0;
       if (period === 'monthly') return a * 12;
@@ -188,7 +190,6 @@ export default function BudgetDetail() {
 
     const totalOverhead = staffOverheadCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead + expenseOverhead;
     const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs + staffCogsCost + expenseCogs;
-    const grossRevenue = budget?.gross_revenue_projection || 0;
     const grossProfit = grossRevenue - totalCogs;
     const netProfit = grossProfit - totalOverhead;
     const netProfitPct = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
