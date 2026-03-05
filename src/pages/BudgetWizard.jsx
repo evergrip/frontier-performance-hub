@@ -119,16 +119,16 @@ export default function BudgetWizard() {
     const selections = getAllSelections();
 
     // Prepare bulk items, stripping internal marker fields
-    const staffItems = selections.staff.map(({ _presetIdx, _source, ...rest }) => {
+    const staffItems = selections.staff.map(({ _presetIdx, _source, _customIdx, ...rest }) => {
       const salary = rest.salary || 0;
       const commissionForTax = rest.cost_category === 'split' ? (rest.commission_amount || 0) : 0;
       const taxBase = salary + commissionForTax;
       return { ...rest, budget_id: budgetId, taxes_cost: Math.round(taxBase * EMPLOYER_TAX_RATE * 100) / 100 };
     });
-    const expenseItems = selections.expenses.map(({ _presetIdx, _source, ...rest }) => ({ ...rest, budget_id: budgetId }));
-    const assetItems = selections.assets.map(({ _presetIdx, _source, ...rest }) => ({ ...rest, budget_id: budgetId }));
-    const liabilityItems = selections.liabilities.map(({ _presetIdx, _source, ...rest }) => ({ ...rest, budget_id: budgetId }));
-    const vehicleItems = selections.vehicles.map(({ _presetIdx, _source, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const expenseItems = selections.expenses.map(({ _presetIdx, _source, _customIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const assetItems = selections.assets.map(({ _presetIdx, _source, _customIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const liabilityItems = selections.liabilities.map(({ _presetIdx, _source, _customIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
+    const vehicleItems = selections.vehicles.map(({ _presetIdx, _source, _customIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
 
     const bulkOps = [];
     if (staffItems.length) bulkOps.push(base44.entities.StaffDetail.bulkCreate(staffItems));
