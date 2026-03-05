@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pencil, Check, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pencil, Check, X, Database, Sparkles, Loader2 } from 'lucide-react';
 
 const PRESET_DATA = {
   staff: [
@@ -67,78 +69,121 @@ const PRESET_DATA = {
   ],
 };
 
+const ENTITY_MAP = {
+  staff: 'StaffDetail',
+  expenses: 'ExpenseDetail',
+  assets: 'AssetDetail',
+  liabilities: 'LiabilityDetail',
+  vehicles: 'VehicleDetail',
+};
+
+const STRIP_FIELDS = ['id', 'created_date', 'updated_date', 'created_by', 'budget_id'];
+
 const CATEGORY_CONFIG = {
   staff: {
     title: 'Staff Members',
-    description: 'Select common roles to add to your budget. Edit salaries and details after.',
+    description: 'Select from templates or import from an existing budget.',
     getLabel: i => i.name,
     getSub: i => i.department,
     getDetail: i => `$${(i.salary||0).toLocaleString()}/yr`,
-    getNameKey: i => i.name,
     editableField: 'salary',
-    editLabel: 'Salary',
   },
   expenses: {
     title: 'Operating Expenses',
-    description: 'Select common business expenses. Adjust amounts to match your costs.',
+    description: 'Select from templates or import from an existing budget.',
     getLabel: i => i.name,
     getSub: i => i.category?.replace('_', ' '),
     getDetail: i => `$${(i.amount||0).toLocaleString()}/${i.period === 'monthly' ? 'mo' : i.period === 'quarterly' ? 'qtr' : 'yr'}`,
-    getNameKey: i => i.name,
     editableField: 'amount',
-    editLabel: 'Amount',
   },
   assets: {
     title: 'Assets & Equipment',
-    description: 'Select equipment and assets your company owns or plans to acquire.',
+    description: 'Select from templates or import from an existing budget.',
     getLabel: i => i.name,
     getSub: i => i.type?.replace('_', ' '),
     getDetail: i => `$${(i.purchase_cost||0).toLocaleString()}`,
-    getNameKey: i => i.name,
     editableField: 'purchase_cost',
-    editLabel: 'Cost',
   },
   liabilities: {
     title: 'Liabilities & Debt',
-    description: 'Select loans, leases, and other financial obligations.',
+    description: 'Select from templates or import from an existing budget.',
     getLabel: i => i.name,
     getSub: i => i.type?.replace('_', ' '),
     getDetail: i => `$${(i.monthly_payment||0).toLocaleString()}/mo`,
-    getNameKey: i => i.name,
     editableField: 'monthly_payment',
-    editLabel: 'Monthly',
   },
   vehicles: {
     title: 'Vehicles',
-    description: 'Select fleet vehicles. Update costs to match your actual fleet.',
+    description: 'Select from templates or import from an existing budget.',
     getLabel: i => `${i.year || ''} ${i.make} ${i.model}`.trim(),
     getSub: () => '',
     getDetail: i => `$${(i.purchase_cost||0).toLocaleString()}`,
-    getNameKey: i => `${i.make} ${i.model}`,
     editableField: 'purchase_cost',
-    editLabel: 'Cost',
   },
 };
 
 export default function WizardPrefillStep({ category, selectedItems, setSelectedItems }) {
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [source, setSource] = useState('templates');
+  const [budgets, setBudgets] = useState([]);
+  const [selectedBudgetId, setSelectedBudgetId] = useState('');
+  const [existingItems, setExistingItems] = useState([]);
+  const [loadingBudgets, setLoadingBudgets] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(false);
+
   const config = CATEGORY_CONFIG[category];
-  const presets = PRESET_DATA[category] || [];
+  const items = source === 'templates' ? (PRESET_DATA[category] || []) : existingItems;
+
+  // Load budgets list once when switching to "existing" source
+  useEffect(() => {
+    if (source === 'existing' && budgets.length === 0) {
+      setLoadingBudgets(true);
+      base44.entities.Budget.list('-created_date').then(b => {
+        setBudgets(b);
+        setLoadingBudgets(false);
+      });
+    }
+  }, [source]);
+
+  // Load items when a budget is selected
+  useEffect(() => {
+    if (source === 'existing' && selectedBudgetId) {
+      setLoadingItems(true);
+      const entityName = ENTITY_MAP[category];
+      base44.entities[entityName].filter({ budget_id: selectedBudgetId }).then(data => {
+        const cleaned = data.map(item => {
+          const copy = { ...item };
+          STRIP_FIELDS.forEach(f => delete copy[f]);
+          return copy;
+        });
+        setExistingItems(cleaned);
+        setLoadingItems(false);
+      });
+    }
+  }, [source, selectedBudgetId, category]);
+
+  // Reset selections when source changes
+  useEffect(() => {
+    setSelectedItems([]);
+    setEditingIdx(null);
+    setExistingItems([]);
+    setSelectedBudgetId('');
+  }, [source]);
 
   const toggle = (idx) => {
     setSelectedItems(prev => {
       const existing = prev.find(s => s._presetIdx === idx);
       if (existing) return prev.filter(s => s._presetIdx !== idx);
-      return [...prev, { ...presets[idx], _presetIdx: idx }];
+      return [...prev, { ...items[idx], _presetIdx: idx }];
     });
   };
 
   const selectAll = () => {
-    if (selectedItems.length === presets.length) {
+    if (selectedItems.length === items.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(presets.map((p, i) => ({ ...p, _presetIdx: i })));
+      setSelectedItems(items.map((p, i) => ({ ...p, _presetIdx: i })));
     }
   };
 
@@ -151,7 +196,7 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
   };
 
   const saveEdit = () => {
-    setSelectedItems(prev => prev.map(s => 
+    setSelectedItems(prev => prev.map(s =>
       s._presetIdx === editingIdx ? { ...s, [config.editableField]: Number(editValue) || 0 } : s
     ));
     setEditingIdx(null);
@@ -166,66 +211,131 @@ export default function WizardPrefillStep({ category, selectedItems, setSelected
         <p className="text-sm text-slate-500">{config.description}</p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={selectAll}>
-          {selectedItems.length === presets.length ? 'Deselect All' : 'Select All'}
-        </Button>
-        <span className="text-sm text-slate-500">{selectedItems.length} of {presets.length} selected</span>
+      {/* Source Toggle */}
+      <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+        <button
+          onClick={() => setSource('templates')}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium flex-1 justify-center transition ${
+            source === 'templates' ? 'bg-white shadow text-amber-700' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" /> Templates
+        </button>
+        <button
+          onClick={() => setSource('existing')}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium flex-1 justify-center transition ${
+            source === 'existing' ? 'bg-white shadow text-blue-700' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Database className="w-4 h-4" /> From Existing Budget
+        </button>
       </div>
 
-      <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
-        {presets.map((item, idx) => {
-          const selected = isSelected(idx);
-          const selectedItem = selectedItems.find(s => s._presetIdx === idx);
-          const displayItem = selectedItem || item;
-          return (
-            <div
-              key={idx}
-              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
-                selected ? 'border-amber-300 bg-amber-50' : 'border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <Checkbox
-                checked={selected}
-                onCheckedChange={() => toggle(idx)}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{config.getLabel(displayItem)}</span>
-                  {config.getSub(displayItem) && (
-                    <Badge variant="outline" className="text-xs capitalize">{config.getSub(displayItem)}</Badge>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {editingIdx === idx ? (
-                  <>
-                    <Input
-                      type="number"
-                      value={editValue}
-                      onChange={e => setEditValue(e.target.value)}
-                      className="w-28 h-8 text-sm"
-                      autoFocus
-                      onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingIdx(null); }}
-                    />
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}><Check className="w-3.5 h-3.5 text-emerald-600" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingIdx(null)}><X className="w-3.5 h-3.5 text-slate-400" /></Button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-slate-600">{config.getDetail(displayItem)}</span>
-                    {selected && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(idx)}>
-                        <Pencil className="w-3 h-3 text-slate-400" />
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
+      {/* Budget picker when in existing mode */}
+      {source === 'existing' && (
+        <div>
+          {loadingBudgets ? (
+            <div className="flex items-center gap-2 text-sm text-slate-500 py-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading budgets...
             </div>
-          );
-        })}
-      </div>
+          ) : budgets.length === 0 ? (
+            <p className="text-sm text-slate-500 py-2">No existing budgets found.</p>
+          ) : (
+            <Select value={selectedBudgetId} onValueChange={setSelectedBudgetId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a budget to import from..." />
+              </SelectTrigger>
+              <SelectContent>
+                {budgets.map(b => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {b.name} (FY {b.fiscal_year})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+
+      {/* Loading items indicator */}
+      {source === 'existing' && loadingItems && (
+        <div className="flex items-center gap-2 text-sm text-slate-500 py-4 justify-center">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading items...
+        </div>
+      )}
+
+      {/* Empty state for existing budget with no items */}
+      {source === 'existing' && selectedBudgetId && !loadingItems && items.length === 0 && (
+        <div className="text-center py-8 text-sm text-slate-400">
+          No {category} items found in this budget.
+        </div>
+      )}
+
+      {/* Items list */}
+      {items.length > 0 && !(source === 'existing' && loadingItems) && (
+        <>
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" onClick={selectAll}>
+              {selectedItems.length === items.length ? 'Deselect All' : 'Select All'}
+            </Button>
+            <span className="text-sm text-slate-500">{selectedItems.length} of {items.length} selected</span>
+          </div>
+
+          <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+            {items.map((item, idx) => {
+              const selected = isSelected(idx);
+              const selectedItem = selectedItems.find(s => s._presetIdx === idx);
+              const displayItem = selectedItem || item;
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                    selected ? 'border-amber-300 bg-amber-50' : 'border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <Checkbox checked={selected} onCheckedChange={() => toggle(idx)} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">{config.getLabel(displayItem)}</span>
+                      {config.getSub(displayItem) && (
+                        <Badge variant="outline" className="text-xs capitalize">{config.getSub(displayItem)}</Badge>
+                      )}
+                      {source === 'existing' && (
+                        <Badge className="text-xs bg-blue-50 text-blue-600 border-blue-200">imported</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {editingIdx === idx ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={editValue}
+                          onChange={e => setEditValue(e.target.value)}
+                          className="w-28 h-8 text-sm"
+                          autoFocus
+                          onKeyDown={e => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') setEditingIdx(null); }}
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={saveEdit}><Check className="w-3.5 h-3.5 text-emerald-600" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingIdx(null)}><X className="w-3.5 h-3.5 text-slate-400" /></Button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium text-slate-600">{config.getDetail(displayItem)}</span>
+                        {selected && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(idx)}>
+                            <Pencil className="w-3 h-3 text-slate-400" />
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
