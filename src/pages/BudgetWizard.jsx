@@ -224,6 +224,15 @@ export default function BudgetWizard() {
         </div>
       </div>
 
+      {hasDraft && (
+        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 mb-4">
+          <p className="text-sm text-blue-700">Restored from your saved draft.</p>
+          <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-800" onClick={handleDiscardDraft}>
+            Discard Draft
+          </Button>
+        </div>
+      )}
+
       <WizardStepNav steps={STEPS} currentStep={currentStep} onStepClick={(idx) => {
         if (idx === 0 || canProceedFromBasics) setCurrentStep(idx);
       }} />
