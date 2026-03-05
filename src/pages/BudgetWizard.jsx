@@ -208,7 +208,8 @@ export default function BudgetWizard() {
               netProfitEstimate={(() => {
                 const allSel = getAllSelections();
                 const revenue = Number(form.gross_revenue_projection) || 0;
-                const staffTotal = allSel.staff.reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0) + (i.commission_amount || 0), 0);
+                const staffBenTotal = (st) => { const b = st.benefits || []; return b.length > 0 ? b.reduce((s2, bn) => s2 + (Number(bn.amount) || 0), 0) : (st.benefits_cost || 0) + (st.hsa_cost || 0) + (st.rrsp_match_cost || 0); };
+                const staffTotal = allSel.staff.reduce((s, i) => s + (i.salary || 0) + staffBenTotal(i) + (i.commission_amount || 0), 0);
                 const expenseTotal = allSel.expenses.reduce((s, i) => {
                   const a = Number(i.amount) || 0;
                   if (i.period === 'monthly') return s + a * 12;
