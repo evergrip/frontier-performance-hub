@@ -307,7 +307,10 @@ function CategoryTab({ category, department, items, setItems }) {
                       <>
                         <span className="text-xs font-medium text-slate-600">{config.getDetail(displayItem)}</span>
                         {selected && (
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEdit(idx)}>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                            const selItem = items.find(s => s._presetIdx === idx && s._source === source);
+                            if (selItem) setEditingFullItem(selItem);
+                          }}>
                             <Pencil className="w-3 h-3 text-slate-400" />
                           </Button>
                         )}
