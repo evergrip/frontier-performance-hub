@@ -221,6 +221,28 @@ export default function BudgetProfitSharingView({ budgetId, netProfit }) {
           })}
         </div>
 
+        {/* Distribution Waterfall */}
+        {(config.distribution_tiers || []).length > 0 && netProfit > 0 && (() => {
+          const totalAllocated = editAllocations.reduce((s, a) => s + a, 0);
+          const editTiers = config.distribution_tiers || [];
+          const totalRemPct = editTiers.filter(t => t.type === 'percentage_of_remainder').reduce((s, t) => s + (Number(t.value) || 0), 0);
+          const unallocated = editDistributable - totalAllocated;
+          return (
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 space-y-2">
+              <h3 className="font-semibold text-slate-800 text-sm uppercase tracking-wider">Distribution Waterfall</h3>
+              <WaterfallRow label="Net Profit" amount={netProfit} bold />
+              <WaterfallRow label="Company Retention" amount={-editRetention} indent />
+              <div className="border-t border-slate-300 my-1" />
+              <WaterfallRow label="Available for Distribution" amount={editDistributable} bold accent />
+              {editTiers.map((tier, idx) => (
+                <WaterfallRow key={tier.id} label={`${idx + 1}. ${tier.name || 'Untitled'}`} amount={-(editAllocations[idx] || 0)} indent />
+              ))}
+              <div className="border-t border-slate-300 my-1" />
+              <WaterfallRow label="Undistributed Remainder" amount={unallocated < 0.01 ? 0 : unallocated} bold />
+            </div>
+          );
+        })()}
+
         <div><Label>Plan Notes</Label><Textarea value={config.notes || ''} onChange={e => setConfig(prev => ({ ...prev, notes: e.target.value }))} rows={2} /></div>
       </div>
     );

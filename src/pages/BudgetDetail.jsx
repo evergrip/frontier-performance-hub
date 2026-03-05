@@ -69,6 +69,13 @@ export default function BudgetDetail() {
     enabled: !!budgetId,
   });
 
+  const { data: profitSharingPlans = [] } = useQuery({
+    queryKey: ['profitSharing', budgetId],
+    queryFn: () => base44.entities.ProfitSharingPlan.filter({ budget_id: budgetId }),
+    enabled: !!budgetId,
+  });
+  const profitSharingPlan = profitSharingPlans[0] || null;
+
   const createVersionSnapshot = (changeSummary) => {
     const snapshot = {
       name: budget.name,
@@ -238,7 +245,7 @@ export default function BudgetDetail() {
         </TabsList>
 
         <TabsContent value="pl">
-          <BudgetPLProjection budget={budget} totals={totals} onSetRevenue={(rev) => updateBudgetMutation.mutate({ gross_revenue_projection: rev, _changeSummary: 'Set gross revenue to required amount' })} />
+          <BudgetPLProjection budget={budget} totals={totals} profitSharingPlan={profitSharingPlan} onSetRevenue={(rev) => updateBudgetMutation.mutate({ gross_revenue_projection: rev, _changeSummary: 'Set gross revenue to required amount' })} />
         </TabsContent>
 
         <TabsContent value="basics">
