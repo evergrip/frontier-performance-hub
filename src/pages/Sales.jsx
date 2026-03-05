@@ -713,6 +713,29 @@ export default function Sales() {
         <p className="text-lg text-slate-500">Converted leads appear here — track them through feasibility, design, engineering & permits before converting to construction</p>
       </div>
 
+      {/* Salesperson Filter - admin only */}
+      {isAdmin && (
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-slate-600">Filter by Salesperson:</span>
+          <Select value={filterSalesperson} onValueChange={setFilterSalesperson}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All Salespeople" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Salespeople</SelectItem>
+              {salespeopleWithSales.map(userId => {
+                const u = users.find(u => u.id === userId);
+                return (
+                  <SelectItem key={userId} value={userId}>
+                    {u?.full_name || 'Unknown'}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Summary Stats */}
       <div className="grid grid-cols-4 gap-4">
         <Card>

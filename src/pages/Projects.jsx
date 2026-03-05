@@ -591,6 +591,29 @@ export default function Projects() {
         <p className="text-lg text-slate-500">Active construction projects — created when a pre-construction sale is converted. Drag cards to advance through stages.</p>
       </div>
 
+      {/* Salesperson Filter - admin only */}
+      {isAdmin && (
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-slate-600">Filter by Salesperson:</span>
+          <Select value={filterSalesperson} onValueChange={setFilterSalesperson}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All Salespeople" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Salespeople</SelectItem>
+              {salespeopleWithProjects.map(userId => {
+                const u = users.find(u => u.id === userId);
+                return (
+                  <SelectItem key={userId} value={userId}>
+                    {u?.full_name || 'Unknown'}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Summary Stats */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
