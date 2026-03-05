@@ -29,37 +29,83 @@ function buildSteps(departments) {
   return steps;
 }
 
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(WIZARD_DRAFT_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+
+function saveDraft(data) {
+  try {
+    localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(WIZARD_DRAFT_KEY);
+  } catch {}
+}
+
+const EMPTY_FORM = {
+  name: '',
+  fiscal_year: new Date().getFullYear() + 1,
+  description: '',
+  gross_revenue_projection: '',
+  net_profit_target_percentage: '',
+  departments: [],
+};
+
+const EMPTY_SELECTIONS = { staff: [], expenses: [], assets: [], liabilities: [], vehicles: [] };
+
+const EMPTY_PROFIT_SHARING = { company_retention_amount: '', distribution_tiers: [], notes: '' };
+
 export default function BudgetWizard() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
 
-  const [form, setForm] = useState({
-    name: '',
-    fiscal_year: new Date().getFullYear() + 1,
-    description: '',
-    gross_revenue_projection: '',
-    net_profit_target_percentage: '',
-    departments: [],
-  });
-
-  // Department-keyed selections: { "Sales": { staff: [], expenses: [], ... }, ... }
+  const [currentStep, setCurrentStep] = useState(0);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [deptSelections, setDeptSelections] = useState({});
+  const [companySelections, setCompanySelections] = useState(EMPTY_SELECTIONS);
+  const [profitSharingConfig, setProfitSharingConfig] = useState(EMPTY_PROFIT_SHARING);
 
-  // Company-wide selections (not department-specific)
-  const [companySelections, setCompanySelections] = useState({
-    staff: [],
-    expenses: [],
-    assets: [],
-    liabilities: [],
-    vehicles: [],
-  });
+  // Load draft on mount
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft) {
+      setHasDraft(true);
+      setCurrentStep(draft.currentStep || 0);
+      setForm(draft.form || EMPTY_FORM);
+      setDeptSelections(draft.deptSelections || {});
+      setCompanySelections(draft.companySelections || EMPTY_SELECTIONS);
+      setProfitSharingConfig(draft.profitSharingConfig || EMPTY_PROFIT_SHARING);
+    }
+  }, []);
 
-  const [profitSharingConfig, setProfitSharingConfig] = useState({
-    company_retention_amount: '',
-    distribution_tiers: [],
-    notes: '',
-  });
+  // Auto-save draft whenever state changes (debounced via useEffect)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (form.name || form.departments?.length > 0) {
+        saveDraft({ currentStep, form, deptSelections, companySelections, profitSharingConfig });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [currentStep, form, deptSelections, companySelections, profitSharingConfig]);
+
+  const handleDiscardDraft = () => {
+    clearDraft();
+    setHasDraft(false);
+    setCurrentStep(0);
+    setForm(EMPTY_FORM);
+    setDeptSelections({});
+    setCompanySelections(EMPTY_SELECTIONS);
+    setProfitSharingConfig(EMPTY_PROFIT_SHARING);
+    toast.info('Draft discarded');
+  };
 
   const STEPS = buildSteps(form.departments);
   const stepKey = STEPS[currentStep]?.key || 'basics';
