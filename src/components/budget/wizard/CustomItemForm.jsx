@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Trash2 } from 'lucide-react';
 
 const FIELDS_BY_CATEGORY = {
   staff: [
@@ -17,7 +17,7 @@ const FIELDS_BY_CATEGORY = {
     { key: 'hourly_rate', label: 'Hourly Rate ($)', type: 'number', showWhen: { key: 'pay_type', value: 'hourly' } },
     { key: 'hours_per_week', label: 'Hours / Week', type: 'number', default: '40', showWhen: { key: 'pay_type', value: 'hourly' } },
     { key: 'commission_amount', label: 'Commission', type: 'number' },
-    { key: 'benefits_cost', label: 'Benefits Cost', type: 'number' },
+    { key: 'benefits', label: 'Benefits', type: 'benefits_array' },
     { key: 'cost_category', label: 'Cost Category', type: 'select', options: [
       { value: 'overhead', label: 'Overhead' },
       { value: 'cogs', label: 'COGS' },
@@ -96,7 +96,8 @@ const FIELDS_BY_CATEGORY = {
 function getDefaults(category) {
   const obj = {};
   (FIELDS_BY_CATEGORY[category] || []).forEach(f => {
-    if (f.type === 'select') obj[f.key] = f.default || '';
+    if (f.type === 'benefits_array') obj[f.key] = [];
+    else if (f.type === 'select') obj[f.key] = f.default || '';
     else if (f.type === 'number') obj[f.key] = '';
     else obj[f.key] = '';
   });
@@ -121,7 +122,11 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
     if (editingItem) {
       const obj = {};
       (FIELDS_BY_CATEGORY[category] || []).forEach(f => {
-        obj[f.key] = editingItem[f.key] !== undefined && editingItem[f.key] !== null ? String(editingItem[f.key]) : (f.type === 'select' ? (f.default || '') : '');
+        if (f.type === 'benefits_array') {
+          obj[f.key] = editingItem[f.key] || [];
+        } else {
+          obj[f.key] = editingItem[f.key] !== undefined && editingItem[f.key] !== null ? String(editingItem[f.key]) : (f.type === 'select' ? (f.default || '') : '');
+        }
       });
       setForm(obj);
       setOpen(true);
@@ -138,7 +143,11 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
     const item = {};
     fields.forEach(f => {
       if (f.showWhen && form[f.showWhen.key] !== f.showWhen.value) return;
-      if (f.type === 'number') item[f.key] = Number(form[f.key]) || 0;
+      if (f.type === 'benefits_array') {
+        const clean = (form[f.key] || []).filter(b => b.name && Number(b.amount) > 0).map(b => ({ name: b.name, amount: Number(b.amount) }));
+        item[f.key] = clean;
+        item.benefits_cost = clean.reduce((s, b) => s + b.amount, 0);
+      } else if (f.type === 'number') item[f.key] = Number(form[f.key]) || 0;
       else item[f.key] = form[f.key] || (f.default || '');
     });
     // For hourly staff, compute annualized salary
@@ -180,33 +189,60 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        {fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value).map(f => (
-          <div key={f.key} className={f.type === 'text' && f.required ? 'col-span-2 sm:col-span-1' : ''}>
-            <Label className="text-[11px] text-slate-600">
-              {f.label}{f.required && !f.showWhen && <span className="text-red-500 ml-0.5">*</span>}
-            </Label>
-            {f.type === 'select' ? (
-              <Select value={form[f.key] || f.default} onValueChange={v => setForm(prev => ({ ...prev, [f.key]: v }))}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {f.options.map(o => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                type={f.type}
-                value={form[f.key]}
-                onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                className="h-8 text-xs"
-                placeholder={f.label}
-              />
-            )}
-          </div>
-        ))}
+        {fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value).map(f => {
+          if (f.type === 'benefits_array') {
+            const benefits = form[f.key] || [];
+            const benefitsTotal = benefits.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+            return (
+              <div key={f.key} className="col-span-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] text-slate-600">
+                    Benefits {benefitsTotal > 0 && <span className="text-slate-400 ml-1">(${benefitsTotal.toLocaleString()}/yr)</span>}
+                  </Label>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] gap-1" onClick={() => setForm(prev => ({ ...prev, [f.key]: [...(prev[f.key] || []), { name: '', amount: '' }] }))}>
+                    <Plus className="w-3 h-3" /> Add
+                  </Button>
+                </div>
+                {benefits.map((b, idx) => (
+                  <div key={idx} className="flex gap-1.5 items-center">
+                    <Input value={b.name} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], name: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="e.g. Dental Plan" className="h-7 text-xs flex-1" />
+                    <Input type="number" value={b.amount} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], amount: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="$/yr" className="h-7 text-xs w-24" />
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { const arr = [...benefits]; arr.splice(idx, 1); setForm(prev => ({ ...prev, [f.key]: arr })); }}>
+                      <Trash2 className="w-3 h-3 text-slate-400" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          return (
+            <div key={f.key} className={f.type === 'text' && f.required ? 'col-span-2 sm:col-span-1' : ''}>
+              <Label className="text-[11px] text-slate-600">
+                {f.label}{f.required && !f.showWhen && <span className="text-red-500 ml-0.5">*</span>}
+              </Label>
+              {f.type === 'select' ? (
+                <Select value={form[f.key] || f.default} onValueChange={v => setForm(prev => ({ ...prev, [f.key]: v }))}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {f.options.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  type={f.type}
+                  value={form[f.key]}
+                  onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  className="h-8 text-xs"
+                  placeholder={f.label}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="ghost" size="sm" className="text-xs h-7" onClick={handleCancel}>
