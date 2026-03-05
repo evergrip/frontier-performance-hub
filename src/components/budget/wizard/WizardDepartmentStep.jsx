@@ -88,7 +88,7 @@ const TAB_CONFIG = {
     label: 'Staff',
     getLabel: i => i.name,
     getSub: i => i.role,
-    getDetail: i => `$${(i.salary || 0).toLocaleString()}/yr`,
+    getDetail: i => i.pay_type === 'hourly' ? `$${(i.hourly_rate || 0)}/hr` : `$${(i.salary || 0).toLocaleString()}/yr`,
     editableField: 'salary',
   },
   expenses: {
