@@ -12,7 +12,7 @@ import { Plus, Pencil, Trash2, Users, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits_cost: '', taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
+const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits_cost: '', hsa_cost: '', rrsp_match_cost: '', taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
 
 // Canadian employer withholding rates (approximate)
 const EMPLOYER_RATES = {
@@ -55,7 +55,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   });
 
   const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', hsa_cost: item.hsa_cost ?? '', rrsp_match_cost: item.rrsp_match_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
   const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
   const computedAnnualSalary = form.pay_type === 'hourly'
@@ -72,7 +72,10 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
       hourly_rate: form.pay_type === 'hourly' ? (Number(form.hourly_rate) || 0) : null,
       hours_per_week: form.pay_type === 'hourly' ? (Number(form.hours_per_week) || 0) : null,
       commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0,
-      benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total,
+      benefits_cost: Number(form.benefits_cost) || 0,
+      hsa_cost: Number(form.hsa_cost) || 0,
+      rrsp_match_cost: Number(form.rrsp_match_cost) || 0,
+      taxes_cost: withholdings.total,
       department: form.department || '', employment_type: form.employment_type,
       cost_category: form.cost_category, notes: form.notes,
     };
@@ -81,14 +84,15 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   };
 
   const fmt = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—';
-  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0);
+  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0) + (i.taxes_cost || 0);
+  const getItemBenefitsTotal = (i) => (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0);
   const totalCost = items.reduce((s, i) => s + getItemTotal(i), 0);
   
   // Calculate overhead vs COGS portions
   const overheadCost = items.reduce((s, i) => {
     const cat = i.cost_category || 'overhead';
     if (cat === 'overhead') return s + getItemTotal(i);
-    if (cat === 'split') return s + (i.salary || 0) + (i.benefits_cost || 0) + (i.taxes_cost || 0); // salary+benefits+taxes → overhead
+    if (cat === 'split') return s + (i.salary || 0) + (i.benefits_cost || 0) + (i.hsa_cost || 0) + (i.rrsp_match_cost || 0) + (i.taxes_cost || 0); // salary+benefits+taxes → overhead
     return s;
   }, 0);
   const cogsCost = items.reduce((s, i) => {
@@ -153,7 +157,18 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                         ) : fmt(item.salary)}
                       </TableCell>
                       <TableCell className="text-right">{item.cost_category === 'split' && item.commission_amount ? fmt(item.commission_amount) : '—'}</TableCell>
-                      <TableCell className="text-right">{fmt(item.benefits_cost)}</TableCell>
+                      <TableCell className="text-right">
+                        {fmt(getItemBenefitsTotal(item))}
+                        {((item.hsa_cost || 0) > 0 || (item.rrsp_match_cost || 0) > 0) && (
+                          <span className="block text-[10px] text-slate-400">
+                            {[
+                              item.benefits_cost ? `Ins: ${fmt(item.benefits_cost)}` : null,
+                              item.hsa_cost ? `HSA: ${fmt(item.hsa_cost)}` : null,
+                              item.rrsp_match_cost ? `RRSP: ${fmt(item.rrsp_match_cost)}` : null,
+                            ].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">{fmt(item.taxes_cost)}</TableCell>
                       <TableCell className="text-right font-semibold">{fmt(getItemTotal(item))}</TableCell>
                       <TableCell>
@@ -240,11 +255,13 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                 Annualized: <strong>${computedAnnualSalary.toLocaleString()}</strong> ({form.hourly_rate}/hr × {form.hours_per_week} hrs × 52 wks)
               </div>
             )}
-            <div className={`grid gap-3 ${form.cost_category === 'split' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {form.cost_category === 'split' && (
-                <div><Label>Commission ($)</Label><Input type="number" value={form.commission_amount} onChange={e => setForm({...form, commission_amount: e.target.value})} placeholder="Projected annual" /></div>
-              )}
-              <div><Label>Benefits ($)</Label><Input type="number" value={form.benefits_cost} onChange={e => setForm({...form, benefits_cost: e.target.value})} /></div>
+            {form.cost_category === 'split' && (
+              <div><Label>Commission ($)</Label><Input type="number" value={form.commission_amount} onChange={e => setForm({...form, commission_amount: e.target.value})} placeholder="Projected annual" /></div>
+            )}
+            <div className="grid grid-cols-3 gap-3">
+              <div><Label>Benefits / Insurance ($)</Label><Input type="number" value={form.benefits_cost} onChange={e => setForm({...form, benefits_cost: e.target.value})} placeholder="Annual" /></div>
+              <div><Label>Health Spending (HSA) ($)</Label><Input type="number" value={form.hsa_cost} onChange={e => setForm({...form, hsa_cost: e.target.value})} placeholder="Annual" /></div>
+              <div><Label>RRSP Match ($)</Label><Input type="number" value={form.rrsp_match_cost} onChange={e => setForm({...form, rrsp_match_cost: e.target.value})} placeholder="Annual" /></div>
             </div>
             {form.cost_category === 'split' && (
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-700">
