@@ -97,9 +97,30 @@ function getDefaults(category) {
   return obj;
 }
 
-export default function CustomItemForm({ category, onAdd }) {
+export { FIELDS_BY_CATEGORY };
+
+export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdit, onCancelEdit }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(() => getDefaults(category));
+  const isEditing = !!editingItem;
+  const [form, setForm] = useState(() => isEditing ? (() => {
+    const obj = {};
+    (FIELDS_BY_CATEGORY[category] || []).forEach(f => {
+      obj[f.key] = editingItem[f.key] !== undefined ? String(editingItem[f.key]) : (f.type === 'select' ? (f.default || '') : '');
+    });
+    return obj;
+  })() : getDefaults(category));
+
+  // Sync form when editingItem changes
+  React.useEffect(() => {
+    if (editingItem) {
+      const obj = {};
+      (FIELDS_BY_CATEGORY[category] || []).forEach(f => {
+        obj[f.key] = editingItem[f.key] !== undefined && editingItem[f.key] !== null ? String(editingItem[f.key]) : (f.type === 'select' ? (f.default || '') : '');
+      });
+      setForm(obj);
+      setOpen(true);
+    }
+  }, [editingItem]);
 
   const fields = FIELDS_BY_CATEGORY[category] || [];
   const requiredFields = fields.filter(f => f.required);
@@ -111,12 +132,22 @@ export default function CustomItemForm({ category, onAdd }) {
       if (f.type === 'number') item[f.key] = Number(form[f.key]) || 0;
       else item[f.key] = form[f.key] || (f.default || '');
     });
-    onAdd(item);
+    if (isEditing) {
+      onSaveEdit(item);
+    } else {
+      onAdd(item);
+    }
     setForm(getDefaults(category));
     setOpen(false);
   };
 
-  if (!open) {
+  const handleCancel = () => {
+    setOpen(false);
+    setForm(getDefaults(category));
+    if (isEditing && onCancelEdit) onCancelEdit();
+  };
+
+  if (!open && !isEditing) {
     return (
       <Button variant="outline" size="sm" className="w-full mt-2 border-dashed text-xs gap-1.5" onClick={() => setOpen(true)}>
         <Plus className="w-3.5 h-3.5" /> Add Custom Item
@@ -124,11 +155,13 @@ export default function CustomItemForm({ category, onAdd }) {
     );
   }
 
+  if (!open) return null;
+
   return (
     <div className="mt-3 border border-blue-200 bg-blue-50/50 rounded-lg p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-blue-800">New Custom Item</span>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setOpen(false); setForm(getDefaults(category)); }}>
+        <span className="text-sm font-medium text-blue-800">{isEditing ? 'Edit Item' : 'New Custom Item'}</span>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCancel}>
           <X className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -162,11 +195,11 @@ export default function CustomItemForm({ category, onAdd }) {
         ))}
       </div>
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { setOpen(false); setForm(getDefaults(category)); }}>
+        <Button variant="ghost" size="sm" className="text-xs h-7" onClick={handleCancel}>
           Cancel
         </Button>
         <Button size="sm" className="text-xs h-7 bg-blue-600 hover:bg-blue-700" disabled={!canSubmit} onClick={handleSubmit}>
-          <Plus className="w-3 h-3 mr-1" /> Add
+          {isEditing ? 'Save Changes' : <><Plus className="w-3 h-3 mr-1" /> Add</>}
         </Button>
       </div>
     </div>
