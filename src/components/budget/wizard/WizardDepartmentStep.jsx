@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Check, X, Database, Sparkles, Loader2, Plus, Trash2, Users, Receipt, Wrench, CreditCard, Car } from 'lucide-react';
+import CustomItemForm from './CustomItemForm';
 
 const PRESET_DATA = {
   staff: [
@@ -330,6 +331,43 @@ function CategoryTab({ category, department, items, setItems }) {
           No template items available for {config.label.toLowerCase()}.
         </div>
       )}
+
+      {/* Custom items already added */}
+      {items.filter(s => s._source === 'custom').length > 0 && (
+        <div className="mt-4 pt-3 border-t border-slate-200">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Custom Items</p>
+          <div className="space-y-1">
+            {items.filter(s => s._source === 'custom').map((item, i) => (
+              <div key={`custom-${i}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-blue-200 bg-blue-50">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-sm truncate">{config.getLabel(item)}</span>
+                    {config.getSub(item) && (
+                      <Badge variant="outline" className="text-[10px] capitalize shrink-0">{config.getSub(item)}</Badge>
+                    )}
+                    <Badge className="text-[10px] bg-blue-100 text-blue-700 border-blue-300">custom</Badge>
+                  </div>
+                </div>
+                <span className="text-xs font-medium text-slate-600 shrink-0">{config.getDetail(item)}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => {
+                  setItems(items.filter(s => !(s._source === 'custom' && s._customIdx === item._customIdx)));
+                }}>
+                  <Trash2 className="w-3 h-3 text-red-400" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Add custom item form */}
+      <CustomItemForm
+        category={category}
+        onAdd={(newItem) => {
+          const customIdx = Date.now() + Math.random();
+          setItems([...items, { ...newItem, _source: 'custom', _customIdx: customIdx, department }]);
+        }}
+      />
     </div>
   );
 }
