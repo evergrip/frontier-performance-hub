@@ -26,6 +26,42 @@ const TYPE_LABELS = {
 const genId = () => Math.random().toString(36).slice(2, 9);
 const fmt = (v) => `$${Number(v || 0).toLocaleString()}`;
 
+function computeTierAllocations(tiers, distributable, netProfit) {
+  // First pass: handle fixed_amount and percentage_of_net_profit tiers, 
+  // collect percentage_of_remainder tiers to split the remaining pool proportionally.
+  const allocations = new Array(tiers.length).fill(0);
+  let remaining = distributable;
+  const remainderTierIndices = [];
+
+  // Process non-remainder tiers first in order
+  for (let i = 0; i < tiers.length; i++) {
+    const tier = tiers[i];
+    if (tier.type === 'percentage_of_remainder') {
+      remainderTierIndices.push(i);
+    } else if (tier.type === 'fixed_amount') {
+      const alloc = Math.min(Number(tier.value) || 0, remaining);
+      allocations[i] = alloc;
+      remaining = Math.max(0, remaining - alloc);
+    } else if (tier.type === 'percentage_of_net_profit') {
+      let alloc = (netProfit || 0) * (Number(tier.value) || 0) / 100;
+      alloc = Math.min(alloc, remaining);
+      allocations[i] = alloc;
+      remaining = Math.max(0, remaining - alloc);
+    }
+  }
+
+  // Now distribute the remaining pool proportionally among all percentage_of_remainder tiers
+  const totalRemainderPct = remainderTierIndices.reduce((s, i) => s + (Number(tiers[i].value) || 0), 0);
+  if (totalRemainderPct > 0 && remaining > 0) {
+    for (const i of remainderTierIndices) {
+      const pct = Number(tiers[i].value) || 0;
+      allocations[i] = remaining * pct / totalRemainderPct;
+    }
+  }
+
+  return allocations;
+}
+
 export default function BudgetProfitSharingView({ budgetId, netProfit }) {
   const qc = useQueryClient();
 
@@ -89,20 +125,7 @@ export default function BudgetProfitSharingView({ budgetId, netProfit }) {
   const distributable = Math.max(0, (netProfit || 0) - retentionAmount);
   const tiers = plan?.distribution_tiers || [];
 
-  let remaining = distributable;
-  const tierAllocations = tiers.map(tier => {
-    let allocation = 0;
-    if (tier.type === 'percentage_of_remainder') {
-      allocation = remaining * (Number(tier.value) || 0) / 100;
-    } else if (tier.type === 'fixed_amount') {
-      allocation = Math.min(Number(tier.value) || 0, remaining);
-    } else if (tier.type === 'percentage_of_net_profit') {
-      allocation = (netProfit || 0) * (Number(tier.value) || 0) / 100;
-      allocation = Math.min(allocation, remaining);
-    }
-    remaining = Math.max(0, remaining - allocation);
-    return allocation;
-  });
+  const tierAllocations = computeTierAllocations(tiers, distributable, netProfit);
 
   if (isLoading) return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500" /></div>;
 
@@ -110,15 +133,7 @@ export default function BudgetProfitSharingView({ budgetId, netProfit }) {
   if (editing && config) {
     const editRetention = Number(config.company_retention_amount) || 0;
     const editDistributable = Math.max(0, (netProfit || 0) - editRetention);
-    let editRemaining = editDistributable;
-    const editAllocations = (config.distribution_tiers || []).map(tier => {
-      let alloc = 0;
-      if (tier.type === 'percentage_of_remainder') alloc = editRemaining * (Number(tier.value) || 0) / 100;
-      else if (tier.type === 'fixed_amount') alloc = Math.min(Number(tier.value) || 0, editRemaining);
-      else if (tier.type === 'percentage_of_net_profit') { alloc = (netProfit || 0) * (Number(tier.value) || 0) / 100; alloc = Math.min(alloc, editRemaining); }
-      editRemaining = Math.max(0, editRemaining - alloc);
-      return alloc;
-    });
+    const editAllocations = computeTierAllocations(config.distribution_tiers || [], editDistributable, netProfit);
 
     const addTier = () => {
       const newId = genId();
