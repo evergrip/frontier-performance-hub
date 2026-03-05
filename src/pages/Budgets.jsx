@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,24 +23,13 @@ const STATUS_COLORS = {
 export default function Budgets() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [duplicateFrom, setDuplicateFrom] = useState(null);
-  const [form, setForm] = useState({ name: '', fiscal_year: new Date().getFullYear() + 1, description: '' });
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: budgets = [], isLoading } = useQuery({
     queryKey: ['budgets'],
     queryFn: () => base44.entities.Budget.list('-created_date'),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Budget.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      setShowCreateDialog(false);
-      setForm({ name: '', fiscal_year: new Date().getFullYear() + 1, description: '' });
-      toast.success('Budget created');
-    },
   });
 
   const deleteMutation = useMutation({
@@ -113,7 +102,7 @@ export default function Budgets() {
           <h1 className="text-2xl font-bold text-slate-900">Budgets</h1>
           <p className="text-sm text-slate-500 mt-1">Annual P/L projection budgets</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+        <Button onClick={() => navigate(createPageUrl('BudgetWizard'))} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
           <Plus className="w-4 h-4 mr-2" /> New Budget
         </Button>
       </div>
@@ -143,7 +132,7 @@ export default function Budgets() {
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-1">No budgets found</h3>
           <p className="text-slate-500 text-sm mb-4">Create your first annual budget to get started.</p>
-          <Button onClick={() => setShowCreateDialog(true)} variant="outline">
+          <Button onClick={() => navigate(createPageUrl('BudgetWizard'))} variant="outline">
             <Plus className="w-4 h-4 mr-2" /> Create Budget
           </Button>
         </div>
@@ -186,33 +175,6 @@ export default function Budgets() {
           ))}
         </div>
       )}
-
-      {/* Create Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Create New Budget</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Budget Name</Label>
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g., 2027 Annual Budget" />
-            </div>
-            <div>
-              <Label>Fiscal Year</Label>
-              <Input type="number" value={form.fiscal_year} onChange={e => setForm({ ...form, fiscal_year: parseInt(e.target.value) })} />
-            </div>
-            <div>
-              <Label>Description (optional)</Label>
-              <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Notes about this budget..." />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
-            <Button onClick={() => createMutation.mutate(form)} disabled={!form.name || !form.fiscal_year || createMutation.isPending}>
-              {createMutation.isPending ? 'Creating...' : 'Create Budget'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Duplicate Dialog */}
       <Dialog open={!!duplicateFrom} onOpenChange={() => setDuplicateFrom(null)}>
