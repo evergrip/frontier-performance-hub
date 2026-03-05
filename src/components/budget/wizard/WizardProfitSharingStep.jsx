@@ -33,21 +33,37 @@ export default function WizardProfitSharingStep({ config, setConfig, netProfitEs
   const distributable = Math.max(0, (netProfitEstimate || 0) - retentionAmount);
 
   // Calculate each tier's allocation
-  const tierAllocations = [];
+  // Process fixed and % of net profit tiers first, then split the remaining pool
+  // proportionally among all "% of remainder" tiers so 20+50+30 = 100%.
+  const tiers = config.distribution_tiers || [];
+  const tierAllocations = new Array(tiers.length).fill(0);
   let remaining = distributable;
-  (config.distribution_tiers || []).forEach((tier) => {
-    let allocation = 0;
+  const remainderIndices = [];
+
+  for (let i = 0; i < tiers.length; i++) {
+    const tier = tiers[i];
     if (tier.type === 'percentage_of_remainder') {
-      allocation = remaining * (Number(tier.value) || 0) / 100;
+      remainderIndices.push(i);
     } else if (tier.type === 'fixed_amount') {
-      allocation = Math.min(Number(tier.value) || 0, remaining);
+      const alloc = Math.min(Number(tier.value) || 0, remaining);
+      tierAllocations[i] = alloc;
+      remaining = Math.max(0, remaining - alloc);
     } else if (tier.type === 'percentage_of_net_profit') {
-      allocation = (netProfitEstimate || 0) * (Number(tier.value) || 0) / 100;
-      allocation = Math.min(allocation, remaining);
+      let alloc = (netProfitEstimate || 0) * (Number(tier.value) || 0) / 100;
+      alloc = Math.min(alloc, remaining);
+      tierAllocations[i] = alloc;
+      remaining = Math.max(0, remaining - alloc);
     }
-    tierAllocations.push(allocation);
-    remaining = Math.max(0, remaining - allocation);
-  });
+  }
+
+  const totalRemainderPct = remainderIndices.reduce((s, i) => s + (Number(tiers[i].value) || 0), 0);
+  if (totalRemainderPct > 0 && remaining > 0) {
+    const pool = remaining;
+    for (const i of remainderIndices) {
+      tierAllocations[i] = pool * (Number(tiers[i].value) || 0) / totalRemainderPct;
+    }
+    remaining = totalRemainderPct >= 100 ? 0 : pool * (1 - totalRemainderPct / 100);
+  }
 
   const addTier = () => {
     const newId = genId();
