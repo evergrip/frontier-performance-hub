@@ -30,6 +30,7 @@ export default function Projects() {
   }, []);
 
   const isAdmin = currentUser?.role === 'admin';
+  const [filterSalesperson, setFilterSalesperson] = useState('all');
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [closeoutDialogOpen, setCloseoutDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);

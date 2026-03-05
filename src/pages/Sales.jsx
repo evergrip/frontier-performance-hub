@@ -27,6 +27,7 @@ export default function Sales() {
   }, []);
 
   const isAdmin = currentUser?.role === 'admin';
+  const [filterSalesperson, setFilterSalesperson] = useState('all');
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
   const [financeDialogOpen, setFinanceDialogOpen] = useState(false);
