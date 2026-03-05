@@ -67,8 +67,11 @@ export default function BudgetWizard() {
   const isLastStep = currentStep === STEPS.length - 1;
 
   // Keep step in bounds when departments change
-  const safeStep = Math.min(currentStep, STEPS.length - 1);
-  if (safeStep !== currentStep) setCurrentStep(safeStep);
+  React.useEffect(() => {
+    if (currentStep >= STEPS.length) {
+      setCurrentStep(STEPS.length - 1);
+    }
+  }, [form.departments?.length]);
 
   const goNext = () => {
     if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
