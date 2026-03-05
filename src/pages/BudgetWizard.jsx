@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 
 import WizardStepNav from '../components/budget/wizard/WizardStepNav';
 import WizardBasicsStep from '../components/budget/wizard/WizardBasicsStep';
-import WizardPrefillStep from '../components/budget/wizard/WizardPrefillStep';
 import WizardDepartmentStep from '../components/budget/wizard/WizardDepartmentStep';
+import WizardCompanyWideStep from '../components/budget/wizard/WizardCompanyWideStep';
 import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
 import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSharingStep';
 
