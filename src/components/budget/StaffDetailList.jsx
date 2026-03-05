@@ -12,7 +12,7 @@ import { Plus, Pencil, Trash2, Users, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const makeEmpty = (dept = '') => ({ name: '', role: '', salary: '', commission_amount: '', benefits_cost: '', taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
+const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits_cost: '', taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
 
 // Canadian employer withholding rates (approximate)
 const EMPLOYER_RATES = {
@@ -55,14 +55,27 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   });
 
   const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', salary: item.salary ?? '', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
+  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits_cost: item.benefits_cost ?? '', taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
   const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
-  const totalCompForWithholdings = (Number(form.salary) || 0) + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
+  const computedAnnualSalary = form.pay_type === 'hourly'
+    ? (Number(form.hourly_rate) || 0) * (Number(form.hours_per_week) || 0) * 52
+    : (Number(form.salary) || 0);
+  const totalCompForWithholdings = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
   const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
 
   const handleSave = () => {
-    const data = { budget_id: budgetId, name: form.name, role: form.role, salary: Number(form.salary) || 0, commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0, benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total, department: form.department || '', employment_type: form.employment_type, cost_category: form.cost_category, notes: form.notes };
+    const data = {
+      budget_id: budgetId, name: form.name, role: form.role,
+      pay_type: form.pay_type || 'salary',
+      salary: computedAnnualSalary,
+      hourly_rate: form.pay_type === 'hourly' ? (Number(form.hourly_rate) || 0) : null,
+      hours_per_week: form.pay_type === 'hourly' ? (Number(form.hours_per_week) || 0) : null,
+      commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0,
+      benefits_cost: Number(form.benefits_cost) || 0, taxes_cost: withholdings.total,
+      department: form.department || '', employment_type: form.employment_type,
+      cost_category: form.cost_category, notes: form.notes,
+    };
     if (editing) updateMut.mutate({ id: editing.id, d: data });
     else createMut.mutate(data);
   };
