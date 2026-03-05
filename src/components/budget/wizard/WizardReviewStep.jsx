@@ -12,7 +12,8 @@ const annualize = (amount, period) => {
 };
 
 export default function WizardReviewStep({ form, selections, profitSharingConfig }) {
-  const staffTotal = (selections.staff || []).reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.commission_amount || 0), 0);
+  const staffBenTotal = (st) => { const b = st.benefits || []; return b.length > 0 ? b.reduce((s2, bn) => s2 + (Number(bn.amount) || 0), 0) : (st.benefits_cost || 0) + (st.hsa_cost || 0) + (st.rrsp_match_cost || 0); };
+  const staffTotal = (selections.staff || []).reduce((s, i) => s + (i.salary || 0) + staffBenTotal(i) + (i.commission_amount || 0), 0);
   const expenseTotal = (selections.expenses || []).reduce((s, i) => s + annualize(i.amount, i.period), 0);
   const assetTotal = (selections.assets || []).reduce((s, i) => s + (i.purchase_cost || 0), 0);
   const liabilityTotal = (selections.liabilities || []).reduce((s, i) => s + (i.monthly_payment || 0) * 12, 0);
