@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Sparkles, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 import WizardStepNav from '../components/budget/wizard/WizardStepNav';
@@ -15,6 +15,7 @@ import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
 import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSharingStep';
 
 const EMPLOYER_TAX_RATE = 0.1222; // CPP + EI + WSIB + EHT
+const WIZARD_DRAFT_KEY = 'budget_wizard_draft';
 
 function buildSteps(departments) {
   const steps = [{ key: 'basics', label: 'Basics' }];
