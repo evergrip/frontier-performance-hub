@@ -363,13 +363,20 @@ function CategoryTab({ category, department, items, setItems }) {
           setItems([...items, { ...newItem, _source: 'custom', _customIdx: customIdx, department }]);
         }}
         onSaveEdit={(updatedFields) => {
-          setItems(items.map(s =>
-            (s._customIdx === editingFullItem._customIdx && s._source === editingFullItem._source)
-              ? { ...s, ...updatedFields }
-              : (s._presetIdx === editingFullItem._presetIdx && s._source === editingFullItem._source)
-              ? { ...s, ...updatedFields }
-              : s
-          ));
+          setItems(items.map(s => {
+            if (editingFullItem._source === 'custom') {
+              // Match custom items by their unique _customIdx
+              if (s._customIdx === editingFullItem._customIdx && s._source === 'custom') {
+                return { ...s, ...updatedFields };
+              }
+            } else {
+              // Match template/existing items by _presetIdx + _source
+              if (s._presetIdx === editingFullItem._presetIdx && s._source === editingFullItem._source) {
+                return { ...s, ...updatedFields };
+              }
+            }
+            return s;
+          }));
           setEditingFullItem(null);
         }}
         onCancelEdit={() => setEditingFullItem(null)}
