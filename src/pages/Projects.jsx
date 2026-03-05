@@ -153,8 +153,14 @@ export default function Projects() {
     return 'Unknown Client';
   };
 
-  const activeProjects = projects.filter(p => !['closed'].includes(p.status));
-  const closedProjects = projects.filter(p => p.status === 'closed');
+  // Non-admin users only see projects where they are the project manager or the linked sale is assigned to them
+  const scopedProjects = isAdmin ? projects : projects.filter(p => {
+    if (p.project_manager_id === currentUser?.id) return true;
+    const sale = sales.find(s => s.id === p.sale_id);
+    return sale?.assigned_to === currentUser?.id;
+  });
+  const activeProjects = scopedProjects.filter(p => !['closed'].includes(p.status));
+  const closedProjects = scopedProjects.filter(p => p.status === 'closed');
 
   const statusColumns = [
     { status: 'awaiting_to_be_scheduled', label: 'Awaiting to be Scheduled', color: 'bg-slate-100 border-slate-200', description: 'New projects' },

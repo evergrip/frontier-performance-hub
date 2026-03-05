@@ -284,8 +284,10 @@ export default function Sales() {
     return client?.company_name || client?.contact_name || 'Unknown Client';
   };
 
-  const preconstructionSales = sales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
-  const closedPreconSales = sales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status));
+  // Non-admin users only see sales assigned to them
+  const scopedSales = isAdmin ? sales : sales.filter(s => s.assigned_to === currentUser?.id);
+  const preconstructionSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
+  const closedPreconSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status));
 
   const statusColumns = [
     { status: 'feasibility', label: 'Feasibility', color: 'bg-blue-100 border-blue-200', description: 'Initial assessment' },
