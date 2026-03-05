@@ -566,9 +566,9 @@ export default function Dashboard() {
         open={!!drilldownMetric}
         onOpenChange={(open) => !open && setDrilldownMetric(null)}
         metricKey={drilldownMetric}
-        sales={sales}
-        projects={projects}
-        leads={leads}
+        sales={scopedSales}
+        projects={scopedProjects}
+        leads={scopedLeads}
         clients={clients}
         dateRange={dateRange}
         getSaleEffectiveDate={getSaleEffectiveDate}
