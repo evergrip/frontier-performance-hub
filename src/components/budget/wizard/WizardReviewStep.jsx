@@ -23,10 +23,10 @@ export default function WizardReviewStep({ form, selections, profitSharingConfig
 
   const sections = [
     { icon: Users, label: 'Staff', count: (selections.staff || []).length, total: staffTotal, color: 'text-blue-600 bg-blue-50' },
-    { icon: Receipt, label: 'Expenses', count: (selections.expenses || []).length, total: expenseTotal, color: 'text-amber-600 bg-amber-50' },
     { icon: Wrench, label: 'Assets', count: (selections.assets || []).length, total: assetTotal, color: 'text-purple-600 bg-purple-50', note: 'purchase cost' },
     { icon: CreditCard, label: 'Liabilities', count: (selections.liabilities || []).length, total: liabilityTotal, color: 'text-red-600 bg-red-50' },
     { icon: Car, label: 'Vehicles', count: (selections.vehicles || []).length, total: vehicleTotal, color: 'text-emerald-600 bg-emerald-50', note: 'purchase cost' },
+    { icon: Receipt, label: 'Expenses', count: (selections.expenses || []).length, total: expenseTotal, color: 'text-amber-600 bg-amber-50' },
   ];
 
   return (
