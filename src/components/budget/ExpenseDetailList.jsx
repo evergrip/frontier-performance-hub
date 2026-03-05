@@ -9,8 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Receipt } from 'lucide-react';
+import { Plus, Pencil, Trash2, Receipt, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import BudgetPrefillDialog from './BudgetPrefillDialog';
 
 const EMPTY = { name: '', category: 'other', amount: '', period: 'monthly', cost_type: 'overhead', notes: '' };
 
@@ -37,6 +38,7 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0 })
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
   const createMut = useMutation({
@@ -85,7 +87,10 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0 })
               </span>
             </p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Expense</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowPrefill(true)} size="sm" variant="outline"><Package className="w-4 h-4 mr-1" /> Prefill</Button>
+            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Expense</Button>
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -133,6 +138,19 @@ export default function ExpenseDetailList({ budgetId, items, grossRevenue = 0 })
           )}
         </CardContent>
       </Card>
+
+      <BudgetPrefillDialog
+        open={showPrefill}
+        onOpenChange={setShowPrefill}
+        category="expenses"
+        budgetId={budgetId}
+        existingNames={items.map(i => i.name)}
+        onBulkCreate={async (newItems) => {
+          await base44.entities.ExpenseDetail.bulkCreate(newItems);
+          qc.invalidateQueries({ queryKey: ['expenses', budgetId] });
+          toast.success(`${newItems.length} expenses added`);
+        }}
+      />
 
       <Dialog open={showDialog} onOpenChange={close}>
         <DialogContent>

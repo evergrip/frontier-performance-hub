@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import BudgetPrefillDialog from './BudgetPrefillDialog';
 
 const EMPTY = { name: '', role: '', salary: '', commission_amount: '', benefits_cost: '', taxes_cost: '', department: '', employment_type: 'full_time', cost_category: 'overhead', notes: '' };
 
@@ -37,6 +38,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0 }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
   const createMut = useMutation({
@@ -91,7 +93,10 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0 }) {
             <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Staff Details</CardTitle>
             <p className="text-sm text-slate-500 mt-1">Total: <strong>{fmt(totalCost)}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalCost / grossRevenue * 100).toFixed(1)}% of revenue)</span>} <span className="text-xs ml-2">(<span className="text-amber-600">Overhead: {fmt(overheadCost)}</span> | <span className="text-blue-600">COGS: {fmt(cogsCost)}</span>)</span></p>
           </div>
-          <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Staff</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowPrefill(true)} size="sm" variant="outline"><Package className="w-4 h-4 mr-1" /> Prefill</Button>
+            <Button onClick={openCreate} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Staff</Button>
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -145,6 +150,19 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0 }) {
           )}
         </CardContent>
       </Card>
+
+      <BudgetPrefillDialog
+        open={showPrefill}
+        onOpenChange={setShowPrefill}
+        category="staff"
+        budgetId={budgetId}
+        existingNames={items.map(i => i.name)}
+        onBulkCreate={async (newItems) => {
+          await base44.entities.StaffDetail.bulkCreate(newItems);
+          qc.invalidateQueries({ queryKey: ['staff', budgetId] });
+          toast.success(`${newItems.length} staff members added`);
+        }}
+      />
 
       <Dialog open={showDialog} onOpenChange={close}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">

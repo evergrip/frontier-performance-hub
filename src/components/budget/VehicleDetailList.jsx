@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Car } from 'lucide-react';
+import { Plus, Pencil, Trash2, Car, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import BudgetPrefillDialog from './BudgetPrefillDialog';
 
 const EMPTY = { make: '', model: '', year: '', purchase_cost: '', depreciation_method: 'straight_line', useful_life_years: '', salvage_value: '', monthly_insurance_cost: '', monthly_fuel_cost: '', monthly_maintenance_cost: '', notes: '' };
 
@@ -17,6 +18,7 @@ export default function VehicleDetailList({ budgetId, items, grossRevenue = 0 })
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
   const createMut = useMutation({
@@ -55,7 +57,10 @@ export default function VehicleDetailList({ budgetId, items, grossRevenue = 0 })
               return <p className="text-sm text-slate-500 mt-1">Annual Total: <strong>${Number(totalAnnual).toLocaleString()}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalAnnual / grossRevenue * 100).toFixed(1)}% of revenue)</span>}</p>;
             })()}
           </div>
-          <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Vehicle</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowPrefill(true)} size="sm" variant="outline"><Package className="w-4 h-4 mr-1" /> Prefill</Button>
+            <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Vehicle</Button>
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -93,6 +98,19 @@ export default function VehicleDetailList({ budgetId, items, grossRevenue = 0 })
           )}
         </CardContent>
       </Card>
+
+      <BudgetPrefillDialog
+        open={showPrefill}
+        onOpenChange={setShowPrefill}
+        category="vehicles"
+        budgetId={budgetId}
+        existingNames={items.map(i => `${i.make} ${i.model}`)}
+        onBulkCreate={async (newItems) => {
+          await base44.entities.VehicleDetail.bulkCreate(newItems);
+          qc.invalidateQueries({ queryKey: ['vehicles', budgetId] });
+          toast.success(`${newItems.length} vehicles added`);
+        }}
+      />
 
       <Dialog open={showDialog} onOpenChange={close}>
         <DialogContent>

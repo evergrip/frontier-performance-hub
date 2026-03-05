@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, CreditCard } from 'lucide-react';
+import { Plus, Pencil, Trash2, CreditCard, Package } from 'lucide-react';
 import { toast } from 'sonner';
+import BudgetPrefillDialog from './BudgetPrefillDialog';
 
 const EMPTY = { name: '', type: 'loan', principal_amount: '', interest_rate: '', monthly_payment: '', notes: '' };
 
@@ -17,6 +18,7 @@ export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0 
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [showPrefill, setShowPrefill] = useState(false);
   const qc = useQueryClient();
 
   const createMut = useMutation({
@@ -52,7 +54,10 @@ export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0 
             <CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5" /> Liabilities</CardTitle>
             <p className="text-sm text-slate-500 mt-1">Total annual payments: <strong>{fmt(totalAnnual)}</strong>{grossRevenue > 0 && <span className="text-xs ml-1 text-slate-400">({(totalAnnual / grossRevenue * 100).toFixed(1)}% of revenue)</span>}</p>
           </div>
-          <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Liability</Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowPrefill(true)} size="sm" variant="outline"><Package className="w-4 h-4 mr-1" /> Prefill</Button>
+            <Button onClick={() => { setForm(EMPTY); setShowDialog(true); }} size="sm"><Plus className="w-4 h-4 mr-1" /> Add Liability</Button>
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -94,6 +99,19 @@ export default function LiabilityDetailList({ budgetId, items, grossRevenue = 0 
           )}
         </CardContent>
       </Card>
+
+      <BudgetPrefillDialog
+        open={showPrefill}
+        onOpenChange={setShowPrefill}
+        category="liabilities"
+        budgetId={budgetId}
+        existingNames={items.map(i => i.name)}
+        onBulkCreate={async (newItems) => {
+          await base44.entities.LiabilityDetail.bulkCreate(newItems);
+          qc.invalidateQueries({ queryKey: ['liabilities', budgetId] });
+          toast.success(`${newItems.length} liabilities added`);
+        }}
+      />
 
       <Dialog open={showDialog} onOpenChange={close}>
         <DialogContent>
