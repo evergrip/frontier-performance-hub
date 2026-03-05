@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Users, Receipt, Wrench, CreditCard, Car, DollarSign } from 'lucide-react';
+import { Users, Receipt, Wrench, CreditCard, Car, DollarSign, TrendingUp } from 'lucide-react';
 
 const fmt = (v) => `$${Number(v || 0).toLocaleString()}`;
 
@@ -11,7 +11,7 @@ const annualize = (amount, period) => {
   return a;
 };
 
-export default function WizardReviewStep({ form, selections }) {
+export default function WizardReviewStep({ form, selections, profitSharingConfig }) {
   const staffTotal = (selections.staff || []).reduce((s, i) => s + (i.salary || 0) + (i.benefits_cost || 0) + (i.commission_amount || 0), 0);
   const expenseTotal = (selections.expenses || []).reduce((s, i) => s + annualize(i.amount, i.period), 0);
   const assetTotal = (selections.assets || []).reduce((s, i) => s + (i.purchase_cost || 0), 0);
@@ -92,6 +92,32 @@ export default function WizardReviewStep({ form, selections }) {
             Estimated annual operating costs (staff + expenses + liabilities): <strong>{fmt(totalAnnualCosts)}</strong>
             <span className="ml-1">({(totalAnnualCosts / revenue * 100).toFixed(1)}% of projected revenue)</span>
           </p>
+        </div>
+      )}
+
+      {/* Profit Sharing Summary */}
+      {profitSharingConfig && (Number(profitSharingConfig.company_retention_amount) > 0 || (profitSharingConfig.distribution_tiers || []).length > 0) && (
+        <div className="space-y-2">
+          <h3 className="font-semibold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" /> Profit Sharing Plan
+          </h3>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-emerald-700">Company Retention</span>
+              <span className="font-semibold text-emerald-800">{fmt(profitSharingConfig.company_retention_amount)}</span>
+            </div>
+            {(profitSharingConfig.distribution_tiers || []).map((tier, idx) => (
+              <div key={tier.id || idx} className="flex justify-between text-sm">
+                <span className="text-emerald-700">
+                  {idx + 1}. {tier.name || 'Untitled'}
+                  <span className="text-emerald-500 ml-1">
+                    ({tier.type === 'fixed_amount' ? fmt(tier.value) : `${tier.value || 0}%`})
+                  </span>
+                </span>
+                <span className="text-xs text-emerald-600">{(tier.recipients || []).length} recipient{(tier.recipients || []).length !== 1 ? 's' : ''}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
