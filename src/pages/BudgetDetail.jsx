@@ -282,6 +282,7 @@ export default function BudgetDetail() {
               liabilityItems={liabilityItems}
               vehicleItems={vehicleItems}
               grossRevenue={totals.grossRevenue}
+              payrollObligations={payrollObligations}
             />
           </TabsContent>
         ))}
@@ -296,6 +297,7 @@ export default function BudgetDetail() {
             liabilityItems={liabilityItems}
             vehicleItems={vehicleItems}
             grossRevenue={totals.grossRevenue}
+            payrollObligations={payrollObligations}
           />
         </TabsContent>
 
