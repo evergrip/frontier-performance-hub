@@ -24,9 +24,17 @@ const migrateBenefits = (item) => {
   return arr;
 };
 
+const resolveBenefitAmount = (benefit, annualIncome) => {
+  if (benefit.mode === 'percent_of_income') {
+    return Math.round((Number(benefit.percent_value) || 0) / 100 * annualIncome * 100) / 100;
+  }
+  return Number(benefit.amount) || 0;
+};
+
 const getBenefitsTotal = (item) => {
   const benefits = item.benefits || [];
-  if (benefits.length > 0) return benefits.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+  const income = (item.salary || 0) + (item.commission_amount || 0);
+  if (benefits.length > 0) return benefits.reduce((s, b) => s + resolveBenefitAmount(b, income), 0);
   return (item.benefits_cost || 0) + (item.hsa_cost || 0) + (item.rrsp_match_cost || 0);
 };
 
