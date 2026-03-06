@@ -291,6 +291,13 @@ export default function BudgetWizard() {
             />
           )}
 
+          {stepKey === 'payroll' && (
+            <WizardPayrollStep
+              config={payrollConfig}
+              setConfig={setPayrollConfig}
+            />
+          )}
+
           {stepKey === 'profit_sharing' && (
             <WizardProfitSharingStep
               config={profitSharingConfig}
