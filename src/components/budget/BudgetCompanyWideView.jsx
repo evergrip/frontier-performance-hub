@@ -15,7 +15,7 @@ const CATEGORIES = [
   { key: 'vehicles', label: 'Vehicles', icon: Car },
 ];
 
-export default function BudgetCompanyWideView({ budgetId, departments, staffItems, expenseItems, assetItems, liabilityItems, vehicleItems, grossRevenue }) {
+export default function BudgetCompanyWideView({ budgetId, departments, staffItems, expenseItems, assetItems, liabilityItems, vehicleItems, grossRevenue, payrollObligations }) {
   const [activeTab, setActiveTab] = useState('staff');
 
   // Company-wide = items with no department or department not in the budget's department list
@@ -54,7 +54,7 @@ export default function BudgetCompanyWideView({ budgetId, departments, staffItem
         </TabsList>
 
         <TabsContent value="staff" className="mt-3">
-          <StaffDetailList budgetId={budgetId} items={cwStaff} grossRevenue={grossRevenue} />
+          <StaffDetailList budgetId={budgetId} items={cwStaff} grossRevenue={grossRevenue} payrollObligations={payrollObligations} />
         </TabsContent>
         <TabsContent value="expenses" className="mt-3">
           <ExpenseDetailList budgetId={budgetId} items={cwExpenses} grossRevenue={grossRevenue} />

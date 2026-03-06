@@ -15,7 +15,7 @@ const CATEGORIES = [
   { key: 'vehicles', label: 'Vehicles', icon: Car },
 ];
 
-export default function BudgetDepartmentView({ budgetId, department, staffItems, expenseItems, assetItems, liabilityItems, vehicleItems, grossRevenue }) {
+export default function BudgetDepartmentView({ budgetId, department, staffItems, expenseItems, assetItems, liabilityItems, vehicleItems, grossRevenue, payrollObligations }) {
   const [activeTab, setActiveTab] = useState('staff');
 
   const deptStaff = useMemo(() => staffItems.filter(s => s.department === department), [staffItems, department]);
@@ -50,7 +50,7 @@ export default function BudgetDepartmentView({ budgetId, department, staffItems,
         </TabsList>
 
         <TabsContent value="staff" className="mt-3">
-          <StaffDetailList budgetId={budgetId} items={deptStaff} grossRevenue={grossRevenue} defaultDepartment={department} />
+          <StaffDetailList budgetId={budgetId} items={deptStaff} grossRevenue={grossRevenue} defaultDepartment={department} payrollObligations={payrollObligations} />
         </TabsContent>
         <TabsContent value="expenses" className="mt-3">
           <ExpenseDetailList budgetId={budgetId} items={deptExpenses} grossRevenue={grossRevenue} defaultDepartment={department} />
