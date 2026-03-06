@@ -140,6 +140,14 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
 
   const fields = FIELDS_BY_CATEGORY[category] || [];
   const visibleFields = fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value);
+
+  const getFormAnnualIncome = () => {
+    if (category !== 'staff') return 0;
+    const salary = form.pay_type === 'hourly'
+      ? (Number(form.hourly_rate) || 0) * (Number(form.hours_per_week) || 0) * 52
+      : (Number(form.salary) || 0);
+    return salary + (Number(form.commission_amount) || 0);
+  };
   const requiredFields = visibleFields.filter(f => f.required);
   const canSubmit = requiredFields.every(f => form[f.key] !== '' && form[f.key] !== undefined) &&
     (category !== 'staff' || form.pay_type !== 'hourly' || (Number(form.hourly_rate) > 0)) &&
@@ -150,7 +158,15 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
     fields.forEach(f => {
       if (f.showWhen && form[f.showWhen.key] !== f.showWhen.value) return;
       if (f.type === 'benefits_array') {
-        const clean = (form[f.key] || []).filter(b => b.name && Number(b.amount) > 0).map(b => ({ name: b.name, amount: Number(b.amount) }));
+        const income = getFormAnnualIncome();
+        const clean = (form[f.key] || [])
+          .filter(b => b.name && ((b.mode === 'percent_of_income' && Number(b.percent_value) > 0) || (b.mode !== 'percent_of_income' && Number(b.amount) > 0)))
+          .map(b => {
+            if (b.mode === 'percent_of_income') {
+              return { name: b.name, mode: 'percent_of_income', percent_value: Number(b.percent_value), amount: Math.round((Number(b.percent_value) / 100) * income * 100) / 100 };
+            }
+            return { name: b.name, mode: 'fixed', amount: Number(b.amount) };
+          });
         item[f.key] = clean;
         item.benefits_cost = clean.reduce((s, b) => s + b.amount, 0);
       } else if (f.type === 'number') item[f.key] = Number(form[f.key]) || 0;
