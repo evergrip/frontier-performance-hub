@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Users, Receipt, Wrench, CreditCard, Car, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, Receipt, Wrench, CreditCard, Car, DollarSign, TrendingUp, Shield } from 'lucide-react';
 
 const fmt = (v) => `$${Number(v || 0).toLocaleString()}`;
 
@@ -11,7 +11,7 @@ const annualize = (amount, period) => {
   return a;
 };
 
-export default function WizardReviewStep({ form, selections, profitSharingConfig }) {
+export default function WizardReviewStep({ form, selections, profitSharingConfig, payrollConfig }) {
   const revenue = Number(form.gross_revenue_projection) || 0;
 
   const staffBenTotal = (st) => { const b = st.benefits || []; return b.length > 0 ? b.reduce((s2, bn) => s2 + (Number(bn.amount) || 0), 0) : (st.benefits_cost || 0) + (st.hsa_cost || 0) + (st.rrsp_match_cost || 0); };
@@ -94,6 +94,30 @@ export default function WizardReviewStep({ form, selections, profitSharingConfig
             Estimated annual operating costs (staff + expenses + liabilities): <strong>{fmt(totalAnnualCosts)}</strong>
             <span className="ml-1">({(totalAnnualCosts / revenue * 100).toFixed(1)}% of projected revenue)</span>
           </p>
+        </div>
+      )}
+
+      {/* Payroll Obligations Summary */}
+      {payrollConfig && (payrollConfig.obligations || []).length > 0 && (
+        <div className="space-y-2">
+          <h3 className="font-semibold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+            <Shield className="w-4 h-4" /> Payroll Obligations
+          </h3>
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-1.5">
+            {payrollConfig.region && (
+              <p className="text-xs text-slate-500 mb-2">Region: <strong>{payrollConfig.region}</strong></p>
+            )}
+            {(payrollConfig.obligations || []).map((o, idx) => (
+              <div key={o.id || idx} className="flex justify-between text-sm">
+                <span className="text-slate-600">{o.name}</span>
+                <span className="font-medium text-slate-800">{Number(o.rate).toFixed(2)}%</span>
+              </div>
+            ))}
+            <div className="border-t pt-1.5 mt-1.5 flex justify-between text-sm font-semibold">
+              <span>Total combined rate</span>
+              <span>{(payrollConfig.obligations || []).reduce((s, o) => s + (Number(o.rate) || 0), 0).toFixed(2)}%</span>
+            </div>
+          </div>
         </div>
       )}
 
