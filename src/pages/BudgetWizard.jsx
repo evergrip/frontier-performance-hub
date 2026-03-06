@@ -89,7 +89,10 @@ export default function BudgetWizard() {
   // Auto-save draft whenever state changes (debounced via useEffect)
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (form.name || form.departments?.length > 0) {
+      const hasAnyData = form.name || form.departments?.length > 0 ||
+        Object.values(deptSelections).some(d => Object.values(d).some(arr => arr?.length > 0)) ||
+        Object.values(companySelections).some(arr => arr?.length > 0);
+      if (hasAnyData) {
         saveDraft({ currentStep, form, deptSelections, companySelections, profitSharingConfig });
       }
     }, 500);
