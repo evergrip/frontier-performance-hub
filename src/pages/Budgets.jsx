@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, Copy, Trash2, DollarSign, TrendingUp, FileText } from 'lucide-react';
+import { Plus, Search, Copy, Trash2, DollarSign, TrendingUp, FileText, Sparkles, ArrowRight, X } from 'lucide-react';
 import { toast } from 'sonner';
+
+const WIZARD_DRAFT_KEY = 'budget_wizard_draft';
 
 const STATUS_COLORS = {
   draft: 'bg-slate-100 text-slate-700',
