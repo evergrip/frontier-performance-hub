@@ -6,7 +6,7 @@ import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, DollarSign, Building2, Globe, TrendingUp, History, Receipt } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, Building2, Globe, TrendingUp, History, Receipt, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 import BudgetSummaryForm from '../components/budget/BudgetSummaryForm';
@@ -16,6 +16,7 @@ import BudgetCompanyWideView from '../components/budget/BudgetCompanyWideView';
 import BudgetProfitSharingView from '../components/budget/BudgetProfitSharingView';
 import BudgetLineItems from '../components/budget/BudgetLineItems';
 import BudgetVersionHistory from '../components/budget/BudgetVersionHistory';
+import PayrollObligationsEditor from '../components/budget/PayrollObligationsEditor';
 
 const STATUS_COLORS = {
   draft: 'bg-slate-100 text-slate-700',
@@ -75,6 +76,13 @@ export default function BudgetDetail() {
     enabled: !!budgetId,
   });
   const profitSharingPlan = profitSharingPlans[0] || null;
+
+  const { data: payrollObligationsPlans = [] } = useQuery({
+    queryKey: ['payrollObligations', budgetId],
+    queryFn: () => base44.entities.PayrollObligations.filter({ budget_id: budgetId }),
+    enabled: !!budgetId,
+  });
+  const payrollObligations = payrollObligationsPlans[0] || null;
 
   const createVersionSnapshot = (changeSummary) => {
     const snapshot = {
@@ -249,6 +257,7 @@ export default function BudgetDetail() {
             </TabsTrigger>
           ))}
           <TabsTrigger value="company_wide"><Globe className="w-4 h-4 mr-1" /> Company-Wide</TabsTrigger>
+          <TabsTrigger value="payroll"><Shield className="w-4 h-4 mr-1" /> Payroll Obligations</TabsTrigger>
           <TabsTrigger value="profit_sharing"><TrendingUp className="w-4 h-4 mr-1" /> Profit Sharing</TabsTrigger>
           <TabsTrigger value="line_items"><Receipt className="w-4 h-4 mr-1" /> Line Items</TabsTrigger>
           <TabsTrigger value="history"><History className="w-4 h-4 mr-1" /> History</TabsTrigger>
@@ -288,6 +297,10 @@ export default function BudgetDetail() {
             vehicleItems={vehicleItems}
             grossRevenue={totals.grossRevenue}
           />
+        </TabsContent>
+
+        <TabsContent value="payroll">
+          <PayrollObligationsEditor budgetId={budgetId} />
         </TabsContent>
 
         <TabsContent value="profit_sharing">
