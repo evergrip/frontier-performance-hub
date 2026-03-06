@@ -88,10 +88,19 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   const totalCompForWithholdings = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
   const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
 
-  const formBenefitsTotal = (form.benefits || []).reduce((s, b) => s + (Number(b.amount) || 0), 0);
+  const formAnnualIncome = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
+  const formBenefitsTotal = (form.benefits || []).reduce((s, b) => s + resolveBenefitAmount(b, formAnnualIncome), 0);
 
   const handleSave = () => {
-    const cleanBenefits = (form.benefits || []).filter(b => b.name && Number(b.amount) > 0).map(b => ({ name: b.name, amount: Number(b.amount) }));
+    const cleanBenefits = (form.benefits || [])
+      .filter(b => b.name && ((b.mode === 'percent_of_income' && Number(b.percent_value) > 0) || (b.mode !== 'percent_of_income' && Number(b.amount) > 0)))
+      .map(b => {
+        const income = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
+        if (b.mode === 'percent_of_income') {
+          return { name: b.name, mode: 'percent_of_income', percent_value: Number(b.percent_value), amount: resolveBenefitAmount(b, income) };
+        }
+        return { name: b.name, mode: 'fixed', amount: Number(b.amount) };
+      });
     const data = {
       budget_id: budgetId, name: form.name, role: form.role,
       pay_type: form.pay_type || 'salary',
@@ -292,18 +301,37 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                 <p className="text-xs text-slate-400 py-2 text-center">No benefits added yet. Click "Add Benefit" to create one.</p>
               )}
               {(form.benefits || []).map((b, idx) => (
-                <div key={idx} className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    {idx === 0 && <Label className="text-xs text-slate-500">Name</Label>}
-                    <Input value={b.name} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], name: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="e.g. Dental Plan, HSA, RRSP Match" />
+                <div key={idx} className="space-y-1">
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      {idx === 0 && <Label className="text-xs text-slate-500">Name</Label>}
+                      <Input value={b.name} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], name: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="e.g. Dental Plan, HSA, RRSP Match" />
+                    </div>
+                    <div className="w-32">
+                      {idx === 0 && <Label className="text-xs text-slate-500">Type</Label>}
+                      <Select value={b.mode || 'fixed'} onValueChange={v => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], mode: v}; setForm({...form, benefits: arr}); }}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Fixed $</SelectItem>
+                          <SelectItem value="percent_of_income">% of Income</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-28">
+                      {idx === 0 && <Label className="text-xs text-slate-500">{b.mode === 'percent_of_income' ? '%' : 'Annual ($)'}</Label>}
+                      {b.mode === 'percent_of_income' ? (
+                        <Input type="number" value={b.percent_value ?? ''} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], percent_value: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="e.g. 5" />
+                      ) : (
+                        <Input type="number" value={b.amount ?? ''} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], amount: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="0" />
+                      )}
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { const arr = [...form.benefits]; arr.splice(idx, 1); setForm({...form, benefits: arr}); }}>
+                      <Trash2 className="w-3 h-3 text-slate-400" />
+                    </Button>
                   </div>
-                  <div className="w-36">
-                    {idx === 0 && <Label className="text-xs text-slate-500">Annual ($)</Label>}
-                    <Input type="number" value={b.amount} onChange={e => { const arr = [...form.benefits]; arr[idx] = {...arr[idx], amount: e.target.value}; setForm({...form, benefits: arr}); }} placeholder="0" />
-                  </div>
-                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { const arr = [...form.benefits]; arr.splice(idx, 1); setForm({...form, benefits: arr}); }}>
-                    <Trash2 className="w-3 h-3 text-slate-400" />
-                  </Button>
+                  {b.mode === 'percent_of_income' && Number(b.percent_value) > 0 && formAnnualIncome > 0 && (
+                    <p className="text-[10px] text-slate-400 ml-1">= ${resolveBenefitAmount(b, formAnnualIncome).toLocaleString()}/yr ({b.percent_value}% of ${formAnnualIncome.toLocaleString()})</p>
+                  )}
                 </div>
               ))}
             </div>
