@@ -30,13 +30,13 @@ export default function Budgets() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Check for in-progress wizard draft
-  useState(() => {
+  // Check for in-progress wizard draft on mount
+  React.useEffect(() => {
     try {
       const raw = localStorage.getItem(WIZARD_DRAFT_KEY);
       if (raw) setWizardDraft(JSON.parse(raw));
     } catch {}
-  });
+  }, []);
 
   const discardDraft = () => {
     localStorage.removeItem(WIZARD_DRAFT_KEY);
