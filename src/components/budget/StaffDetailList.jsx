@@ -12,7 +12,7 @@ import { Plus, Pencil, Trash2, Users, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import BudgetPrefillDialog from './BudgetPrefillDialog';
 
-const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits: [], taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', notes: '' });
+const makeEmpty = (dept = '') => ({ name: '', role: '', pay_type: 'salary', salary: '', hourly_rate: '', hours_per_week: '40', commission_amount: '', benefits: [], taxes_cost: '', department: dept, employment_type: 'full_time', cost_category: 'overhead', payroll_obligation_overrides: [], notes: '' });
 
 // Migrate legacy fields to benefits array
 const migrateBenefits = (item) => {
@@ -38,24 +38,24 @@ const getBenefitsTotal = (item) => {
   return (item.benefits_cost || 0) + (item.hsa_cost || 0) + (item.rrsp_match_cost || 0);
 };
 
-// Canadian employer withholding rates (approximate)
-const EMPLOYER_RATES = {
-  cpp: 0.0595,   // CPP employer portion ~5.95%
-  ei: 0.0232,    // EI employer portion ~2.32% (1.4x employee rate)
-  wsib: 0.015,   // WSIB ~1.5% (varies by industry)
-  eht: 0.0195,   // Employer Health Tax ~1.95%
-};
-const TOTAL_EMPLOYER_RATE = Object.values(EMPLOYER_RATES).reduce((s, r) => s + r, 0);
-
-const calcEmployerWithholdings = (salary) => {
-  const s = Number(salary) || 0;
-  return {
-    cpp: Math.round(s * EMPLOYER_RATES.cpp * 100) / 100,
-    ei: Math.round(s * EMPLOYER_RATES.ei * 100) / 100,
-    wsib: Math.round(s * EMPLOYER_RATES.wsib * 100) / 100,
-    eht: Math.round(s * EMPLOYER_RATES.eht * 100) / 100,
-    total: Math.round(s * TOTAL_EMPLOYER_RATE * 100) / 100,
-  };
+// Calculate withholdings based on budget payroll obligations with per-staff overrides
+const calcWithholdingsFromObligations = (obligations, salary, commission, costCategory, overrides) => {
+  if (!obligations || obligations.length === 0) return { items: [], total: 0 };
+  const staffOverrides = overrides || [];
+  const items = obligations.map(o => {
+    const override = staffOverrides.find(ov => ov.obligation_id === o.id);
+    if (override?.exempt) return { id: o.id, name: o.name, rate: 0, amount: 0, exempt: true };
+    const rate = Number(override?.rate ?? o.rate) || 0;
+    const cap = Number(override?.annual_cap ?? o.annual_cap) || 0;
+    const appliesTo = o.applies_to || 'salary';
+    let base = Number(salary) || 0;
+    if (appliesTo === 'salary_and_commission') base += Number(commission) || 0;
+    if (appliesTo === 'total_compensation') base += Number(commission) || 0;
+    let amount = Math.round(base * (rate / 100) * 100) / 100;
+    if (cap > 0) amount = Math.min(amount, cap);
+    return { id: o.id, name: o.name, rate, amount };
+  });
+  return { items, total: items.reduce((s, i) => s + i.amount, 0) };
 };
 
 export default function StaffDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
