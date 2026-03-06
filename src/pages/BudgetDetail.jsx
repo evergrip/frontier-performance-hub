@@ -202,8 +202,9 @@ export default function BudgetDetail() {
 
     const lineItemOverhead = (budget?.line_items || []).filter(i => i.type === 'overhead').reduce((sum, i) => sum + (i.amount || 0), 0);
     const lineItemCogs = (budget?.line_items || []).filter(i => i.type === 'cogs').reduce((sum, i) => sum + (i.amount || 0), 0);
+    const lineItemRevenue = (budget?.line_items || []).filter(i => i.type === 'revenue').reduce((sum, i) => sum + (i.amount || 0), 0);
 
-    const grossRevenue = budget?.gross_revenue_projection || 0;
+    const grossRevenue = (budget?.gross_revenue_projection || 0) + lineItemRevenue;
 
     const annualize = (amount, period) => {
       const a = Number(amount) || 0;
@@ -218,13 +219,18 @@ export default function BudgetDetail() {
     const expenseOverhead = expenseItems.filter(e => (e.cost_type || 'overhead') === 'overhead').reduce((s, e) => s + getExpenseAnnual(e), 0);
     const expenseCogs = expenseItems.filter(e => e.cost_type === 'cogs').reduce((s, e) => s + getExpenseAnnual(e), 0);
 
+    // Calculate variable cost rate (percent_of_revenue expenses as a decimal fraction)
+    const variableCostRate = expenseItems
+      .filter(e => e.amount_mode === 'percent_of_revenue')
+      .reduce((s, e) => s + (Number(e.percent_of_revenue) || 0) / 100, 0);
+
     const totalOverhead = staffOverheadCost + totalAssetCost + totalAssetDepreciation + totalLiabilityCost + totalVehicleCost + totalVehicleDepreciation + lineItemOverhead + expenseOverhead;
     const totalCogs = (budget?.cost_of_goods_sold_projection || 0) + lineItemCogs + staffCogsCost + expenseCogs;
     const grossProfit = grossRevenue - totalCogs;
     const netProfit = grossProfit - totalOverhead;
     const netProfitPct = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
 
-    return { totalStaffCost, staffOverheadCost, staffCogsCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, lineItemCogs, expenseOverhead, expenseCogs, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct };
+    return { totalStaffCost, staffOverheadCost, staffCogsCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, lineItemCogs, lineItemRevenue, expenseOverhead, expenseCogs, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct, variableCostRate };
   }, [budget, staffItems, assetItems, liabilityItems, vehicleItems, expenseItems, payrollObligations]);
 
   if (isLoading) {

@@ -62,6 +62,24 @@ function computeTierAllocations(tiers, distributable, netProfit) {
   return allocations;
 }
 
+// Apply recipient caps and return the effective tier totals (after caps reduce payouts)
+function computeEffectiveTierTotals(tiers, allocations) {
+  return allocations.map((alloc, idx) => {
+    const recipients = tiers[idx]?.recipients || [];
+    if (recipients.length === 0) return alloc;
+    const totalWeight = recipients.reduce((s, r) => s + (Number(r.weight) || 0), 0);
+    if (totalWeight === 0) return alloc;
+    let effectiveTotal = 0;
+    for (const r of recipients) {
+      const share = (Number(r.weight) || 0) / totalWeight;
+      let amount = alloc * share;
+      if (r.cap_amount && amount > Number(r.cap_amount)) amount = Number(r.cap_amount);
+      effectiveTotal += amount;
+    }
+    return effectiveTotal;
+  });
+}
+
 function WaterfallRow({ label, amount, bold, indent, accent }) {
   const isNeg = amount < 0;
   return (

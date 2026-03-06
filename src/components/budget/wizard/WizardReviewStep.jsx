@@ -14,8 +14,25 @@ const annualize = (amount, period) => {
 export default function WizardReviewStep({ form, selections, profitSharingConfig, payrollConfig }) {
   const revenue = Number(form.gross_revenue_projection) || 0;
 
+  const obligations = (payrollConfig?.obligations || []).filter(o => o.name && Number(o.rate) >= 0);
+  const calcStaffWithholdings = (salary, commission) => {
+    if (obligations.length === 0) return 0;
+    return obligations.reduce((total, o) => {
+      const rate = Number(o.rate) || 0;
+      const cap = Number(o.annual_cap) || 0;
+      let base = Number(salary) || 0;
+      if (o.applies_to === 'salary_and_commission' || o.applies_to === 'total_compensation') base += Number(commission) || 0;
+      let amount = Math.round(base * (rate / 100) * 100) / 100;
+      if (cap > 0) amount = Math.min(amount, cap);
+      return total + amount;
+    }, 0);
+  };
   const staffBenTotal = (st) => { const b = st.benefits || []; return b.length > 0 ? b.reduce((s2, bn) => s2 + (Number(bn.amount) || 0), 0) : (st.benefits_cost || 0) + (st.hsa_cost || 0) + (st.rrsp_match_cost || 0); };
-  const staffTotal = (selections.staff || []).reduce((s, i) => s + (i.salary || 0) + staffBenTotal(i) + (i.commission_amount || 0), 0);
+  const staffTotal = (selections.staff || []).reduce((s, i) => {
+    const commission = i.cost_category === 'split' ? (i.commission_amount || 0) : 0;
+    const withholdings = calcStaffWithholdings(i.salary, commission);
+    return s + (i.salary || 0) + staffBenTotal(i) + (i.commission_amount || 0) + withholdings;
+  }, 0);
   const getExpAnnual = (e) => e.amount_mode === 'percent_of_revenue' ? (Number(e.percent_of_revenue) || 0) / 100 * revenue : annualize(e.amount, e.period);
   const expenseTotal = (selections.expenses || []).reduce((s, i) => s + getExpAnnual(i), 0);
   const assetTotal = (selections.assets || []).reduce((s, i) => s + (i.purchase_cost || 0), 0);

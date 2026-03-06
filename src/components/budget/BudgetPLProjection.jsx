@@ -40,26 +40,34 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue, profi
   const targetPctMet = targetPct != null && netProfitPct >= targetPct;
 
   // Reverse-calculate required gross revenue to meet targets
-  // Net Profit = Gross Revenue - Total COGS - Total Overhead
-  // Since COGS are entered as fixed amounts: Required Revenue = Target + Overhead + COGS
-  // For % target: Net Profit = Revenue * (targetPct/100), so Revenue = (Overhead + COGS) / (1 - targetPct/100)
-  const fixedCosts = totalOverhead + totalCogs;
+  // Some expenses are variable (% of revenue), so we must account for them:
+  // Net Profit = Revenue - FixedCosts - (Revenue * variableRate)
+  // Net Profit = Revenue * (1 - variableRate) - FixedCosts
+  // Revenue = (FixedCosts + TargetProfit) / (1 - variableRate)
+  
+  // Calculate the variable cost rate (sum of all percent_of_revenue expenses as a decimal)
+  const variableRate = totals.variableCostRate || 0;
+  const fixedCosts = totalOverhead + totalCogs - (grossRevenue * variableRate); // Remove variable portion from current totals
+  
   let requiredRevenueByAmt = null;
   let requiredRevenueByPct = null;
   let requiredRevenue = null;
 
-  if (targetAmt != null && targetAmt > 0) {
-    requiredRevenueByAmt = targetAmt + fixedCosts;
-  }
-  if (targetPct != null && targetPct > 0 && targetPct < 100) {
-    requiredRevenueByPct = fixedCosts / (1 - targetPct / 100);
+  const effectiveDivisor = 1 - variableRate;
+  if (effectiveDivisor > 0) {
+    if (targetAmt != null && targetAmt > 0) {
+      requiredRevenueByAmt = (fixedCosts + targetAmt) / effectiveDivisor;
+    }
+    if (targetPct != null && targetPct > 0 && targetPct < 100) {
+      requiredRevenueByPct = fixedCosts / (effectiveDivisor - targetPct / 100);
+    }
   }
 
   // Use whichever requires more revenue (the stricter target)
-  if (requiredRevenueByAmt != null && requiredRevenueByPct != null) {
+  if (requiredRevenueByAmt != null && requiredRevenueByAmt > 0 && requiredRevenueByPct != null && requiredRevenueByPct > 0) {
     requiredRevenue = Math.max(requiredRevenueByAmt, requiredRevenueByPct);
   } else {
-    requiredRevenue = requiredRevenueByAmt || requiredRevenueByPct;
+    requiredRevenue = (requiredRevenueByAmt && requiredRevenueByAmt > 0) ? requiredRevenueByAmt : (requiredRevenueByPct && requiredRevenueByPct > 0) ? requiredRevenueByPct : null;
   }
 
   const revenueGap = requiredRevenue != null ? requiredRevenue - grossRevenue : null;
@@ -113,7 +121,7 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue, profi
                 {revenueGap > 0 && (
                   <div className="mt-2 flex items-center gap-3">
                     <p className="text-xs text-slate-500 flex-1">
-                      Based on your current fixed costs ({fmt$(fixedCosts)}), you need {fmt$(requiredRevenue)} in gross revenue to achieve your net profit goal.
+                      Based on your fixed costs ({fmt$(fixedCosts)}) and variable cost rate ({(variableRate * 100).toFixed(1)}% of revenue), you need {fmt$(requiredRevenue)} in gross revenue to achieve your net profit goal.
                     </p>
                     {onSetRevenue && (
                       <Button
@@ -153,6 +161,7 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue, profi
         <CardHeader><CardTitle>Profit & Loss Projection</CardTitle></CardHeader>
         <CardContent className="divide-y divide-slate-100">
           <Row label="Gross Revenue" value={grossRevenue} bold />
+          {(totals.lineItemRevenue || 0) > 0 && <Row label="Includes Revenue Line Items" value={totals.lineItemRevenue} indent />}
           
           <div className="py-2">
             <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mt-2">Cost of Goods Sold Breakdown</p>
@@ -209,7 +218,24 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue, profi
                   for (const i of remainderIndices) allocations[i] = pool * (Number(psTiers[i].value) || 0) / totalPct;
                   psRemaining = totalPct >= 100 ? 0 : pool * (1 - totalPct / 100);
                 }
-                const totalDistributed = allocations.reduce((s, a) => s + a, 0);
+                // Apply recipient caps to get effective tier totals
+                const effectiveTotals = (() => {
+                  return allocations.map((alloc, idx) => {
+                    const recipients = psTiers[idx]?.recipients || [];
+                    if (recipients.length === 0) return alloc;
+                    const totalWeight = recipients.reduce((s, r) => s + (Number(r.weight) || 0), 0);
+                    if (totalWeight === 0) return alloc;
+                    let effective = 0;
+                    for (const r of recipients) {
+                      const share = (Number(r.weight) || 0) / totalWeight;
+                      let amount = alloc * share;
+                      if (r.cap_amount && amount > Number(r.cap_amount)) amount = Number(r.cap_amount);
+                      effective += amount;
+                    }
+                    return effective;
+                  });
+                })();
+                const totalDistributed = effectiveTotals.reduce((s, a) => s + a, 0);
                 const retainedByCompany = netProfit - totalDistributed;
 
                 return (
@@ -217,7 +243,7 @@ export default function BudgetPLProjection({ budget, totals, onSetRevenue, profi
                     <Row label="Company Retention" value={retention} indent pctOfRevenue={grossRevenue > 0 ? retention / grossRevenue * 100 : null} />
                     <Row label="Available for Distribution" value={distributable} indent />
                     {psTiers.map((t, i) => (
-                      <Row key={t.id || i} label={`${t.name || 'Tier ' + (i + 1)}`} value={allocations[i]} indent pctOfRevenue={grossRevenue > 0 ? allocations[i] / grossRevenue * 100 : null} />
+                      <Row key={t.id || i} label={`${t.name || 'Tier ' + (i + 1)}`} value={effectiveTotals[i]} indent pctOfRevenue={grossRevenue > 0 ? effectiveTotals[i] / grossRevenue * 100 : null} />
                     ))}
                     <Row label="Total Profit Sharing" value={totalDistributed} bold pctOfRevenue={grossRevenue > 0 ? totalDistributed / grossRevenue * 100 : null} />
                     <Row label="Retained After Distribution" value={retainedByCompany} bold variant={retainedByCompany >= 0 ? 'positive' : 'negative'} pctOfRevenue={grossRevenue > 0 ? retainedByCompany / grossRevenue * 100 : null} />
