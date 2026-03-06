@@ -100,7 +100,10 @@ const TAB_CONFIG = {
     label: 'Expenses',
     getLabel: i => i.name,
     getSub: i => i.category?.replace('_', ' '),
-    getDetail: i => `$${(i.amount || 0).toLocaleString()}/${i.period === 'monthly' ? 'mo' : i.period === 'quarterly' ? 'qtr' : 'yr'}`,
+    getDetail: i => {
+      if (i.amount_mode === 'percent_of_revenue') return `${i.percent_of_revenue || 0}% of rev`;
+      return `$${(i.amount || 0).toLocaleString()}/${i.period === 'monthly' ? 'mo' : i.period === 'quarterly' ? 'qtr' : 'yr'}`;
+    },
     editableField: 'amount',
   },
   assets: {
