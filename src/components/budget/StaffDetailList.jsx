@@ -103,24 +103,26 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   const formBenefitsTotal = (form.benefits || []).reduce((s, b) => s + resolveBenefitAmount(b, formAnnualIncome), 0);
 
   const handleSave = () => {
+    const commissionForCalc = form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0;
     const cleanBenefits = (form.benefits || [])
       .filter(b => b.name && ((b.mode === 'percent_of_income' && Number(b.percent_value) > 0) || (b.mode !== 'percent_of_income' && Number(b.amount) > 0)))
       .map(b => {
-        const income = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
+        const income = computedAnnualSalary + commissionForCalc;
         if (b.mode === 'percent_of_income') {
           return { name: b.name, mode: 'percent_of_income', percent_value: Number(b.percent_value), amount: resolveBenefitAmount(b, income) };
         }
         return { name: b.name, mode: 'fixed', amount: Number(b.amount) };
       });
+    const resolvedBenefitsCost = cleanBenefits.reduce((s, b) => s + (Number(b.amount) || 0), 0);
     const data = {
       budget_id: budgetId, name: form.name, role: form.role,
       pay_type: form.pay_type || 'salary',
       salary: computedAnnualSalary,
       hourly_rate: form.pay_type === 'hourly' ? (Number(form.hourly_rate) || 0) : null,
       hours_per_week: form.pay_type === 'hourly' ? (Number(form.hours_per_week) || 0) : null,
-      commission_amount: form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0,
+      commission_amount: commissionForCalc,
       benefits: cleanBenefits,
-      benefits_cost: cleanBenefits.reduce((s, b) => s + b.amount, 0),
+      benefits_cost: resolvedBenefitsCost,
       hsa_cost: 0,
       rrsp_match_cost: 0,
       taxes_cost: withholdings.total,
@@ -133,14 +135,24 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   };
 
   const fmt = (v) => v != null ? `$${Number(v).toLocaleString()}` : '—';
-  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + getBenefitsTotal(i) + (i.taxes_cost || 0);
+
+  // Dynamically calculate withholdings for display (not from stale stored taxes_cost)
+  const getItemWithholdings = (i) => {
+    if (budgetObligations.length > 0) {
+      const commission = i.cost_category === 'split' ? (i.commission_amount || 0) : 0;
+      return calcWithholdingsFromObligations(budgetObligations, i.salary, commission, i.cost_category, i.payroll_obligation_overrides).total;
+    }
+    return i.taxes_cost || 0;
+  };
+
+  const getItemTotal = (i) => (i.salary || 0) + (i.commission_amount || 0) + getBenefitsTotal(i) + getItemWithholdings(i);
   const totalCost = items.reduce((s, i) => s + getItemTotal(i), 0);
   
   // Calculate overhead vs COGS portions
   const overheadCost = items.reduce((s, i) => {
     const cat = i.cost_category || 'overhead';
     if (cat === 'overhead') return s + getItemTotal(i);
-    if (cat === 'split') return s + (i.salary || 0) + getBenefitsTotal(i) + (i.taxes_cost || 0); // salary+benefits+taxes → overhead
+    if (cat === 'split') return s + (i.salary || 0) + getBenefitsTotal(i) + getItemWithholdings(i); // salary+benefits+taxes → overhead
     return s;
   }, 0);
   const cogsCost = items.reduce((s, i) => {
@@ -217,7 +229,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">{fmt(item.taxes_cost)}</TableCell>
+                      <TableCell className="text-right">{fmt(getItemWithholdings(item))}</TableCell>
                       <TableCell className="text-right font-semibold">{fmt(getItemTotal(item))}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">

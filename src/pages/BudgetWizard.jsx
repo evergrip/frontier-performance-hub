@@ -15,7 +15,7 @@ import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
 import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSharingStep';
 import WizardPayrollStep from '../components/budget/wizard/WizardPayrollStep';
 
-const EMPLOYER_TAX_RATE = 0.1222; // CPP + EI + WSIB + EHT
+const EMPLOYER_TAX_RATE = 0; // Legacy fallback — payroll obligations should be configured in the wizard
 const WIZARD_DRAFT_KEY = 'budget_wizard_draft';
 
 function buildSteps(departments) {
