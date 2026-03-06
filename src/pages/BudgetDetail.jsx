@@ -225,7 +225,7 @@ export default function BudgetDetail() {
     const netProfitPct = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
 
     return { totalStaffCost, staffOverheadCost, staffCogsCost, totalAssetCost, totalAssetDepreciation, totalLiabilityCost, totalVehicleCost, totalVehicleDepreciation, lineItemOverhead, lineItemCogs, expenseOverhead, expenseCogs, totalOverhead, totalCogs, grossRevenue, grossProfit, netProfit, netProfitPct };
-  }, [budget, staffItems, assetItems, liabilityItems, vehicleItems, expenseItems]);
+  }, [budget, staffItems, assetItems, liabilityItems, vehicleItems, expenseItems, payrollObligations]);
 
   if (isLoading) {
     return <div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" /></div>;
