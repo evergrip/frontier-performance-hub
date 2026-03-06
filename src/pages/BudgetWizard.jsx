@@ -321,7 +321,7 @@ export default function BudgetWizard() {
           )}
 
           {stepKey === 'review' && (
-            <WizardReviewStep form={form} selections={getAllSelections()} profitSharingConfig={profitSharingConfig} />
+            <WizardReviewStep form={form} selections={getAllSelections()} profitSharingConfig={profitSharingConfig} payrollConfig={payrollConfig} />
           )}
         </CardContent>
       </Card>
