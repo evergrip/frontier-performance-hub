@@ -145,12 +145,34 @@ export default function BudgetDetail() {
   };
 
   const totals = useMemo(() => {
+    const budgetObligations = payrollObligations?.obligations || [];
+
+    const resolveStaffBenefitAmount = (benefit, income) => {
+      if (benefit.mode === 'percent_of_income') return Math.round((Number(benefit.percent_value) || 0) / 100 * income * 100) / 100;
+      return Number(benefit.amount) || 0;
+    };
     const staffBenefitsTotal = (s) => {
       const benefits = s.benefits || [];
-      if (benefits.length > 0) return benefits.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+      const income = (s.salary || 0) + (s.commission_amount || 0);
+      if (benefits.length > 0) return benefits.reduce((sum, b) => sum + resolveStaffBenefitAmount(b, income), 0);
       return (s.benefits_cost || 0) + (s.hsa_cost || 0) + (s.rrsp_match_cost || 0);
     };
-    const staffBaseCost = (s) => (s.salary || 0) + staffBenefitsTotal(s) + (s.taxes_cost || 0);
+    const calcStaffPayrollCost = (s) => {
+      if (budgetObligations.length === 0) return s.taxes_cost || 0;
+      const overrides = s.payroll_obligation_overrides || [];
+      return budgetObligations.reduce((total, o) => {
+        const ov = overrides.find(x => x.obligation_id === o.id);
+        if (ov?.exempt) return total;
+        const rate = Number(ov?.rate ?? o.rate) || 0;
+        const cap = Number(ov?.annual_cap ?? o.annual_cap) || 0;
+        let base = Number(s.salary) || 0;
+        if (o.applies_to === 'salary_and_commission' || o.applies_to === 'total_compensation') base += Number(s.commission_amount) || 0;
+        let amount = Math.round(base * (rate / 100) * 100) / 100;
+        if (cap > 0) amount = Math.min(amount, cap);
+        return total + amount;
+      }, 0);
+    };
+    const staffBaseCost = (s) => (s.salary || 0) + staffBenefitsTotal(s) + calcStaffPayrollCost(s);
     let staffOverheadCost = 0;
     let staffCogsCost = 0;
     staffItems.forEach(s => {
