@@ -356,23 +356,85 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                 <strong>Split allocation:</strong> Salary + Benefits + Withholdings → Overhead | Commission → COGS
               </div>
             )}
-            {computedAnnualSalary > 0 && (
+            {computedAnnualSalary > 0 && budgetObligations.length > 0 && (
               <div className="bg-slate-50 border rounded-lg p-3 space-y-1.5">
-                <p className="text-xs font-semibold text-slate-700 mb-2">Employer Withholdings (auto-calculated)</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                  <span className="text-slate-500">CPP ({(EMPLOYER_RATES.cpp * 100).toFixed(2)}%)</span>
-                  <span className="text-right font-medium">${withholdings.cpp.toLocaleString()}</span>
-                  <span className="text-slate-500">EI ({(EMPLOYER_RATES.ei * 100).toFixed(2)}%)</span>
-                  <span className="text-right font-medium">${withholdings.ei.toLocaleString()}</span>
-                  <span className="text-slate-500">WSIB ({(EMPLOYER_RATES.wsib * 100).toFixed(2)}%)</span>
-                  <span className="text-right font-medium">${withholdings.wsib.toLocaleString()}</span>
-                  <span className="text-slate-500">EHT ({(EMPLOYER_RATES.eht * 100).toFixed(2)}%)</span>
-                  <span className="text-right font-medium">${withholdings.eht.toLocaleString()}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-slate-700">Employer Payroll Obligations (from budget defaults)</p>
+                  {withholdings.items.some(i => (form.payroll_obligation_overrides || []).find(o => o.obligation_id === i.id)) && (
+                    <span className="text-[10px] text-amber-600 font-medium">Has overrides</span>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {withholdings.items.map(item => {
+                    const hasOverride = (form.payroll_obligation_overrides || []).find(o => o.obligation_id === item.id);
+                    return (
+                      <div key={item.id} className="flex items-center gap-2 text-xs">
+                        <span className={`flex-1 ${item.exempt ? 'line-through text-slate-400' : 'text-slate-600'}`}>
+                          {item.name} ({item.rate.toFixed(2)}%)
+                          {hasOverride && !item.exempt && <span className="text-amber-500 ml-1">*</span>}
+                          {item.exempt && <span className="text-red-400 ml-1">(exempt)</span>}
+                        </span>
+                        <span className="font-medium text-right w-20">{item.exempt ? '—' : `$${item.amount.toLocaleString()}`}</span>
+                        <Button
+                          type="button" variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]"
+                          onClick={() => {
+                            const overrides = [...(form.payroll_obligation_overrides || [])];
+                            const existingIdx = overrides.findIndex(o => o.obligation_id === item.id);
+                            if (existingIdx >= 0) {
+                              overrides.splice(existingIdx, 1);
+                            } else {
+                              const orig = budgetObligations.find(o => o.id === item.id);
+                              overrides.push({ obligation_id: item.id, rate: orig?.rate || 0, annual_cap: orig?.annual_cap || 0, exempt: false });
+                            }
+                            setForm({ ...form, payroll_obligation_overrides: overrides });
+                          }}
+                        >
+                          {hasOverride ? 'Reset' : 'Override'}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  {/* Show editable override fields */}
+                  {(form.payroll_obligation_overrides || []).length > 0 && (
+                    <div className="border-t pt-2 mt-2 space-y-1.5">
+                      <p className="text-[10px] text-amber-600 font-semibold">Staff-Specific Overrides:</p>
+                      {(form.payroll_obligation_overrides || []).map((ov, idx) => {
+                        const orig = budgetObligations.find(o => o.id === ov.obligation_id);
+                        if (!orig) return null;
+                        return (
+                          <div key={ov.obligation_id} className="flex items-center gap-2 text-xs">
+                            <span className="text-slate-600 flex-1 truncate">{orig.name}</span>
+                            <label className="flex items-center gap-1">
+                              <input type="checkbox" checked={ov.exempt || false} onChange={e => {
+                                const arr = [...form.payroll_obligation_overrides]; arr[idx] = { ...arr[idx], exempt: e.target.checked }; setForm({ ...form, payroll_obligation_overrides: arr });
+                              }} className="rounded" />
+                              <span className="text-[10px]">Exempt</span>
+                            </label>
+                            {!ov.exempt && (
+                              <>
+                                <Input type="number" value={ov.rate ?? ''} onChange={e => {
+                                  const arr = [...form.payroll_obligation_overrides]; arr[idx] = { ...arr[idx], rate: e.target.value }; setForm({ ...form, payroll_obligation_overrides: arr });
+                                }} className="h-6 text-[11px] w-16" placeholder="Rate %" step="0.01" />
+                                <Input type="number" value={ov.annual_cap ?? ''} onChange={e => {
+                                  const arr = [...form.payroll_obligation_overrides]; arr[idx] = { ...arr[idx], annual_cap: e.target.value }; setForm({ ...form, payroll_obligation_overrides: arr });
+                                }} className="h-6 text-[11px] w-20" placeholder="Cap $" />
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="border-t pt-1.5 mt-1.5 flex justify-between text-sm font-semibold">
-                  <span>Total Withholdings</span>
+                  <span>Total Payroll Obligations</span>
                   <span>${withholdings.total.toLocaleString()}</span>
                 </div>
+              </div>
+            )}
+            {computedAnnualSalary > 0 && budgetObligations.length === 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+                <strong>No payroll obligations configured.</strong> Go to the "Payroll Obligations" tab to set up employer statutory deductions (CPP, EI, etc.) for this budget.
               </div>
             )}
           </div>
