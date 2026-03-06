@@ -58,7 +58,8 @@ const calcWithholdingsFromObligations = (obligations, salary, commission, costCa
   return { items, total: items.reduce((s, i) => s + i.amount, 0) };
 };
 
-export default function StaffDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '' }) {
+export default function StaffDetailList({ budgetId, items, grossRevenue = 0, defaultDepartment = '', payrollObligations = null }) {
+  const budgetObligations = payrollObligations?.obligations || [];
   const [showDialog, setShowDialog] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(makeEmpty(defaultDepartment));
@@ -87,7 +88,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
       percent_value: b.percent_value ?? '',
     }));
     setEditing(item);
-    setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits: migratedBenefits, taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' });
+    setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits: migratedBenefits, taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', payroll_obligation_overrides: item.payroll_obligation_overrides || [], notes: item.notes || '' });
     setShowDialog(true);
   };
   const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
@@ -95,10 +96,10 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   const computedAnnualSalary = form.pay_type === 'hourly'
     ? (Number(form.hourly_rate) || 0) * (Number(form.hours_per_week) || 0) * 52
     : (Number(form.salary) || 0);
-  const totalCompForWithholdings = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
-  const withholdings = calcEmployerWithholdings(totalCompForWithholdings);
+  const formCommission = form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0;
+  const withholdings = calcWithholdingsFromObligations(budgetObligations, computedAnnualSalary, formCommission, form.cost_category, form.payroll_obligation_overrides);
 
-  const formAnnualIncome = computedAnnualSalary + (form.cost_category === 'split' ? (Number(form.commission_amount) || 0) : 0);
+  const formAnnualIncome = computedAnnualSalary + formCommission;
   const formBenefitsTotal = (form.benefits || []).reduce((s, b) => s + resolveBenefitAmount(b, formAnnualIncome), 0);
 
   const handleSave = () => {
@@ -123,6 +124,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
       hsa_cost: 0,
       rrsp_match_cost: 0,
       taxes_cost: withholdings.total,
+      payroll_obligation_overrides: (form.payroll_obligation_overrides || []).filter(o => o.obligation_id),
       department: form.department || '', employment_type: form.employment_type,
       cost_category: form.cost_category, notes: form.notes,
     };
