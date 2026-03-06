@@ -124,6 +124,37 @@ export default function Budgets() {
         </Button>
       </div>
 
+      {wizardDraft && (
+        <Card className="mb-6 border-amber-200 bg-amber-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-slate-900 text-sm truncate">
+                    {wizardDraft.form?.name || 'Untitled Budget'} — Wizard In Progress
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    FY {wizardDraft.form?.fiscal_year || '—'} · Step {(wizardDraft.currentStep || 0) + 1}
+                    {wizardDraft.form?.departments?.length > 0 && ` · ${wizardDraft.form.departments.length} dept(s)`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="ghost" size="sm" className="text-slate-500 hover:text-red-600" onClick={discardDraft}>
+                  <X className="w-4 h-4 mr-1" /> Discard
+                </Button>
+                <Button size="sm" onClick={() => navigate(createPageUrl('BudgetWizard'))} className="bg-amber-500 hover:bg-amber-600 text-white">
+                  Continue <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
