@@ -26,8 +26,23 @@ export default function Budgets() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [duplicateFrom, setDuplicateFrom] = useState(null);
+  const [wizardDraft, setWizardDraft] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Check for in-progress wizard draft
+  useState(() => {
+    try {
+      const raw = localStorage.getItem(WIZARD_DRAFT_KEY);
+      if (raw) setWizardDraft(JSON.parse(raw));
+    } catch {}
+  });
+
+  const discardDraft = () => {
+    localStorage.removeItem(WIZARD_DRAFT_KEY);
+    setWizardDraft(null);
+    toast.info('Draft discarded');
+  };
 
   const { data: budgets = [], isLoading } = useQuery({
     queryKey: ['budgets'],
