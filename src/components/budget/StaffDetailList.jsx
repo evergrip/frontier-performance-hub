@@ -79,7 +79,17 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
   });
 
   const close = () => { setShowDialog(false); setEditing(null); setForm(makeEmpty(defaultDepartment)); };
-  const openEdit = (item) => { setEditing(item); setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits: migrateBenefits(item), taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' }); setShowDialog(true); };
+  const openEdit = (item) => {
+    const migratedBenefits = migrateBenefits(item).map(b => ({
+      name: b.name || '',
+      mode: b.mode || 'fixed',
+      amount: b.amount ?? '',
+      percent_value: b.percent_value ?? '',
+    }));
+    setEditing(item);
+    setForm({ name: item.name || '', role: item.role || '', pay_type: item.pay_type || 'salary', salary: item.salary ?? '', hourly_rate: item.hourly_rate ?? '', hours_per_week: item.hours_per_week ?? '40', commission_amount: item.commission_amount ?? '', benefits: migratedBenefits, taxes_cost: item.taxes_cost ?? '', department: item.department || '', employment_type: item.employment_type || 'full_time', cost_category: item.cost_category || 'overhead', notes: item.notes || '' });
+    setShowDialog(true);
+  };
   const openCreate = () => { setForm(makeEmpty(defaultDepartment)); setShowDialog(true); };
 
   const computedAnnualSalary = form.pay_type === 'hourly'
@@ -293,7 +303,7 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-semibold">Benefits {formBenefitsTotal > 0 && <span className="text-slate-400 font-normal ml-1">(Total: {fmt(formBenefitsTotal)})</span>}</Label>
-                <Button type="button" variant="outline" size="sm" onClick={() => setForm({...form, benefits: [...(form.benefits || []), { name: '', amount: '' }]})}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setForm({...form, benefits: [...(form.benefits || []), { name: '', mode: 'fixed', amount: '', percent_value: '' }]})}>
                   <Plus className="w-3 h-3 mr-1" /> Add Benefit
                 </Button>
               </div>
