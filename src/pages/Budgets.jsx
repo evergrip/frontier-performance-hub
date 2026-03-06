@@ -119,7 +119,12 @@ export default function Budgets() {
           <h1 className="text-2xl font-bold text-slate-900">Budgets</h1>
           <p className="text-sm text-slate-500 mt-1">Annual P/L projection budgets</p>
         </div>
-        <Button onClick={() => navigate(createPageUrl('BudgetWizard'))} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
+        <Button onClick={() => {
+          if (wizardDraft) {
+            localStorage.removeItem(WIZARD_DRAFT_KEY);
+          }
+          navigate(createPageUrl('BudgetWizard'));
+        }} className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white">
           <Plus className="w-4 h-4 mr-2" /> New Budget
         </Button>
       </div>
