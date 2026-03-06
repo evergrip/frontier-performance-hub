@@ -13,6 +13,7 @@ import WizardDepartmentStep from '../components/budget/wizard/WizardDepartmentSt
 import WizardCompanyWideStep from '../components/budget/wizard/WizardCompanyWideStep';
 import WizardReviewStep from '../components/budget/wizard/WizardReviewStep';
 import WizardProfitSharingStep from '../components/budget/wizard/WizardProfitSharingStep';
+import WizardPayrollStep from '../components/budget/wizard/WizardPayrollStep';
 
 const EMPLOYER_TAX_RATE = 0.1222; // CPP + EI + WSIB + EHT
 const WIZARD_DRAFT_KEY = 'budget_wizard_draft';
@@ -24,6 +25,7 @@ function buildSteps(departments) {
   });
   // Company-wide items for things not tied to a department
   steps.push({ key: 'company_wide', label: 'Company-Wide' });
+  steps.push({ key: 'payroll', label: 'Payroll Obligations' });
   steps.push({ key: 'profit_sharing', label: 'Profit Sharing' });
   steps.push({ key: 'review', label: 'Review' });
   return steps;
@@ -61,6 +63,7 @@ const EMPTY_FORM = {
 const EMPTY_SELECTIONS = { staff: [], expenses: [], assets: [], liabilities: [], vehicles: [] };
 
 const EMPTY_PROFIT_SHARING = { company_retention_amount: '', distribution_tiers: [], notes: '' };
+const EMPTY_PAYROLL = { region: '', obligations: [], notes: '' };
 
 export default function BudgetWizard() {
   const navigate = useNavigate();
@@ -72,6 +75,7 @@ export default function BudgetWizard() {
   const [deptSelections, setDeptSelections] = useState({});
   const [companySelections, setCompanySelections] = useState(EMPTY_SELECTIONS);
   const [profitSharingConfig, setProfitSharingConfig] = useState(EMPTY_PROFIT_SHARING);
+  const [payrollConfig, setPayrollConfig] = useState(EMPTY_PAYROLL);
 
   // Load draft on mount
   useEffect(() => {
@@ -82,6 +86,7 @@ export default function BudgetWizard() {
       setForm(draft.form || EMPTY_FORM);
       setDeptSelections(draft.deptSelections || {});
       setCompanySelections(draft.companySelections || EMPTY_SELECTIONS);
+      setPayrollConfig(draft.payrollConfig || EMPTY_PAYROLL);
       setProfitSharingConfig(draft.profitSharingConfig || EMPTY_PROFIT_SHARING);
     }
   }, []);
@@ -93,11 +98,11 @@ export default function BudgetWizard() {
         Object.values(deptSelections).some(d => Object.values(d).some(arr => arr?.length > 0)) ||
         Object.values(companySelections).some(arr => arr?.length > 0);
       if (hasAnyData) {
-        saveDraft({ currentStep, form, deptSelections, companySelections, profitSharingConfig });
+        saveDraft({ currentStep, form, deptSelections, companySelections, payrollConfig, profitSharingConfig });
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [currentStep, form, deptSelections, companySelections, profitSharingConfig]);
+  }, [currentStep, form, deptSelections, companySelections, payrollConfig, profitSharingConfig]);
 
   const handleDiscardDraft = () => {
     clearDraft();
@@ -106,6 +111,7 @@ export default function BudgetWizard() {
     setForm(EMPTY_FORM);
     setDeptSelections({});
     setCompanySelections(EMPTY_SELECTIONS);
+    setPayrollConfig(EMPTY_PAYROLL);
     setProfitSharingConfig(EMPTY_PROFIT_SHARING);
     toast.info('Draft discarded');
   };
@@ -168,12 +174,26 @@ export default function BudgetWizard() {
     const budgetId = budget.id;
     const selections = getAllSelections();
 
+    // Calculate withholdings from payroll obligations
+    const obligations = (payrollConfig.obligations || []).filter(o => o.name && Number(o.rate) >= 0);
+    const calcTaxes = (salary, commission, costCategory) => {
+      return obligations.reduce((total, o) => {
+        const rate = Number(o.rate) || 0;
+        const cap = Number(o.annual_cap) || 0;
+        let base = Number(salary) || 0;
+        if (o.applies_to === 'salary_and_commission' || o.applies_to === 'total_compensation') base += Number(commission) || 0;
+        let amount = Math.round(base * (rate / 100) * 100) / 100;
+        if (cap > 0) amount = Math.min(amount, cap);
+        return total + amount;
+      }, 0);
+    };
+
     // Prepare bulk items, stripping internal marker fields
     const staffItems = selections.staff.map(({ _presetIdx, _source, _customIdx, ...rest }) => {
       const salary = rest.salary || 0;
       const commissionForTax = rest.cost_category === 'split' ? (rest.commission_amount || 0) : 0;
-      const taxBase = salary + commissionForTax;
-      return { ...rest, budget_id: budgetId, taxes_cost: Math.round(taxBase * EMPLOYER_TAX_RATE * 100) / 100 };
+      const taxes = obligations.length > 0 ? calcTaxes(salary, commissionForTax, rest.cost_category) : Math.round((salary + commissionForTax) * EMPLOYER_TAX_RATE * 100) / 100;
+      return { ...rest, budget_id: budgetId, taxes_cost: taxes };
     });
     const expenseItems = selections.expenses.map(({ _presetIdx, _source, _customIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
     const assetItems = selections.assets.map(({ _presetIdx, _source, _customIdx, ...rest }) => ({ ...rest, budget_id: budgetId }));
@@ -186,6 +206,16 @@ export default function BudgetWizard() {
     if (assetItems.length) bulkOps.push(base44.entities.AssetDetail.bulkCreate(assetItems));
     if (liabilityItems.length) bulkOps.push(base44.entities.LiabilityDetail.bulkCreate(liabilityItems));
     if (vehicleItems.length) bulkOps.push(base44.entities.VehicleDetail.bulkCreate(vehicleItems));
+
+    // Save payroll obligations if configured
+    if (obligations.length > 0) {
+      bulkOps.push(base44.entities.PayrollObligations.create({
+        budget_id: budgetId,
+        region: payrollConfig.region || '',
+        obligations,
+        notes: payrollConfig.notes || '',
+      }));
+    }
 
     // Save profit sharing plan if configured
     if (Number(profitSharingConfig.company_retention_amount) > 0 || (profitSharingConfig.distribution_tiers || []).length > 0) {
