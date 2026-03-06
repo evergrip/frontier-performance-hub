@@ -207,7 +207,11 @@ export default function StaffDetailList({ budgetId, items, grossRevenue = 0, def
                         {fmt(getBenefitsTotal(item))}
                         {(item.benefits || []).length > 0 && (
                           <span className="block text-[10px] text-slate-400">
-                            {item.benefits.map(b => `${b.name}: ${fmt(b.amount)}`).join(' · ')}
+                            {item.benefits.map(b => {
+                              const income = (item.salary || 0) + (item.commission_amount || 0);
+                              if (b.mode === 'percent_of_income') return `${b.name}: ${b.percent_value}% ($${resolveBenefitAmount(b, income).toLocaleString()})`;
+                              return `${b.name}: ${fmt(b.amount)}`;
+                            }).join(' · ')}
                           </span>
                         )}
                       </TableCell>
