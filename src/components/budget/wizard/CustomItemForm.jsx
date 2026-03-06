@@ -198,24 +198,44 @@ export default function CustomItemForm({ category, onAdd, editingItem, onSaveEdi
         {fields.filter(f => !f.showWhen || form[f.showWhen.key] === f.showWhen.value).map(f => {
           if (f.type === 'benefits_array') {
             const benefits = form[f.key] || [];
-            const benefitsTotal = benefits.reduce((s, b) => s + (Number(b.amount) || 0), 0);
+            const annualIncome = getFormAnnualIncome();
+            const benefitsTotal = benefits.reduce((s, b) => {
+              if (b.mode === 'percent_of_income') return s + Math.round((Number(b.percent_value) || 0) / 100 * annualIncome * 100) / 100;
+              return s + (Number(b.amount) || 0);
+            }, 0);
             return (
               <div key={f.key} className="col-span-2 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-[11px] text-slate-600">
                     Benefits {benefitsTotal > 0 && <span className="text-slate-400 ml-1">(${benefitsTotal.toLocaleString()}/yr)</span>}
                   </Label>
-                  <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] gap-1" onClick={() => setForm(prev => ({ ...prev, [f.key]: [...(prev[f.key] || []), { name: '', amount: '' }] }))}>
+                  <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] gap-1" onClick={() => setForm(prev => ({ ...prev, [f.key]: [...(prev[f.key] || []), { name: '', mode: 'fixed', amount: '', percent_value: '' }] }))}>
                     <Plus className="w-3 h-3" /> Add
                   </Button>
                 </div>
                 {benefits.map((b, idx) => (
-                  <div key={idx} className="flex gap-1.5 items-center">
-                    <Input value={b.name} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], name: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="e.g. Dental Plan" className="h-7 text-xs flex-1" />
-                    <Input type="number" value={b.amount} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], amount: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="$/yr" className="h-7 text-xs w-24" />
-                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { const arr = [...benefits]; arr.splice(idx, 1); setForm(prev => ({ ...prev, [f.key]: arr })); }}>
-                      <Trash2 className="w-3 h-3 text-slate-400" />
-                    </Button>
+                  <div key={idx} className="space-y-0.5">
+                    <div className="flex gap-1.5 items-center">
+                      <Input value={b.name} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], name: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="e.g. Dental Plan" className="h-7 text-xs flex-1" />
+                      <Select value={b.mode || 'fixed'} onValueChange={v => { const arr = [...benefits]; arr[idx] = { ...arr[idx], mode: v }; setForm(prev => ({ ...prev, [f.key]: arr })); }}>
+                        <SelectTrigger className="h-7 text-[10px] w-28"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Fixed $</SelectItem>
+                          <SelectItem value="percent_of_income">% of Income</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {b.mode === 'percent_of_income' ? (
+                        <Input type="number" value={b.percent_value ?? ''} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], percent_value: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="%" className="h-7 text-xs w-20" />
+                      ) : (
+                        <Input type="number" value={b.amount ?? ''} onChange={e => { const arr = [...benefits]; arr[idx] = { ...arr[idx], amount: e.target.value }; setForm(prev => ({ ...prev, [f.key]: arr })); }} placeholder="$/yr" className="h-7 text-xs w-24" />
+                      )}
+                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { const arr = [...benefits]; arr.splice(idx, 1); setForm(prev => ({ ...prev, [f.key]: arr })); }}>
+                        <Trash2 className="w-3 h-3 text-slate-400" />
+                      </Button>
+                    </div>
+                    {b.mode === 'percent_of_income' && Number(b.percent_value) > 0 && annualIncome > 0 && (
+                      <p className="text-[9px] text-slate-400 ml-1">= ${Math.round((Number(b.percent_value) / 100) * annualIncome).toLocaleString()}/yr ({b.percent_value}% of ${annualIncome.toLocaleString()})</p>
+                    )}
                   </div>
                 ))}
               </div>
