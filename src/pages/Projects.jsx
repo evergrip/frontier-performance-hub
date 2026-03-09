@@ -729,18 +729,27 @@ export default function Projects() {
                                    onClick={() => openEditDialog(project)}
                                  >
                                   <CardContent className="px-3 py-2">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-medium text-slate-900 text-sm truncate">{project.title}</p>
-                                        <p className="text-xs text-slate-500 truncate">{getProjectClientName(project)}</p>
-                                      </div>
-                                      <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
-                                        ${((project.contract_value || 0) / 1000).toFixed(0)}k
-                                      </span>
-                                    </div>
-                                    {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
-                                      <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
-                                    )}
+                                   <div className="flex items-start justify-between gap-2">
+                                     <div className="min-w-0 flex-1">
+                                       <p className="font-medium text-slate-900 text-sm truncate">{project.title}</p>
+                                       <p className="text-xs text-slate-500 truncate">{getProjectClientName(project)}</p>
+                                     </div>
+                                     <div className="flex items-center gap-1 shrink-0">
+                                       <button
+                                         className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/60"
+                                         title="Edit project details"
+                                         onClick={(e) => { e.stopPropagation(); setEditingProject(project); setEditDetailDialogOpen(true); }}
+                                       >
+                                         <Pencil className="w-3 h-3 text-slate-400" />
+                                       </button>
+                                       <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
+                                         ${((project.contract_value || 0) / 1000).toFixed(0)}k
+                                       </span>
+                                     </div>
+                                   </div>
+                                   {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
+                                     <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
+                                   )}
                                   </CardContent>
                                 </Card>
                               )}
