@@ -96,7 +96,7 @@ export default function Projects() {
   });
 
   const updateProjectStatusMutation = useMutation({
-    mutationFn: ({ projectId, status, actual_costs, actual_margin, color, client_id, status_history, monthly_revenue_allocations, notes }) => {
+    mutationFn: ({ projectId, status, actual_costs, actual_margin, color, client_id, status_history, monthly_revenue_allocations, notes, project_manager_id }) => {
       const updateData = {};
       if (status !== undefined) updateData.status = status;
       if (actual_costs !== undefined) updateData.actual_costs = actual_costs;
@@ -106,6 +106,7 @@ export default function Projects() {
       if (status_history !== undefined) updateData.status_history = status_history;
       if (monthly_revenue_allocations !== undefined) updateData.monthly_revenue_allocations = monthly_revenue_allocations;
       if (notes !== undefined) updateData.notes = notes;
+      if (project_manager_id !== undefined) updateData.project_manager_id = project_manager_id;
       return base44.entities.Project.update(projectId, updateData);
     },
     onSuccess: () => {
