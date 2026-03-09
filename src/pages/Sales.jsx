@@ -1585,6 +1585,9 @@ export default function Sales() {
 
               {/* Actions */}
               <div className="grid grid-cols-2 gap-2">
+                <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setEditingSale(selectedSale); setEditSaleDialogOpen(true); }}>
+                  <Pencil className="w-3 h-3 mr-1" /> Edit Details
+                </Button>
                 {nextStatus && (
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openAdvanceDialog(selectedSale); }}>
                     <ChevronRight className="w-3 h-3 mr-1" /> Move to Next Phase
