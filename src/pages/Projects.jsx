@@ -844,6 +844,15 @@ export default function Projects() {
         </TabsContent>
       </Tabs>
 
+      {/* Edit Project Detail Dialog */}
+      <EditProjectDetailDialog
+        open={editDetailDialogOpen}
+        onOpenChange={setEditDetailDialogOpen}
+        project={editingProject}
+        clients={clients}
+        users={users}
+      />
+
       {/* Advance Phase Dialog */}
       <Dialog open={advanceDialogOpen} onOpenChange={setAdvanceDialogOpen}>
         <DialogContent>
