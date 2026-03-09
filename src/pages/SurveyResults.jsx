@@ -202,13 +202,21 @@ export default function SurveyResults() {
           {responses.map((r, i) => (
             <Card key={r.id}>
               <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-sm">
-                    Response #{responses.length - i}
-                    {r.respondent_name && ` — ${r.respondent_name}`}
-                    {!r.respondent_name && r.respondent_email && ` — ${r.respondent_email}`}
-                  </CardTitle>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-sm">
+                      Response #{responses.length - i}
+                      {r.respondent_name && ` — ${r.respondent_name}`}
+                      {!r.respondent_name && r.respondent_email && ` — ${r.respondent_email}`}
+                    </CardTitle>
+                    {r.max_possible_score > 0 && (
+                      <ResponseScoreCard response={r} compact />
+                    )}
+                  </div>
                   <div className="flex items-center gap-2">
+                    {r.max_possible_score > 0 && (
+                      <GenerateAgendaButton survey={survey} response={r} />
+                    )}
                     <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-400 hover:text-red-600" onClick={() => { if (confirm("Delete this response? This cannot be undone.")) deleteMutation.mutate(r.id); }}>
                       <Trash2 className="w-3.5 h-3.5" />
@@ -217,6 +225,11 @@ export default function SurveyResults() {
                 </div>
               </CardHeader>
               <CardContent>
+                {r.max_possible_score > 0 && (
+                  <div className="mb-4">
+                    <ResponseScoreCard response={r} />
+                  </div>
+                )}
                 <div className="space-y-3">
                   {questions.map(q => (
                     <div key={q.id}>
