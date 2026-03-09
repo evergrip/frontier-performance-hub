@@ -238,9 +238,15 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
 
             {/* Bottom row */}
             <div className="flex items-center justify-between pt-2 border-t">
-              <div className="flex items-center gap-2">
-                <Switch checked={question.required || false} onCheckedChange={v => update("required", v)} />
-                <Label className="text-xs">Required</Label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Switch checked={question.required || false} onCheckedChange={v => update("required", v)} />
+                  <Label className="text-xs">Required</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={question.is_followup || false} onCheckedChange={v => update("is_followup", v)} />
+                  <Label className="text-xs text-amber-700">Follow-up</Label>
+                </div>
               </div>
               <div className="flex gap-1 items-center">
                 <AIQuestionEditor question={question} onApply={onChange} />

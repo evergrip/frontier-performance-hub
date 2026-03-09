@@ -15,6 +15,7 @@ import { createPageUrl } from "@/utils";
 import QuestionEditor from "../components/surveys/QuestionEditor";
 import ImportQuestionsDialog from "../components/surveys/ImportQuestionsDialog";
 import HeadingsEditor from "../components/surveys/HeadingsEditor";
+import SectionFollowupEditor from "../components/surveys/SectionFollowupEditor";
 
 const QUESTION_TYPES = [
   { value: "text", label: "Short Text" },
@@ -52,6 +53,7 @@ export default function SurveyBuilder() {
 
   const [questions, setQuestions] = useState([]);
   const [headings, setHeadings] = useState([]);
+  const [followupRules, setFollowupRules] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
@@ -61,6 +63,9 @@ export default function SurveyBuilder() {
     }
     if (survey?.headings) {
       setHeadings(survey.headings);
+    }
+    if (survey?.section_followup_rules) {
+      setFollowupRules(survey.section_followup_rules);
     }
   }, [survey]);
 
@@ -115,7 +120,7 @@ export default function SurveyBuilder() {
   };
 
   const handleSave = () => {
-    saveMutation.mutate({ questions, headings });
+    saveMutation.mutate({ questions, headings, section_followup_rules: followupRules });
   };
 
   if (isLoading) {
@@ -155,6 +160,18 @@ export default function SurveyBuilder() {
           <HeadingsEditor
             headings={headings}
             onChange={(h) => { setHeadings(h); setHasChanges(true); }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Section Score Follow-up Rules */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <SectionFollowupEditor
+            rules={followupRules}
+            headings={headings}
+            questions={questions}
+            onChange={(r) => { setFollowupRules(r); setHasChanges(true); }}
           />
         </CardContent>
       </Card>
