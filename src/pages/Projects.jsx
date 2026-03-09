@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Building2, ChevronRight, ChevronLeft, GripVertical, CheckCircle, Archive } from 'lucide-react';
+import { Building2, ChevronRight, ChevronLeft, GripVertical, CheckCircle, Archive, Pencil } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import AuditItemFixer from '../components/common/AuditItemFixer';
+import EditProjectDetailDialog from '../components/projects/EditProjectDetailDialog';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
