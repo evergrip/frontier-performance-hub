@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import QuestionEditor from "../components/surveys/QuestionEditor";
 import ImportQuestionsDialog from "../components/surveys/ImportQuestionsDialog";
+import HeadingsEditor from "../components/surveys/HeadingsEditor";
 
 const QUESTION_TYPES = [
   { value: "text", label: "Short Text" },
@@ -50,12 +51,16 @@ export default function SurveyBuilder() {
   });
 
   const [questions, setQuestions] = useState([]);
+  const [headings, setHeadings] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     if (survey?.questions) {
       setQuestions(survey.questions);
+    }
+    if (survey?.headings) {
+      setHeadings(survey.headings);
     }
   }, [survey]);
 
@@ -110,7 +115,7 @@ export default function SurveyBuilder() {
   };
 
   const handleSave = () => {
-    saveMutation.mutate({ questions });
+    saveMutation.mutate({ questions, headings });
   };
 
   if (isLoading) {
@@ -144,6 +149,16 @@ export default function SurveyBuilder() {
         </div>
       </div>
 
+      {/* Section Headings */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <HeadingsEditor
+            headings={headings}
+            onChange={(h) => { setHeadings(h); setHasChanges(true); }}
+          />
+        </CardContent>
+      </Card>
+
       <div className="space-y-4 mb-6">
         {questions.map((q, index) => (
           <QuestionEditor
@@ -157,6 +172,7 @@ export default function SurveyBuilder() {
             onMove={(dir) => moveQuestion(index, dir)}
             onDuplicate={() => duplicateQuestion(index)}
             allQuestions={questions}
+            headings={headings}
           />
         ))}
       </div>
