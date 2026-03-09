@@ -175,6 +175,12 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
           </div>
         </form>
 
+        {/* Edit History */}
+        <div className="border-t pt-4 mt-2">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Edit History</p>
+          <EditLogViewer entityType="lead" entityId={lead.id} />
+        </div>
+
         {/* Quick Actions */}
         <div className="border-t pt-4 mt-2 space-y-2">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</p>
