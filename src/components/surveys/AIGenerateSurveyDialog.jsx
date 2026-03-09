@@ -37,41 +37,70 @@ export default function AIGenerateSurveyDialog({ open, onOpenChange }) {
     setGenerating(true);
 
     const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a professional survey designer. Create a survey based on this description:
+      prompt: `You are an expert survey designer specializing in qualification scoring and lead assessment (Sandler methodology). Create a comprehensive, fully-featured survey based on this description:
 
 "${prompt.trim()}"
 
-${questionCount === 'auto' ? 'Generate as many questions as you think are needed to thoroughly cover the topic — no more, no less. Use your judgment on the optimal number.' : `Generate exactly ${questionCount} questions.`} Mix question types for a good survey experience.
+${questionCount === 'auto' ? 'Generate as many questions as needed to thoroughly cover the topic. Use your judgment on the optimal number.' : `Generate approximately ${questionCount} questions (including follow-up questions).`}
 
-Return a JSON object with:
-- title: a clear survey title
-- description: a 1-2 sentence description
-- questions: array of question objects, each with:
-  - id: unique string like "q_1", "q_2", etc.
-  - text: the question text
-  - type: one of: ${QUESTION_TYPES.join(", ")}
-  - required: boolean (true for important questions)
-  - options: array of strings (REQUIRED for radio, checkbox, dropdown types; omit for others)
-  - description: optional helper text
-  - min_value: for rating type use 1, for scale type use 1
-  - max_value: for rating type use 5, for scale type use 10
-  - min_label: for scale type (e.g. "Not at all likely")
-  - max_label: for scale type (e.g. "Extremely likely")
-  - placeholder: optional placeholder text for text/textarea/email/phone types
+You MUST generate ALL of the following:
+
+1. SECTIONS (headings): Group questions into logical sections/categories. Each section needs a unique id (like "h_1"), title, description, and max_score (the maximum points achievable in that section).
+
+2. QUESTIONS: Each question must belong to a section (via category_id matching a heading id). Include:
+   - id: unique string like "q_1", "q_2"
+   - text: clear question text
+   - type: one of ${QUESTION_TYPES.join(", ")}
+   - category_id: the heading id this question belongs to
+   - required: boolean
+   - options: array of strings (REQUIRED for radio, checkbox, dropdown)
+   - option_scores: object mapping each option text to a numeric point value (REQUIRED for radio, checkbox, dropdown). Higher scores = stronger indicator. Example: {"Strongly Agree": 10, "Agree": 7, "Neutral": 4, "Disagree": 1, "Strongly Disagree": 0}
+   - points: max points for rating/scale/number types
+   - weight: multiplier (default 1, use 2 for critical questions)
+   - description: helper text
+   - min_value, max_value, min_label, max_label: for scale type
+   - placeholder: for text types
+   - is_followup: boolean (true ONLY for follow-up questions that should be hidden by default)
+   - logic_rules: array of conditional show/skip rules. Each rule: {condition_question_id, operator (equals/not_equals/greater_than/less_than/is_answered), value, logic_type (show/skip)}
+
+3. SECTION FOLLOW-UP RULES (section_followup_rules): For sections where high scores indicate a pain point or important topic, create rules that reveal follow-up questions when the section score exceeds a threshold. Each rule:
+   - heading_id: the section id
+   - threshold_score: score that triggers the follow-up
+   - followup_question_ids: array of question ids (these questions must have is_followup: true)
+
+4. WELCOME PAGE: welcome_page_content (HTML string with a warm intro) and welcome_page_button_text.
+
+5. THANK YOU PAGE: thank_you_page_content (HTML string thanking the respondent and explaining next steps).
+
+6. SUCCESS MESSAGE: A brief thank-you message string.
 
 Guidelines:
-- Start with easier questions, put sensitive ones later
-- Use rating (1-5 stars) for satisfaction questions
-- Use scale (1-10) for NPS-style questions
-- Use radio for single-choice, checkbox for multi-choice
-- Always include options array for radio/checkbox/dropdown
-- Include at least one open-ended text/textarea question
-- Make questions clear and unbiased`,
+- Start sections with easier questions, put sensitive/probing ones later
+- Use rating (1-5 stars) for satisfaction, scale (1-10) for importance/priority
+- Use radio for single-choice with scored options, checkbox for multi-choice
+- Every scored question (radio/checkbox/dropdown) MUST have option_scores
+- Include 1-2 follow-up questions per section for when scores are high
+- Set threshold_score for follow-up rules to about 60-70% of the section max_score
+- Follow-up questions should probe deeper (e.g. "On a scale of 1-10, how important is it that we discuss [topic] as a core agenda item?")
+- Use logic_rules sparingly — only when a question naturally depends on another
+- Make the welcome page engaging and the thank you page appreciative`,
       response_json_schema: {
         type: "object",
         properties: {
           title: { type: "string" },
           description: { type: "string" },
+          headings: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                title: { type: "string" },
+                description: { type: "string" },
+                max_score: { type: "number" },
+              },
+            },
+          },
           questions: {
             type: "array",
             items: {
@@ -80,19 +109,52 @@ Guidelines:
                 id: { type: "string" },
                 text: { type: "string" },
                 type: { type: "string" },
+                category_id: { type: "string" },
                 required: { type: "boolean" },
                 options: { type: "array", items: { type: "string" } },
+                option_scores: { type: "object" },
+                points: { type: "number" },
+                weight: { type: "number" },
                 description: { type: "string" },
                 min_value: { type: "number" },
                 max_value: { type: "number" },
                 min_label: { type: "string" },
                 max_label: { type: "string" },
                 placeholder: { type: "string" },
+                is_followup: { type: "boolean" },
+                logic_rules: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      condition_question_id: { type: "string" },
+                      operator: { type: "string" },
+                      value: { type: "string" },
+                      logic_type: { type: "string" },
+                    },
+                  },
+                },
               },
             },
           },
+          section_followup_rules: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                heading_id: { type: "string" },
+                threshold_score: { type: "number" },
+                followup_question_ids: { type: "array", items: { type: "string" } },
+              },
+            },
+          },
+          welcome_page_content: { type: "string" },
+          welcome_page_button_text: { type: "string" },
+          thank_you_page_content: { type: "string" },
+          success_message: { type: "string" },
         },
       },
+      model: "claude_sonnet_4_6",
     });
 
     setGenerating(false);
@@ -100,13 +162,19 @@ Guidelines:
     const surveyData = {
       title: result.title,
       description: result.description,
-      questions: result.questions,
+      headings: result.headings || [],
+      questions: result.questions || [],
+      section_followup_rules: result.section_followup_rules || [],
       status: "draft",
       access_type: "link_only",
       share_token: generateToken(),
       allow_anonymous_responses: false,
       allow_multiple_responses: false,
-      success_message: "Thank you for completing this survey!",
+      welcome_page_enabled: !!(result.welcome_page_content),
+      welcome_page_content: result.welcome_page_content || "",
+      welcome_page_button_text: result.welcome_page_button_text || "Start Survey",
+      thank_you_page_content: result.thank_you_page_content || "",
+      success_message: result.success_message || "Thank you for completing this survey!",
       styling: {},
     };
 
