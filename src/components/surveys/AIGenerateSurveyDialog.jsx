@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -159,8 +160,13 @@ Guidelines:
 
     setGenerating(false);
 
+    if (!result || (!result.title && !result.questions?.length)) {
+      toast.error("AI generation failed to produce a valid survey. Please try again with a shorter or clearer prompt.");
+      return;
+    }
+
     const surveyData = {
-      title: result.title,
+      title: result.title || "Generated Survey",
       description: result.description,
       headings: result.headings || [],
       questions: result.questions || [],
@@ -178,7 +184,11 @@ Guidelines:
       styling: {},
     };
 
-    createMutation.mutate(surveyData);
+    createMutation.mutate(surveyData, {
+      onError: (err) => {
+        toast.error("Failed to save survey: " + (err?.message || "Unknown error"));
+      },
+    });
   };
 
   const isLoading = generating || createMutation.isPending;
