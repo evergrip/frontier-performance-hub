@@ -499,6 +499,13 @@ export default function Projects() {
     const newStatus = destination.droppableId;
     const projectId = draggableId;
     const project = projects.find(p => p.id === projectId);
+
+    // If dragging to mobilization and no project manager, open the advance dialog instead
+    if (newStatus === 'mobilization' && !project?.project_manager_id) {
+      toast.error('A Project Manager must be assigned before moving to Mobilization. Use the advance dialog.');
+      openAdvanceDialog(project);
+      return;
+    }
     
     // Build status history — tag with source: 'project'
     const currentHistory = project?.status_history || [];
