@@ -1343,6 +1343,31 @@ export default function Projects() {
               ) : null;
             })()}
 
+            {/* Margin variance vs estimated margin from linked Sale */}
+            {selectedProject && projectForm.actual_margin && (() => {
+              const linkedSale = sales.find(s => s.id === selectedProject.sale_id);
+              const estimatedMargin = linkedSale?.estimated_margin;
+              if (estimatedMargin == null) return null;
+              const actualMargin = parseFloat(projectForm.actual_margin) || 0;
+              const marginDiff = Math.abs(actualMargin - estimatedMargin);
+              if (marginDiff <= 2) return null;
+              return (
+                <div>
+                  <Label className="text-amber-700">Margin Variance Explanation *</Label>
+                  <p className="text-xs text-amber-600 mb-2">
+                    Actual gross margin ({actualMargin.toFixed(1)}%) differs from estimated margin ({estimatedMargin.toFixed(1)}%) by {marginDiff.toFixed(1)}%. Please explain why.
+                  </p>
+                  <Input
+                    type="text"
+                    value={projectForm.margin_variance_explanation}
+                    onChange={(e) => setProjectForm({...projectForm, margin_variance_explanation: e.target.value})}
+                    placeholder="Explain the difference between estimated and actual gross margin"
+                    required
+                  />
+                </div>
+              );
+            })()}
+
             {/* Fiscal Year Selector */}
             <div>
               <Label className="block mb-2">Fiscal Year for Revenue Allocation *</Label>
