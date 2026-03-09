@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Briefcase, ChevronRight } from 'lucide-react';
+import { Target, Briefcase, ChevronRight, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import EmptyState from '../components/common/EmptyState';
@@ -333,14 +333,25 @@ export default function Leads() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`border ${column.color} transition-all cursor-pointer ${
+                                  className={`border ${column.color} transition-all cursor-pointer group ${
                                     snapshot.isDragging ? 'shadow-2xl rotate-1' : 'hover:shadow-md'
                                   }`}
                                   onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
                                 >
                                   <CardContent className="px-3 py-2">
-                                    <p className="font-medium text-slate-900 text-sm truncate">{lead.title}</p>
-                                    <p className="text-xs text-slate-500 truncate">{getClientName(lead.client_id)}</p>
+                                    <div className="flex items-start justify-between gap-1">
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-medium text-slate-900 text-sm truncate">{lead.title}</p>
+                                        <p className="text-xs text-slate-500 truncate">{getClientName(lead.client_id)}</p>
+                                      </div>
+                                      <button
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/60 shrink-0"
+                                        title="Edit lead details"
+                                        onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
+                                      >
+                                        <Pencil className="w-3 h-3 text-slate-400" />
+                                      </button>
+                                    </div>
                                   </CardContent>
                                 </Card>
                               )}
