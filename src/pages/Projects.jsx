@@ -404,6 +404,15 @@ export default function Projects() {
       toast.error(`Variance exceeds ${threshold}%. Please explain the difference.`);
       return;
     }
+
+    // Check margin variance vs estimated margin from linked sale
+    const linkedSale = sales.find(s => s.id === selectedProject.sale_id);
+    const estimatedMargin = linkedSale?.estimated_margin;
+    const actualMargin = parseFloat(projectForm.actual_margin) || 0;
+    if (estimatedMargin != null && Math.abs(actualMargin - estimatedMargin) > 2 && !projectForm.margin_variance_explanation?.trim()) {
+      toast.error('Actual margin differs from estimated margin by more than 2%. Please explain why.');
+      return;
+    }
     
     // Validate that monthly allocations sum to 100%
     const totalPercent = monthlyAllocations.reduce((sum, a) => sum + (parseFloat(a.percentage) || 0), 0);
