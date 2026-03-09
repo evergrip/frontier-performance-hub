@@ -46,6 +46,8 @@ export default function Sales() {
   const [targetCompletionDate, setTargetCompletionDate] = useState('');
   const [finalPreconValue, setFinalPreconValue] = useState('');
   const [editTargetDate, setEditTargetDate] = useState('');
+  const [editSaleDialogOpen, setEditSaleDialogOpen] = useState(false);
+  const [editingSale, setEditingSale] = useState(null);
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
@@ -811,20 +813,29 @@ export default function Sales() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`border ${column.color} transition-all cursor-pointer ${
+                                  className={`border ${column.color} transition-all cursor-pointer group ${
                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-md'
                                   }`}
                                   onClick={() => openDetailDialog(sale)}
                                 >
                                   <CardContent className="px-3 py-2">
-                                    <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
                                         <p className="font-medium text-slate-900 text-sm truncate">{sale.title}</p>
                                         <p className="text-xs text-slate-500 truncate">{getClientName(sale.client_id)}</p>
                                       </div>
-                                      <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
-                                        ${((sale.contract_value || 0) / 1000).toFixed(0)}k
-                                      </span>
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <button
+                                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/60"
+                                          title="Edit sale details"
+                                          onClick={(e) => { e.stopPropagation(); setEditingSale(sale); setEditSaleDialogOpen(true); }}
+                                        >
+                                          <Pencil className="w-3 h-3 text-slate-400" />
+                                        </button>
+                                        <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">
+                                          ${((sale.contract_value || 0) / 1000).toFixed(0)}k
+                                        </span>
+                                      </div>
                                     </div>
                                     {needsDrawAlert(sale) && (
                                       <div className="mt-1 flex items-center gap-1">
