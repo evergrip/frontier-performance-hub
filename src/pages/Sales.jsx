@@ -1538,6 +1538,15 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Sale Dialog */}
+      <EditSaleDialog
+        open={editSaleDialogOpen}
+        onOpenChange={setEditSaleDialogOpen}
+        sale={editingSale}
+        clients={clients}
+        users={users}
+      />
+
       {/* Detail Dialog - Phase Timeline & Actions */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
