@@ -350,6 +350,12 @@ export default function Projects() {
     e.preventDefault();
     const nextStatus = getNextStatus(selectedProject.status);
     if (!nextStatus) return;
+
+    // Require project manager when advancing to mobilization
+    if (nextStatus === 'mobilization' && !projectForm.project_manager_id) {
+      toast.error('A Project Manager must be assigned before moving to Mobilization.');
+      return;
+    }
     
     // Update phase-based commission availability
     await base44.functions.invoke('updatePhaseCommission', {
@@ -370,6 +376,11 @@ export default function Projects() {
       actual_costs: parseFloat(projectForm.actual_costs) || 0,
       actual_margin: parseFloat(projectForm.actual_margin) || 0
     };
+
+    // Save project manager if set
+    if (projectForm.project_manager_id) {
+      updateData.project_manager_id = projectForm.project_manager_id;
+    }
     
     if (nextStatus === 'mobilization' && monthlyAllocations.length > 0) {
       updateData.monthly_revenue_allocations = monthlyAllocations
