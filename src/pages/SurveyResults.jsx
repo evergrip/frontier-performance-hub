@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2, FileSpreadsheet, Target } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import moment from "moment";
 import AIInsightsPanel from "../components/surveys/AIInsightsPanel";
+import ResponseScoreCard from "../components/surveys/ResponseScoreCard";
+import GenerateAgendaButton from "../components/surveys/GenerateAgendaButton";
 
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -43,9 +45,13 @@ export default function SurveyResults() {
   }
 
   const questions = survey.questions || [];
+  const hasScoring = responses.some(r => r.max_possible_score > 0);
   const avgTime = responses.length > 0
     ? Math.round(responses.reduce((s, r) => s + (r.completion_time_seconds || 0), 0) / responses.length)
     : 0;
+  const avgScore = hasScoring && responses.length > 0
+    ? Math.round(responses.reduce((s, r) => s + (r.score_percentage || 0), 0) / responses.length)
+    : null;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -121,7 +127,7 @@ export default function SurveyResults() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className={`grid grid-cols-1 sm:grid-cols-${hasScoring ? '4' : '3'} gap-4 mb-6`}>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <Users className="w-8 h-8 text-blue-500" />
@@ -149,6 +155,17 @@ export default function SurveyResults() {
             </div>
           </CardContent>
         </Card>
+        {hasScoring && (
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Target className="w-8 h-8 text-amber-500" />
+              <div>
+                <p className="text-2xl font-bold">{avgScore}%</p>
+                <p className="text-xs text-slate-500">Avg. Qualification Score</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Tabs defaultValue="summary">
