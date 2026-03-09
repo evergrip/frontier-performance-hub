@@ -11,9 +11,11 @@ Deno.serve(async (req) => {
   // Use service role to list all users so non-admin salespeople can see each other
   const allUsers = await base44.asServiceRole.entities.User.list();
 
-  // Return users who are in the Sales department (via department or departments array)
+  // Return users who are in the Sales department (case-insensitive) or are admins
   const salespeople = allUsers.filter(u => {
-    const inSalesDept = u.department === 'Sales' || (u.departments && u.departments.includes('Sales'));
+    const dept = (u.department || '').toLowerCase();
+    const depts = (u.departments || []).map(d => d.toLowerCase());
+    const inSalesDept = dept === 'sales' || depts.includes('sales');
     return inSalesDept || u.role === 'admin';
   }).map(u => ({
     id: u.id,
