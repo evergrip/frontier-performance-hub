@@ -223,7 +223,7 @@ Guidelines:
           </div>
 
           <p className="text-xs text-slate-500">
-            The AI will generate a complete survey with title, description, and questions. You can edit everything afterwards in the Survey Builder.
+            The AI will generate a fully-featured survey including scored sections, per-option point values, follow-up rules triggered by section scores, conditional logic, and welcome/thank-you pages. Uses a premium AI model (extra credits). You can edit everything afterwards in the Survey Builder.
           </p>
         </div>
 
