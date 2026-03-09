@@ -825,6 +825,29 @@ export default function Projects() {
               <p className="text-xs text-slate-500">{getProjectClientName(selectedProject)}</p>
             </div>
 
+            {/* Project Manager — required for mobilization */}
+            {getNextStatus(selectedProject?.status) === 'mobilization' && (
+              <div>
+                <Label className="text-amber-700">Project Manager *</Label>
+                <p className="text-xs text-amber-600 mb-2">
+                  A project manager must be assigned before moving to Mobilization.
+                </p>
+                <Select
+                  value={projectForm.project_manager_id}
+                  onValueChange={(value) => setProjectForm({...projectForm, project_manager_id: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Project Manager" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div>
               <Label>Actual Project Costs *</Label>
               <p className="text-xs text-slate-500 mb-2">
