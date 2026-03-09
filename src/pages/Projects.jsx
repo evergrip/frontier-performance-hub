@@ -446,9 +446,12 @@ export default function Projects() {
       monthly_revenue_allocations: monthlyAllocations
         .filter(a => a.year && a.month && parseFloat(a.percentage) > 0)
         .map(a => ({ year: Number(a.year), month: Number(a.month), period: `${a.year}-${String(a.month).padStart(2, '0')}`, percentage: Number(a.percentage) })),
-      notes: projectForm.variance_explanation ? 
-        `${selectedProject.notes || ''}\n\nCloseout Variance Explanation: ${projectForm.variance_explanation}`.trim() :
-        selectedProject.notes
+      notes: (() => {
+        let n = selectedProject.notes || '';
+        if (projectForm.variance_explanation) n = `${n}\n\nCloseout Variance Explanation: ${projectForm.variance_explanation}`.trim();
+        if (projectForm.margin_variance_explanation) n = `${n}\n\nMargin Variance Explanation: ${projectForm.margin_variance_explanation}`.trim();
+        return n || selectedProject.notes;
+      })()
     });
   };
 
