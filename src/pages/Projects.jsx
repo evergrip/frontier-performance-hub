@@ -723,9 +723,9 @@ export default function Projects() {
                                       ...provided.draggableProps.style,
                                       ...(project.color ? { borderColor: project.color, borderWidth: '2px', backgroundColor: project.color + '18' } : {})
                                     }}
-                                    className={`border ${!project.color ? column.color : ''} transition-all cursor-pointer ${
-                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-md'
-                                   }`}
+                                    className={`border ${!project.color ? column.color : ''} transition-all cursor-pointer group ${
+                                    snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-md'
+                                    }`}
                                    onClick={() => openEditDialog(project)}
                                  >
                                   <CardContent className="px-3 py-2">
