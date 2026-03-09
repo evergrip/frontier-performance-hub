@@ -192,7 +192,8 @@ export default function Projects() {
     setSelectedProject(project);
     setProjectForm({
       actual_costs: project.actual_costs || project.contract_value || '',
-      actual_margin: project.actual_margin || 45
+      actual_margin: project.actual_margin || 45,
+      project_manager_id: project.project_manager_id || ''
     });
     
     // Initialize monthly allocations if advancing TO mobilization
