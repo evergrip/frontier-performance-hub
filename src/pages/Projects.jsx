@@ -39,7 +39,9 @@ export default function Projects() {
     actual_costs: '',
     actual_margin: '',
     variance_explanation: '',
-    client_id: ''
+    margin_variance_explanation: '',
+    client_id: '',
+    project_manager_id: ''
   });
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [monthlyAllocations, setMonthlyAllocations] = useState([]);
@@ -110,7 +112,7 @@ export default function Projects() {
       queryClient.invalidateQueries(['projects']);
       setAdvanceDialogOpen(false);
       setCloseoutDialogOpen(false);
-      setProjectForm({ actual_costs: '', actual_margin: '' });
+      setProjectForm({ actual_costs: '', actual_margin: '', variance_explanation: '', margin_variance_explanation: '', client_id: '', project_manager_id: '' });
       toast.success('Project updated');
     }
   });
