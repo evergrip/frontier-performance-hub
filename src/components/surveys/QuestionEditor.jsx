@@ -12,6 +12,7 @@ import { Trash2, Copy, ChevronUp, ChevronDown, Plus, X, Image, Video, Upload, Gi
 import { base44 } from "@/api/base44Client";
 import LogicRuleEditor from "./LogicRuleEditor";
 import AIQuestionEditor from "./AIQuestionEditor";
+import ScoringEditor from "./ScoringEditor";
 
 const FILE_TYPE_OPTIONS = [
   { value: "image", label: "Images" },
@@ -19,7 +20,7 @@ const FILE_TYPE_OPTIONS = [
   { value: "audio", label: "Audio" },
 ];
 
-export default function QuestionEditor({ question, index, totalCount, questionTypes, onChange, onRemove, onMove, onDuplicate, allQuestions }) {
+export default function QuestionEditor({ question, index, totalCount, questionTypes, onChange, onRemove, onMove, onDuplicate, allQuestions, headings }) {
   const [uploading, setUploading] = useState(false);
 
   const update = (key, value) => {
@@ -221,6 +222,9 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
                 )}
               </div>
             </div>
+
+            {/* Scoring */}
+            <ScoringEditor question={question} headings={headings || []} onChange={onChange} />
 
             {/* Logic rules */}
             {allQuestions && (
