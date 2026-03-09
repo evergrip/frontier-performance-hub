@@ -51,6 +51,8 @@ export default function Projects() {
   const [sendBackPhase, setSendBackPhase] = useState('');
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
   const [closeoutAuditPassed, setCloseoutAuditPassed] = useState(false);
+  const [editDetailDialogOpen, setEditDetailDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
