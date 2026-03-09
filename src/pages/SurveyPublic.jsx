@@ -70,8 +70,66 @@ export default function SurveyPublic() {
     });
   };
 
+  // Calculate real-time section scores from current answers
+  const calculateSectionScores = () => {
+    if (!survey) return {};
+    const questions = survey.questions || [];
+    const headings = survey.headings || [];
+    const scores = {};
+    headings.forEach(h => { scores[h.id] = { score: 0, max: 0 }; });
+
+    for (const q of questions) {
+      if (!q.category_id || !scores[q.category_id]) continue;
+      const answer = answers[q.id];
+      const weight = q.weight || 1;
+      let qScore = 0;
+      let qMax = 0;
+
+      if ((q.type === "radio" || q.type === "dropdown") && q.option_scores && Object.keys(q.option_scores).length > 0) {
+        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
+        qMax = vals.length > 0 ? Math.max(...vals) : 0;
+        if (answer && q.option_scores[answer] !== undefined) qScore = Number(q.option_scores[answer]) || 0;
+      } else if (q.type === "checkbox" && q.option_scores && Object.keys(q.option_scores).length > 0) {
+        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
+        qMax = vals.reduce((s, v) => s + Math.max(0, v), 0);
+        if (Array.isArray(answer)) answer.forEach(a => { if (q.option_scores[a] !== undefined) qScore += Number(q.option_scores[a]) || 0; });
+      } else if (q.type === "rating") {
+        qMax = q.points || 5;
+        qScore = Math.min(Number(answer) || 0, qMax);
+      } else if (q.type === "scale") {
+        qMax = q.max_value || 10;
+        qScore = Math.min(Number(answer) || 0, qMax);
+      } else if (q.type === "number") {
+        qMax = q.points || 0;
+        qScore = Math.min(Number(answer) || 0, qMax);
+      }
+
+      scores[q.category_id].score += qScore * weight;
+      scores[q.category_id].max += qMax * weight;
+    }
+    return scores;
+  };
+
+  const sectionScores = calculateSectionScores();
+
+  // Check if a follow-up question should be visible based on section score rules
+  const isFollowupVisible = (question) => {
+    if (!question.is_followup) return true; // not a followup, normal visibility
+    const rules = survey.section_followup_rules || [];
+    for (const rule of rules) {
+      if ((rule.followup_question_ids || []).includes(question.id)) {
+        const sectionScore = sectionScores[rule.heading_id]?.score || 0;
+        if (sectionScore >= rule.threshold_score) return true;
+      }
+    }
+    return false; // followup question but no rule matched
+  };
+
   // Skip/show logic evaluation
   const evaluateLogic = (question) => {
+    // First check section-based follow-up rules
+    if (!isFollowupVisible(question)) return false;
+
     const rules = question.logic_rules;
     if (!rules || rules.length === 0) return true; // no rules = always show
 
