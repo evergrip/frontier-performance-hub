@@ -54,8 +54,11 @@ export default function Leads() {
   });
 
   const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryKey: ['salespeople'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('listSalespeople', {});
+      return res.data?.salespeople || [];
+    },
     initialData: [],
   });
 

@@ -55,11 +55,10 @@ export default function Clients() {
   });
 
   const { data: salesUsers = [] } = useQuery({
-    queryKey: ['salesUsers'],
+    queryKey: ['salespeople'],
     queryFn: async () => {
-      const users = await base44.entities.User.list();
-      // Return all users — there is no departments field on User entity
-      return users;
+      const res = await base44.functions.invoke('listSalespeople', {});
+      return res.data?.salespeople || [];
     },
     initialData: [],
   });
