@@ -11,6 +11,8 @@ import { Slider } from '@/components/ui/slider';
 import { ChevronRight, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import LeadSourcePicker from '../common/LeadSourcePicker';
+import EditLogViewer from '../common/EditLogViewer';
+import { computeChanges, logEdit } from '../common/editLogUtils';
 
 export default function EditLeadDialog({ open, onOpenChange, lead, clients, users, onAdvance, onConvert, onDisqualify, onViewTimeline }) {
   const queryClient = useQueryClient();
@@ -31,10 +33,35 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
     }
   }, [lead]);
 
+  const TRACKED_FIELDS = ['title', 'client_id', 'source', 'lead_score', 'estimated_precon_value', 'estimated_construction_value', 'assigned_to', 'notes'];
+
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Lead.update(lead.id, data),
+    mutationFn: async (data) => {
+      const changes = computeChanges(lead, data, TRACKED_FIELDS);
+
+      // Resolve client and user names for audit readability
+      changes.forEach(c => {
+        if (c.field === 'client_id') {
+          c.old_value = clients?.find(cl => cl.id === c.old_value)?.company_name || c.old_value || '';
+          c.new_value = clients?.find(cl => cl.id === c.new_value)?.company_name || c.new_value || '';
+        }
+        if (c.field === 'assigned_to') {
+          c.old_value = users?.find(u => u.id === c.old_value)?.full_name || c.old_value || '';
+          c.new_value = users?.find(u => u.id === c.new_value)?.full_name || c.new_value || '';
+        }
+      });
+
+      await base44.entities.Lead.update(lead.id, data);
+      await logEdit({
+        entityType: 'lead',
+        entityId: lead.id,
+        entityTitle: lead.title,
+        changes,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['leads']);
+      queryClient.invalidateQueries(['edit-logs']);
       onOpenChange(false);
       toast.success('Lead updated');
     },
