@@ -161,6 +161,7 @@ export default function SurveyPublic() {
     );
   }
 
+  const surveyHeadings = survey.headings || [];
   const visibleQuestions = (survey.questions || []).filter(q => evaluateLogic(q));
   const totalQuestions = visibleQuestions.length;
   const answeredCount = visibleQuestions.filter(q => {
@@ -234,8 +235,20 @@ export default function SurveyPublic() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {visibleQuestions.map((q, idx) => (
-            <div key={q.id} className="p-6 shadow-sm survey-input" style={{ backgroundColor: cardBg, borderRadius, border: `1px solid ${cardBorder}` }}>
+          {visibleQuestions.map((q, idx) => {
+            // Show section heading before first question in each section
+            const heading = surveyHeadings.find(h => h.id === q.category_id);
+            const isFirstInSection = heading && (idx === 0 || visibleQuestions[idx - 1]?.category_id !== q.category_id);
+            return (
+            <React.Fragment key={q.id}>
+            {isFirstInSection && (
+              <div className="pt-4 pb-1">
+                <h2 className="text-xl font-bold" style={{ color: headingColor, fontFamily: headingFont }}>{heading.title}</h2>
+                {heading.description && <p className="text-sm mt-1" style={{ color: descColor || `${textColor}99` }}>{heading.description}</p>}
+                <div className="h-px mt-3" style={{ backgroundColor: `${accentColor}30` }} />
+              </div>
+            )}
+            <div className="p-6 shadow-sm survey-input" style={{ backgroundColor: cardBg, borderRadius, border: `1px solid ${cardBorder}` }}>
               <div className="mb-3">
                 <Label className="text-base font-medium" style={{ color: headingColor, fontFamily: headingFont }}>
                   {pipedText(q.text)}
@@ -253,7 +266,9 @@ export default function SurveyPublic() {
                 accentColor={accentColor}
               />
             </div>
-          ))}
+            </React.Fragment>
+            );
+          })}
 
           <button
             type="submit"
