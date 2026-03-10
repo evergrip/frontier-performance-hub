@@ -150,17 +150,31 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
             </div>
           </div>
 
-          <div>
-            <Label>Project Manager</Label>
-            <Select value={form.project_manager_id || 'none'} onValueChange={(v) => set('project_manager_id', v === 'none' ? '' : v)}>
-              <SelectTrigger><SelectValue placeholder="Select PM" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                {(users || []).map(u => (
-                  <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Project Manager</Label>
+              <Select value={form.project_manager_id || 'none'} onValueChange={(v) => set('project_manager_id', v === 'none' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Select PM" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {(users || []).map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Salesperson</Label>
+              <Select value={form.sale_assigned_to || 'unassigned'} onValueChange={(v) => set('sale_assigned_to', v === 'unassigned' ? '' : v)}>
+                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {(users || []).map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
