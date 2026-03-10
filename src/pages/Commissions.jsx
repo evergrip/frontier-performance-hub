@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCircle, Edit2, Users, Plus } from 'lucide-react';
+import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCircle, Edit2, Users, Plus, FileText } from 'lucide-react';
+import CommissionChangeLogDialog from '@/components/commissions/CommissionChangeLogDialog';
 import AddCommissionTransactionForm from '@/components/commissions/AddCommissionTransactionForm';
 import ExportCSVButton from '@/components/commissions/ExportCSVButton';
 import { toast } from 'sonner';
@@ -31,6 +32,7 @@ export default function Commissions() {
   const [requestedAmount, setRequestedAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [transactionPeriod, setTransactionPeriod] = useState('current_fiscal_year');
+  const [changeLogOpen, setChangeLogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -387,8 +389,12 @@ export default function Commissions() {
             {isAdmin ? 'View and manage all commission data' : 'Track your earnings and manage payouts'}
           </p>
         </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => setChangeLogOpen(true)}>
+            <FileText className="w-4 h-4 mr-2" /> Change Log
+          </Button>
         {isAdmin && (
-          <div className="flex items-center gap-3">
+          <>
             <AddCommissionTransactionForm allUsers={allUsers} />
             <Users className="w-5 h-5 text-slate-400" />
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
@@ -407,8 +413,9 @@ export default function Commissions() {
                   ))}
               </SelectContent>
             </Select>
-          </div>
+          </>
         )}
+        </div>
       </div>
 
       {/* Stats Cards */}
