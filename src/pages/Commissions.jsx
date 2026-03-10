@@ -123,6 +123,12 @@ export default function Commissions() {
     initialData: [],
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    initialData: [],
+  });
+
   const getFilteredTransactions = () => {
     const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
     const today = new Date();
