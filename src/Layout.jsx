@@ -106,7 +106,13 @@ export default function Layout({ children, currentPageName }) {
   };
 
   if (!authChecked) {
-    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ea7924]"></div></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ea7924]"></div>
+        </div>
+      </div>
+    );
   }
 
   // Public pages: render without sidebar/layout
@@ -116,6 +122,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" />
       <style>{`
         :root {
           --navy: #333645;
@@ -124,9 +131,6 @@ export default function Layout({ children, currentPageName }) {
           --slate-light: #CBD5E1;
           --slate-bg: #F1F5F9;
         }
-        
-        @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap');
-        
         body {
           font-family: 'Work Sans', Helvetica, Arial, Lucida, sans-serif;
         }
