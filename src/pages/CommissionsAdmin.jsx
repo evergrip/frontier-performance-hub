@@ -548,20 +548,34 @@ export default function CommissionsAdmin() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {(bank.current_bank_balance || 0) > 0 && (
+                        <div className="flex gap-1">
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-amber-600 border-amber-500 hover:bg-amber-50"
+                            className="text-blue-600 border-blue-400 hover:bg-blue-50"
                             onClick={() => {
-                              setSelectedBank(bank);
-                              setReleaseAmount('');
-                              setReleaseDialogOpen(true);
+                              setRecurringBank(bank);
+                              setRecurringDialogOpen(true);
                             }}
                           >
-                            Release
+                            <Repeat className="w-3 h-3 mr-1" />
+                            Payout
                           </Button>
-                        )}
+                          {(bank.current_bank_balance || 0) > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-amber-600 border-amber-500 hover:bg-amber-50"
+                              onClick={() => {
+                                setSelectedBank(bank);
+                                setReleaseAmount('');
+                                setReleaseDialogOpen(true);
+                              }}
+                            >
+                              Release
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
