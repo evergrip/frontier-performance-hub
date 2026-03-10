@@ -38,6 +38,8 @@ export default function CommissionsAdmin() {
   const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
   const [selectedBank, setSelectedBank] = useState(null);
   const [releaseAmount, setReleaseAmount] = useState('');
+  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
+  const [recurringBank, setRecurringBank] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
