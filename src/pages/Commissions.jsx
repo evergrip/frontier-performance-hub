@@ -256,10 +256,15 @@ export default function Commissions() {
 
   const requestBalloonMutation = useMutation({
     mutationFn: async ({ amount, notes }) => {
-      const response = await base44.functions.invoke('processBalloonPayment', {
+      const payload = {
         requested_amount: parseFloat(amount),
         notes
-      });
+      };
+      // If admin is viewing another user, pass their user_id
+      if (isAdmin && displayUserId && displayUserId !== user?.id) {
+        payload.user_id = displayUserId;
+      }
+      const response = await base44.functions.invoke('processBalloonPayment', payload);
       return response.data;
     },
     onSuccess: () => {
