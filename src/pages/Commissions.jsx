@@ -12,6 +12,7 @@ import { Wallet, TrendingUp, DollarSign, Clock, ArrowUpCircle, History, AlertCir
 import CommissionChangeLogDialog from '@/components/commissions/CommissionChangeLogDialog';
 import AddCommissionTransactionForm from '@/components/commissions/AddCommissionTransactionForm';
 import ExportCSVButton from '@/components/commissions/ExportCSVButton';
+import MyJobsOverview from '@/components/commissions/MyJobsOverview';
 import { toast } from 'sonner';
 import StatCard from '@/components/common/StatCard';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
