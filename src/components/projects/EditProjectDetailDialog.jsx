@@ -17,9 +17,13 @@ const TRACKED_FIELDS = [
   'crew_assignment', 'notes'
 ];
 
-export default function EditProjectDetailDialog({ open, onOpenChange, project, clients, users }) {
+const SALE_TRACKED_FIELDS = ['assigned_to'];
+
+export default function EditProjectDetailDialog({ open, onOpenChange, project, clients, users, sales }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({});
+
+  const linkedSale = (sales || []).find(s => s.id === project?.sale_id);
 
   useEffect(() => {
     if (project) {
@@ -34,9 +38,10 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
         crew_assignment: project.crew_assignment || 'unassigned',
         notes: project.notes || '',
         client_id: project.client_id || '',
+        sale_assigned_to: linkedSale?.assigned_to || '',
       });
     }
-  }, [project]);
+  }, [project, linkedSale]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
