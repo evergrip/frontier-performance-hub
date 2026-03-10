@@ -17,13 +17,9 @@ const TRACKED_FIELDS = [
   'crew_assignment', 'notes'
 ];
 
-const SALE_TRACKED_FIELDS = ['assigned_to'];
-
-export default function EditProjectDetailDialog({ open, onOpenChange, project, clients, users, sales }) {
+export default function EditProjectDetailDialog({ open, onOpenChange, project, clients, users }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({});
-
-  const linkedSale = (sales || []).find(s => s.id === project?.sale_id);
 
   useEffect(() => {
     if (project) {
@@ -38,10 +34,9 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
         crew_assignment: project.crew_assignment || 'unassigned',
         notes: project.notes || '',
         client_id: project.client_id || '',
-        sale_assigned_to: linkedSale?.assigned_to || '',
       });
     }
-  }, [project, linkedSale]);
+  }, [project]);
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
@@ -55,37 +50,16 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
         }
       });
 
-      // Separate sale_assigned_to from project data
-      const { sale_assigned_to, ...projectData } = data;
-      await base44.entities.Project.update(project.id, projectData);
+      await base44.entities.Project.update(project.id, data);
       await logEdit({
         entityType: 'project',
         entityId: project.id,
         entityTitle: project.title,
         changes,
       });
-
-      // Update linked sale's assigned_to if changed
-      if (linkedSale && sale_assigned_to !== undefined && sale_assigned_to !== (linkedSale.assigned_to || '')) {
-        const saleChanges = computeChanges(linkedSale, { assigned_to: sale_assigned_to }, SALE_TRACKED_FIELDS);
-        saleChanges.forEach(c => {
-          if (c.field === 'assigned_to') {
-            c.old_value = users?.find(u => u.id === c.old_value)?.full_name || c.old_value || '';
-            c.new_value = users?.find(u => u.id === c.new_value)?.full_name || c.new_value || '';
-          }
-        });
-        await base44.entities.Sale.update(linkedSale.id, { assigned_to: sale_assigned_to });
-        await logEdit({
-          entityType: 'sale',
-          entityId: linkedSale.id,
-          entityTitle: linkedSale.title,
-          changes: saleChanges,
-        });
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
-      queryClient.invalidateQueries(['sales']);
       queryClient.invalidateQueries(['edit-logs']);
       onOpenChange(false);
       toast.success('Project updated');
@@ -150,31 +124,17 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Project Manager</Label>
-              <Select value={form.project_manager_id || 'none'} onValueChange={(v) => set('project_manager_id', v === 'none' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="Select PM" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {(users || []).map(u => (
-                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Salesperson</Label>
-              <Select value={form.sale_assigned_to || 'unassigned'} onValueChange={(v) => set('sale_assigned_to', v === 'unassigned' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {(users || []).map(u => (
-                    <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Project Manager</Label>
+            <Select value={form.project_manager_id || 'none'} onValueChange={(v) => set('project_manager_id', v === 'none' ? '' : v)}>
+              <SelectTrigger><SelectValue placeholder="Select PM" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {(users || []).map(u => (
+                  <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

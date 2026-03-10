@@ -37,13 +37,6 @@ export default function EditSaleDialog({ open, onOpenChange, sale, clients, user
   const updateMutation = useMutation({
     mutationFn: async (data) => {
       const changes = computeChanges(sale, data, TRACKED_FIELDS);
-      // Resolve user names for assigned_to changes
-      changes.forEach(c => {
-        if (c.field === 'assigned_to') {
-          c.old_value = users?.find(u => u.id === c.old_value)?.full_name || c.old_value || '';
-          c.new_value = users?.find(u => u.id === c.new_value)?.full_name || c.new_value || '';
-        }
-      });
       await base44.entities.Sale.update(sale.id, data);
       await logEdit({
         entityType: 'sale',

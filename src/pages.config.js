@@ -67,7 +67,6 @@ import KPIDefinitions from './pages/KPIDefinitions';
 import Leads from './pages/Leads';
 import MarketingCampaigns from './pages/MarketingCampaigns';
 import Meetings from './pages/Meetings';
-import MyAlerts from './pages/MyAlerts';
 import MyKPIs from './pages/MyKPIs';
 import Projects from './pages/Projects';
 import ProjectsAdmin from './pages/ProjectsAdmin';
@@ -82,6 +81,7 @@ import SurveyPublic from './pages/SurveyPublic';
 import SurveyResults from './pages/SurveyResults';
 import Surveys from './pages/Surveys';
 import UsersAdmin from './pages/UsersAdmin';
+import MyAlerts from './pages/MyAlerts';
 import __Layout from './Layout.jsx';
 
 
@@ -106,7 +106,6 @@ export const PAGES = {
     "Leads": Leads,
     "MarketingCampaigns": MarketingCampaigns,
     "Meetings": Meetings,
-    "MyAlerts": MyAlerts,
     "MyKPIs": MyKPIs,
     "Projects": Projects,
     "ProjectsAdmin": ProjectsAdmin,
@@ -121,6 +120,7 @@ export const PAGES = {
     "SurveyResults": SurveyResults,
     "Surveys": Surveys,
     "UsersAdmin": UsersAdmin,
+    "MyAlerts": MyAlerts,
 }
 
 export const pagesConfig = {

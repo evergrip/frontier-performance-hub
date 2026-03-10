@@ -851,7 +851,6 @@ export default function Projects() {
         project={editingProject}
         clients={clients}
         users={users}
-        sales={sales}
       />
 
       {/* Advance Phase Dialog */}
