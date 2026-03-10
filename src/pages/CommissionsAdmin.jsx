@@ -500,7 +500,8 @@ export default function CommissionsAdmin() {
                     <TableHead>YTD Volume</TableHead>
                     <TableHead>Bank Balance</TableHead>
                     <TableHead>Available Balance</TableHead>
-                    <TableHead>Quarterly Payout</TableHead>
+                    <TableHead>Recurring Payout</TableHead>
+                    <TableHead>Next Payday</TableHead>
                     <TableHead>Total Earned</TableHead>
                     <TableHead>Total Paid</TableHead>
                     <TableHead>Commission Rule</TableHead>
