@@ -55,16 +55,37 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
         }
       });
 
-      await base44.entities.Project.update(project.id, data);
+      // Separate sale_assigned_to from project data
+      const { sale_assigned_to, ...projectData } = data;
+      await base44.entities.Project.update(project.id, projectData);
       await logEdit({
         entityType: 'project',
         entityId: project.id,
         entityTitle: project.title,
         changes,
       });
+
+      // Update linked sale's assigned_to if changed
+      if (linkedSale && sale_assigned_to !== undefined && sale_assigned_to !== (linkedSale.assigned_to || '')) {
+        const saleChanges = computeChanges(linkedSale, { assigned_to: sale_assigned_to }, SALE_TRACKED_FIELDS);
+        saleChanges.forEach(c => {
+          if (c.field === 'assigned_to') {
+            c.old_value = users?.find(u => u.id === c.old_value)?.full_name || c.old_value || '';
+            c.new_value = users?.find(u => u.id === c.new_value)?.full_name || c.new_value || '';
+          }
+        });
+        await base44.entities.Sale.update(linkedSale.id, { assigned_to: sale_assigned_to });
+        await logEdit({
+          entityType: 'sale',
+          entityId: linkedSale.id,
+          entityTitle: linkedSale.title,
+          changes: saleChanges,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['sales']);
       queryClient.invalidateQueries(['edit-logs']);
       onOpenChange(false);
       toast.success('Project updated');
