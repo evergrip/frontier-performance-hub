@@ -20,7 +20,7 @@ const FILE_TYPE_OPTIONS = [
   { value: "audio", label: "Audio" },
 ];
 
-export default function QuestionEditor({ question, index, totalCount, questionTypes, onChange, onRemove, onMove, onDuplicate, allQuestions, headings }) {
+export default function QuestionEditor({ question, index, totalCount, questionTypes, onChange, onRemove, onMove, onDuplicate, allQuestions, headings, hideSectionPicker }) {
   const [uploading, setUploading] = useState(false);
 
   const update = (key, value) => {
@@ -223,8 +223,29 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
               </div>
             </div>
 
+            {/* Section assignment (visible when not inside a section block) */}
+            {!hideSectionPicker && headings && headings.length > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <Label className="text-xs text-blue-700 whitespace-nowrap">Section:</Label>
+                <Select
+                  value={question.category_id || "none"}
+                  onValueChange={v => onChange({ ...question, category_id: v === "none" ? "" : v })}
+                >
+                  <SelectTrigger className="h-7 text-xs flex-1">
+                    <SelectValue placeholder="Assign to section..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No section (unassigned)</SelectItem>
+                    {headings.map(h => (
+                      <SelectItem key={h.id} value={h.id}>{h.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Scoring */}
-            <ScoringEditor question={question} headings={headings || []} onChange={onChange} />
+            <ScoringEditor question={question} headings={headings || []} onChange={onChange} hideSectionPicker />
 
             {/* Logic rules */}
             {allQuestions && (
