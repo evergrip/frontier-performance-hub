@@ -382,6 +382,11 @@ Deno.serve(async (req) => {
         const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedDiff;
         const newTotalEarned = (commissionBank.total_earned || 0) + amountDiff;
         
+        // Calculate available balance adjustment (immediate payouts go to available)
+        const oldAvailableAmount = existingTransaction.immediate_payout_amount || existingTransaction.amount_made_available || 0;
+        const availableDiff = newAvailableAmount - oldAvailableAmount;
+        const newAvailableBalance = (commissionBank.available_balance || 0) + availableDiff;
+        
         // Update volumes based on sale type
         const finalConstructionVolume = adjustedConstructionYTD + (sale_type === 'construction' ? saleAmount : 0);
         const finalPreconVolume = adjustedPreconYTD + (sale_type === 'preconstruction' ? saleAmount : 0);
@@ -389,6 +394,7 @@ Deno.serve(async (req) => {
 
         await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
           current_bank_balance: newBankBalance,
+          available_balance: newAvailableBalance,
           total_earned: newTotalEarned,
           ytd_sales_volume: finalTotalVolume,
           ytd_construction_volume: finalConstructionVolume,
