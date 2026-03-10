@@ -81,6 +81,7 @@ import SurveyPublic from './pages/SurveyPublic';
 import SurveyResults from './pages/SurveyResults';
 import Surveys from './pages/Surveys';
 import UsersAdmin from './pages/UsersAdmin';
+import MyAlerts from './pages/MyAlerts';
 import __Layout from './Layout.jsx';
 
 
@@ -119,6 +120,7 @@ export const PAGES = {
     "SurveyResults": SurveyResults,
     "Surveys": Surveys,
     "UsersAdmin": UsersAdmin,
+    "MyAlerts": MyAlerts,
 }
 
 export const pagesConfig = {
