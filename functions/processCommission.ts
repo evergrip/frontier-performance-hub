@@ -477,7 +477,7 @@ Deno.serve(async (req) => {
       commission_amount: commissionAmount,
       banked_amount: bankedAmount,
       immediate_payout: immediatePayout,
-      new_bank_balance: newBankBalance
+      new_bank_balance: updatedBankBalance
     });
 
   } catch (error) {
