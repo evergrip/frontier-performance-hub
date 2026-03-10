@@ -457,6 +457,35 @@ export default function Commissions() {
         />
       </div>
 
+      {/* Recurring Payout Info */}
+      {commissionBank && !commissionBank.isAggregate && commissionBank.recurring_payout_amount > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Recurring Payout</p>
+                  <p className="text-xs text-slate-500">
+                    ${commissionBank.recurring_payout_amount.toLocaleString()} every pay period
+                  </p>
+                </div>
+              </div>
+              {commissionBank.next_payout_date && (
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">Next payday</p>
+                  <p className="text-sm font-semibold text-blue-600">
+                    {new Date(commissionBank.next_payout_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Commission Tier Info */}
       {commissionBank && !commissionBank.isAggregate && (
         <Card>
