@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-export default function ScoringEditor({ question, headings = [], onChange }) {
+export default function ScoringEditor({ question, headings = [], onChange, hideSectionPicker }) {
   const [expanded, setExpanded] = useState(false);
   const hasOptions = ["radio", "checkbox", "dropdown"].includes(question.type);
   const isScoreable = hasOptions || ["rating", "scale", "number"].includes(question.type);
@@ -28,7 +28,7 @@ export default function ScoringEditor({ question, headings = [], onChange }) {
       {expanded && (
         <div className="space-y-3 pt-1">
           {/* Category assignment */}
-          {headings.length > 0 && (
+          {!hideSectionPicker && headings.length > 0 && (
             <div>
               <Label className="text-xs text-amber-700">Section</Label>
               <Select
