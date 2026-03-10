@@ -42,19 +42,25 @@ Deno.serve(async (req) => {
       const bankedAmount = transaction.banked_amount || 0;
       const saleAmount = transaction.sale_amount || 0;
       const saleType = transaction.sale_type;
+      const txType = transaction.transaction_type;
 
-      // Immediate payouts go to available balance
-      const immediateAvailable = transaction.immediate_payout_amount || 0;
-      // Phase releases also go to available balance
-      const phaseAvailable = transaction.amount_made_available || 0;
-      const totalAvailable = immediateAvailable + phaseAvailable;
-
-      agg.total_earned += amount;
-      agg.current_bank_balance += bankedAmount;
-      agg.available_balance += totalAvailable;
-      agg.ytd_sales_volume += saleAmount;
-      if (saleType === 'construction') agg.ytd_construction_volume += saleAmount;
-      if (saleType === 'preconstruction') agg.ytd_preconstruction_volume += saleAmount;
+      if (txType === 'phase_commission') {
+        // Phase releases TRANSFER money from banked to available (no new earnings)
+        const released = transaction.amount_made_available || 0;
+        agg.current_bank_balance -= released;
+        agg.available_balance += released;
+      } else {
+        // sale_commission, adjustment, bonus, etc: new earnings
+        // Immediate payouts go directly to available
+        const immediateAvailable = transaction.immediate_payout_amount || 0;
+        
+        agg.total_earned += amount;
+        agg.current_bank_balance += bankedAmount;
+        agg.available_balance += immediateAvailable;
+        agg.ytd_sales_volume += saleAmount;
+        if (saleType === 'construction') agg.ytd_construction_volume += saleAmount;
+        if (saleType === 'preconstruction') agg.ytd_preconstruction_volume += saleAmount;
+      }
     }
 
     // Now write each bank once
