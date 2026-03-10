@@ -3,19 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, GripVertical, Trash2, ArrowLeft, Copy, ChevronUp, ChevronDown, Image, Video, Save, Upload } from "lucide-react";
+import { Plus, ArrowLeft, Save, Upload, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import QuestionEditor from "../components/surveys/QuestionEditor";
 import ImportQuestionsDialog from "../components/surveys/ImportQuestionsDialog";
-import HeadingsEditor from "../components/surveys/HeadingsEditor";
-import SectionFollowupEditor from "../components/surveys/SectionFollowupEditor";
+import SectionBlock from "../components/surveys/SectionBlock";
 
 const QUESTION_TYPES = [
   { value: "text", label: "Short Text" },
@@ -35,6 +29,10 @@ const QUESTION_TYPES = [
 
 function generateId() {
   return "q_" + Math.random().toString(36).substring(2, 9);
+}
+
+function generateHeadingId() {
+  return "h_" + Math.random().toString(36).substring(2, 9);
 }
 
 export default function SurveyBuilder() {
@@ -58,15 +56,9 @@ export default function SurveyBuilder() {
   const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
-    if (survey?.questions) {
-      setQuestions(survey.questions);
-    }
-    if (survey?.headings) {
-      setHeadings(survey.headings);
-    }
-    if (survey?.section_followup_rules) {
-      setFollowupRules(survey.section_followup_rules);
-    }
+    if (survey?.questions) setQuestions(survey.questions);
+    if (survey?.headings) setHeadings(survey.headings);
+    if (survey?.section_followup_rules) setFollowupRules(survey.section_followup_rules);
   }, [survey]);
 
   const saveMutation = useMutation({
@@ -78,20 +70,7 @@ export default function SurveyBuilder() {
     },
   });
 
-  const addQuestion = (type) => {
-    const newQ = {
-      id: generateId(),
-      text: "",
-      type,
-      required: false,
-      options: ["radio", "checkbox", "dropdown"].includes(type) ? ["Option 1", "Option 2"] : undefined,
-      allowed_file_types: type === "file_upload" ? ["image", "video", "audio"] : undefined,
-      max_files: type === "file_upload" ? 5 : undefined,
-    };
-    setQuestions(prev => [...prev, newQ]);
-    setHasChanges(true);
-  };
-
+  // Question CRUD helpers
   const updateQuestion = (index, updated) => {
     setQuestions(prev => prev.map((q, i) => i === index ? updated : q));
     setHasChanges(true);
@@ -119,9 +98,52 @@ export default function SurveyBuilder() {
     setHasChanges(true);
   };
 
+  const addQuestionToSection = (newQ) => {
+    setQuestions(prev => [...prev, newQ]);
+    setHasChanges(true);
+  };
+
+  const addUnassignedQuestion = (type) => {
+    const newQ = {
+      id: generateId(),
+      text: "",
+      type,
+      required: false,
+      options: ["radio", "checkbox", "dropdown"].includes(type) ? ["Option 1", "Option 2"] : undefined,
+      allowed_file_types: type === "file_upload" ? ["image", "video", "audio"] : undefined,
+      max_files: type === "file_upload" ? 5 : undefined,
+    };
+    setQuestions(prev => [...prev, newQ]);
+    setHasChanges(true);
+  };
+
+  // Heading CRUD helpers
+  const addSection = () => {
+    setHeadings(prev => [...prev, { id: generateHeadingId(), title: "", description: "" }]);
+    setHasChanges(true);
+  };
+
+  const updateHeading = (index, key, value) => {
+    setHeadings(prev => prev.map((h, i) => i === index ? { ...h, [key]: value } : h));
+    setHasChanges(true);
+  };
+
+  const removeHeading = (index) => {
+    const removedId = headings[index].id;
+    // Unassign questions from this section
+    setQuestions(prev => prev.map(q => q.category_id === removedId ? { ...q, category_id: "" } : q));
+    setHeadings(prev => prev.filter((_, i) => i !== index));
+    // Remove followup rules for this section
+    setFollowupRules(prev => prev.filter(r => r.heading_id !== removedId));
+    setHasChanges(true);
+  };
+
   const handleSave = () => {
     saveMutation.mutate({ questions, headings, section_followup_rules: followupRules });
   };
+
+  // Unassigned questions (no section)
+  const unassignedQuestions = questions.filter(q => !q.category_id || !headings.find(h => h.id === q.category_id));
 
   if (isLoading) {
     return <div className="max-w-4xl mx-auto p-6"><div className="animate-pulse h-8 bg-slate-200 rounded w-1/3 mb-4" /></div>;
@@ -133,6 +155,7 @@ export default function SurveyBuilder() {
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Link to={createPageUrl("Surveys")}>
@@ -140,79 +163,119 @@ export default function SurveyBuilder() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-800">{survey.title}</h1>
-            <p className="text-sm text-slate-500">{questions.length} questions</p>
+            <p className="text-sm text-slate-500">
+              {headings.length} {headings.length === 1 ? 'section' : 'sections'} · {questions.length} questions
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4 mr-2" /> Import
           </Button>
+          <Button variant="outline" onClick={addSection}>
+            <Layers className="w-4 h-4 mr-2" /> Add Section
+          </Button>
           <Button onClick={handleSave} className="bg-[#ea7924] hover:bg-[#d66a1f]" disabled={!hasChanges || saveMutation.isPending}>
             <Save className="w-4 h-4 mr-2" />
-            {saveMutation.isPending ? "Saving..." : "Save Questions"}
+            {saveMutation.isPending ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>
 
-      {/* Section Headings */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <HeadingsEditor
-            headings={headings}
-            onChange={(h) => { setHeadings(h); setHasChanges(true); }}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Section Score Follow-up Rules */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <SectionFollowupEditor
-            rules={followupRules}
-            headings={headings}
+      {/* Sections with their questions */}
+      <div className="space-y-6 mb-6">
+        {headings.map((heading, hIndex) => (
+          <SectionBlock
+            key={heading.id}
+            heading={heading}
             questions={questions}
-            onChange={(r) => { setFollowupRules(r); setHasChanges(true); }}
-          />
-        </CardContent>
-      </Card>
-
-      <div className="space-y-4 mb-6">
-        {questions.map((q, index) => (
-          <QuestionEditor
-            key={q.id}
-            question={q}
-            index={index}
-            totalCount={questions.length}
-            questionTypes={QUESTION_TYPES}
-            onChange={(updated) => updateQuestion(index, updated)}
-            onRemove={() => removeQuestion(index)}
-            onMove={(dir) => moveQuestion(index, dir)}
-            onDuplicate={() => duplicateQuestion(index)}
             allQuestions={questions}
             headings={headings}
+            followupRules={followupRules}
+            onUpdateHeading={(key, value) => updateHeading(hIndex, key, value)}
+            onRemoveHeading={() => removeHeading(hIndex)}
+            onUpdateQuestion={updateQuestion}
+            onRemoveQuestion={removeQuestion}
+            onMoveQuestion={moveQuestion}
+            onDuplicateQuestion={duplicateQuestion}
+            onAddQuestion={addQuestionToSection}
+            onUpdateFollowupRules={(rules) => { setFollowupRules(rules); setHasChanges(true); }}
           />
         ))}
       </div>
 
-      <Card className="border-dashed border-2 border-slate-300 bg-slate-50/50">
-        <CardContent className="p-6">
-          <p className="text-sm font-medium text-slate-600 mb-3">Add a question</p>
-          <div className="flex flex-wrap gap-2">
-            {QUESTION_TYPES.map(type => (
-              <Button
-                key={type.value}
-                variant="outline"
-                size="sm"
-                onClick={() => addQuestion(type.value)}
-                className="text-xs"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                {type.label}
-              </Button>
-            ))}
+      {/* Unassigned Questions */}
+      {(unassignedQuestions.length > 0 || headings.length === 0) && (
+        <div className="mb-6">
+          {headings.length > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-sm font-semibold text-slate-600">Unassigned Questions</h2>
+              <Badge variant="outline" className="text-xs">{unassignedQuestions.length}</Badge>
+              <p className="text-xs text-slate-400">— these questions are not in any section</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {unassignedQuestions.map((q) => {
+              const globalIndex = questions.findIndex(aq => aq.id === q.id);
+              return (
+                <QuestionEditor
+                  key={q.id}
+                  question={q}
+                  index={globalIndex}
+                  totalCount={questions.length}
+                  questionTypes={QUESTION_TYPES}
+                  onChange={(updated) => updateQuestion(globalIndex, updated)}
+                  onRemove={() => removeQuestion(globalIndex)}
+                  onMove={(dir) => moveQuestion(globalIndex, dir)}
+                  onDuplicate={() => duplicateQuestion(globalIndex)}
+                  allQuestions={questions}
+                  headings={headings}
+                />
+              );
+            })}
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Add unassigned question */}
+          <Card className="border-dashed border-2 border-slate-300 bg-slate-50/50 mt-4">
+            <CardContent className="p-4">
+              <p className="text-xs font-medium text-slate-500 mb-2">
+                {headings.length > 0 ? "Add unassigned question" : "Add a question"}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUESTION_TYPES.map(type => (
+                  <Button
+                    key={type.value}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addUnassignedQuestion(type.value)}
+                    className="text-xs h-7"
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    {type.label}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Empty state when no sections and no questions */}
+      {headings.length === 0 && questions.length === 0 && (
+        <Card className="border-dashed border-2 border-slate-300">
+          <CardContent className="p-8 text-center">
+            <Layers className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <h3 className="font-semibold text-slate-700 mb-1">Start building your survey</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              Create sections to organize your questions, then add questions within each section.
+            </p>
+            <Button onClick={addSection} className="bg-[#ea7924] hover:bg-[#d66a1f]">
+              <Plus className="w-4 h-4 mr-2" /> Create First Section
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <ImportQuestionsDialog
         open={showImport}
