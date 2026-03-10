@@ -48,6 +48,7 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import Alerts from './pages/Alerts';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -57,4 +58,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Alerts",
     Pages: PAGES,
+    Layout: __Layout,
 };

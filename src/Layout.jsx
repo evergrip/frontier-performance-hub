@@ -4,7 +4,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -19,7 +19,6 @@ export default function Layout({ children, currentPageName }) {
 
   useEffect(() => {
     const init = async () => {
-      // Load branding and auth in parallel
       const [, settingsResult] = await Promise.allSettled([
         (async () => {
           try {
@@ -70,6 +69,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'My Performance', icon: Target, page: 'MyKPIs' },
     { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
     { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },
+    { name: 'Alerts', icon: Bell, page: 'Alerts' },
   ];
 
   const isManager = user?.is_department_manager && user?.managed_departments?.length > 0;
@@ -101,7 +101,6 @@ export default function Layout({ children, currentPageName }) {
     return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ea7924]"></div></div>;
   }
 
-  // Public pages: render without sidebar/layout
   if (PUBLIC_PAGES.includes(currentPageName)) {
     return <>{children}</>;
   }
@@ -124,7 +123,6 @@ export default function Layout({ children, currentPageName }) {
         }
       `}</style>
 
-      {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
@@ -132,14 +130,12 @@ export default function Layout({ children, currentPageName }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed top-0 left-0 h-full w-72 bg-white border-r border-slate-200 
         transform transition-transform duration-300 ease-out z-50
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -166,7 +162,6 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -186,14 +181,13 @@ export default function Layout({ children, currentPageName }) {
                   style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} style={!active ? {} : {}} />
+                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} />
                   <span className="font-medium">{item.name}</span>
                   {active && <ChevronRight className="w-4 h-4 ml-auto" />}
                 </Link>
               );
             })}
 
-            {/* User-specific navigation */}
             {user && (
               <>
                 <div className="h-px bg-slate-200 my-4" />
@@ -224,7 +218,6 @@ export default function Layout({ children, currentPageName }) {
               </>
             )}
 
-            {/* Manager navigation (non-admin managers) */}
             {user?.role !== 'admin' && isManager && (
               <>
                 <div className="h-px bg-slate-200 my-4" />
@@ -258,7 +251,6 @@ export default function Layout({ children, currentPageName }) {
               </>
             )}
 
-            {/* Admin-only navigation */}
             {user?.role === 'admin' && (
               <>
                 <div className="h-px bg-slate-200 my-4" />
@@ -293,7 +285,6 @@ export default function Layout({ children, currentPageName }) {
             )}
           </nav>
 
-          {/* User section */}
           {user && (
             <div className="p-4 border-t border-slate-200">
               <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
@@ -320,9 +311,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
       </aside>
 
-      {/* Main content */}
       <div className="lg:pl-72">
-        {/* Mobile header */}
         <header className="lg:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200">
           <div className="flex items-center justify-between px-4 py-4">
             <Button
@@ -344,7 +333,6 @@ export default function Layout({ children, currentPageName }) {
           </div>
         </header>
 
-        {/* Page content */}
         <main className="min-h-screen p-6 lg:p-8">
           {children}
         </main>
