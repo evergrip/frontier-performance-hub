@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
   try {
@@ -9,41 +9,41 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { requested_amount, notes } = await req.json();
+    const { requested_amount, notes, user_id: target_user_id } = await req.json();
 
-    // Use the authenticated user's ID — users can only request for themselves
-    const user_id = user.id;
+    // Admins can request on behalf of another user
+    let user_id = user.id;
+    if (target_user_id && target_user_id !== user.id) {
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Only admins can request payments on behalf of other users' }, { status: 403 });
+      }
+      user_id = target_user_id;
+    }
 
     // Validate inputs
     if (!requested_amount) {
-      return Response.json({ 
-        error: 'requested_amount is required' 
-      }, { status: 400 });
+      return Response.json({ error: 'requested_amount is required' }, { status: 400 });
     }
 
     if (requested_amount <= 0) {
-      return Response.json({ 
-        error: 'requested_amount must be greater than 0' 
-      }, { status: 400 });
+      return Response.json({ error: 'requested_amount must be greater than 0' }, { status: 400 });
     }
 
     // Get commission bank
     const banks = await base44.asServiceRole.entities.CommissionBank.filter({ user_id });
     if (!banks || banks.length === 0) {
-      return Response.json({ 
-        error: 'Commission bank not found for this user' 
-      }, { status: 404 });
+      return Response.json({ error: 'Commission bank not found for this user' }, { status: 404 });
     }
 
     const commissionBank = banks[0];
-    const currentBalance = commissionBank.current_bank_balance || 0;
+    const availableBalance = commissionBank.available_balance || 0;
 
-    // Check if sufficient balance
-    if (requested_amount > currentBalance) {
+    // Check if sufficient available balance
+    if (requested_amount > availableBalance) {
       return Response.json({ 
-        error: 'Insufficient commission bank balance',
+        error: 'Insufficient available balance',
         requested: requested_amount,
-        available: currentBalance
+        available: availableBalance
       }, { status: 400 });
     }
 
@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
       amount: requested_amount,
       status: 'pending',
       request_date: new Date().toISOString().split('T')[0],
-      bank_balance_before: currentBalance,
-      bank_balance_after: currentBalance - requested_amount,
+      bank_balance_before: availableBalance,
+      bank_balance_after: availableBalance - requested_amount,
       notes: notes || 'Balloon payment request'
     });
 
@@ -64,8 +64,8 @@ Deno.serve(async (req) => {
       message: 'Balloon payment request created and pending approval',
       payout_id: payout.id,
       requested_amount,
-      current_balance: currentBalance,
-      remaining_after_approval: currentBalance - requested_amount,
+      available_balance: availableBalance,
+      remaining_after_approval: availableBalance - requested_amount,
       status: 'pending'
     });
 
