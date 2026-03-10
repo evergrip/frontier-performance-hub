@@ -443,26 +443,26 @@ Deno.serve(async (req) => {
     });
 
     // Update commission bank
-    const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedAmount;
-    const newAvailableBalance = (commissionBank.available_balance || 0) + availableAmount;
-    const newTotalEarned = (commissionBank.total_earned || 0) + commissionAmount;
+    const updatedBankBalance = (commissionBank.current_bank_balance || 0) + bankedAmount;
+    const updatedAvailableBalance = (commissionBank.available_balance || 0) + availableAmount;
+    const updatedTotalEarned = (commissionBank.total_earned || 0) + commissionAmount;
     
     // Update volumes based on sale type
-    const newConstructionVolume = sale_type === 'construction' 
+    const updatedConstructionVolume = sale_type === 'construction' 
       ? ytdConstructionVolume + saleAmount 
       : ytdConstructionVolume;
-    const newPreconVolume = sale_type === 'preconstruction' 
+    const updatedPreconVolume = sale_type === 'preconstruction' 
       ? ytdPreconVolume + saleAmount 
       : ytdPreconVolume;
-    const newTotalVolume = newConstructionVolume + newPreconVolume;
+    const updatedTotalVolume = updatedConstructionVolume + updatedPreconVolume;
 
     await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
-      current_bank_balance: newBankBalance,
-      available_balance: newAvailableBalance,
-      total_earned: newTotalEarned,
-      ytd_sales_volume: newTotalVolume,
-      ytd_construction_volume: newConstructionVolume,
-      ytd_preconstruction_volume: newPreconVolume
+      current_bank_balance: updatedBankBalance,
+      available_balance: updatedAvailableBalance,
+      total_earned: updatedTotalEarned,
+      ytd_sales_volume: updatedTotalVolume,
+      ytd_construction_volume: updatedConstructionVolume,
+      ytd_preconstruction_volume: updatedPreconVolume
     });
 
     // Update sale to mark commission as processed
