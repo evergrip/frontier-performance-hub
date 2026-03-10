@@ -522,7 +522,20 @@ export default function CommissionsAdmin() {
                       <TableCell className="font-bold text-green-600">
                         ${(bank.available_balance || 0).toLocaleString()}
                       </TableCell>
-                      <TableCell>${(bank.quarterly_payout_amount || 0).toLocaleString()}</TableCell>
+                      <TableCell>
+                        {bank.recurring_payout_amount > 0 ? (
+                          <span className="font-semibold text-blue-600">${(bank.recurring_payout_amount || 0).toLocaleString()}</span>
+                        ) : (
+                          <span className="text-slate-400 text-sm">Not set</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {bank.next_payout_date ? (
+                          <span className="text-xs">{new Date(bank.next_payout_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        ) : (
+                          <span className="text-slate-400 text-sm">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>${(bank.total_earned || 0).toLocaleString()}</TableCell>
                       <TableCell>${(bank.total_paid_out || 0).toLocaleString()}</TableCell>
                       <TableCell>
