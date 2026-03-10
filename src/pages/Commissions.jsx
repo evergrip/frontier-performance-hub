@@ -130,6 +130,12 @@ export default function Commissions() {
     initialData: [],
   });
 
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list(),
+    initialData: [],
+  });
+
   const getFilteredTransactions = () => {
     const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
     const today = new Date();
@@ -718,6 +724,16 @@ export default function Commissions() {
             })()}
           </CardContent>
         </Card>
+      )}
+
+      {/* My Jobs Overview */}
+      {!isCompanyWide && displayUserId && (
+        <MyJobsOverview
+          sales={sales}
+          projects={projects}
+          clients={clients}
+          displayUserId={displayUserId}
+        />
       )}
 
       {/* Pending Requests */}
