@@ -18,20 +18,24 @@ export default function Layout({ children, currentPageName }) {
   const [branding, setBranding] = useState({ company_name: 'Frontier Building Group', logo_url: '', primary_color: '#ea7924', accent_color: '#d66a1f' });
 
   useEffect(() => {
+    let cancelled = false;
     const init = async () => {
       // Load branding and auth in parallel
       const [, settingsResult] = await Promise.allSettled([
         (async () => {
           try {
             const isAuth = await base44.auth.isAuthenticated();
+            if (cancelled) return;
             if (isAuth) {
               const currentUser = await base44.auth.me();
+              if (cancelled) return;
               setUser(currentUser);
             } else if (!PUBLIC_PAGES.includes(currentPageName)) {
               base44.auth.redirectToLogin();
               return;
             }
           } catch (error) {
+            if (cancelled) return;
             if (!PUBLIC_PAGES.includes(currentPageName)) {
               base44.auth.redirectToLogin();
               return;
@@ -40,6 +44,8 @@ export default function Layout({ children, currentPageName }) {
         })(),
         base44.entities.CompanySettings.list().catch(() => [])
       ]);
+
+      if (cancelled) return;
 
       if (settingsResult.status === 'fulfilled' && settingsResult.value?.length > 0) {
         const s = settingsResult.value[0];
@@ -55,7 +61,8 @@ export default function Layout({ children, currentPageName }) {
       setAuthChecked(true);
     };
     init();
-  }, [currentPageName]);
+    return () => { cancelled = true; };
+  }, []);
 
   const navigation = [
     { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
