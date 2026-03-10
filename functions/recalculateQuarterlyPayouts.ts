@@ -26,21 +26,22 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
 
     for (const bank of commissionBanks) {
-      const currentBalance = bank.current_bank_balance || 0;
+      const availableBalance = bank.available_balance || 0;
       
-      // Calculate new quarterly payout amount: remaining bank / 26 pay periods
-      const newQuarterlyAmount = currentBalance / 26;
+      // Calculate suggested payout: available balance / 26 pay periods
+      const suggestedAmount = Math.round(availableBalance / 26);
 
-      // Update the commission bank
+      // Update the commission bank with the suggested amount
       await base44.asServiceRole.entities.CommissionBank.update(bank.id, {
-        quarterly_payout_amount: newQuarterlyAmount,
+        quarterly_payout_amount: suggestedAmount,
         last_quarterly_calculation_date: today
       });
 
       results.push({
         user_id: bank.user_id,
-        bank_balance: currentBalance,
-        new_quarterly_payout: newQuarterlyAmount
+        available_balance: availableBalance,
+        suggested_payout: suggestedAmount,
+        current_recurring: bank.recurring_payout_amount || 0
       });
     }
 
