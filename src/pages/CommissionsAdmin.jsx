@@ -191,6 +191,24 @@ export default function CommissionsAdmin() {
     },
   });
 
+  const updateRecurringPayoutMutation = useMutation({
+    mutationFn: async ({ bankId, recurring_payout_amount, next_payout_date }) => {
+      const updateData = { recurring_payout_amount };
+      if (next_payout_date) updateData.next_payout_date = next_payout_date;
+      else updateData.next_payout_date = null;
+      await base44.entities.CommissionBank.update(bankId, updateData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCommissionBanks'] });
+      toast.success('Recurring payout updated');
+      setRecurringDialogOpen(false);
+      setRecurringBank(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update recurring payout');
+    },
+  });
+
   const handleUpdateRow = (id, field, value) => {
     setLegacySales(legacySales.map(row => 
       row.id === id ? { ...row, [field]: value } : row
