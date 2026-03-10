@@ -977,6 +977,15 @@ export default function Commissions() {
         </Dialog>
       )}
 
+      {/* Commission Change Log Dialog */}
+      <CommissionChangeLogDialog
+        open={changeLogOpen}
+        onOpenChange={setChangeLogOpen}
+        userId={displayUserId}
+        userName={isCompanyWide ? 'Company-Wide' : (displayUser?.full_name || user?.full_name)}
+        sales={sales}
+      />
+
       {/* Transaction Detail Dialog */}
       <Dialog open={transactionDetailOpen} onOpenChange={setTransactionDetailOpen}>
         <DialogContent className="max-w-2xl">
