@@ -51,11 +51,16 @@ Deno.serve(async (req) => {
         agg.available_balance += released;
       } else {
         // sale_commission, adjustment, bonus, etc: new earnings
-        // Immediate payouts go directly to available
         const immediateAvailable = transaction.immediate_payout_amount || 0;
         
+        // If banked_amount is null/undefined (historical/manual entries), 
+        // the full amount minus immediate payout goes to banked
+        const effectiveBanked = (transaction.banked_amount != null) 
+          ? transaction.banked_amount 
+          : (amount - immediateAvailable);
+        
         agg.total_earned += amount;
-        agg.current_bank_balance += bankedAmount;
+        agg.current_bank_balance += effectiveBanked;
         agg.available_balance += immediateAvailable;
         agg.ytd_sales_volume += saleAmount;
         if (saleType === 'construction') agg.ytd_construction_volume += saleAmount;
