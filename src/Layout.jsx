@@ -4,7 +4,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -89,6 +89,7 @@ export default function Layout({ children, currentPageName }) {
 
   const userNavigation = [
     { name: 'My Commissions', icon: DollarSign, page: 'Commissions' },
+    { name: 'My Alerts', icon: Bell, page: 'MyAlerts' },
   ];
 
   const isActive = (pageName) => currentPageName === pageName;
