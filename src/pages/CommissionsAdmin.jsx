@@ -821,6 +821,16 @@ export default function CommissionsAdmin() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Recurring Payout Dialog */}
+      <RecurringPayoutDialog
+        open={recurringDialogOpen}
+        onOpenChange={setRecurringDialogOpen}
+        bank={recurringBank}
+        userName={getUserName(recurringBank?.user_id)}
+        onSave={(data) => updateRecurringPayoutMutation.mutate(data)}
+        isSaving={updateRecurringPayoutMutation.isPending}
+      />
+
       {/* Release Commission Dialog */}
       <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
         <DialogContent>
