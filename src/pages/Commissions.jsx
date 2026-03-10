@@ -630,40 +630,52 @@ export default function Commissions() {
           </CardHeader>
           <CardContent>
             {(() => {
-              // Leads assigned to this user (not converted/disqualified)
+              // --- LEADS (not converted/disqualified) ---
+              // Matches Leads page: pipeline = estimated_construction_value
               const myLeads = leads.filter(l => l.assigned_to === displayUserId && l.status !== 'converted' && l.status !== 'disqualified');
-              const leadPreconRevenue = myLeads.reduce((s, l) => s + (l.estimated_precon_value || 0), 0);
               const leadConstructionRevenue = myLeads.reduce((s, l) => s + (l.estimated_construction_value || 0), 0);
-              const leadTotal = leadPreconRevenue + leadConstructionRevenue;
+              const leadPreconRevenue = myLeads.reduce((s, l) => s + (l.estimated_precon_value || 0), 0);
 
-              // Active precon sales assigned to this user OR where they are a contributor (not closed)
+              // --- PRE-CONSTRUCTION SALES (active, not closed) ---
+              // contract_value = precon fee, estimated_construction_budget = construction potential
               const isUserOnSale = (s) => s.assigned_to === displayUserId || (s.sale_contributors || []).some(c => c.user_id === displayUserId);
               const myPreconSales = sales.filter(s => isUserOnSale(s) && s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
-              const preconRevenue = myPreconSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
+              const preconFeeRevenue = myPreconSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
+              const preconConstructionPotential = myPreconSales.reduce((s, sale) => s + (sale.estimated_construction_budget || 0), 0);
 
-              // Active construction sales assigned to this user OR where they are a contributor (not closed)
-              const myConstructionSales = sales.filter(s => isUserOnSale(s) && s.sale_type === 'construction' && s.status !== 'closed_won' && s.status !== 'closed_lost');
-              const constructionRevenue = myConstructionSales.reduce((s, sale) => s + (sale.contract_value || 0), 0);
+              // --- CONSTRUCTION PROJECTS (active, non-closed) ---
+              // Matches Projects page: use Project entity contract_value
+              const myActiveProjects = projects.filter(p => {
+                if (p.status === 'closed') return false;
+                if (p.project_manager_id === displayUserId) return true;
+                const sale = sales.find(s => s.id === p.sale_id);
+                return sale?.assigned_to === displayUserId || (sale?.sale_contributors || []).some(c => c.user_id === displayUserId);
+              });
+              const constructionRevenue = myActiveProjects.reduce((s, p) => s + (p.contract_value || 0), 0);
 
-              const totalPipeline = leadTotal + preconRevenue + constructionRevenue;
+              const totalPipeline = leadConstructionRevenue + leadPreconRevenue + preconFeeRevenue + preconConstructionPotential + constructionRevenue;
 
               return (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="p-4 bg-purple-50 rounded-lg">
                       <p className="text-xs text-slate-600 mb-1">Leads ({myLeads.length})</p>
-                      <p className="text-lg font-bold text-purple-600">${leadTotal.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-purple-600">${(leadConstructionRevenue + leadPreconRevenue).toLocaleString()}</p>
                       <div className="text-xs text-slate-500 mt-1 space-y-0.5">
-                        <p>Precon: ${leadPreconRevenue.toLocaleString()}</p>
-                        <p>Construction: ${leadConstructionRevenue.toLocaleString()}</p>
+                        <p>Construction est: ${leadConstructionRevenue.toLocaleString()}</p>
+                        <p>Precon est: ${leadPreconRevenue.toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <p className="text-xs text-slate-600 mb-1">Pre-Construction ({myPreconSales.length})</p>
-                      <p className="text-lg font-bold text-blue-600">${preconRevenue.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-blue-600">${(preconFeeRevenue + preconConstructionPotential).toLocaleString()}</p>
+                      <div className="text-xs text-slate-500 mt-1 space-y-0.5">
+                        <p>Precon fees: ${preconFeeRevenue.toLocaleString()}</p>
+                        <p>Construction est: ${preconConstructionPotential.toLocaleString()}</p>
+                      </div>
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-lg">
-                      <p className="text-xs text-slate-600 mb-1">Construction ({myConstructionSales.length})</p>
+                      <p className="text-xs text-slate-600 mb-1">Construction ({myActiveProjects.length})</p>
                       <p className="text-lg font-bold text-emerald-600">${constructionRevenue.toLocaleString()}</p>
                     </div>
                   </div>
