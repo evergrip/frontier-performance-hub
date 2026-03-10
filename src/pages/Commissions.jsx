@@ -380,42 +380,42 @@ export default function Commissions() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold text-slate-900">
-            {isAdmin ? 'Commission Management' : 'My Commissions'}
-          </h1>
-          <p className="text-slate-500 mt-1">
-            {isAdmin ? 'View and manage all commission data' : 'Track your earnings and manage payouts'}
-          </p>
+      <div className="space-y-3">
+        <div className="flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">
+              {isAdmin ? 'Commission Management' : 'My Commissions'}
+            </h1>
+            <p className="text-slate-500 mt-1">
+              {isAdmin ? 'View and manage all commission data' : 'Track your earnings and manage payouts'}
+            </p>
+          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-3">
+              <AddCommissionTransactionForm allUsers={allUsers} />
+              <Users className="w-5 h-5 text-slate-400" />
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Select salesperson" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="current_user">My Commissions</SelectItem>
+                  <SelectItem value="all">Company-Wide</SelectItem>
+                  {allUsers
+                    .filter(u => u.commission_rule_ids?.length > 0)
+                    .map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name || u.email}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={() => setChangeLogOpen(true)}>
-            <FileText className="w-4 h-4 mr-2" /> Change Log
-          </Button>
-        {isAdmin && (
-          <>
-            <AddCommissionTransactionForm allUsers={allUsers} />
-            <Users className="w-5 h-5 text-slate-400" />
-            <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-              <SelectTrigger className="w-[250px]">
-                <SelectValue placeholder="Select salesperson" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current_user">My Commissions</SelectItem>
-                <SelectItem value="all">Company-Wide</SelectItem>
-                {allUsers
-                  .filter(u => u.commission_rule_ids?.length > 0)
-                  .map(u => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.full_name || u.email}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </>
-        )}
-        </div>
+        <Button variant="outline" onClick={() => setChangeLogOpen(true)} className="gap-2">
+          <FileText className="w-4 h-4" /> View Change Log
+        </Button>
       </div>
 
       {/* Stats Cards */}
