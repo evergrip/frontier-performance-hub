@@ -484,8 +484,9 @@ export default function CommissionsAdmin() {
                     { header: 'YTD Volume', accessor: (b) => b.ytd_sales_volume || 0 },
                     { header: 'Bank Balance', accessor: (b) => b.current_bank_balance || 0 },
                     { header: 'Available Balance', accessor: (b) => b.available_balance || 0 },
-                    { header: 'Quarterly Payout', accessor: (b) => b.quarterly_payout_amount || 0 },
-                    { header: 'Total Earned', accessor: (b) => b.total_earned || 0 },
+                    { header: 'Recurring Payout', accessor: (b) => b.recurring_payout_amount || 0 },
+                     { header: 'Next Payout Date', accessor: (b) => b.next_payout_date || '' },
+                     { header: 'Total Earned', accessor: (b) => b.total_earned || 0 },
                     { header: 'Total Paid', accessor: (b) => b.total_paid_out || 0 },
                   ]}
                 />
