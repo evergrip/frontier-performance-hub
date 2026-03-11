@@ -17,16 +17,59 @@ function formatDateForICS(dateStr) {
   return new Date(dateStr).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 }
 
+function stripHtml(html) {
+  if (!html) return '';
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function buildAgendaText(meeting) {
+  // Prefer structured sections, fall back to HTML agenda
+  if (meeting.agenda_sections?.length > 0) {
+    const lines = ['AGENDA:'];
+    meeting.agenda_sections.forEach((section, i) => {
+      const duration = section.duration_minutes ? ` (${section.duration_minutes} min)` : '';
+      lines.push(`${i + 1}. ${section.title}${duration}`);
+      if (section.content) lines.push(`   ${section.content}`);
+      if (section.items?.length > 0) {
+        section.items.forEach(item => {
+          lines.push(`   • ${item.text || item}`);
+        });
+      }
+    });
+    return lines.join('\n');
+  }
+  if (meeting.agenda_html) {
+    return 'AGENDA:\n' + stripHtml(meeting.agenda_html);
+  }
+  return '';
+}
+
 function buildDescription(meeting) {
   const parts = [];
   if (meeting.description) parts.push(meeting.description);
+  
+  const agendaText = buildAgendaText(meeting);
+  if (agendaText) parts.push(agendaText);
+
   if ((meeting.action_items || []).length > 0) {
-    parts.push('\nAction Items:');
+    parts.push('\nACTION ITEMS:');
     meeting.action_items.forEach((item, i) => {
       parts.push(`${i + 1}. ${item.description}`);
     });
   }
-  return parts.join('\n');
+  return parts.join('\n\n');
 }
 
 function getAttendeeEmails(meeting, users) {
