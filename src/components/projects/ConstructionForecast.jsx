@@ -165,7 +165,27 @@ export default function ConstructionForecast({ projects, clients, sales, company
 
   const grandTotal = Object.values(monthlyTotals).reduce((sum, v) => sum + v, 0);
 
+  const stageLabels = {
+    substantial_completion_closeout: { label: 'Substantial Completion & Closeout', color: 'bg-amber-100 text-amber-800 border-amber-300' },
+    active_construction: { label: 'Active Construction', color: 'bg-green-100 text-green-800 border-green-300' },
+    mobilization: { label: 'Mobilization', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+    awaiting_to_be_scheduled: { label: 'Awaiting to be Scheduled', color: 'bg-slate-100 text-slate-700 border-slate-300' },
+    pending_construction_sale: { label: 'Pending Construction', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+    engineering_permits: { label: 'Engineering & Permits', color: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+    design_material_selections: { label: 'Design & Materials', color: 'bg-purple-100 text-purple-800 border-purple-300' },
+    feasibility: { label: 'Feasibility', color: 'bg-sky-100 text-sky-800 border-sky-300' },
+    closed: { label: 'Closed Projects', color: 'bg-gray-100 text-gray-600 border-gray-300' },
+  };
+
+  // Precompute which stages appear so we can render group headers
+  const stageGroupOrder = useMemo(() => {
+    const seen = new Set(rows.map(r => r.status));
+    return Object.keys(stageLabels).filter(s => seen.has(s));
+  }, [rows]);
+
   const fmt = (val) => val > 0 ? `$${val.toLocaleString()}` : '-';
+
+  const totalCols = 3 + fiscalMonths.length + 1; // project + contract + alloc + months + FY total
 
   return (
     <Card className="mt-6">
