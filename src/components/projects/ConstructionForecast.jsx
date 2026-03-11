@@ -66,6 +66,8 @@ export default function ConstructionForecast({ projects, clients, sales, company
         if (dollarValue > 0) hasAnyInFY = true;
       });
 
+      const totalAllocPct = allocations.reduce((sum, a) => sum + (Number(a.percentage) || 0), 0);
+
       result.push({
         projectId: project.id,
         projectName: project.title,
@@ -76,6 +78,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
         hasAllocations: allocations.length > 0,
         hasAnyInFY,
         isPrecon: false,
+        totalAllocPct,
       });
     });
 
@@ -99,6 +102,8 @@ export default function ConstructionForecast({ projects, clients, sales, company
         const client = clients.find(c => c.id === sale.client_id);
         const clientName = client?.company_name || client?.contact_name || 'Unknown Client';
 
+        const totalAllocPct = allocations.reduce((sum, a) => sum + (Number(a.percentage) || 0), 0);
+
         result.push({
           saleId: sale.id,
           projectName: sale.title,
@@ -109,19 +114,26 @@ export default function ConstructionForecast({ projects, clients, sales, company
           hasAllocations: allocations.length > 0,
           hasAnyInFY,
           isPrecon: true,
+          totalAllocPct,
         });
       });
     }
 
+    // Filter out closed projects that have no activity in this FY (keeps list from growing forever)
+    const filtered = result.filter(row => {
+      if (row.status === 'closed' && !row.hasAnyInFY) return false;
+      return true;
+    });
+
     // Sort: projects with allocations in this FY first, then pre-con last, then by client name
-    result.sort((a, b) => {
+    filtered.sort((a, b) => {
       if (a.hasAnyInFY && !b.hasAnyInFY) return -1;
       if (!a.hasAnyInFY && b.hasAnyInFY) return 1;
       if (a.isPrecon !== b.isPrecon) return a.isPrecon ? 1 : -1;
       return a.clientName.localeCompare(b.clientName) || a.projectName.localeCompare(b.projectName);
     });
 
-    return result;
+    return filtered;
   }, [projects, clients, sales, preconSales, fiscalMonths]);
 
   // Compute monthly totals
@@ -163,7 +175,8 @@ export default function ConstructionForecast({ projects, clients, sales, company
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead className="sticky left-0 bg-slate-50 z-10 min-w-[200px] text-xs">Project</TableHead>
-                <TableHead className="sticky left-[200px] bg-slate-50 z-10 min-w-[100px] text-xs text-right">Contract</TableHead>
+                <TableHead className="sticky left-[200px] bg-slate-50 z-10 min-w-[80px] text-xs text-right">Contract</TableHead>
+                <TableHead className="sticky left-[280px] bg-slate-50 z-10 min-w-[55px] text-xs text-right">Alloc</TableHead>
                 {fiscalMonths.map((fm, i) => (
                   <TableHead key={i} className="text-right text-xs whitespace-nowrap min-w-[90px]">{fm.label}</TableHead>
                 ))}
@@ -198,6 +211,9 @@ export default function ConstructionForecast({ projects, clients, sales, company
                         <TableCell className="sticky left-[200px] bg-white z-10 text-right text-xs font-medium text-slate-700">
                           ${(row.contractValue / 1000).toFixed(0)}k
                         </TableCell>
+                        <TableCell className={`sticky left-[280px] bg-white z-10 text-right text-xs font-medium ${row.totalAllocPct >= 99.9 ? 'text-emerald-600' : row.totalAllocPct > 0 ? 'text-amber-600' : 'text-red-400'}`}>
+                          {row.totalAllocPct > 0 ? `${row.totalAllocPct.toFixed(0)}%` : '—'}
+                        </TableCell>
                         {fiscalMonths.map((fm, i) => {
                           const val = row.monthValues[`${fm.year}-${fm.month}`] || 0;
                           return (
@@ -221,6 +237,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     <TableCell className="sticky left-[200px] bg-slate-100 z-10 text-right text-xs font-bold text-slate-700">
                       ${(rows.reduce((s, r) => s + r.contractValue, 0) / 1000).toFixed(0)}k
                     </TableCell>
+                    <TableCell className="sticky left-[280px] bg-slate-100 z-10"></TableCell>
                     {fiscalMonths.map((fm, i) => {
                       const val = monthlyTotals[`${fm.year}-${fm.month}`] || 0;
                       return (
