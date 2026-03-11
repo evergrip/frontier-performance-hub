@@ -345,14 +345,14 @@ export default function ConstructionForecast({ projects, clients, sales, company
                       const val = monthlyTotals[key] || 0;
                       const inHouse = monthlyInHouseTotals[key] || 0;
                       const sub = monthlySubTotals[key] || 0;
+                      const hasSplit = val > 0 && (sub > 0 || inHouse !== val);
                       return (
                         <TableCell key={i} className="text-right text-xs font-bold text-slate-900 bg-slate-100">
                           <div>{fmt(val)}</div>
-                          {val > 0 && (
-                            <div className="flex justify-end gap-1 text-[9px] font-medium">
-                              <span className="text-blue-600">{fmt(inHouse)}</span>
-                              <span className="text-slate-300">/</span>
-                              <span className="text-orange-600">{fmt(sub)}</span>
+                          {hasSplit && (
+                            <div className="text-[9px] font-medium leading-tight">
+                              <div className="text-blue-600">IH: {fmt(inHouse)}</div>
+                              <div className="text-orange-600">Sub: {fmt(sub)}</div>
                             </div>
                           )}
                         </TableCell>
@@ -360,11 +360,10 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     })}
                     <TableCell className="text-right text-sm font-bold text-slate-900 bg-slate-100">
                       <div>{fmt(grandTotal)}</div>
-                      {grandTotal > 0 && (
-                        <div className="flex justify-end gap-1 text-[9px] font-medium">
-                          <span className="text-blue-600">{fmt(grandInHouseTotal)}</span>
-                          <span className="text-slate-300">/</span>
-                          <span className="text-orange-600">{fmt(grandSubTotal)}</span>
+                      {(grandSubTotal > 0 || grandInHouseTotal !== grandTotal) && grandTotal > 0 && (
+                        <div className="text-[9px] font-medium leading-tight">
+                          <div className="text-blue-600">IH: {fmt(grandInHouseTotal)}</div>
+                          <div className="text-orange-600">Sub: {fmt(grandSubTotal)}</div>
                         </div>
                       )}
                     </TableCell>
