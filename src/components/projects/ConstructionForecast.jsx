@@ -343,33 +343,31 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     {fiscalMonths.map((fm, i) => {
                       const key = `${fm.year}-${fm.month}`;
                       const val = monthlyTotals[key] || 0;
-                      const inHouse = monthlyInHouseTotals[key] || 0;
-                      const sub = monthlySubTotals[key] || 0;
-                      const hasSplit = val > 0 && (sub > 0 || inHouse !== val);
                       return (
                         <TableCell key={i} className="text-right text-xs font-bold text-slate-900 bg-slate-100">
-                          <div>{fmt(val)}</div>
-                          {hasSplit && (
-                            <div className="text-[9px] font-medium leading-tight">
-                              <div className="text-blue-600">IH: {fmt(inHouse)}</div>
-                              <div className="text-orange-600">Sub: {fmt(sub)}</div>
-                            </div>
-                          )}
+                          {fmt(val)}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-right text-sm font-bold text-slate-900 bg-slate-100">
-                      <div>{fmt(grandTotal)}</div>
-                      {(grandSubTotal > 0 || grandInHouseTotal !== grandTotal) && grandTotal > 0 && (
-                        <div className="text-[9px] font-medium leading-tight">
-                          <div className="text-blue-600">IH: {fmt(grandInHouseTotal)}</div>
-                          <div className="text-orange-600">Sub: {fmt(grandSubTotal)}</div>
-                        </div>
-                      )}
+                      {fmt(grandTotal)}
                     </TableCell>
                   </TableRow>
+                </>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {rows.some(r => !r.hasAllocations) && (
+          <div className="px-6 py-3 bg-amber-50 border-t border-amber-200 text-xs text-amber-700">
+            Some projects have no revenue allocations yet. Click a project card above, then edit its Revenue Schedule to forecast monthly values.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
-                  {/* In-House Revenue Row */}
                   <TableRow className="bg-blue-50">
                     <TableCell className="sticky left-0 bg-blue-50 z-10 text-xs font-semibold text-blue-800">
                       <div className="flex items-center gap-1.5">
