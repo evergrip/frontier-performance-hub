@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarRange, Building2, Wrench } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
 
 export default function ConstructionForecast({ projects, clients, sales, companySettings, onProjectClick, preconSales, onPreconSaleClick }) {
@@ -53,17 +54,23 @@ export default function ConstructionForecast({ projects, clients, sales, company
     // Construction projects
     projects.forEach(project => {
       const allocations = project.monthly_revenue_allocations || [];
+      const subAllocations = project.monthly_sub_allocations || [];
       const contractValue = project.contract_value || 0;
 
       const monthValues = {};
+      const monthSubPct = {};
       let hasAnyInFY = false;
 
       fiscalMonths.forEach(fm => {
+        const key = `${fm.year}-${fm.month}`;
         const alloc = allocations.find(a => Number(a.year) === fm.year && Number(a.month) === fm.month);
         const pct = alloc ? Number(alloc.percentage) || 0 : 0;
         const dollarValue = Math.round(contractValue * (pct / 100));
-        monthValues[`${fm.year}-${fm.month}`] = dollarValue;
+        monthValues[key] = dollarValue;
         if (dollarValue > 0) hasAnyInFY = true;
+
+        const subAlloc = subAllocations.find(a => Number(a.year) === fm.year && Number(a.month) === fm.month);
+        monthSubPct[key] = subAlloc ? Number(subAlloc.sub_percentage) || 0 : 0;
       });
 
       const totalAllocPct = allocations.reduce((sum, a) => sum + (Number(a.percentage) || 0), 0);
@@ -75,6 +82,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
         contractValue,
         status: project.status,
         monthValues,
+        monthSubPct,
         hasAllocations: allocations.length > 0,
         hasAnyInFY,
         isPrecon: false,
@@ -86,17 +94,23 @@ export default function ConstructionForecast({ projects, clients, sales, company
     if (preconSales?.length > 0) {
       preconSales.forEach(sale => {
         const allocations = sale.monthly_revenue_allocations || [];
+        const subAllocations = sale.monthly_sub_allocations || [];
         const forecastValue = sale.estimated_construction_budget || 0;
 
         const monthValues = {};
+        const monthSubPct = {};
         let hasAnyInFY = false;
 
         fiscalMonths.forEach(fm => {
+          const key = `${fm.year}-${fm.month}`;
           const alloc = allocations.find(a => Number(a.year) === fm.year && Number(a.month) === fm.month);
           const pct = alloc ? Number(alloc.percentage) || 0 : 0;
           const dollarValue = Math.round(forecastValue * (pct / 100));
-          monthValues[`${fm.year}-${fm.month}`] = dollarValue;
+          monthValues[key] = dollarValue;
           if (dollarValue > 0) hasAnyInFY = true;
+
+          const subAlloc = subAllocations.find(a => Number(a.year) === fm.year && Number(a.month) === fm.month);
+          monthSubPct[key] = subAlloc ? Number(subAlloc.sub_percentage) || 0 : 0;
         });
 
         const client = clients.find(c => c.id === sale.client_id);
@@ -111,6 +125,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
           contractValue: forecastValue,
           status: sale.status,
           monthValues,
+          monthSubPct,
           hasAllocations: allocations.length > 0,
           hasAnyInFY,
           isPrecon: true,
