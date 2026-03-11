@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
+import SubAllocationDialog from './SubAllocationDialog';
 
 export default function ProjectAllocationDialog({ open, onOpenChange, project, companySettings }) {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export default function ProjectAllocationDialog({ open, onOpenChange, project, c
 
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(null);
   const [monthlyAllocations, setMonthlyAllocations] = useState([]);
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!project || !open) return;
@@ -171,14 +173,26 @@ export default function ProjectAllocationDialog({ open, onOpenChange, project, c
             Total (all years): <span className={`font-semibold ${totalPct >= 99.9 ? 'text-emerald-600' : totalPct > 0 ? 'text-amber-600' : ''}`}>{totalPct.toFixed(1)}%</span>
           </div>
 
-          <div className="flex gap-2 justify-end pt-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-              Save Allocations
+          <div className="flex gap-2 justify-between pt-2">
+            <Button variant="outline" size="sm" className="text-xs text-orange-700 border-orange-300 hover:bg-orange-50" onClick={() => setSubDialogOpen(true)}>
+              Sub/In-House Split
             </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                Save Allocations
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
+      <SubAllocationDialog
+        open={subDialogOpen}
+        onOpenChange={setSubDialogOpen}
+        entity={project}
+        entityType="project"
+        companySettings={companySettings}
+      />
     </Dialog>
   );
 }

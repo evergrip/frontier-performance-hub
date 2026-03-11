@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
+import SubAllocationDialog from './SubAllocationDialog';
 
 export default function PreconAllocationDialog({ open, onOpenChange, sale, companySettings }) {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export default function PreconAllocationDialog({ open, onOpenChange, sale, compa
 
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(null);
   const [monthlyAllocations, setMonthlyAllocations] = useState([]);
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!sale || !open) return;
@@ -174,14 +176,26 @@ export default function PreconAllocationDialog({ open, onOpenChange, sale, compa
             Total (all years): <span className="font-semibold">{totalPct.toFixed(1)}%</span>
           </div>
 
-          <div className="flex gap-2 justify-end pt-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
-              Save Forecast
+          <div className="flex gap-2 justify-between pt-2">
+            <Button variant="outline" size="sm" className="text-xs text-orange-700 border-orange-300 hover:bg-orange-50" onClick={() => setSubDialogOpen(true)}>
+              Sub/In-House Split
             </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
+                Save Forecast
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
+      <SubAllocationDialog
+        open={subDialogOpen}
+        onOpenChange={setSubDialogOpen}
+        entity={sale}
+        entityType="sale"
+        companySettings={companySettings}
+      />
     </Dialog>
   );
 }
