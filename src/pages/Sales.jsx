@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import { createPageUrl } from '../utils';
+import { useNavigate } from 'react-router-dom';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditSaleDialog from '../components/sales/EditSaleDialog';
 import ConstructionForecast from '../components/projects/ConstructionForecast';
@@ -24,6 +25,7 @@ import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 
 export default function Sales() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
@@ -1558,7 +1560,7 @@ export default function Sales() {
         sales={sales}
         companySettings={companySettings}
         preconSales={preconstructionSales}
-        onProjectClick={() => {}}
+        onProjectClick={() => navigate(createPageUrl('Projects'))}
         onPreconSaleClick={(saleId) => {
           const sale = sales.find(s => s.id === saleId);
           if (sale) { setAllocatingSale(sale); setPreconAllocDialogOpen(true); }
