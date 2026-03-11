@@ -49,7 +49,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
   // Build forecast rows: each project becomes a row with monthly dollar values
   const rows = useMemo(() => {
     const result = [];
-    const activeProjects = projects.filter(p => p.status !== 'closed');
+    const activeProjects = projects;
 
     activeProjects.forEach(project => {
       const allocations = project.monthly_revenue_allocations || [];
