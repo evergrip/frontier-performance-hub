@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
 
-export default function ConstructionForecast({ projects, clients, sales, companySettings, onProjectClick }) {
+export default function ConstructionForecast({ projects, clients, sales, companySettings, onProjectClick, preconSales, onPreconSaleClick }) {
   const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
 
   // Determine current fiscal year
@@ -49,13 +49,12 @@ export default function ConstructionForecast({ projects, clients, sales, company
   // Build forecast rows: each project becomes a row with monthly dollar values
   const rows = useMemo(() => {
     const result = [];
-    const activeProjects = projects;
 
-    activeProjects.forEach(project => {
+    // Construction projects
+    projects.forEach(project => {
       const allocations = project.monthly_revenue_allocations || [];
       const contractValue = project.contract_value || 0;
 
-      // Build a map of year-month -> dollar value
       const monthValues = {};
       let hasAnyInFY = false;
 
@@ -67,7 +66,6 @@ export default function ConstructionForecast({ projects, clients, sales, company
         if (dollarValue > 0) hasAnyInFY = true;
       });
 
-      // Also include projects with no allocations but that are active (show them with $0 so the PM knows they need forecasting)
       result.push({
         projectId: project.id,
         projectName: project.title,
@@ -77,18 +75,54 @@ export default function ConstructionForecast({ projects, clients, sales, company
         monthValues,
         hasAllocations: allocations.length > 0,
         hasAnyInFY,
+        isPrecon: false,
       });
     });
 
-    // Sort: projects with allocations in this FY first, then by client name
+    // Pre-con sales (forecast based on estimated_construction_budget)
+    if (preconSales?.length > 0) {
+      preconSales.forEach(sale => {
+        const allocations = sale.monthly_revenue_allocations || [];
+        const forecastValue = sale.estimated_construction_budget || 0;
+
+        const monthValues = {};
+        let hasAnyInFY = false;
+
+        fiscalMonths.forEach(fm => {
+          const alloc = allocations.find(a => Number(a.year) === fm.year && Number(a.month) === fm.month);
+          const pct = alloc ? Number(alloc.percentage) || 0 : 0;
+          const dollarValue = Math.round(forecastValue * (pct / 100));
+          monthValues[`${fm.year}-${fm.month}`] = dollarValue;
+          if (dollarValue > 0) hasAnyInFY = true;
+        });
+
+        const client = clients.find(c => c.id === sale.client_id);
+        const clientName = client?.company_name || client?.contact_name || 'Unknown Client';
+
+        result.push({
+          saleId: sale.id,
+          projectName: sale.title,
+          clientName,
+          contractValue: forecastValue,
+          status: sale.status,
+          monthValues,
+          hasAllocations: allocations.length > 0,
+          hasAnyInFY,
+          isPrecon: true,
+        });
+      });
+    }
+
+    // Sort: projects with allocations in this FY first, then pre-con last, then by client name
     result.sort((a, b) => {
       if (a.hasAnyInFY && !b.hasAnyInFY) return -1;
       if (!a.hasAnyInFY && b.hasAnyInFY) return 1;
+      if (a.isPrecon !== b.isPrecon) return a.isPrecon ? 1 : -1;
       return a.clientName.localeCompare(b.clientName) || a.projectName.localeCompare(b.projectName);
     });
 
     return result;
-  }, [projects, clients, sales, fiscalMonths]);
+  }, [projects, clients, sales, preconSales, fiscalMonths]);
 
   // Compute monthly totals
   const monthlyTotals = useMemo(() => {
@@ -147,11 +181,19 @@ export default function ConstructionForecast({ projects, clients, sales, company
                 <>
                   {rows.map((row) => {
                     const rowTotal = fiscalMonths.reduce((sum, fm) => sum + (row.monthValues[`${fm.year}-${fm.month}`] || 0), 0);
+                    const rowKey = row.isPrecon ? `sale-${row.saleId}` : `proj-${row.projectId}`;
+                    const handleRowClick = () => {
+                      if (row.isPrecon) onPreconSaleClick?.(row.saleId);
+                      else onProjectClick?.(row.projectId);
+                    };
                     return (
-                      <TableRow key={row.projectId} className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''}`} onClick={() => onProjectClick?.(row.projectId)}>
+                      <TableRow key={rowKey} className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''} ${row.isPrecon ? 'border-l-2 border-l-amber-400' : ''}`} onClick={handleRowClick}>
                         <TableCell className="sticky left-0 bg-white z-10 min-w-[200px]">
-                          <div className="text-sm font-medium text-slate-900 truncate">{row.clientName}</div>
-                          <div className="text-xs text-slate-500 truncate">{row.projectName}</div>
+                          <div className={`text-sm font-medium truncate ${row.isPrecon ? 'text-amber-700 italic' : 'text-slate-900'}`}>{row.clientName}</div>
+                          <div className="flex items-center gap-1">
+                            <span className={`text-xs truncate ${row.isPrecon ? 'text-amber-500 italic' : 'text-slate-500'}`}>{row.projectName}</span>
+                            {row.isPrecon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">Pre-Con</span>}
+                          </div>
                         </TableCell>
                         <TableCell className="sticky left-[200px] bg-white z-10 text-right text-xs font-medium text-slate-700">
                           ${(row.contractValue / 1000).toFixed(0)}k
