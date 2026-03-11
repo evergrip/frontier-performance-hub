@@ -18,6 +18,9 @@ import EditableTimeline from '../components/common/EditableTimeline';
 import { createPageUrl } from '../utils';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditSaleDialog from '../components/sales/EditSaleDialog';
+import ConstructionForecast from '../components/projects/ConstructionForecast';
+import PreconAllocationDialog from '../components/projects/PreconAllocationDialog';
+import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 
 export default function Sales() {
   const queryClient = useQueryClient();
@@ -48,6 +51,8 @@ export default function Sales() {
   const [editTargetDate, setEditTargetDate] = useState('');
   const [editSaleDialogOpen, setEditSaleDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
+  const [preconAllocDialogOpen, setPreconAllocDialogOpen] = useState(false);
+  const [allocatingSale, setAllocatingSale] = useState(null);
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
@@ -481,6 +486,14 @@ export default function Sales() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
     initialData: [],
+  });
+
+  const { data: companySettings } = useQuery({
+    queryKey: ['company-settings'],
+    queryFn: async () => {
+      const settings = await base44.entities.CompanySettings.list();
+      return settings[0];
+    }
   });
 
   const leadPhases = [
@@ -1537,6 +1550,28 @@ export default function Sales() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Revenue Forecast — shows pre-con sales alongside construction projects */}
+      <ConstructionForecast
+        projects={projects.filter(p => p.project_type === 'construction')}
+        clients={clients}
+        sales={sales}
+        companySettings={companySettings}
+        preconSales={preconstructionSales}
+        onProjectClick={() => {}}
+        onPreconSaleClick={(saleId) => {
+          const sale = sales.find(s => s.id === saleId);
+          if (sale) { setAllocatingSale(sale); setPreconAllocDialogOpen(true); }
+        }}
+      />
+
+      {/* Pre-Con Allocation Dialog */}
+      <PreconAllocationDialog
+        open={preconAllocDialogOpen}
+        onOpenChange={setPreconAllocDialogOpen}
+        sale={allocatingSale}
+        companySettings={companySettings}
+      />
 
       {/* Edit Sale Dialog */}
       <EditSaleDialog
