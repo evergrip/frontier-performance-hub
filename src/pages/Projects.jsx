@@ -19,6 +19,7 @@ import EditableTimeline from '../components/common/EditableTimeline';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditProjectDetailDialog from '../components/projects/EditProjectDetailDialog';
 import ConstructionForecast from '../components/projects/ConstructionForecast';
+import PreconAllocationDialog from '../components/projects/PreconAllocationDialog';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
@@ -54,6 +55,8 @@ export default function Projects() {
   const [closeoutAuditPassed, setCloseoutAuditPassed] = useState(false);
   const [editDetailDialogOpen, setEditDetailDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [preconAllocDialogOpen, setPreconAllocDialogOpen] = useState(false);
+  const [allocatingSale, setAllocatingSale] = useState(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -862,10 +865,23 @@ export default function Projects() {
         clients={clients}
         sales={sales}
         companySettings={companySettings}
+        preconSales={sales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status))}
         onProjectClick={(projectId) => {
           const project = projects.find(p => p.id === projectId);
           if (project) openEditDialog(project);
         }}
+        onPreconSaleClick={(saleId) => {
+          const sale = sales.find(s => s.id === saleId);
+          if (sale) { setAllocatingSale(sale); setPreconAllocDialogOpen(true); }
+        }}
+      />
+
+      {/* Pre-Con Allocation Dialog */}
+      <PreconAllocationDialog
+        open={preconAllocDialogOpen}
+        onOpenChange={setPreconAllocDialogOpen}
+        sale={allocatingSale}
+        companySettings={companySettings}
       />
 
       {/* Edit Project Detail Dialog */}
