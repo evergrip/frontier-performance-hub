@@ -129,11 +129,24 @@ export default function ConstructionForecast({ projects, clients, sales, company
       return false;
     });
 
-    // Sort: projects with allocations in this FY first, then pre-con last, then by client name
+    // Sort by stage in specified order, then alphabetically within each stage
+    const stageOrder = [
+      'substantial_completion_closeout',
+      'active_construction',
+      'mobilization',
+      'awaiting_to_be_scheduled',
+      'pending_construction_sale',
+      'engineering_permits',
+      'design_material_selections',
+      'feasibility',
+      'closed',
+    ];
     filtered.sort((a, b) => {
-      if (a.hasAnyInFY && !b.hasAnyInFY) return -1;
-      if (!a.hasAnyInFY && b.hasAnyInFY) return 1;
-      if (a.isPrecon !== b.isPrecon) return a.isPrecon ? 1 : -1;
+      const aIdx = stageOrder.indexOf(a.status);
+      const bIdx = stageOrder.indexOf(b.status);
+      const aOrder = aIdx >= 0 ? aIdx : stageOrder.length;
+      const bOrder = bIdx >= 0 ? bIdx : stageOrder.length;
+      if (aOrder !== bOrder) return aOrder - bOrder;
       return a.clientName.localeCompare(b.clientName) || a.projectName.localeCompare(b.projectName);
     });
 
