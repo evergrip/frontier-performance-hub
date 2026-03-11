@@ -331,7 +331,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     });
                   })()}
 
-                  {/* Monthly Totals Row */}
+                  {/* Monthly Totals Row with Sub/In-House Breakdown */}
                   <TableRow className="bg-slate-100 border-t-2 border-slate-300">
                     <TableCell className="sticky left-0 bg-slate-100 z-10 font-bold text-sm text-slate-900">
                       Monthly Totals
