@@ -229,42 +229,67 @@ export default function ConstructionForecast({ projects, clients, sales, company
                 </TableRow>
               ) : (
                 <>
-                  {rows.map((row) => {
-                    const rowTotal = fiscalMonths.reduce((sum, fm) => sum + (row.monthValues[`${fm.year}-${fm.month}`] || 0), 0);
-                    const rowKey = row.isPrecon ? `sale-${row.saleId}` : `proj-${row.projectId}`;
-                    const handleRowClick = () => {
-                      if (row.isPrecon) onPreconSaleClick?.(row.saleId);
-                      else onProjectClick?.(row.projectId);
-                    };
-                    return (
-                      <TableRow key={rowKey} className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''} ${row.isPrecon ? 'border-l-2 border-l-amber-400' : ''}`} onClick={handleRowClick}>
-                        <TableCell className="sticky left-0 bg-white z-10 min-w-[200px]">
-                          <div className={`text-sm font-medium truncate ${row.isPrecon ? 'text-amber-700 italic' : 'text-slate-900'}`}>{row.clientName}</div>
-                          <div className="flex items-center gap-1">
-                            <span className={`text-xs truncate ${row.isPrecon ? 'text-amber-500 italic' : 'text-slate-500'}`}>{row.projectName}</span>
-                            {row.isPrecon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">Pre-Con</span>}
-                          </div>
-                        </TableCell>
-                        <TableCell className="sticky left-[200px] bg-white z-10 text-right text-xs font-medium text-slate-700">
-                          ${(row.contractValue / 1000).toFixed(0)}k
-                        </TableCell>
-                        <TableCell className={`sticky left-[280px] bg-white z-10 text-right text-xs font-medium ${row.totalAllocPct >= 99.9 ? 'text-emerald-600' : row.totalAllocPct > 0 ? 'text-amber-600' : 'text-red-400'}`}>
-                          {row.totalAllocPct > 0 ? `${row.totalAllocPct.toFixed(0)}%` : '—'}
-                        </TableCell>
-                        {fiscalMonths.map((fm, i) => {
-                          const val = row.monthValues[`${fm.year}-${fm.month}`] || 0;
-                          return (
-                            <TableCell key={i} className={`text-right text-xs ${val > 0 ? 'text-slate-800 font-medium bg-green-50' : 'text-slate-300'}`}>
-                              {fmt(val)}
+                  {(() => {
+                    let lastStage = null;
+                    return rows.map((row) => {
+                      const rowTotal = fiscalMonths.reduce((sum, fm) => sum + (row.monthValues[`${fm.year}-${fm.month}`] || 0), 0);
+                      const rowKey = row.isPrecon ? `sale-${row.saleId}` : `proj-${row.projectId}`;
+                      const handleRowClick = () => {
+                        if (row.isPrecon) onPreconSaleClick?.(row.saleId);
+                        else onProjectClick?.(row.projectId);
+                      };
+                      const showHeader = row.status !== lastStage;
+                      lastStage = row.status;
+                      const stageCfg = stageLabels[row.status] || { label: row.status, color: 'bg-gray-50 text-gray-600 border-gray-200' };
+                      // Compute stage subtotal
+                      const stageRows = showHeader ? rows.filter(r => r.status === row.status) : [];
+                      const stageTotal = showHeader ? stageRows.reduce((sum, r) => sum + fiscalMonths.reduce((s, fm) => s + (r.monthValues[`${fm.year}-${fm.month}`] || 0), 0), 0) : 0;
+                      return (
+                        <React.Fragment key={rowKey}>
+                          {showHeader && (
+                            <TableRow className={`border-t-2 ${stageCfg.color}`}>
+                              <TableCell colSpan={3} className={`sticky left-0 z-10 ${stageCfg.color} py-1.5 px-4`}>
+                                <span className="text-xs font-bold uppercase tracking-wide">{stageCfg.label}</span>
+                                <span className="text-[10px] ml-2 opacity-70">({stageRows.length})</span>
+                              </TableCell>
+                              {fiscalMonths.map((_, i) => (
+                                <TableCell key={i} className={`${stageCfg.color} py-1.5`} />
+                              ))}
+                              <TableCell className={`${stageCfg.color} py-1.5 text-right text-xs font-bold`}>
+                                {stageTotal > 0 ? fmt(stageTotal) : ''}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          <TableRow className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''} ${row.isPrecon ? 'border-l-2 border-l-amber-400' : ''}`} onClick={handleRowClick}>
+                            <TableCell className="sticky left-0 bg-white z-10 min-w-[200px]">
+                              <div className={`text-sm font-medium truncate ${row.isPrecon ? 'text-amber-700 italic' : 'text-slate-900'}`}>{row.clientName}</div>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-xs truncate ${row.isPrecon ? 'text-amber-500 italic' : 'text-slate-500'}`}>{row.projectName}</span>
+                                {row.isPrecon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">Pre-Con</span>}
+                              </div>
                             </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-right text-xs font-bold text-slate-900">
-                          {fmt(rowTotal)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                            <TableCell className="sticky left-[200px] bg-white z-10 text-right text-xs font-medium text-slate-700">
+                              ${(row.contractValue / 1000).toFixed(0)}k
+                            </TableCell>
+                            <TableCell className={`sticky left-[280px] bg-white z-10 text-right text-xs font-medium ${row.totalAllocPct >= 99.9 ? 'text-emerald-600' : row.totalAllocPct > 0 ? 'text-amber-600' : 'text-red-400'}`}>
+                              {row.totalAllocPct > 0 ? `${row.totalAllocPct.toFixed(0)}%` : '—'}
+                            </TableCell>
+                            {fiscalMonths.map((fm, i) => {
+                              const val = row.monthValues[`${fm.year}-${fm.month}`] || 0;
+                              return (
+                                <TableCell key={i} className={`text-right text-xs ${val > 0 ? 'text-slate-800 font-medium bg-green-50' : 'text-slate-300'}`}>
+                                  {fmt(val)}
+                                </TableCell>
+                              );
+                            })}
+                            <TableCell className="text-right text-xs font-bold text-slate-900">
+                              {fmt(rowTotal)}
+                            </TableCell>
+                          </TableRow>
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
 
                   {/* Monthly Totals Row */}
                   <TableRow className="bg-slate-100 border-t-2 border-slate-300">
