@@ -341,15 +341,32 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     </TableCell>
                     <TableCell className="sticky left-[280px] bg-slate-100 z-10"></TableCell>
                     {fiscalMonths.map((fm, i) => {
-                      const val = monthlyTotals[`${fm.year}-${fm.month}`] || 0;
+                      const key = `${fm.year}-${fm.month}`;
+                      const val = monthlyTotals[key] || 0;
+                      const inHouse = monthlyInHouseTotals[key] || 0;
+                      const sub = monthlySubTotals[key] || 0;
                       return (
                         <TableCell key={i} className="text-right text-xs font-bold text-slate-900 bg-slate-100">
-                          {fmt(val)}
+                          <div>{fmt(val)}</div>
+                          {val > 0 && (
+                            <div className="flex justify-end gap-1 text-[9px] font-medium">
+                              <span className="text-blue-600">{fmt(inHouse)}</span>
+                              <span className="text-slate-300">/</span>
+                              <span className="text-orange-600">{fmt(sub)}</span>
+                            </div>
+                          )}
                         </TableCell>
                       );
                     })}
                     <TableCell className="text-right text-sm font-bold text-slate-900 bg-slate-100">
-                      {fmt(grandTotal)}
+                      <div>{fmt(grandTotal)}</div>
+                      {grandTotal > 0 && (
+                        <div className="flex justify-end gap-1 text-[9px] font-medium">
+                          <span className="text-blue-600">{fmt(grandInHouseTotal)}</span>
+                          <span className="text-slate-300">/</span>
+                          <span className="text-orange-600">{fmt(grandSubTotal)}</span>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
 
