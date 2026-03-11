@@ -168,17 +168,33 @@ export default function ConstructionForecast({ projects, clients, sales, company
     return filtered;
   }, [projects, clients, sales, preconSales, fiscalMonths]);
 
-  // Compute monthly totals
-  const monthlyTotals = useMemo(() => {
+  // Compute monthly totals with sub/in-house breakdown
+  const { monthlyTotals, monthlySubTotals, monthlyInHouseTotals } = useMemo(() => {
     const totals = {};
+    const subTotals = {};
+    const inHouseTotals = {};
     fiscalMonths.forEach(fm => {
       const key = `${fm.year}-${fm.month}`;
-      totals[key] = rows.reduce((sum, row) => sum + (row.monthValues[key] || 0), 0);
+      let total = 0, subTotal = 0, inHouseTotal = 0;
+      rows.forEach(row => {
+        const val = row.monthValues[key] || 0;
+        const subPct = row.monthSubPct?.[key] || 0;
+        const subVal = Math.round(val * subPct / 100);
+        const inHouseVal = val - subVal;
+        total += val;
+        subTotal += subVal;
+        inHouseTotal += inHouseVal;
+      });
+      totals[key] = total;
+      subTotals[key] = subTotal;
+      inHouseTotals[key] = inHouseTotal;
     });
-    return totals;
+    return { monthlyTotals: totals, monthlySubTotals: subTotals, monthlyInHouseTotals: inHouseTotals };
   }, [rows, fiscalMonths]);
 
   const grandTotal = Object.values(monthlyTotals).reduce((sum, v) => sum + v, 0);
+  const grandSubTotal = Object.values(monthlySubTotals).reduce((sum, v) => sum + v, 0);
+  const grandInHouseTotal = Object.values(monthlyInHouseTotals).reduce((sum, v) => sum + v, 0);
 
   const stageLabels = {
     substantial_completion_closeout: { label: 'Substantial Completion & Closeout', color: 'bg-amber-100 text-amber-800 border-amber-300' },
