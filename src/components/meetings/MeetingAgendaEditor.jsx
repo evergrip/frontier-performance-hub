@@ -59,10 +59,16 @@ export default function MeetingAgendaEditor({
     }
   };
 
+  const handleAIGenerateClick = () => {
+    setAiDescOpen(true);
+  };
+
   const handleAIGenerate = async () => {
+    setAiDescOpen(false);
     setAiLoading(true);
     const prompt = `Generate a professional meeting agenda in HTML format for a meeting titled "${meetingTitle || 'Team Meeting'}". 
 The meeting type is "${meetingType || 'general'}".
+${aiDescription.trim() ? `\nMEETING DESCRIPTION / CONTEXT:\n${aiDescription.trim()}\n` : ''}
 ${agendaHtml ? `Use this existing agenda as a starting point and enhance it:\n${agendaHtml}` : ''}
 Format the agenda with clear numbered sections, time allocations, and action-oriented items.
 Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise and actionable.`;
@@ -78,6 +84,7 @@ Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise an
     });
     onAgendaChange?.(result.agenda_html || '');
     setAiLoading(false);
+    setAiDescription('');
   };
 
   const hasStructuredSections = agendaSections && agendaSections.length > 0;
