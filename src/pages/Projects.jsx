@@ -18,6 +18,7 @@ import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditProjectDetailDialog from '../components/projects/EditProjectDetailDialog';
+import ConstructionForecast from '../components/projects/ConstructionForecast';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
