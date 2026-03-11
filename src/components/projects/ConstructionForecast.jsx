@@ -306,10 +306,19 @@ export default function ConstructionForecast({ projects, clients, sales, company
                               {row.totalAllocPct > 0 ? `${row.totalAllocPct.toFixed(0)}%` : '—'}
                             </TableCell>
                             {fiscalMonths.map((fm, i) => {
-                              const val = row.monthValues[`${fm.year}-${fm.month}`] || 0;
+                              const key = `${fm.year}-${fm.month}`;
+                              const val = row.monthValues[key] || 0;
+                              const subPct = row.monthSubPct?.[key] || 0;
+                              const hasSubSplit = val > 0 && subPct > 0 && subPct < 100;
+                              const isAllSub = val > 0 && subPct === 100;
                               return (
                                 <TableCell key={i} className={`text-right text-xs ${val > 0 ? 'text-slate-800 font-medium bg-green-50' : 'text-slate-300'}`}>
-                                  {fmt(val)}
+                                  <div>{fmt(val)}</div>
+                                  {val > 0 && subPct > 0 && (
+                                    <div className={`text-[9px] ${isAllSub ? 'text-orange-500' : hasSubSplit ? 'text-slate-400' : ''}`}>
+                                      {subPct}% sub
+                                    </div>
+                                  )}
                                 </TableCell>
                               );
                             })}
@@ -341,6 +350,52 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     })}
                     <TableCell className="text-right text-sm font-bold text-slate-900 bg-slate-100">
                       {fmt(grandTotal)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* In-House Revenue Row */}
+                  <TableRow className="bg-blue-50">
+                    <TableCell className="sticky left-0 bg-blue-50 z-10 text-xs font-semibold text-blue-800">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        In-House Revenue
+                      </div>
+                    </TableCell>
+                    <TableCell className="sticky left-[200px] bg-blue-50 z-10"></TableCell>
+                    <TableCell className="sticky left-[280px] bg-blue-50 z-10"></TableCell>
+                    {fiscalMonths.map((fm, i) => {
+                      const val = monthlyInHouseTotals[`${fm.year}-${fm.month}`] || 0;
+                      return (
+                        <TableCell key={i} className="text-right text-xs font-semibold text-blue-700 bg-blue-50">
+                          {fmt(val)}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right text-xs font-bold text-blue-800 bg-blue-50">
+                      {fmt(grandInHouseTotal)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Sub Revenue Row */}
+                  <TableRow className="bg-orange-50">
+                    <TableCell className="sticky left-0 bg-orange-50 z-10 text-xs font-semibold text-orange-800">
+                      <div className="flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5" />
+                        Sub Revenue
+                      </div>
+                    </TableCell>
+                    <TableCell className="sticky left-[200px] bg-orange-50 z-10"></TableCell>
+                    <TableCell className="sticky left-[280px] bg-orange-50 z-10"></TableCell>
+                    {fiscalMonths.map((fm, i) => {
+                      const val = monthlySubTotals[`${fm.year}-${fm.month}`] || 0;
+                      return (
+                        <TableCell key={i} className="text-right text-xs font-semibold text-orange-700 bg-orange-50">
+                          {fmt(val)}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right text-xs font-bold text-orange-800 bg-orange-50">
+                      {fmt(grandSubTotal)}
                     </TableCell>
                   </TableRow>
                 </>
