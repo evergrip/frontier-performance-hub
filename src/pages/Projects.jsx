@@ -748,9 +748,20 @@ export default function Projects() {
                                        </span>
                                      </div>
                                    </div>
-                                   {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
-                                     <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
-                                   )}
+                                   {(() => {
+                                      const allocs = project.monthly_revenue_allocations || [];
+                                      const totalPct = allocs.reduce((s, a) => s + (Number(a.percentage) || 0), 0);
+                                      const isFullyAllocated = totalPct >= 99.9;
+                                      const hasAny = allocs.length > 0 && totalPct > 0;
+                                      return (
+                                        <p className={`text-[10px] mt-0.5 font-medium ${isFullyAllocated ? 'text-emerald-600' : hasAny ? 'text-amber-600' : 'text-red-400'}`}>
+                                          {isFullyAllocated ? '● Fully Allocated' : hasAny ? `◐ ${totalPct.toFixed(0)}% Allocated` : '○ Not Allocated'}
+                                        </p>
+                                      );
+                                    })()}
+                                    {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
+                                      <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
+                                    )}
                                   </CardContent>
                                 </Card>
                               )}
