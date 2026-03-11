@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react';
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
 
-export default function ConstructionForecast({ projects, clients, sales, companySettings }) {
+export default function ConstructionForecast({ projects, clients, sales, companySettings, onProjectClick }) {
   const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
 
   // Determine current fiscal year
@@ -148,7 +148,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
                   {rows.map((row) => {
                     const rowTotal = fiscalMonths.reduce((sum, fm) => sum + (row.monthValues[`${fm.year}-${fm.month}`] || 0), 0);
                     return (
-                      <TableRow key={row.projectId} className={!row.hasAnyInFY ? 'opacity-50' : ''}>
+                      <TableRow key={row.projectId} className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''}`} onClick={() => onProjectClick?.(row.projectId)}>
                         <TableCell className="sticky left-0 bg-white z-10 min-w-[200px]">
                           <div className="text-sm font-medium text-slate-900 truncate">{row.clientName}</div>
                           <div className="text-xs text-slate-500 truncate">{row.projectName}</div>

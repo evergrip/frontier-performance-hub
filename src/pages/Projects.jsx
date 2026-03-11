@@ -862,6 +862,10 @@ export default function Projects() {
         clients={clients}
         sales={sales}
         companySettings={companySettings}
+        onProjectClick={(projectId) => {
+          const project = projects.find(p => p.id === projectId);
+          if (project) openEditDialog(project);
+        }}
       />
 
       {/* Edit Project Detail Dialog */}
