@@ -279,8 +279,8 @@ export default function Projects() {
       client_id: project.client_id || ''
     });
     
-    // Load allocations if project is in mobilization or later
-    if (['mobilization', 'active_construction', 'substantial_completion_closeout'].includes(project.status)) {
+    // Load allocations for all active statuses including awaiting_to_be_scheduled
+    if (['awaiting_to_be_scheduled', 'mobilization', 'active_construction', 'substantial_completion_closeout'].includes(project.status)) {
       const now = new Date();
       const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
       const currentMonth = now.getMonth() + 1;
@@ -1182,8 +1182,8 @@ export default function Projects() {
               </div>
             )}
 
-            {/* Show revenue allocation for projects in mobilization or later */}
-            {selectedProject && ['mobilization', 'active_construction', 'substantial_completion_closeout'].includes(selectedProject.status) && (
+            {/* Show revenue allocation for all active projects */}
+            {selectedProject && ['awaiting_to_be_scheduled', 'mobilization', 'active_construction', 'substantial_completion_closeout'].includes(selectedProject.status) && (
               <div className="border-t pt-4 mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <Label>Revenue Allocation</Label>

@@ -143,7 +143,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="text-lg font-bold flex items-center gap-2">
           <CalendarRange className="h-5 w-5 text-slate-500" />
-          Construction Forecast
+          Revenue Forecast
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setSelectedFY(f => f - 1)}>
