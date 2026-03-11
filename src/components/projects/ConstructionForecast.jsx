@@ -331,8 +331,54 @@ export default function ConstructionForecast({ projects, clients, sales, company
                     });
                   })()}
 
-                  {/* Monthly Totals Row with Sub/In-House Breakdown */}
-                  <TableRow className="bg-slate-100 border-t-2 border-slate-300">
+                  {/* In-House Revenue Row */}
+                  <TableRow className="bg-blue-50 border-t-2 border-slate-300">
+                    <TableCell className="sticky left-0 bg-blue-50 z-10 text-xs font-semibold text-blue-800">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        In-House Revenue
+                      </div>
+                    </TableCell>
+                    <TableCell className="sticky left-[200px] bg-blue-50 z-10"></TableCell>
+                    <TableCell className="sticky left-[280px] bg-blue-50 z-10"></TableCell>
+                    {fiscalMonths.map((fm, i) => {
+                      const val = monthlyInHouseTotals[`${fm.year}-${fm.month}`] || 0;
+                      return (
+                        <TableCell key={i} className="text-right text-xs font-semibold text-blue-700 bg-blue-50">
+                          {fmt(val)}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right text-xs font-bold text-blue-800 bg-blue-50">
+                      {fmt(grandInHouseTotal)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Sub Revenue Row */}
+                  <TableRow className="bg-orange-50">
+                    <TableCell className="sticky left-0 bg-orange-50 z-10 text-xs font-semibold text-orange-800">
+                      <div className="flex items-center gap-1.5">
+                        <Wrench className="w-3.5 h-3.5" />
+                        Sub Revenue
+                      </div>
+                    </TableCell>
+                    <TableCell className="sticky left-[200px] bg-orange-50 z-10"></TableCell>
+                    <TableCell className="sticky left-[280px] bg-orange-50 z-10"></TableCell>
+                    {fiscalMonths.map((fm, i) => {
+                      const val = monthlySubTotals[`${fm.year}-${fm.month}`] || 0;
+                      return (
+                        <TableCell key={i} className="text-right text-xs font-semibold text-orange-700 bg-orange-50">
+                          {fmt(val)}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="text-right text-xs font-bold text-orange-800 bg-orange-50">
+                      {fmt(grandSubTotal)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Monthly Totals Row */}
+                  <TableRow className="bg-slate-100">
                     <TableCell className="sticky left-0 bg-slate-100 z-10 font-bold text-sm text-slate-900">
                       Monthly Totals
                     </TableCell>
