@@ -845,6 +845,14 @@ export default function Projects() {
         </TabsContent>
       </Tabs>
 
+      {/* Construction Forecast */}
+      <ConstructionForecast
+        projects={filteredProjects}
+        clients={clients}
+        sales={sales}
+        companySettings={companySettings}
+      />
+
       {/* Edit Project Detail Dialog */}
       <EditProjectDetailDialog
         open={editDetailDialogOpen}
