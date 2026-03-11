@@ -119,10 +119,14 @@ export default function ConstructionForecast({ projects, clients, sales, company
       });
     }
 
-    // Filter out closed projects that have no activity in this FY (keeps list from growing forever)
+    // Dynamic filter: only show rows that have allocations in the viewed FY OR are not fully allocated
     const filtered = result.filter(row => {
-      if (row.status === 'closed' && !row.hasAnyInFY) return false;
-      return true;
+      // Always show if it has revenue in the currently viewed FY
+      if (row.hasAnyInFY) return true;
+      // Show if not fully allocated (needs attention)
+      if (row.totalAllocPct < 99.9) return true;
+      // Fully allocated with no activity in this FY — hide
+      return false;
     });
 
     // Sort: projects with allocations in this FY first, then pre-con last, then by client name
