@@ -21,6 +21,7 @@ import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditSaleDialog from '../components/sales/EditSaleDialog';
 import ConstructionForecast from '../components/projects/ConstructionForecast';
 import PreconAllocationDialog from '../components/projects/PreconAllocationDialog';
+import ProjectAllocationDialog from '../components/projects/ProjectAllocationDialog';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 
 export default function Sales() {
@@ -55,6 +56,8 @@ export default function Sales() {
   const [editingSale, setEditingSale] = useState(null);
   const [preconAllocDialogOpen, setPreconAllocDialogOpen] = useState(false);
   const [allocatingSale, setAllocatingSale] = useState(null);
+  const [projectAllocDialogOpen, setProjectAllocDialogOpen] = useState(false);
+  const [allocatingProject, setAllocatingProject] = useState(null);
   const [constructionForm, setConstructionForm] = useState({
     final_precon_value: '',
     construction_budget: ''
@@ -1560,7 +1563,10 @@ export default function Sales() {
         sales={sales}
         companySettings={companySettings}
         preconSales={preconstructionSales}
-        onProjectClick={() => navigate(createPageUrl('Projects'))}
+        onProjectClick={(projectId) => {
+          const project = projects.find(p => p.id === projectId);
+          if (project) { setAllocatingProject(project); setProjectAllocDialogOpen(true); }
+        }}
         onPreconSaleClick={(saleId) => {
           const sale = sales.find(s => s.id === saleId);
           if (sale) { setAllocatingSale(sale); setPreconAllocDialogOpen(true); }
@@ -1572,6 +1578,14 @@ export default function Sales() {
         open={preconAllocDialogOpen}
         onOpenChange={setPreconAllocDialogOpen}
         sale={allocatingSale}
+        companySettings={companySettings}
+      />
+
+      {/* Project Allocation Dialog */}
+      <ProjectAllocationDialog
+        open={projectAllocDialogOpen}
+        onOpenChange={setProjectAllocDialogOpen}
+        project={allocatingProject}
         companySettings={companySettings}
       />
 
