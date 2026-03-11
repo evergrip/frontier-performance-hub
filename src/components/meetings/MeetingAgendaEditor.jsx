@@ -107,10 +107,37 @@ Use clean HTML with <h3>, <ol>, <li>, <p>, and <strong> tags. Keep it concise an
           )}
         </SelectContent>
       </Select>
-      <Button type="button" variant="outline" size="sm" onClick={handleAIGenerate} disabled={aiLoading} className="gap-1.5 shrink-0">
+      <Button type="button" variant="outline" size="sm" onClick={handleAIGenerateClick} disabled={aiLoading} className="gap-1.5 shrink-0">
         {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-amber-500" />}
         {aiLoading ? 'Generating...' : 'AI Agenda'}
       </Button>
+
+      <Dialog open={aiDescOpen} onOpenChange={setAiDescOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Describe Your Meeting
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>What is this meeting about?</Label>
+            <Textarea
+              value={aiDescription}
+              onChange={(e) => setAiDescription(e.target.value)}
+              placeholder="e.g. Quarterly review with the project team to discuss budget overruns on the Smith project and plan next quarter's schedule..."
+              className="min-h-[120px]"
+            />
+            <p className="text-xs text-slate-400">The more detail you provide, the better the agenda will be.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAiDescOpen(false)}>Cancel</Button>
+            <Button onClick={handleAIGenerate} className="gap-1.5">
+              <Sparkles className="w-4 h-4" /> Generate Agenda
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
