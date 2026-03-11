@@ -18,6 +18,8 @@ export default function MeetingAgendaEditor({
   showMinutes = false
 }) {
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiDescOpen, setAiDescOpen] = useState(false);
+  const [aiDescription, setAiDescription] = useState('');
 
   const { data: templates = [] } = useQuery({
     queryKey: ['agendaTemplates'],
