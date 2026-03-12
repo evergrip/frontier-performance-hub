@@ -1010,40 +1010,27 @@ export default function Projects() {
                 {allocationDialogOpen && (
                   <>
                     <div className="mb-3">
-                      <Label className="text-xs mb-1">Fiscal Year</Label>
-                      <Select 
-                        value={selectedFiscalYear?.toString()} 
-                        onValueChange={(value) => {
-                         const newFY = parseInt(value);
+                     <Label className="text-xs mb-1">Fiscal Year</Label>
+                     <div className="flex items-center gap-2">
+                       <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                         const newFY = selectedFiscalYear - 1;
                          setSelectedFiscalYear(newFY);
                          const fsm = companySettings?.fiscal_year_start_month || 1;
                          const newMonths = [];
-                         for (let i = 0; i < 12; i++) {
-                           const month = ((fsm - 1 + i) % 12) + 1;
-                           const yr = fsm === 1 ? newFY : (month >= fsm ? newFY - 1 : newFY);
-                           newMonths.push({ year: yr, month, percentage: 0 });
-                         }
-                         setMonthlyAllocations(prev => {
-                           const merged = [...prev];
-                           newMonths.forEach(nm => {
-                             if (!merged.find(a => a.year === nm.year && a.month === nm.month)) {
-                               merged.push(nm);
-                             }
-                           });
-                           return merged;
-                         });
-                        }}
-                        >
-                        <SelectTrigger>
-                         <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                         <SelectItem value={(selectedFiscalYear - 1).toString()}>{getFiscalYearLabel(selectedFiscalYear - 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
-                         <SelectItem value={selectedFiscalYear?.toString()}>{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10, true)}</SelectItem>
-                         <SelectItem value={(selectedFiscalYear + 1).toString()}>{getFiscalYearLabel(selectedFiscalYear + 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
-                        </SelectContent>
-                        </Select>
-                        </div>
+                         for (let i = 0; i < 12; i++) { const month = ((fsm - 1 + i) % 12) + 1; const yr = fsm === 1 ? newFY : (month >= fsm ? newFY - 1 : newFY); newMonths.push({ year: yr, month, percentage: 0 }); }
+                         setMonthlyAllocations(prev => { const merged = [...prev]; newMonths.forEach(nm => { if (!merged.find(a => a.year === nm.year && a.month === nm.month)) merged.push(nm); }); return merged; });
+                       }}><span className="text-xs">◀</span></Button>
+                       <span className="text-sm font-semibold text-center flex-1">{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10)}</span>
+                       <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                         const newFY = selectedFiscalYear + 1;
+                         setSelectedFiscalYear(newFY);
+                         const fsm = companySettings?.fiscal_year_start_month || 1;
+                         const newMonths = [];
+                         for (let i = 0; i < 12; i++) { const month = ((fsm - 1 + i) % 12) + 1; const yr = fsm === 1 ? newFY : (month >= fsm ? newFY - 1 : newFY); newMonths.push({ year: yr, month, percentage: 0 }); }
+                         setMonthlyAllocations(prev => { const merged = [...prev]; newMonths.forEach(nm => { if (!merged.find(a => a.year === nm.year && a.month === nm.month)) merged.push(nm); }); return merged; });
+                       }}><span className="text-xs">▶</span></Button>
+                     </div>
+                       </div>
 
                         <div className="grid grid-cols-3 gap-2 max-h-[160px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
                         {monthlyAllocations
