@@ -135,16 +135,15 @@ export default function PreconAllocationDialog({ open, onOpenChange, sale, compa
 
           <div>
             <Label className="text-xs mb-1">Fiscal Year</Label>
-            <Select value={selectedFiscalYear?.toString()} onValueChange={handleFYChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={(selectedFiscalYear - 1).toString()}>{getFiscalYearLabel(selectedFiscalYear - 1, fiscalStartMonth)}</SelectItem>
-                <SelectItem value={selectedFiscalYear?.toString()}>{getFiscalYearLabel(selectedFiscalYear, fiscalStartMonth, true)}</SelectItem>
-                <SelectItem value={(selectedFiscalYear + 1).toString()}>{getFiscalYearLabel(selectedFiscalYear + 1, fiscalStartMonth)}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleFYChange((selectedFiscalYear - 1).toString())}>
+                <span className="text-xs">◀</span>
+              </Button>
+              <span className="text-sm font-semibold text-center flex-1">{getFiscalYearLabel(selectedFiscalYear, fiscalStartMonth)}</span>
+              <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleFYChange((selectedFiscalYear + 1).toString())}>
+                <span className="text-xs">▶</span>
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
