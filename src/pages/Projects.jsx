@@ -491,7 +491,13 @@ export default function Projects() {
     setAllocationDialogOpen(false);
   };
 
-
+  const generateRandomColor = () => {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+      '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#82E0AA'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -515,12 +521,17 @@ export default function Projects() {
     const currentHistory = project?.status_history || [];
     const newHistory = [...currentHistory, { status: newStatus, entered_date: new Date().toISOString(), source: 'project' }];
 
+    // Generate random color when moving away from awaiting_to_be_scheduled
     const updates = { status: newStatus, status_history: newHistory };
+    if (project?.status === 'awaiting_to_be_scheduled' && newStatus !== 'awaiting_to_be_scheduled') {
+      updates.color = generateRandomColor();
+    }
     
     // Wipe allocations when moving back to awaiting_to_be_scheduled
     if (newStatus === 'awaiting_to_be_scheduled') {
       updates.monthly_revenue_allocations = [];
       updates.monthly_work_allocations = [];
+      updates.color = null;
     }
     
     updateProjectStatusMutation.mutate({
@@ -715,8 +726,11 @@ export default function Projects() {
                                    ref={provided.innerRef}
                                    {...provided.draggableProps}
                                    {...provided.dragHandleProps}
-                                   style={provided.draggableProps.style}
-                                    className={`border ${column.color} transition-all cursor-pointer group ${
+                                   style={{
+                                      ...provided.draggableProps.style,
+                                      ...(project.color ? { borderColor: project.color, borderWidth: '2px', backgroundColor: project.color + '18' } : {})
+                                    }}
+                                    className={`border ${!project.color ? column.color : ''} transition-all cursor-pointer group ${
                                     snapshot.isDragging ? 'shadow-2xl rotate-2' : 'hover:shadow-md'
                                     }`}
                                    onClick={() => openEditDialog(project)}
