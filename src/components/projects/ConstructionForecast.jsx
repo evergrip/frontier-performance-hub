@@ -238,17 +238,17 @@ export default function ConstructionForecast({ projects, clients, sales, company
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[75vh]">
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 z-20">
               <TableRow className="bg-slate-50">
-                <TableHead className="sticky left-0 bg-slate-50 z-10 min-w-[200px] text-xs">Project</TableHead>
-                <TableHead className="sticky left-[200px] bg-slate-50 z-10 min-w-[80px] text-xs text-right">Contract</TableHead>
-                <TableHead className="sticky left-[280px] bg-slate-50 z-10 min-w-[55px] text-xs text-right">Alloc</TableHead>
+                <TableHead className="sticky left-0 bg-slate-50 z-30 min-w-[200px] text-xs">Project</TableHead>
+                <TableHead className="sticky left-[200px] bg-slate-50 z-30 min-w-[80px] text-xs text-right">Contract</TableHead>
+                <TableHead className="sticky left-[280px] bg-slate-50 z-30 min-w-[55px] text-xs text-right">Alloc</TableHead>
                 {fiscalMonths.map((fm, i) => (
-                  <TableHead key={i} className="text-right text-xs whitespace-nowrap min-w-[90px]">{fm.label}</TableHead>
+                  <TableHead key={i} className="bg-slate-50 text-right text-xs whitespace-nowrap min-w-[90px]">{fm.label}</TableHead>
                 ))}
-                <TableHead className="text-right text-xs whitespace-nowrap min-w-[100px] font-bold">FY Total</TableHead>
+                <TableHead className="bg-slate-50 text-right text-xs whitespace-nowrap min-w-[100px] font-bold">FY Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
