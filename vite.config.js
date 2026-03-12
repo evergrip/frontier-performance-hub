@@ -16,9 +16,10 @@ export default defineConfig({
     }),
     react(),
   ]
-  server:{
-    allowedHosts:[
+  server: {
+    allowedHosts: [
       'ta-01kkh7s2rf8ep1sy83gbj7tjp9-5173-byyp7uepj4fhq0dpjwyjbhbhl.w.modal.host',
+      // Add any other hosts you need to allow here
     ],
   },
 });
