@@ -12,7 +12,7 @@ import EditLogViewer from '../common/EditLogViewer';
 import { computeChanges, logEdit } from '../common/editLogUtils';
 
 const TRACKED_FIELDS = [
-  'title', 'contract_value', 'actual_costs', 'actual_margin',
+  'title', 'contract_value',
   'start_date', 'target_completion_date', 'project_manager_id',
   'crew_assignment', 'notes'
 ];

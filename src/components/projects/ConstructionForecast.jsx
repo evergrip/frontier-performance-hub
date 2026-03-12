@@ -55,7 +55,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
     projects.forEach(project => {
       const allocations = project.monthly_revenue_allocations || [];
       const subAllocations = project.monthly_sub_allocations || [];
-      const contractValue = project.contract_value || 0;
+      const contractValue = project.actual_costs || project.contract_value || 0;
 
       const monthValues = {};
       const monthSubPct = {};
