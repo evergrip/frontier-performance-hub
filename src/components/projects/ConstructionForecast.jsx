@@ -239,8 +239,8 @@ export default function ConstructionForecast({ projects, clients, sales, company
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-auto max-h-[75vh]">
-          <Table>
-            <TableHeader className="sticky top-0 z-20">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="sticky top-0 z-20 [&_tr]:border-b">
               <TableRow className="bg-slate-50">
                 <TableHead className="sticky left-0 bg-slate-50 z-30 min-w-[200px] text-xs">Project</TableHead>
                 <TableHead className="sticky left-[200px] bg-slate-50 z-30 min-w-[80px] text-xs text-right">Contract</TableHead>
@@ -250,7 +250,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
                 ))}
                 <TableHead className="bg-slate-50 text-right text-xs whitespace-nowrap min-w-[100px] font-bold">FY Total</TableHead>
               </TableRow>
-            </TableHeader>
+            </thead>
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
@@ -402,7 +402,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
                 </>
               )}
             </TableBody>
-          </Table>
+          </table>
         </div>
         {rows.some(r => !r.hasAllocations) && (
           <div className="px-6 py-3 bg-amber-50 border-t border-amber-200 text-xs text-amber-700">
