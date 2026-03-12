@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'; 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarRange, Building2, Wrench } from 'lucide-react';
 
