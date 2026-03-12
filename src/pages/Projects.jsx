@@ -1435,44 +1435,27 @@ export default function Projects() {
             <div>
               <Label className="block mb-2">Fiscal Year for Revenue Allocation *</Label>
               <p className="text-xs text-slate-500 mb-2">
-                Select which fiscal year this project's revenue should be allocated to
+                Navigate to the fiscal year for allocation
               </p>
-              <Select 
-                value={selectedFiscalYear?.toString()} 
-                onValueChange={(value) => {
-                  const newFiscalYear = parseInt(value);
-                  setSelectedFiscalYear(newFiscalYear);
-                  
-                  // Merge new fiscal year months without wiping existing allocations
-                  const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                  const newFY = selectedFiscalYear - 1;
+                  setSelectedFiscalYear(newFY);
+                  const fsm = companySettings?.fiscal_year_start_month || 1;
                   const newMonths = [];
-                  for (let i = 0; i < 12; i++) {
-                    const month = ((fiscalStartMonth - 1 + i) % 12) + 1;
-                    const yr = fiscalStartMonth === 1 ? newFiscalYear : (month >= fiscalStartMonth ? newFiscalYear - 1 : newFiscalYear);
-                    newMonths.push({ year: yr, month, percentage: 0 });
-                  }
-                  setMonthlyAllocations(prev => {
-                    const merged = [...prev];
-                    newMonths.forEach(nm => {
-                      if (!merged.find(a => a.year === nm.year && a.month === nm.month)) {
-                        merged.push(nm);
-                      }
-                    });
-                    return merged;
-                  });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select fiscal year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={(selectedFiscalYear - 2).toString()}>{getFiscalYearLabel(selectedFiscalYear - 2, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
-                  <SelectItem value={(selectedFiscalYear - 1).toString()}>{getFiscalYearLabel(selectedFiscalYear - 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
-                  <SelectItem value={selectedFiscalYear?.toString()}>{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10, true)}</SelectItem>
-                  <SelectItem value={(selectedFiscalYear + 1).toString()}>{getFiscalYearLabel(selectedFiscalYear + 1, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
-                  <SelectItem value={(selectedFiscalYear + 2).toString()}>{getFiscalYearLabel(selectedFiscalYear + 2, companySettings?.fiscal_year_start_month || 10)}</SelectItem>
-                </SelectContent>
-              </Select>
+                  for (let i = 0; i < 12; i++) { const month = ((fsm - 1 + i) % 12) + 1; const yr = fsm === 1 ? newFY : (month >= fsm ? newFY - 1 : newFY); newMonths.push({ year: yr, month, percentage: 0 }); }
+                  setMonthlyAllocations(prev => { const merged = [...prev]; newMonths.forEach(nm => { if (!merged.find(a => a.year === nm.year && a.month === nm.month)) merged.push(nm); }); return merged; });
+                }}><span className="text-xs">◀</span></Button>
+                <span className="text-sm font-semibold text-center flex-1">{getFiscalYearLabel(selectedFiscalYear, companySettings?.fiscal_year_start_month || 10)}</span>
+                <Button type="button" variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => {
+                  const newFY = selectedFiscalYear + 1;
+                  setSelectedFiscalYear(newFY);
+                  const fsm = companySettings?.fiscal_year_start_month || 1;
+                  const newMonths = [];
+                  for (let i = 0; i < 12; i++) { const month = ((fsm - 1 + i) % 12) + 1; const yr = fsm === 1 ? newFY : (month >= fsm ? newFY - 1 : newFY); newMonths.push({ year: yr, month, percentage: 0 }); }
+                  setMonthlyAllocations(prev => { const merged = [...prev]; newMonths.forEach(nm => { if (!merged.find(a => a.year === nm.year && a.month === nm.month)) merged.push(nm); }); return merged; });
+                }}><span className="text-xs">▶</span></Button>
+              </div>
             </div>
 
             {/* Monthly Revenue Allocation */}
