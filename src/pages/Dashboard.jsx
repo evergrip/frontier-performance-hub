@@ -421,66 +421,9 @@ export default function Dashboard() {
         monthConstruction += p.actual_costs || p.contract_value || 0;
       });
       
-      // Build per-project breakdown for tooltip
-      const projectBreakdowns = [];
-      
-      // Precon closed sales
-      scopedSales.filter(s => {
-        if (s.sale_type !== 'preconstruction' || s.status !== 'closed_won') return false;
-        const d = getSaleEffectiveDate(s);
-        return d >= mStart && d <= mEnd;
-      }).forEach(s => {
-        const client = clients.find(c => c.id === s.client_id);
-        projectBreakdowns.push({
-          name: s.title || client?.company_name || 'Pre-Con Sale',
-          amount: (s.contract_value || 0) / 1000,
-          type: 'precon'
-        });
-      });
-
-      // Construction projects with allocations
-      scopedProjects.filter(p => p.project_type === 'construction').forEach(p => {
-        const allocations = p.monthly_revenue_allocations || [];
-        const alloc = allocations.find(a => {
-          if (a.period === targetPeriod) return true;
-          let aYear = a.year != null ? Number(a.year) : null;
-          let aMonth = a.month != null ? Number(a.month) : null;
-          if (!aYear && a.period) { const parts = a.period.split('-'); aYear = parseInt(parts[0]); aMonth = parseInt(parts[1]); }
-          return aYear === yearNum && aMonth === monthNum;
-        });
-        if (alloc && alloc.percentage > 0) {
-          const amt = (p.contract_value || 0) * (alloc.percentage / 100);
-          projectBreakdowns.push({
-            name: p.title || 'Construction Project',
-            amount: amt / 1000,
-            type: 'construction'
-          });
-        }
-      });
-
-      // Closed construction projects without allocations
-      scopedProjects.filter(p => {
-        if (p.project_type !== 'construction' || p.status !== 'closed') return false;
-        if (p.monthly_revenue_allocations?.length > 0) return false;
-        const d = getProjectEffectiveDate(p);
-        return d >= mStart && d <= mEnd;
-      }).forEach(p => {
-        projectBreakdowns.push({
-          name: p.title || 'Closed Project',
-          amount: (p.actual_costs || p.contract_value || 0) / 1000,
-          type: 'construction'
-        });
-      });
-
-      return {
-        month: format(month, 'MMM yy'),
-        revenue: (monthPrecon + monthConstruction) / 1000,
-        precon: monthPrecon / 1000,
-        construction: monthConstruction / 1000,
-        breakdowns: projectBreakdowns.sort((a, b) => b.amount - a.amount)
-      };
+      return { month: format(month, 'MMM yy'), revenue: (monthPrecon + monthConstruction) / 1000 };
     });
-  }, [dateRange, scopedSales, scopedProjects, clients]);
+  }, [dateRange, scopedSales, scopedProjects]);
 
   // Loading skeleton
   if (isLoading) {
