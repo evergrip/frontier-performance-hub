@@ -1244,6 +1244,15 @@ export default function Projects() {
                 <p className="text-xs text-slate-500 mb-3">
                   Distribute revenue across months for reporting. Update anytime — finalized at closeout.
                 </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs text-orange-700 border-orange-300 hover:bg-orange-50 mb-3"
+                  onClick={() => { setSubDialogProject(selectedProject); setSubDialogOpen(true); }}
+                >
+                  Sub/In-House Split
+                </Button>
                 
                 {allocationDialogOpen && (
                   <>
