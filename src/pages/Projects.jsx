@@ -20,6 +20,7 @@ import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditProjectDetailDialog from '../components/projects/EditProjectDetailDialog';
 import ConstructionForecast from '../components/projects/ConstructionForecast';
 import PreconAllocationDialog from '../components/projects/PreconAllocationDialog';
+import SubAllocationDialog from '../components/projects/SubAllocationDialog';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
 
@@ -57,6 +58,8 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [preconAllocDialogOpen, setPreconAllocDialogOpen] = useState(false);
   const [allocatingSale, setAllocatingSale] = useState(null);
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
+  const [subDialogProject, setSubDialogProject] = useState(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -874,6 +877,15 @@ export default function Projects() {
           const sale = sales.find(s => s.id === saleId);
           if (sale) { setAllocatingSale(sale); setPreconAllocDialogOpen(true); }
         }}
+      />
+
+      {/* Sub Allocation Dialog for active projects */}
+      <SubAllocationDialog
+        open={subDialogOpen}
+        onOpenChange={setSubDialogOpen}
+        entity={subDialogProject}
+        entityType="project"
+        companySettings={companySettings}
       />
 
       {/* Pre-Con Allocation Dialog */}
