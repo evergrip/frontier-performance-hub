@@ -15,6 +15,7 @@ import RevenueTrendChart from '../components/dashboard/RevenueTrendChart';
 import CustomizeMetricsDialog from '../components/dashboard/CustomizeMetricsDialog';
 import MyMeetingsDashboard from '../components/dashboard/MyMeetingsDashboard';
 import GettingStartedChecklist from '../components/dashboard/GettingStartedChecklist';
+import MeetingReminderPopup from '../components/meetings/MeetingReminderPopup';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
