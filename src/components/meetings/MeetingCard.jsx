@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat, ClipboardCheck, Mic } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, CheckCircle2, Circle, Pencil, Trash2, Lock, FileText, Target, Repeat, ClipboardCheck, Mic, Play, Check } from 'lucide-react';
 import CalendarInviteButton from './CalendarInviteButton';
 import ScorecardAggregateBadge, { getScorecardAggregates } from './ScorecardAggregateBadge';
 import { format } from 'date-fns';
@@ -26,7 +26,7 @@ const STATUS_COLORS = {
   rescheduled: 'bg-orange-100 text-orange-800',
 };
 
-export default function MeetingCard({ meeting, users, meetingTypes = [], onEdit, onDelete }) {
+export default function MeetingCard({ meeting, users, meetingTypes = [], onEdit, onDelete, onQuickComplete, onQuickStart, currentUserId }) {
   const getTypeLabel = (val) => meetingTypes.find(t => t.value === val)?.label || val?.replace(/_/g, ' ') || 'Unknown';
   const getTypeColor = (val) => {
     const idx = meetingTypes.findIndex(t => t.value === val);
