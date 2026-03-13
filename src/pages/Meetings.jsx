@@ -288,6 +288,20 @@ export default function Meetings() {
         </div>
       </div>
 
+      {/* Meeting Reminders */}
+      {currentUser && (
+        <MeetingReminderPopup
+          meetings={visibleMeetings}
+          currentUser={currentUser}
+          onMarkComplete={(meeting) => {
+            updateMutation.mutate({ id: meeting.id, data: { status: 'completed' } });
+          }}
+          onStartMeeting={(meeting) => {
+            updateMutation.mutate({ id: meeting.id, data: { status: 'in_progress', actual_start_time: new Date().toISOString() } });
+          }}
+        />
+      )}
+
       {/* KPI Stats */}
       <MeetingKPIStats meetings={visibleMeetings} />
 
