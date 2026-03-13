@@ -459,6 +459,22 @@ export default function Dashboard() {
         </Button>
       </div>
 
+      {/* Meeting Reminders */}
+      {user && (
+        <MeetingReminderPopup
+          meetings={visibleMeetings}
+          currentUser={user}
+          onMarkComplete={(meeting) => {
+            base44.entities.Meeting.update(meeting.id, { status: 'completed' });
+            queryClient.invalidateQueries({ queryKey: ['meetings'] });
+          }}
+          onStartMeeting={(meeting) => {
+            base44.entities.Meeting.update(meeting.id, { status: 'in_progress', actual_start_time: new Date().toISOString() });
+            queryClient.invalidateQueries({ queryKey: ['meetings'] });
+          }}
+        />
+      )}
+
       {/* Getting Started Checklist - for new companies */}
       <GettingStartedChecklist
         clientCount={clients.length}
