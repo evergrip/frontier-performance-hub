@@ -177,6 +177,24 @@ export default function MeetingCard({ meeting, users, meetingTypes = [], onEdit,
             <p className="text-sm text-slate-600 line-clamp-2">{meeting.outcome_summary}</p>
           </div>
         )}
+
+        {/* Quick Actions for Organizer */}
+        {currentUserId && meeting.organizer_id === currentUserId && (
+          <div className="border-t pt-3 mt-3 flex flex-wrap gap-2">
+            {meeting.status === 'scheduled' && (
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1"
+                onClick={(e) => { e.stopPropagation(); onQuickStart?.(meeting); }}>
+                <Play className="w-3 h-3" /> Start Meeting
+              </Button>
+            )}
+            {(meeting.status === 'scheduled' || meeting.status === 'in_progress') && (
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1 text-green-700 border-green-300 hover:bg-green-50"
+                onClick={(e) => { e.stopPropagation(); onQuickComplete?.(meeting); }}>
+                <Check className="w-3 h-3" /> Mark Complete
+              </Button>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
