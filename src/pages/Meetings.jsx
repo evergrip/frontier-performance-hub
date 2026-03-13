@@ -19,6 +19,7 @@ import { getGoogleCalendarUrl } from '../components/meetings/CalendarInviteButto
 import AllActionItemsView from '../components/meetings/AllActionItemsView';
 import AgendaTemplatesTab from '@/components/meetings/AgendaTemplatesTab';
 import MeetingWalkthrough from '@/components/meetings/MeetingWalkthrough';
+import MeetingReminderPopup from '@/components/meetings/MeetingReminderPopup';
 
 export default function Meetings() {
   const [formOpen, setFormOpen] = useState(false);
