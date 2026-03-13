@@ -420,7 +420,11 @@ export default function Meetings() {
             <div className="grid gap-4 md:grid-cols-2">
               {filtered.map(m => (
                 <div key={m.id} onClick={() => setDetailMeeting(m)} className="cursor-pointer">
-                  <MeetingCard meeting={m} users={users} meetingTypes={meetingTypes} onEdit={handleEdit} onDelete={handleDelete} />
+                  <MeetingCard meeting={m} users={users} meetingTypes={meetingTypes} onEdit={handleEdit} onDelete={handleDelete}
+                    currentUserId={currentUser?.id}
+                    onQuickStart={(mtg) => updateMutation.mutate({ id: mtg.id, data: { status: 'in_progress', actual_start_time: new Date().toISOString() } })}
+                    onQuickComplete={(mtg) => { setDetailMeeting(mtg); }}
+                  />
                 </div>
               ))}
             </div>
