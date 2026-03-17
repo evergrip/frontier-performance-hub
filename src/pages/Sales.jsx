@@ -44,6 +44,7 @@ export default function Sales() {
   const [sendBackToLeadsDialogOpen, setSendBackToLeadsDialogOpen] = useState(false);
   const [sendBackLeadPhase, setSendBackLeadPhase] = useState('');
   const [reopenPreconDialogOpen, setReopenPreconDialogOpen] = useState(false);
+  const [finalizePreconCostsDialogOpen, setFinalizePreconCostsDialogOpen] = useState(false);
   const [reopenAction, setReopenAction] = useState('reopen'); // 'reopen' or 'convert'
   const [convertAuditPassed, setConvertAuditPassed] = useState(false);
   const [finalizeAuditPassed, setFinalizeAuditPassed] = useState(false);
