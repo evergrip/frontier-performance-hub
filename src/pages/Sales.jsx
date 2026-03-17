@@ -1563,6 +1563,54 @@ export default function Sales() {
         </DialogContent>
       </Dialog>
 
+      {/* Finalize Precon Costs Dialog */}
+      <Dialog open={finalizePreconCostsDialogOpen} onOpenChange={setFinalizePreconCostsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Finalize Preconstruction Costs</DialogTitle>
+          </DialogHeader>
+          {selectedSale && (
+            <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="text-sm font-medium text-slate-900">{selectedSale.title}</p>
+                <p className="text-xs text-slate-500">{getClientName(selectedSale.client_id)}</p>
+              </div>
+
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg space-y-2">
+                <p className="text-sm font-medium text-emerald-800">
+                  Confirm that all final bills have been received and the preconstruction costs below are accurate.
+                </p>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div>
+                    <p className="text-xs text-slate-500">Contract Value</p>
+                    <p className="text-sm font-bold text-slate-900">${((selectedSale.contract_value || 0)).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Total Deposits</p>
+                    <p className="text-sm font-bold text-slate-900">${getTotalDeposits(selectedSale).toLocaleString()}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">
+                  Once finalized, costs will be locked. You can still edit them by un-finalizing if needed.
+                </p>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={() => setFinalizePreconCostsDialogOpen(false)}>Cancel</Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={finalizePreconCostsMutation.isPending}
+                  onClick={() => finalizePreconCostsMutation.mutate({ sale: selectedSale })}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Finalize Costs
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Send Back to Leads Dialog */}
       <Dialog open={sendBackToLeadsDialogOpen} onOpenChange={setSendBackToLeadsDialogOpen}>
         <DialogContent>
