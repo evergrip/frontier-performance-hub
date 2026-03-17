@@ -934,13 +934,40 @@ export default function Sales() {
                             {sale.estimated_construction_budget ? `$${((sale.estimated_construction_budget) / 1000).toFixed(0)}k` : '-'}
                           </TableCell>
                           <TableCell>
+                            {sale.status === 'closed_won' && sale.sale_type === 'preconstruction' ? (
+                              sale.precon_costs_finalized ? (
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                  <CheckCircle2 className="w-3 h-3" /> Finalized
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                  <Clock className="w-3 h-3" /> Pending Final Bills
+                                </span>
+                              )
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
                             {sale.close_date ? format(new Date(sale.close_date), 'MMM d, yyyy') : 
                               sale.phase_history?.length > 0 
                                 ? format(new Date(sale.phase_history[sale.phase_history.length - 1].entered_date), 'MMM d, yyyy')
                                 : '-'}
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-wrap">
+                              {/* Edit costs & invoices on closed precon sales that aren't finalized */}
+                              {sale.status === 'closed_won' && sale.sale_type === 'preconstruction' && !sale.precon_costs_finalized && (
+                                <>
+                                  <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setEditingSale(sale); setEditSaleDialogOpen(true); }}>
+                                    <Pencil className="w-3 h-3 mr-1" /> Edit Costs
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); setInvoiceDialogOpen(true); }}>
+                                    <FileText className="w-3 h-3 mr-1" /> Deposits & Invoices
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="text-xs bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); setFinalizePreconCostsDialogOpen(true); }}>
+                                    <CheckCircle2 className="w-3 h-3 mr-1" /> Finalize Costs
+                                  </Button>
+                                </>
+                              )}
                               {!hasConstructionSale && sale.status === 'closed_won' && (
                                 <>
                                   <Button size="sm" variant="outline" className="text-xs" onClick={(e) => { e.stopPropagation(); setSelectedSale(sale); setReopenAction('reopen'); setReopenPreconDialogOpen(true); }}>
