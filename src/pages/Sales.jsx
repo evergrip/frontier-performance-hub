@@ -220,6 +220,27 @@ export default function Sales() {
     }
   });
 
+  const finalizePreconCostsMutation = useMutation({
+    mutationFn: async ({ sale }) => {
+      await base44.entities.Sale.update(sale.id, {
+        precon_costs_finalized: true
+      });
+      // Re-process commission with final contract value
+      await base44.functions.invoke('processCommission', {
+        sale_id: sale.id,
+        sale_type: 'preconstruction',
+        final_amount: sale.contract_value,
+        is_update: true
+      });
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['sales']);
+      setFinalizePreconCostsDialogOpen(false);
+      toast.success('Preconstruction costs finalized');
+    }
+  });
+
   const convertToConstructionMutation = useMutation({
     mutationFn: async ({ preconSale, final_precon_value, construction_budget }) => {
       // Update preconstruction sale with final value and add closed_won to phase_history
