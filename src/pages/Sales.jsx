@@ -1734,20 +1734,23 @@ export default function Sales() {
 
               {/* Actions */}
               <div className="grid grid-cols-2 gap-2">
-                <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setEditingSale(selectedSale); setEditSaleDialogOpen(true); }}>
-                  <Pencil className="w-3 h-3 mr-1" /> Edit Details
-                </Button>
+                {/* Always allow editing if costs aren't finalized */}
+                {(!['closed_won', 'closed_lost'].includes(selectedSale.status) || !selectedSale.precon_costs_finalized) && (
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setEditingSale(selectedSale); setEditSaleDialogOpen(true); }}>
+                    <Pencil className="w-3 h-3 mr-1" /> Edit Details
+                  </Button>
+                )}
                 {nextStatus && (
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openAdvanceDialog(selectedSale); }}>
                     <ChevronRight className="w-3 h-3 mr-1" /> Move to Next Phase
                   </Button>
                 )}
-                {!(selectedSale.deposits || []).length && !selectedSale.minimum_draw_threshold && (
+                {!(selectedSale.deposits || []).length && !selectedSale.minimum_draw_threshold && !['closed_won', 'closed_lost'].includes(selectedSale.status) && (
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openFinanceDialog(selectedSale); }}>
                     <DollarSign className="w-3 h-3 mr-1" /> Setup Tracking
                   </Button>
                 )}
-                {((selectedSale.deposits || []).length > 0 || selectedSale.minimum_draw_threshold) && (
+                {((selectedSale.deposits || []).length > 0 || selectedSale.minimum_draw_threshold || ['closed_won'].includes(selectedSale.status)) && !selectedSale.precon_costs_finalized && (
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); openInvoiceDialog(selectedSale); }}>
                     <FileText className="w-3 h-3 mr-1" /> Deposits & Invoices
                   </Button>
@@ -1757,10 +1760,23 @@ export default function Sales() {
                     <Building2 className="w-3 h-3 mr-1" /> Convert to Construction
                   </Button>
                 )}
-                <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setSelectedSale(selectedSale); setFinalPreconValue(selectedSale.contract_value || ''); setClosePreconDialogOpen(true); }}>
-                  Finalize Pre-Con Only
-                </Button>
-                {selectedSale.lead_id && (
+                {!['closed_won', 'closed_lost'].includes(selectedSale.status) && (
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => { setDetailDialogOpen(false); setSelectedSale(selectedSale); setFinalPreconValue(selectedSale.contract_value || ''); setClosePreconDialogOpen(true); }}>
+                    Finalize Pre-Con Only
+                  </Button>
+                )}
+                {/* Finalize costs button for closed precon sales */}
+                {selectedSale.status === 'closed_won' && selectedSale.sale_type === 'preconstruction' && !selectedSale.precon_costs_finalized && (
+                  <Button size="sm" variant="outline" className="text-xs bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100" onClick={() => { setDetailDialogOpen(false); setFinalizePreconCostsDialogOpen(true); }}>
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Finalize Costs
+                  </Button>
+                )}
+                {selectedSale.status === 'closed_won' && selectedSale.precon_costs_finalized && (
+                  <div className="col-span-2 flex items-center gap-1.5 px-2 py-1 text-xs text-emerald-700 bg-emerald-50 rounded">
+                    <CheckCircle2 className="w-3 h-3" /> Preconstruction costs finalized
+                  </div>
+                )}
+                {selectedSale.lead_id && !['closed_won', 'closed_lost'].includes(selectedSale.status) && (
                   <Button size="sm" variant="outline" className="text-xs border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => { setDetailDialogOpen(false); setSendBackLeadPhase('new_project_lead'); setSendBackToLeadsDialogOpen(true); }}>
                     <ChevronLeft className="w-3 h-3 mr-1" /> Send Back to Leads
                   </Button>
