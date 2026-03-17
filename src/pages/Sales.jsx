@@ -896,15 +896,16 @@ export default function Sales() {
               {closedPreconSales.length > 0 ? (
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Client</TableHead>
-                      <TableHead>Outcome</TableHead>
-                      <TableHead>Contract Value</TableHead>
-                      <TableHead>Est. Construction</TableHead>
-                      <TableHead>Close Date</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
+                   <TableRow>
+                     <TableHead>Project</TableHead>
+                     <TableHead>Client</TableHead>
+                     <TableHead>Outcome</TableHead>
+                     <TableHead>Contract Value</TableHead>
+                     <TableHead>Est. Construction</TableHead>
+                     <TableHead>Precon Costs</TableHead>
+                     <TableHead>Close Date</TableHead>
+                     <TableHead></TableHead>
+                   </TableRow>
                   </TableHeader>
                   <TableBody>
                     {closedPreconSales.map((sale) => {
