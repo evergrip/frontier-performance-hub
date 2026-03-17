@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Briefcase, Building2, ChevronRight, ChevronLeft, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical, Archive, Pencil } from 'lucide-react';
+import { Briefcase, Building2, ChevronRight, ChevronLeft, DollarSign, AlertCircle, FileText, Plus, Trash2, GripVertical, Archive, Pencil, CheckCircle2, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
