@@ -159,13 +159,10 @@ export default function VarCompRuleFormDialog({ open, onOpenChange, editingRule 
                   <Button variant="ghost" size="icon" onClick={() => removePool(idx)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label className="text-xs">Eligible Roles (comma-separated)</Label>
+                  <div className="col-span-2">
+                    <Label className="text-xs">Eligible Pool Tags (comma-separated, e.g. shareholders, leadership, full_staff, or "all")</Label>
                     <Input value={(pool.eligible_roles || []).join(', ')} onChange={e => updatePool(idx, 'eligible_roles', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} className="text-xs" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Also Participates In (pool names)</Label>
-                    <Input value={(pool.also_participates_in || []).join(', ')} onChange={e => updatePool(idx, 'also_participates_in', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} className="text-xs" />
+                    <p className="text-xs text-slate-400 mt-1">Users assigned to any of these pools in User Admin will be included. Use "all" to include everyone eligible.</p>
                   </div>
                 </div>
               </div>
