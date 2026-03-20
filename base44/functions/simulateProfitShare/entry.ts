@@ -8,15 +8,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { rule, seeded_np_percent, seeded_revenue } = await req.json();
+    const { rule, seeded_np_percent, seeded_revenue, simulated_users } = await req.json();
 
     if (!rule || seeded_np_percent === undefined || seeded_revenue === undefined) {
       return Response.json({ error: 'Missing required fields: rule, seeded_np_percent, seeded_revenue' }, { status: 400 });
     }
 
-    // Get all users
-    const allUsers = await base44.asServiceRole.entities.User.list();
-    const eligibleUsers = allUsers.filter(u => u.profit_sharing_eligible);
+    // Use simulated users if provided, otherwise fetch real users
+    let eligibleUsers;
+    if (simulated_users && simulated_users.length > 0) {
+      eligibleUsers = simulated_users.filter(u => u.profit_sharing_eligible);
+    } else {
+      const allUsers = await base44.asServiceRole.entities.User.list();
+      eligibleUsers = allUsers.filter(u => u.profit_sharing_eligible);
+    }
 
     const gateValue = rule.payout_gate_value || 0;
     const companyRetention = rule.company_retention_percent || 0;
