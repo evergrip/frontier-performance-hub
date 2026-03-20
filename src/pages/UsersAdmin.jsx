@@ -120,7 +120,10 @@ export default function UsersAdmin() {
       commission_rule_ids: selectedUser.commission_rule_ids,
       next_year_commission_rule_ids: selectedUser.next_year_commission_rule_ids,
       is_commission_eligible: selectedUser.departments?.includes('sales'),
-      commission_start_date: selectedUser.commission_start_date || null
+      commission_start_date: selectedUser.commission_start_date || null,
+      profit_sharing_eligible: selectedUser.profit_sharing_eligible || false,
+      profit_sharing_pool: selectedUser.profit_sharing_eligible ? (selectedUser.profit_sharing_pool || null) : null,
+      hire_date: selectedUser.hire_date || null,
     };
     
     updateUserMutation.mutate({
@@ -361,6 +364,46 @@ export default function UsersAdmin() {
                   ))}
                 </div>
               </div>
+              {/* Profit Sharing Eligibility */}
+              <div className="space-y-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Profit Sharing Eligible</Label>
+                    <p className="text-xs text-slate-500">Admin override for variable compensation eligibility</p>
+                  </div>
+                  <Switch
+                    checked={selectedUser.profit_sharing_eligible || false}
+                    onCheckedChange={(checked) => setSelectedUser({ ...selectedUser, profit_sharing_eligible: checked })}
+                  />
+                </div>
+                {selectedUser.profit_sharing_eligible && (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-xs text-slate-500">Profit Sharing Pool</Label>
+                      <Select
+                        value={selectedUser.profit_sharing_pool || ''}
+                        onValueChange={(value) => setSelectedUser({ ...selectedUser, profit_sharing_pool: value })}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Select pool" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="shareholders">Shareholders</SelectItem>
+                          <SelectItem value="leadership">Leadership</SelectItem>
+                          <SelectItem value="full_staff">Full Staff</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-slate-500">Hire Date (for tenure calc)</Label>
+                      <Input
+                        type="date"
+                        value={selectedUser.hire_date || ''}
+                        onChange={(e) => setSelectedUser({ ...selectedUser, hire_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Department Manager Toggle */}
               <div className="space-y-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
                 <div className="flex items-center justify-between">
