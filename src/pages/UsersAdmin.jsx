@@ -122,7 +122,7 @@ export default function UsersAdmin() {
       is_commission_eligible: selectedUser.departments?.includes('sales'),
       commission_start_date: selectedUser.commission_start_date || null,
       profit_sharing_eligible: selectedUser.profit_sharing_eligible || false,
-      profit_sharing_pool: selectedUser.profit_sharing_eligible ? (selectedUser.profit_sharing_pool || null) : null,
+      profit_sharing_pools: selectedUser.profit_sharing_eligible ? (selectedUser.profit_sharing_pools || []) : [],
       hire_date: selectedUser.hire_date || null,
     };
     
@@ -379,18 +379,33 @@ export default function UsersAdmin() {
                 {selectedUser.profit_sharing_eligible && (
                   <div className="space-y-2">
                     <div>
-                      <Label className="text-xs text-slate-500">Profit Sharing Pool</Label>
-                      <Select
-                        value={selectedUser.profit_sharing_pool || ''}
-                        onValueChange={(value) => setSelectedUser({ ...selectedUser, profit_sharing_pool: value })}
-                      >
-                        <SelectTrigger><SelectValue placeholder="Select pool" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="shareholders">Shareholders</SelectItem>
-                          <SelectItem value="leadership">Leadership</SelectItem>
-                          <SelectItem value="full_staff">Full Staff</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label className="text-xs text-slate-500">Profit Sharing Pools</Label>
+                      <div className="space-y-2 mt-1">
+                        {[
+                          { value: 'shareholders', label: 'Shareholders / Ownership' },
+                          { value: 'leadership', label: 'Leadership' },
+                          { value: 'full_staff', label: 'Full Staff / Employee' },
+                        ].map((pool) => {
+                          const pools = selectedUser.profit_sharing_pools || [];
+                          const checked = pools.includes(pool.value);
+                          return (
+                            <label key={pool.value} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  const updated = checked
+                                    ? pools.filter(p => p !== pool.value)
+                                    : [...pools, pool.value];
+                                  setSelectedUser({ ...selectedUser, profit_sharing_pools: updated });
+                                }}
+                                className="rounded border-slate-300"
+                              />
+                              <span className="text-sm">{pool.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div>
                       <Label className="text-xs text-slate-500">Hire Date (for tenure calc)</Label>
