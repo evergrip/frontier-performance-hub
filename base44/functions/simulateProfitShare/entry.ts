@@ -54,34 +54,17 @@ Deno.serve(async (req) => {
       const poolAmount = distributableAmount * (pool.allocation_percent / 100);
 
       // Find eligible users for this pool
-      const poolUsers = eligibleUsers.filter(u => {
-        if (!u.profit_sharing_pool) return false;
-        const userPool = u.profit_sharing_pool.toLowerCase();
-        const eligibleRoles = (pool.eligible_roles || []).map(r => r.toLowerCase());
+      // Users now have profit_sharing_pools (array) — match if any user pool is in the pool's eligible_roles
+      const poolNameNormalized = pool.pool_name.toLowerCase().replace(/\s+/g, '_');
+      const eligibleRoles = (pool.eligible_roles || []).map(r => r.toLowerCase().replace(/\s+/g, '_'));
+
+      const allPoolUsers = eligibleUsers.filter(u => {
+        const userPools = (u.profit_sharing_pools || []).map(p => p.toLowerCase().replace(/\s+/g, '_'));
+        if (userPools.length === 0) return false;
         if (eligibleRoles.includes('all')) return true;
-        return eligibleRoles.includes(userPool);
+        // User is in this pool if any of their assigned pools matches the eligible roles OR the pool name itself
+        return userPools.some(up => eligibleRoles.includes(up) || up === poolNameNormalized);
       });
-
-      // Also check "also_participates_in" — if leadership also participates in full_staff
-      const crossPoolUsers = [];
-      if (pool.also_participates_in?.length > 0) {
-        // Users from other pools that also participate here
-        for (const otherPoolName of pool.also_participates_in) {
-          const otherPool = pools.find(p => p.pool_name.toLowerCase() === otherPoolName.toLowerCase());
-          if (otherPool) {
-            const otherPoolEligible = eligibleUsers.filter(u => {
-              if (!u.profit_sharing_pool) return false;
-              const userPool = u.profit_sharing_pool.toLowerCase();
-              const eligibleRoles = (otherPool.eligible_roles || []).map(r => r.toLowerCase());
-              if (eligibleRoles.includes('all')) return true;
-              return eligibleRoles.includes(userPool);
-            });
-            crossPoolUsers.push(...otherPoolEligible.filter(u => !poolUsers.find(pu => pu.id === u.id)));
-          }
-        }
-      }
-
-      const allPoolUsers = [...poolUsers, ...crossPoolUsers];
       const headCount = allPoolUsers.length || 1;
       const baseSharePerPerson = poolAmount / headCount;
 
