@@ -78,8 +78,6 @@ export default function Layout({ children, currentPageName }) {
     { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
   ];
 
-  const varCompEnabled = typeof window !== 'undefined' && localStorage.getItem('varcomp_enabled') === 'true';
-
   const adminNavigation = [
     { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
     { name: 'Data Quality', icon: Flag, page: 'DataQuality' },
@@ -87,13 +85,13 @@ export default function Layout({ children, currentPageName }) {
     ...(schedulerEnabled ? [{ name: 'Subtrades', icon: Wrench, page: 'Subtrades' }] : []),
     { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
     { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
-    ...(varCompEnabled ? [{ name: 'Var Comp Admin', icon: PieChart, page: 'VarCompAdmin' }] : []),
+    { name: 'Var Comp Admin', icon: PieChart, page: 'VarCompAdmin' },
   ];
 
   const userNavigation = [
     { name: 'My Commissions', icon: DollarSign, page: 'Commissions' },
     { name: 'My Alerts', icon: Bell, page: 'MyAlerts' },
-    ...(varCompEnabled ? [{ name: 'My Profit Share', icon: PieChart, page: 'MyProfitShare' }] : []),
+    { name: 'My Profit Share', icon: PieChart, page: 'MyProfitShare' },
   ];
 
   const isActive = (pageName) => currentPageName === pageName;
