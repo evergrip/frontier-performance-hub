@@ -7,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, MinusCircle, Play, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const QUARTERS = [1, 2, 3, 4];
-
 export default function QuarterlyGateStatus({ filterYear }) {
   const [evaluating, setEvaluating] = useState(null);
   const queryClient = useQueryClient();
@@ -31,6 +29,10 @@ export default function QuarterlyGateStatus({ filterYear }) {
   const activeRule = rules.find(r => r.status === 'active' && r.effective_fiscal_year === filterYear);
   const yearEntries = npEntries.filter(e => e.fiscal_year === filterYear && e.period_type === 'quarterly');
   const yearPayouts = payouts.filter(p => p.fiscal_year === filterYear);
+
+  // Only show quarters defined in the rule's payout schedule
+  const isQuarterly = !activeRule || activeRule.payout_schedule !== 'annual';
+  const activeQuarters = activeRule?.payout_quarters?.length > 0 ? activeRule.payout_quarters : [1, 2, 3, 4];
 
   const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -95,8 +97,12 @@ export default function QuarterlyGateStatus({ filterYear }) {
         {!activeRule && (
           <p className="text-sm text-slate-500 mb-4">No active rule for FY {filterYear}. Create and activate a rule first.</p>
         )}
+        {activeRule && !isQuarterly && (
+          <p className="text-sm text-slate-500 mb-4">This rule is set to annual-only payouts. Quarterly evaluation is disabled.</p>
+        )}
+        {isQuarterly && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {QUARTERS.map(q => {
+          {activeQuarters.map(q => {
             const qs = getQuarterStatus(q);
             return (
               <div key={q} className={`rounded-xl border p-4 space-y-2 ${
@@ -150,6 +156,7 @@ export default function QuarterlyGateStatus({ filterYear }) {
             );
           })}
         </div>
+        )}
       </CardContent>
     </Card>
   );
