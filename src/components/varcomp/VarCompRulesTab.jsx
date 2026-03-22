@@ -66,7 +66,7 @@ export default function VarCompRulesTab() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
               <CardTitle className="text-lg">{rule.rule_name}</CardTitle>
-              <p className="text-sm text-slate-500">FY {rule.effective_fiscal_year} • Gate: {rule.payout_gate_value}% NP</p>
+              <p className="text-sm text-slate-500">FY {rule.effective_fiscal_year} • Gate: {rule.payout_gate_value}% NP{rule.min_net_profit_dollars ? ` • Floor: $${rule.min_net_profit_dollars.toLocaleString()}` : ''}</p>
             </div>
             <Badge className={statusColors[rule.status]}>{rule.status}</Badge>
           </CardHeader>
