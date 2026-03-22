@@ -38,19 +38,21 @@ export default function VarCompPayoutsTab() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Pool</TableHead>
-                  <TableHead className="text-right">Base Share</TableHead>
-                  <TableHead className="text-right">Multiplier</TableHead>
-                  <TableHead className="text-right">Final Payout</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
+                   <TableHead>Employee</TableHead>
+                   <TableHead>Quarter</TableHead>
+                   <TableHead>Pool</TableHead>
+                   <TableHead className="text-right">Base Share</TableHead>
+                   <TableHead className="text-right">Multiplier</TableHead>
+                   <TableHead className="text-right">Final Payout</TableHead>
+                   <TableHead>Status</TableHead>
+                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-slate-400 py-8">No payouts for FY {filterYear}. Use the simulation tool on a rule to preview outcomes.</TableCell></TableRow>}
-                {filtered.map(p => (
+                {filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-slate-400 py-8">No payouts for FY {filterYear}. Use the quarterly gate evaluation or simulation tool to generate payouts.</TableCell></TableRow>}
+                {filtered.sort((a, b) => (a.quarter || 0) - (b.quarter || 0)).map(p => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.user_name}</TableCell>
+                    <TableCell>{p.quarter ? `Q${p.quarter}` : 'Annual'}</TableCell>
                     <TableCell>{p.pool_name}</TableCell>
                     <TableCell className="text-right">{fmt(p.base_share_amount)}</TableCell>
                     <TableCell className="text-right">{p.tenure_multiplier}x</TableCell>

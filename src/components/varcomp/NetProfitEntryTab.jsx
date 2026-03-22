@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import QuarterlyGateStatus from './QuarterlyGateStatus';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -83,6 +84,8 @@ export default function NetProfitEntryTab() {
         </div>
         <Button onClick={() => handleOpen(null)} className="bg-gradient-to-r from-amber-500 to-amber-600 text-white"><Plus className="w-4 h-4 mr-2" /> New Entry</Button>
       </div>
+
+      <QuarterlyGateStatus filterYear={filterYear} />
 
       <Card>
         <CardHeader><CardTitle>NP% Entries — FY {filterYear}</CardTitle></CardHeader>
