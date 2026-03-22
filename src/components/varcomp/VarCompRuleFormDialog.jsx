@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,6 +38,8 @@ const defaultRule = {
     ],
   },
   tracking_interval: 'monthly',
+  payout_schedule: 'quarterly',
+  payout_quarters: [1, 2, 3, 4],
 };
 
 export default function VarCompRuleFormDialog({ open, onOpenChange, editingRule }) {
@@ -213,9 +216,54 @@ export default function VarCompRuleFormDialog({ open, onOpenChange, editingRule 
             )}
           </div>
 
+          {/* Payout Schedule */}
+          <div className="p-4 bg-amber-50 rounded-lg space-y-4">
+            <h3 className="font-semibold text-slate-900">Payout Calculation Schedule</h3>
+            <div>
+              <Label>Calculate Payouts</Label>
+              <Select value={form.payout_schedule || 'quarterly'} onValueChange={v => setForm({ ...form, payout_schedule: v })}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="quarterly">Per Quarter</SelectItem>
+                  <SelectItem value="annual">Annual Only</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                {form.payout_schedule === 'quarterly'
+                  ? 'Each selected quarter is evaluated independently against the gate. If met, payouts are generated for that quarter.'
+                  : 'Payouts are only calculated once at year-end based on total annual performance.'}
+              </p>
+            </div>
+            {form.payout_schedule === 'quarterly' && (
+              <div>
+                <Label className="mb-2 block">Active Payout Quarters</Label>
+                <div className="flex gap-6">
+                  {[1, 2, 3, 4].map(q => (
+                    <label key={q} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={(form.payout_quarters || []).includes(q)}
+                        onCheckedChange={(checked) => {
+                          const current = form.payout_quarters || [];
+                          setForm({
+                            ...form,
+                            payout_quarters: checked
+                              ? [...current, q].sort()
+                              : current.filter(x => x !== q)
+                          });
+                        }}
+                      />
+                      <span className="text-sm font-medium">Q{q}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Only selected quarters will be evaluated for profit sharing payouts.</p>
+              </div>
+            )}
+          </div>
+
           {/* Tracking Interval */}
           <div>
-            <Label>Tracking Interval</Label>
+            <Label>NP% Tracking Interval</Label>
             <Select value={form.tracking_interval} onValueChange={v => setForm({ ...form, tracking_interval: v })}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
