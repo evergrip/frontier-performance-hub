@@ -156,6 +156,8 @@ Deno.serve(async (req) => {
       gate_met: true,
       seeded_np_percent,
       gate_value: gateValue,
+      min_np_floor: minNpFloor,
+      actual_net_profit_dollars: Math.round(actualNetProfitDollars * 100) / 100,
       excess_percent: Math.round(excessPercent * 100) / 100,
       excess_dollars: Math.round(excessDollars * 100) / 100,
       company_retention: Math.round(companyRetentionDollars * 100) / 100,
