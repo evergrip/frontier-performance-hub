@@ -128,11 +128,18 @@ export default function VarCompRuleFormDialog({ open, onOpenChange, editingRule 
           {/* Gate & Distribution */}
           <div className="p-4 bg-slate-50 rounded-lg space-y-4">
             <h3 className="font-semibold text-slate-900">Payout Gate & Distribution</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>NP% Gate</Label>
                 <Input type="number" step="0.1" value={form.payout_gate_value} onChange={e => setForm({ ...form, payout_gate_value: Number(e.target.value) })} />
               </div>
+              <div>
+                <Label>Min Net Profit $ Floor</Label>
+                <Input type="number" value={form.min_net_profit_dollars || ''} onChange={e => setForm({ ...form, min_net_profit_dollars: e.target.value ? Number(e.target.value) : null })} placeholder="e.g. 500000" />
+                <p className="text-xs text-slate-500 mt-1">Even if NP% gate is met, total net profit must exceed this dollar amount before sharing begins.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Company Retention %</Label>
                 <Input type="number" step="0.1" value={form.company_retention_percent} onChange={e => setForm({ ...form, company_retention_percent: Number(e.target.value) })} />

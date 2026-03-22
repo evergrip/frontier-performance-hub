@@ -29,15 +29,27 @@ Deno.serve(async (req) => {
     const pools = rule.pools || [];
     const eligibilityRules = rule.eligibility_rules || {};
 
+    // Calculate actual net profit dollars
+    const actualNetProfitDollars = (seeded_np_percent / 100) * seeded_revenue;
+    const minNpFloor = rule.min_net_profit_dollars || 0;
+
     // Calculate excess
     const excessPercent = Math.max(0, seeded_np_percent - gateValue);
     const excessDollars = (excessPercent / 100) * seeded_revenue;
 
-    if (excessDollars <= 0) {
+    // Check both gates: NP% gate AND dollar floor
+    const npPercentGateMet = excessDollars > 0;
+    const dollarFloorMet = actualNetProfitDollars >= minNpFloor;
+
+    if (!npPercentGateMet || !dollarFloorMet) {
       return Response.json({
         gate_met: false,
         seeded_np_percent,
         gate_value: gateValue,
+        min_np_floor: minNpFloor,
+        actual_net_profit_dollars: Math.round(actualNetProfitDollars * 100) / 100,
+        floor_met: dollarFloorMet,
+        percent_gate_met: npPercentGateMet,
         excess_percent: 0,
         excess_dollars: 0,
         company_retention: 0,
