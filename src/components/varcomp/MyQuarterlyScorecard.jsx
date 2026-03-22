@@ -4,8 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 
-const QUARTERS = [1, 2, 3, 4];
-
 export default function MyQuarterlyScorecard({ userId, filterYear }) {
   const { data: payouts = [] } = useQuery({
     queryKey: ['myProfitSharePayouts', userId],
@@ -14,9 +12,18 @@ export default function MyQuarterlyScorecard({ userId, filterYear }) {
   });
 
   const { data: npEntries = [] } = useQuery({
-    queryKey: ['publicNpEntries'],
+    queryKey: ['publicNpEntries', filterYear],
     queryFn: () => base44.entities.NetProfitEntry.filter({ period_type: 'quarterly', fiscal_year: filterYear }),
   });
+
+  const { data: rules = [] } = useQuery({
+    queryKey: ['varCompRules'],
+    queryFn: () => base44.entities.VarCompRule.list('-created_date'),
+  });
+
+  const activeRule = rules.find(r => r.status === 'active' && r.effective_fiscal_year === filterYear);
+  const isQuarterly = !activeRule || activeRule.payout_schedule !== 'annual';
+  const activeQuarters = activeRule?.payout_quarters?.length > 0 ? activeRule.payout_quarters : [1, 2, 3, 4];
 
   const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -45,8 +52,12 @@ export default function MyQuarterlyScorecard({ userId, filterYear }) {
         <CardTitle className="text-base">Quarterly Profit Share Scorecard — FY {filterYear}</CardTitle>
       </CardHeader>
       <CardContent>
+        {!isQuarterly && (
+          <p className="text-sm text-slate-500">This year's profit sharing is evaluated annually. Quarterly breakdown is not available.</p>
+        )}
+        {isQuarterly && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {QUARTERS.map(q => {
+          {activeQuarters.map(q => {
             const info = getQuarterInfo(q);
             return (
               <div key={q} className={`rounded-xl border p-4 text-center space-y-2 ${
@@ -76,6 +87,7 @@ export default function MyQuarterlyScorecard({ userId, filterYear }) {
             );
           })}
         </div>
+        )}
         <div className="mt-4 text-right">
           <span className="text-sm text-slate-500">YTD Total:</span>
           <span className="ml-2 text-lg font-bold text-slate-900">{fmt(yearTotal)}</span>
