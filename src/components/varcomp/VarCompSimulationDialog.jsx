@@ -88,8 +88,16 @@ export default function VarCompSimulationDialog({ open, onOpenChange, rule }) {
                 <CardContent className="py-4 flex items-center gap-3">
                   {result.gate_met ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <AlertCircle className="w-5 h-5 text-red-600" />}
                   <div>
-                    <p className="font-medium">{result.gate_met ? 'Payout Gate Met' : 'Payout Gate NOT Met'}</p>
+                    <p className="font-medium">{result.gate_met ? 'All Gates Met — Sharing Active' : 'Payout Gate NOT Met'}</p>
                     <p className="text-sm text-slate-600">NP% {result.seeded_np_percent}% vs Gate {result.gate_value}%</p>
+                    {!result.gate_met && result.percent_gate_met === false && (
+                      <p className="text-sm text-red-600">NP% is below the required gate threshold.</p>
+                    )}
+                    {!result.gate_met && result.floor_met === false && (
+                      <p className="text-sm text-red-600">
+                        Net profit {fmt(result.actual_net_profit_dollars)} is below the {fmt(result.min_np_floor)} dollar floor.
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
