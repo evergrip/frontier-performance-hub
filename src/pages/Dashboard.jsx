@@ -77,7 +77,6 @@ export default function Dashboard() {
       return response.data?.users || [];
     },
     initialData: [],
-    enabled: !!user && user.role === 'admin',
   });
 
   // Filter meetings for privacy
