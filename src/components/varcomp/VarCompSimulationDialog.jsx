@@ -19,15 +19,20 @@ export default function VarCompSimulationDialog({ open, onOpenChange, rule }) {
 
   const loadRealUsers = async () => {
     setLoadingReal(true);
-    const users = await base44.entities.User.list();
-    setSimUsers(users.map(u => ({
-      _simId: u.id,
-      full_name: u.full_name,
-      hire_date: u.hire_date || '',
-      profit_sharing_pools: u.profit_sharing_pools || [],
-      profit_sharing_eligible: u.profit_sharing_eligible || false,
-    })));
-    setLoadingReal(false);
+    try {
+      const users = await base44.entities.User.list();
+      setSimUsers(users.map(u => ({
+        _simId: u.id,
+        full_name: u.full_name,
+        hire_date: u.hire_date || '',
+        profit_sharing_pools: u.profit_sharing_pools || [],
+        profit_sharing_eligible: u.profit_sharing_eligible || false,
+      })));
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoadingReal(false);
+    }
   };
 
   const runSimulation = async () => {
