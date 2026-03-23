@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Target, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Minus, PartyPopper, Trophy } from 'lucide-react';
 
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -99,8 +99,17 @@ export default function AnnualProgressTracker({ filterYear, showPayoutInfo, user
     ? payouts.reduce((s, p) => s + (p.final_payout_amount || 0), 0)
     : 0;
 
-  // Bar chart max value
-  const maxVal = Math.max(annualFloor, cumulativeActual[3] || cumulativeActual[displayQuarter - 1], 1);
+  // Check if annual target exceeded
+  const targetExceeded = latestDataQuarter > 0 && currentCumulative >= annualFloor && annualFloor > 0;
+  const overachievementAmount = targetExceeded ? currentCumulative - annualFloor : 0;
+  const overachievementPercent = annualFloor > 0 ? (overachievementAmount / annualFloor) * 100 : 0;
+
+  // Bar chart max value — extend beyond target if overachieving
+  const maxPositive = Math.max(annualFloor, ...cumulativeActual.filter(v => v > 0), 1);
+  // For negatives, find the most negative cumulative value
+  const minNegative = Math.min(0, ...cumulativeActual);
+  const totalRange = maxPositive - minNegative;
+  const zeroOffset = totalRange > 0 ? (Math.abs(minNegative) / totalRange) * 100 : 0;
 
   return (
     <Card>
@@ -150,6 +159,34 @@ export default function AnnualProgressTracker({ filterYear, showPayoutInfo, user
               )}
             </div>
 
+            {/* Celebration banner for exceeding annual target */}
+            {targetExceeded && (
+              <div className="rounded-xl p-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10">
+                  {[...Array(12)].map((_, i) => (
+                    <span key={i} className="absolute text-2xl" style={{ left: `${(i * 8.5) % 100}%`, top: `${(i * 17) % 80}%` }}>🎉</span>
+                  ))}
+                </div>
+                <div className="relative flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl">
+                    <Trophy className="w-8 h-8 text-yellow-300" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-lg font-bold flex items-center gap-2">
+                      <PartyPopper className="w-5 h-5" /> Annual Target Exceeded!
+                    </p>
+                    <p className="text-sm text-emerald-100">
+                      {fmt(overachievementAmount)} over target ({overachievementPercent.toFixed(1)}% above) — Outstanding work!
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-emerald-200">Actual</p>
+                    <p className="text-2xl font-bold">{fmt(currentCumulative)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Quarterly progress bars */}
             <div className="space-y-3">
               {[1, 2, 3, 4].map(q => {
@@ -158,9 +195,25 @@ export default function AnnualProgressTracker({ filterYear, showPayoutInfo, user
                 const benchmark = benchmarks[qi];
                 const hasData = q <= latestDataQuarter;
                 const isFuture = q > displayQuarter && !hasData;
-                const barActual = maxVal > 0 ? Math.min((actual / maxVal) * 100, 100) : 0;
-                const barBenchmark = maxVal > 0 ? Math.min((benchmark / maxVal) * 100, 100) : 0;
                 const qAhead = actual >= benchmark;
+                const isNegative = actual < 0;
+
+                // Calculate bar widths based on total range (supports negatives)
+                const barBenchmarkPos = totalRange > 0 ? ((benchmark - minNegative) / totalRange) * 100 : 0;
+
+                // For the actual bar: render from zero line
+                let barStart, barWidth;
+                if (isNegative) {
+                  // Bar goes LEFT from zero
+                  const actualPos = totalRange > 0 ? ((actual - minNegative) / totalRange) * 100 : 0;
+                  barStart = actualPos;
+                  barWidth = zeroOffset - actualPos;
+                } else {
+                  // Bar goes RIGHT from zero
+                  const actualPos = totalRange > 0 ? ((actual - minNegative) / totalRange) * 100 : 0;
+                  barStart = zeroOffset;
+                  barWidth = actualPos - zeroOffset;
+                }
 
                 return (
                   <div key={q} className={`${isFuture ? 'opacity-40' : ''}`}>
@@ -171,32 +224,44 @@ export default function AnnualProgressTracker({ filterYear, showPayoutInfo, user
                         </span>
                         {hasData && (
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            qAhead ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                            isNegative ? 'bg-red-100 text-red-700' :
+                            qAhead ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
                           }`}>
                             {qAhead ? '+' : ''}{fmt(actual - benchmark)}
                           </span>
                         )}
                       </div>
                       <div className="text-xs text-slate-500">
-                        <span className="font-medium">{hasData ? fmt(actual) : '—'}</span>
+                        <span className={`font-medium ${isNegative ? 'text-red-600' : ''}`}>{hasData ? fmt(actual) : '—'}</span>
                         <span className="mx-1">/</span>
                         <span>{fmt(benchmark)}</span>
                       </div>
                     </div>
                     <div className="relative h-7 bg-slate-100 rounded-full overflow-hidden">
+                      {/* Zero line when negatives exist */}
+                      {minNegative < 0 && (
+                        <div
+                          className="absolute inset-y-0 w-px bg-slate-400/60 z-10"
+                          style={{ left: `${zeroOffset}%` }}
+                        />
+                      )}
                       {/* Actual bar */}
-                      <div
-                        className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ${
-                          hasData
-                            ? qAhead ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-amber-400 to-amber-500'
-                            : 'bg-slate-200'
-                        }`}
-                        style={{ width: `${hasData ? barActual : 0}%` }}
-                      />
+                      {hasData && (
+                        <div
+                          className={`absolute inset-y-0 rounded-full transition-all duration-500 ${
+                            isNegative
+                              ? 'bg-gradient-to-l from-red-400 to-red-500'
+                              : qAhead
+                                ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
+                                : 'bg-gradient-to-r from-amber-400 to-amber-500'
+                          }`}
+                          style={{ left: `${barStart}%`, width: `${Math.max(barWidth, 0.5)}%` }}
+                        />
+                      )}
                       {/* Benchmark marker */}
                       <div
-                        className="absolute inset-y-0 w-0.5 bg-slate-900/40"
-                        style={{ left: `${barBenchmark}%` }}
+                        className="absolute inset-y-0 w-0.5 bg-slate-900/40 z-10"
+                        style={{ left: `${barBenchmarkPos}%` }}
                       >
                         <div className="absolute -top-0.5 -left-1 w-2.5 h-2.5 rounded-full bg-slate-600 border-2 border-white" />
                       </div>
@@ -207,10 +272,18 @@ export default function AnnualProgressTracker({ filterYear, showPayoutInfo, user
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-5 text-xs text-slate-500 pt-1">
+            <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500 pt-1">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500" />
-                <span>Cumulative Net Profit (actual)</span>
+                <span>On/above benchmark</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-400 to-amber-500" />
+                <span>Below benchmark</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-red-400 to-red-500" />
+                <span>Negative</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-0.5 bg-slate-900/40 relative">
