@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,14 @@ export default function VarCompSimulationDialog({ open, onOpenChange, rule }) {
   const [loading, setLoading] = useState(false);
   const [simUsers, setSimUsers] = useState([]);
   const [loadingReal, setLoadingReal] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setLoadingReal(false);
+      setLoading(false);
+      setResult(null);
+    }
+  }, [open]);
 
   const loadRealUsers = async () => {
     setLoadingReal(true);
