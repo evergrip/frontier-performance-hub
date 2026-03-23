@@ -166,7 +166,12 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
               <span>•</span>
               <span>{totalComplete}/{totalIncluded} sections complete</span>
               <div className="flex-1" />
-              <Button variant="outline" size="sm" disabled className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={totalIncluded === 0 || totalComplete < totalIncluded}
+                className="gap-2"
+              >
                 <FileText className="w-4 h-4" /> Generate Report
               </Button>
             </div>
