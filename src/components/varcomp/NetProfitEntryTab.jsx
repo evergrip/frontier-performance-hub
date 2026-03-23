@@ -63,12 +63,12 @@ export default function NetProfitEntryTab() {
     }
   };
 
-  const handleRevenueExpenseChange = (field, value) => {
+  const handleInputChange = (field, value) => {
     const updated = { ...form, [field]: Number(value) };
     const rev = field === 'total_revenue' ? Number(value) : updated.total_revenue;
-    const exp = field === 'total_expenses' ? Number(value) : updated.total_expenses;
-    updated.net_profit_dollars = rev - exp;
-    updated.net_profit_percent = rev > 0 ? Math.round(((rev - exp) / rev) * 10000) / 100 : 0;
+    const np = field === 'net_profit_dollars' ? Number(value) : updated.net_profit_dollars;
+    updated.total_expenses = rev - np;
+    updated.net_profit_percent = rev > 0 ? Math.round((np / rev) * 10000) / 100 : 0;
     setForm(updated);
   };
 
@@ -158,17 +158,17 @@ export default function NetProfitEntryTab() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Total Revenue ($)</Label>
-                <Input type="number" value={form.total_revenue} onChange={e => handleRevenueExpenseChange('total_revenue', e.target.value)} />
+                <Input type="number" value={form.total_revenue} onChange={e => handleInputChange('total_revenue', e.target.value)} />
               </div>
               <div>
-                <Label>Total Expenses ($)</Label>
-                <Input type="number" value={form.total_expenses} onChange={e => handleRevenueExpenseChange('total_expenses', e.target.value)} />
+                <Label>Net Profit ($)</Label>
+                <Input type="number" value={form.net_profit_dollars} onChange={e => handleInputChange('net_profit_dollars', e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Net Profit ($)</Label>
-                <Input value={fmt(form.net_profit_dollars)} disabled className="bg-slate-50" />
+                <Label>Expenses (calculated)</Label>
+                <Input value={fmt(form.total_expenses)} disabled className="bg-slate-50" />
               </div>
               <div>
                 <Label>Net Profit %</Label>
