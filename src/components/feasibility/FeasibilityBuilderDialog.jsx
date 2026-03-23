@@ -5,8 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus } from 'lucide-react';
 import ClauseInputForm from './ClauseInputForm';
+import ClauseFormDialog from '../admin/ClauseFormDialog';
 
 const SECTIONS = [
   'Site & Zoning Analysis',
@@ -29,6 +30,9 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const [activeSection, setActiveSection] = useState(SECTIONS[0]);
   const [activeClauseId, setActiveClauseId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [clauseFormOpen, setClauseFormOpen] = useState(false);
+  const [editingClause, setEditingClause] = useState(null);
+  const [clauseSaving, setClauseSaving] = useState(false);
 
   const { data: study } = useQuery({
     queryKey: ['feasibility-study', studyId],
@@ -119,6 +123,35 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const totalIncluded = selections.filter(s => s.included).length;
   const totalComplete = selections.filter(s => s.included && s.completion_status === 'complete').length;
 
+  const handleSaveClause = async (formData) => {
+    setClauseSaving(true);
+    try {
+      let savedClause;
+      if (editingClause) {
+        await base44.entities.FeasibilityClause.update(editingClause.id, formData);
+        savedClause = { ...editingClause, ...formData };
+      } else {
+        savedClause = await base44.entities.FeasibilityClause.create(formData);
+        // Auto-create a selection for the current study
+        if (studyId && savedClause?.id) {
+          await base44.entities.FeasibilitySelection.create({
+            study_id: studyId,
+            clause_id: savedClause.id,
+            included: true,
+            completion_status: 'not_started'
+          });
+        }
+      }
+      queryClient.invalidateQueries(['feasibility-clauses']);
+      queryClient.invalidateQueries(['all-feasibility-clauses']);
+      refetchSelections();
+      setClauseFormOpen(false);
+      setEditingClause(null);
+    } finally {
+      setClauseSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden">
@@ -171,7 +204,12 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
             {/* Middle — clause list */}
             <div className="w-72 border-r overflow-y-auto shrink-0">
               <div className="p-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2">{activeSection}</p>
+                <div className="flex items-center justify-between mb-2 px-2">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{activeSection}</p>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => { setEditingClause(null); setClauseFormOpen(true); }}>
+                    <Plus className="w-3 h-3" /> Add
+                  </Button>
+                </div>
                 {sectionClauses.length === 0 ? (
                   <div className="p-4 text-center text-sm text-slate-400">
                     <AlertTriangle className="w-5 h-5 mx-auto mb-2" />
@@ -240,6 +278,15 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
             </div>
           </div>
         </div>
+
+        <ClauseFormDialog
+          open={clauseFormOpen}
+          onOpenChange={(v) => { setClauseFormOpen(v); if (!v) setEditingClause(null); }}
+          clause={editingClause}
+          allClauses={clauses}
+          onSave={handleSaveClause}
+          saving={clauseSaving}
+        />
       </DialogContent>
     </Dialog>
   );

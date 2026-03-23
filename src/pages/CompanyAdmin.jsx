@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Settings, DollarSign, Building2, Users as UsersIcon, ChevronDown, MessageSquare, FileText } from 'lucide-react';
+import { Settings, DollarSign, Building2, Users as UsersIcon, ChevronDown, MessageSquare } from 'lucide-react';
 import CommissionRulesTab from '@/components/admin/CommissionRulesTab';
 import MeetingTypesTab from '@/components/admin/MeetingTypesTab';
 import CommissionsAdminTab from '@/components/admin/CommissionsAdminTab';
@@ -10,7 +10,6 @@ import ProjectsAdminTab from '@/components/admin/ProjectsAdminTab';
 import UsersAdminTab from '@/components/admin/UsersAdminTab';
 import CompanySettingsTab from '@/components/admin/CompanySettingsTab';
 import ReportingRelationshipsTab from '@/components/admin/ReportingRelationshipsTab';
-import ClauseLibraryManager from '@/components/admin/ClauseLibraryManager';
 
 function CollapsibleSection({ title, isOpen, onToggle, children }) {
   return (
@@ -38,7 +37,6 @@ export default function CompanyAdmin() {
     usersAdmin: false,
     reportingRelationships: false,
     meetingTypes: true,
-    clauseLibrary: true,
   });
 
   const toggleSection = (key) => {
@@ -68,7 +66,7 @@ export default function CompanyAdmin() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
           <TabsTrigger value="sales" className="gap-2">
             <DollarSign className="w-4 h-4" />
             Sales
@@ -80,10 +78,6 @@ export default function CompanyAdmin() {
           <TabsTrigger value="meetings" className="gap-2">
             <MessageSquare className="w-4 h-4" />
             Meetings
-          </TabsTrigger>
-          <TabsTrigger value="precon" className="gap-2">
-            <FileText className="w-4 h-4" />
-            Pre-Con
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2">
             <Settings className="w-4 h-4" />
@@ -142,17 +136,6 @@ export default function CompanyAdmin() {
             onToggle={() => toggleSection('meetingTypes')}
           >
             <MeetingTypesTab />
-          </CollapsibleSection>
-        </TabsContent>
-
-        {/* Pre-Construction Tab */}
-        <TabsContent value="precon" className="space-y-4">
-          <CollapsibleSection
-            title="Feasibility Clause Library"
-            isOpen={openSections.clauseLibrary}
-            onToggle={() => toggleSection('clauseLibrary')}
-          >
-            <ClauseLibraryManager />
           </CollapsibleSection>
         </TabsContent>
 
