@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Building2, ChevronRight, ChevronLeft, GripVertical, CheckCircle, Archive, Pencil, BarChart3 } from 'lucide-react';
 import GrossMarginReportDialog from '../components/projects/GrossMarginReportDialog';
 import GrossMarginReportBadge from '../components/projects/GrossMarginReportBadge';
+import GrossMarginHistory from '../components/projects/GrossMarginHistory';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -64,6 +65,8 @@ export default function Projects() {
   const [subDialogProject, setSubDialogProject] = useState(null);
   const [gmReportDialogOpen, setGmReportDialogOpen] = useState(false);
   const [gmReportProject, setGmReportProject] = useState(null);
+  const [gmHistoryOpen, setGmHistoryOpen] = useState(false);
+  const [gmHistoryProject, setGmHistoryProject] = useState(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -779,7 +782,12 @@ export default function Projects() {
                                       <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
                                     )}
                                     <div className="flex items-center justify-between mt-1">
-                                      <GrossMarginReportBadge project={project} reports={grossMarginReports} />
+                                      <button
+                                        className="inline-flex items-center gap-0.5"
+                                        onClick={(e) => { e.stopPropagation(); setGmHistoryProject(project); setGmHistoryOpen(true); }}
+                                      >
+                                        <GrossMarginReportBadge project={project} reports={grossMarginReports} />
+                                      </button>
                                       <button
                                         className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
                                         onClick={(e) => { e.stopPropagation(); setGmReportProject(project); setGmReportDialogOpen(true); }}
@@ -913,6 +921,14 @@ export default function Projects() {
         onOpenChange={setPreconAllocDialogOpen}
         sale={allocatingSale}
         companySettings={companySettings}
+      />
+
+      {/* Gross Margin History Dialog */}
+      <GrossMarginHistory
+        open={gmHistoryOpen}
+        onOpenChange={setGmHistoryOpen}
+        project={gmHistoryProject}
+        reports={grossMarginReports}
       />
 
       {/* Gross Margin Report Dialog */}
