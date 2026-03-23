@@ -10,7 +10,6 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import VarCompAdmin from './pages/VarCompAdmin';
 import MyProfitShare from './pages/MyProfitShare';
 import FeasibilityStudies from './pages/FeasibilityStudies';
-import MyProfitShare from './pages/MyProfitShare';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
