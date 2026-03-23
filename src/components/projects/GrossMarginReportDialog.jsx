@@ -19,6 +19,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
     contract_value: project?.contract_value || '',
     actual_costs: project?.actual_costs || '',
     percent_complete: lastReport?.percent_complete ?? '',
+    projected_gross_margin_at_completion: lastReport?.projected_gross_margin_at_completion ?? estimatedMargin ?? '',
     notes: ''
   });
 
@@ -28,7 +29,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
       queryClient.invalidateQueries(['gross-margin-reports']);
       toast.success('Gross margin report submitted');
       onOpenChange(false);
-      setForm({ gross_margin_percent: '', contract_value: '', actual_costs: '', percent_complete: '', notes: '' });
+      setForm({ gross_margin_percent: '', contract_value: '', actual_costs: '', percent_complete: '', projected_gross_margin_at_completion: '', notes: '' });
     }
   });
 
@@ -40,6 +41,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
     const marginDollars = contractVal > 0 ? contractVal - actualCosts : 0;
 
     const pctComplete = parseFloat(form.percent_complete);
+    const projectedGM = parseFloat(form.projected_gross_margin_at_completion);
     submitMutation.mutate({
       project_id: project.id,
       project_title: project.title,
@@ -49,6 +51,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
       gross_margin_percent: marginPct,
       gross_margin_dollars: marginDollars,
       percent_complete: isNaN(pctComplete) ? null : pctComplete,
+      projected_gross_margin_at_completion: isNaN(projectedGM) ? null : projectedGM,
       submitted_by: currentUser?.id,
       submitted_by_name: currentUser?.full_name || currentUser?.email,
       notes: form.notes
@@ -111,6 +114,23 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
               <p className="text-xs text-slate-500 mt-1">
                 Calculated: {calcMargin.toFixed(1)}% (${(contractVal - actualCosts).toLocaleString()} margin)
               </p>
+            )}
+          </div>
+
+          <div>
+            <Label>Projected GM at Completion (%)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={form.projected_gross_margin_at_completion}
+              onChange={(e) => setForm({ ...form, projected_gross_margin_at_completion: e.target.value })}
+              placeholder={estimatedMargin != null ? estimatedMargin.toFixed(1) : 'e.g. 25'}
+            />
+            {estimatedMargin != null && (
+              <p className="text-xs text-blue-600 mt-1">Original sale estimate: {estimatedMargin.toFixed(1)}%</p>
+            )}
+            {lastReport?.projected_gross_margin_at_completion != null && (
+              <p className="text-xs text-slate-500 mt-0.5">Last projected: {lastReport.projected_gross_margin_at_completion.toFixed(1)}%</p>
             )}
           </div>
 

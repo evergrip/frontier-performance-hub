@@ -16,6 +16,7 @@ import CustomizeMetricsDialog from '../components/dashboard/CustomizeMetricsDial
 import MyMeetingsDashboard from '../components/dashboard/MyMeetingsDashboard';
 import GettingStartedChecklist from '../components/dashboard/GettingStartedChecklist';
 import MeetingReminderPopup from '../components/meetings/MeetingReminderPopup';
+import CEOGrossMarginDialog from '../components/dashboard/CEOGrossMarginDialog';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [fiscalYear, setFiscalYear] = useState(new Date().getFullYear());
   const [drilldownMetric, setDrilldownMetric] = useState(null);
+  const [ceoGMDialogOpen, setCeoGMDialogOpen] = useState(false);
 
   const [visibleMetrics, setVisibleMetrics] = useState({
     totalRevenue: true,
@@ -111,6 +113,12 @@ export default function Dashboard() {
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
+    initialData: [],
+  });
+
+  const { data: gmReports = [] } = useQuery({
+    queryKey: ['gross-margin-reports'],
+    queryFn: () => base44.entities.GrossMarginReport.list('-reporting_date'),
     initialData: [],
   });
 
@@ -545,6 +553,36 @@ export default function Dashboard() {
             subtitle="Weighted average" trend={metrics.marginPercent > 20 ? 'Healthy' : 'Below target'}
             trendDirection={metrics.marginPercent > 20 ? 'up' : 'down'} onClick={() => setDrilldownMetric('margins')} />
         )}
+        {isAdmin && (() => {
+          const activeConstruction = projects.filter(p => !['closed'].includes(p.status) && p.project_type === 'construction');
+          const withProjections = activeConstruction.filter(p => {
+            const latestReport = gmReports.find(r => r.project_id === p.id);
+            return latestReport?.projected_gross_margin_at_completion != null;
+          });
+          const atRisk = withProjections.filter(p => {
+            const sale = sales.find(s => s.id === p.sale_id);
+            const latestReport = gmReports.find(r => r.project_id === p.id);
+            if (!sale?.estimated_margin || !latestReport?.projected_gross_margin_at_completion) return false;
+            return latestReport.projected_gross_margin_at_completion < sale.estimated_margin - 3;
+          });
+          const avgGM = withProjections.length > 0
+            ? withProjections.reduce((sum, p) => {
+                const r = gmReports.find(r => r.project_id === p.id);
+                return sum + (r?.projected_gross_margin_at_completion || 0);
+              }, 0) / withProjections.length
+            : 0;
+          return (
+            <StatCard
+              title="Projected GM at Completion"
+              value={withProjections.length > 0 ? `${avgGM.toFixed(1)}%` : '—'}
+              icon={TrendingUp}
+              subtitle={`${withProjections.length} reported · ${atRisk.length} at risk`}
+              trend={atRisk.length > 0 ? `${atRisk.length} at risk` : 'On track'}
+              trendDirection={atRisk.length > 0 ? 'down' : 'up'}
+              onClick={() => setCeoGMDialogOpen(true)}
+            />
+          );
+        })()}
         {visibleMetrics.conversionRate && (
           <StatCard title="Lead Conversion Rate" value={`${metrics.conversionRate.toFixed(1)}%`} icon={Target}
             subtitle={`${metrics.convertedLeads}/${metrics.totalLeadsForConversion} converted`} onClick={() => setDrilldownMetric('conversionRate')} />
@@ -593,6 +631,15 @@ export default function Dashboard() {
         dateRange={dateRange}
         getSaleEffectiveDate={getSaleEffectiveDate}
         getProjectEffectiveDate={getProjectEffectiveDate}
+      />
+
+      {/* CEO Gross Margin Dialog */}
+      <CEOGrossMarginDialog
+        open={ceoGMDialogOpen}
+        onOpenChange={setCeoGMDialogOpen}
+        projects={projects}
+        sales={sales}
+        gmReports={gmReports}
       />
 
       {/* Customize Dialog */}
