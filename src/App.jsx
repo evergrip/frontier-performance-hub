@@ -63,7 +63,7 @@ const AuthenticatedApp = () => {
       ))}
       <Route path="/VarCompAdmin" element={<LayoutWrapper currentPageName="VarCompAdmin"><VarCompAdmin /></LayoutWrapper>} />
       <Route path="/MyProfitShare" element={<LayoutWrapper currentPageName="MyProfitShare"><MyProfitShare /></LayoutWrapper>} />
-      <Route path="/FeasibilityStudies" element={<LayoutWrapper currentPageName="FeasibilityStudies"><FeasibilityStudies /></LayoutWrapper>} />
+
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
