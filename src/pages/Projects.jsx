@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Building2, ChevronRight, ChevronLeft, GripVertical, CheckCircle, Archive, Pencil } from 'lucide-react';
+import { Building2, ChevronRight, ChevronLeft, GripVertical, CheckCircle, Archive, Pencil, BarChart3 } from 'lucide-react';
+import GrossMarginReportDialog from '../components/projects/GrossMarginReportDialog';
+import GrossMarginReportBadge from '../components/projects/GrossMarginReportBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -60,6 +62,8 @@ export default function Projects() {
   const [allocatingSale, setAllocatingSale] = useState(null);
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subDialogProject, setSubDialogProject] = useState(null);
+  const [gmReportDialogOpen, setGmReportDialogOpen] = useState(false);
+  const [gmReportProject, setGmReportProject] = useState(null);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -102,6 +106,12 @@ export default function Projects() {
   const { data: commissionTransactions = [] } = useQuery({
     queryKey: ['commission-transactions'],
     queryFn: () => base44.entities.CommissionTransaction.list(),
+    initialData: [],
+  });
+
+  const { data: grossMarginReports = [] } = useQuery({
+    queryKey: ['gross-margin-reports'],
+    queryFn: () => base44.entities.GrossMarginReport.list('-created_date'),
     initialData: [],
   });
 
@@ -768,7 +778,16 @@ export default function Projects() {
                                     {project.crew_assignment && project.crew_assignment !== 'unassigned' && (
                                       <p className="text-[10px] text-slate-500 mt-0.5">{project.crew_assignment.replace('_', ' ').toUpperCase()}</p>
                                     )}
-                                  </CardContent>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <GrossMarginReportBadge project={project} reports={grossMarginReports} />
+                                      <button
+                                        className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
+                                        onClick={(e) => { e.stopPropagation(); setGmReportProject(project); setGmReportDialogOpen(true); }}
+                                      >
+                                        <BarChart3 className="w-3 h-3 inline mr-0.5" />Report
+                                      </button>
+                                    </div>
+                                    </CardContent>
                                 </Card>
                               )}
                             </Draggable>
@@ -894,6 +913,14 @@ export default function Projects() {
         onOpenChange={setPreconAllocDialogOpen}
         sale={allocatingSale}
         companySettings={companySettings}
+      />
+
+      {/* Gross Margin Report Dialog */}
+      <GrossMarginReportDialog
+        open={gmReportDialogOpen}
+        onOpenChange={setGmReportDialogOpen}
+        project={gmReportProject}
+        currentUser={currentUser}
       />
 
       {/* Edit Project Detail Dialog */}
