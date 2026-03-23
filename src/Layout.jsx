@@ -62,7 +62,6 @@ export default function Layout({ children, currentPageName }) {
     { name: '1. Clients', icon: Users, page: 'Clients' },
     { name: '2. Leads', icon: Target, page: 'Leads' },
     { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales' },
-    { name: 'Feasibility Studies', icon: FileText, page: 'FeasibilityStudies' },
     { name: '4. Projects', icon: Building2, page: 'Projects' },
     ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
     { name: 'Budgets', icon: Wallet, page: 'Budgets' },
