@@ -937,6 +937,11 @@ export default function Projects() {
         onOpenChange={setGmReportDialogOpen}
         project={gmReportProject}
         currentUser={currentUser}
+        estimatedMargin={(() => {
+          if (!gmReportProject) return null;
+          const sale = sales.find(s => s.id === gmReportProject.sale_id);
+          return sale?.estimated_margin ?? null;
+        })()}
       />
 
       {/* Edit Project Detail Dialog */}

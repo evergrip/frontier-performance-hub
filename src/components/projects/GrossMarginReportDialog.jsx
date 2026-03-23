@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-export default function GrossMarginReportDialog({ open, onOpenChange, project, currentUser }) {
+export default function GrossMarginReportDialog({ open, onOpenChange, project, currentUser, estimatedMargin }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     gross_margin_percent: project?.actual_margin || '',
@@ -62,6 +62,9 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
           <div className="p-3 bg-slate-50 rounded-lg">
             <p className="text-sm font-medium text-slate-900">{project?.title}</p>
             <p className="text-xs text-slate-500">Report for {new Date().toLocaleDateString()}</p>
+            {estimatedMargin != null && (
+              <p className="text-xs text-blue-600 mt-1 font-medium">Estimated GM: {estimatedMargin.toFixed(1)}%</p>
+            )}
           </div>
 
           <div>
