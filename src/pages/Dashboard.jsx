@@ -72,8 +72,12 @@ export default function Dashboard() {
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('listSalespeopleForSim');
+      return response.data?.users || [];
+    },
     initialData: [],
+    enabled: !!user && user.role === 'admin',
   });
 
   // Filter meetings for privacy
