@@ -4,7 +4,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -62,6 +62,7 @@ export default function Layout({ children, currentPageName }) {
     { name: '1. Clients', icon: Users, page: 'Clients' },
     { name: '2. Leads', icon: Target, page: 'Leads' },
     { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales' },
+    { name: 'Feasibility Studies', icon: FileText, page: 'FeasibilityStudies' },
     { name: '4. Projects', icon: Building2, page: 'Projects' },
     ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
     { name: 'Budgets', icon: Wallet, page: 'Budgets' },

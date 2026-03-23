@@ -9,6 +9,8 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import VarCompAdmin from './pages/VarCompAdmin';
 import MyProfitShare from './pages/MyProfitShare';
+import FeasibilityStudies from './pages/FeasibilityStudies';
+import MyProfitShare from './pages/MyProfitShare';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -62,6 +64,7 @@ const AuthenticatedApp = () => {
       ))}
       <Route path="/VarCompAdmin" element={<LayoutWrapper currentPageName="VarCompAdmin"><VarCompAdmin /></LayoutWrapper>} />
       <Route path="/MyProfitShare" element={<LayoutWrapper currentPageName="MyProfitShare"><MyProfitShare /></LayoutWrapper>} />
+      <Route path="/FeasibilityStudies" element={<LayoutWrapper currentPageName="FeasibilityStudies"><FeasibilityStudies /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
