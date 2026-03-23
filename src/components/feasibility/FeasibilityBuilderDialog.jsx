@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus, Loader2, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import ClauseInputForm from './ClauseInputForm';
 import ClauseFormDialog from '../admin/ClauseFormDialog';
 
@@ -33,6 +34,23 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const [clauseFormOpen, setClauseFormOpen] = useState(false);
   const [editingClause, setEditingClause] = useState(null);
   const [clauseSaving, setClauseSaving] = useState(false);
+
+  const generateReport = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('generateFeasibilityReport', { studyId });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success('Report generated successfully!');
+      queryClient.invalidateQueries(['feasibility-study', studyId]);
+      if (data.doc_url) {
+        window.open(data.doc_url, '_blank');
+      }
+    },
+    onError: (err) => {
+      toast.error('Failed to generate report: ' + (err?.response?.data?.error || err.message));
+    }
+  });
 
   const { data: study } = useQuery({
     queryKey: ['feasibility-study', studyId],
@@ -166,13 +184,26 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
               <span>•</span>
               <span>{totalComplete}/{totalIncluded} sections complete</span>
               <div className="flex-1" />
+              {study?.generated_doc_url && (
+                <a href={study.generated_doc_url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" className="gap-2 text-blue-600">
+                    <ExternalLink className="w-4 h-4" /> View Last Report
+                  </Button>
+                </a>
+              )}
               <Button
                 variant="outline"
                 size="sm"
-                disabled={totalIncluded === 0 || totalComplete < totalIncluded}
+                disabled={totalIncluded === 0 || totalComplete < totalIncluded || generateReport.isPending}
                 className="gap-2"
+                onClick={() => generateReport.mutate()}
               >
-                <FileText className="w-4 h-4" /> Generate Report
+                {generateReport.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                {generateReport.isPending ? 'Generating...' : 'Generate Report'}
               </Button>
             </div>
           </div>
