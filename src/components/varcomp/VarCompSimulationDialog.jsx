@@ -65,6 +65,7 @@ export default function VarCompSimulationDialog({ open, onOpenChange, rule }) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Simulate: {rule.rule_name}</DialogTitle>
+          <p className="text-sm text-slate-500">Test profit sharing calculations with seed data and simulated users.</p>
         </DialogHeader>
 
         <div className="space-y-6">
