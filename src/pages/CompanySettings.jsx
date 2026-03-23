@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Save, TrendingUp, DollarSign } from 'lucide-react';
+import { Building2, Save, TrendingUp, DollarSign, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import MonthlyCapacitySchedule from '../components/admin/MonthlyCapacitySchedule';
 import BrandingSettingsSection from '../components/admin/BrandingSettingsSection';
@@ -362,6 +362,43 @@ export default function CompanySettings() {
                 saveSettingsMutation.mutate({ scheduler_enabled: checked });
               }}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Feasibility Report Template
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label>Google Docs Template ID</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Paste the document ID from your branded Google Docs template. The ID is the long string in the URL between /d/ and /edit.
+                Use placeholders like {'{{study_title}}'}, {'{{client_name}}'}, {'{{property_address}}'}, {'{{jurisdiction}}'}, {'{{scope_summary}}'}, {'{{date}}'}, {'{{overall_rating}}'} for study info,
+                and {'{{SECTION_Site___Zoning_Analysis}}'}, {'{{SECTION_Budget_Analysis}}'}, etc. for section content.
+              </p>
+              <Input
+                type="text"
+                value={settings[0]?.feasibility_template_doc_id || ''}
+                onChange={(e) => saveSettingsMutation.mutate({ feasibility_template_doc_id: e.target.value })}
+                placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUii7OkTg2RpU..."
+              />
+            </div>
+            {settings[0]?.feasibility_template_doc_id && (
+              <a
+                href={`https://docs.google.com/document/d/${settings[0].feasibility_template_doc_id}/edit`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+              >
+                <FileText className="w-3 h-3" /> Open template in Google Docs
+              </a>
+            )}
           </div>
         </CardContent>
       </Card>
