@@ -160,6 +160,54 @@ export default function VarCompSimulationDialog({ open, onOpenChange, rule }) {
                     </Card>
                   ))}
 
+                  {/* Per-Person Total Summary */}
+                  <Card>
+                    <CardContent className="py-4">
+                      <h4 className="font-semibold mb-3">Total Profit Share Per Person (All Pools Combined)</h4>
+                      {(() => {
+                        const personTotals = {};
+                        result.pool_breakdowns?.forEach(pool => {
+                          pool.payouts?.forEach(p => {
+                            if (!personTotals[p.user_id || p.user_name]) {
+                              personTotals[p.user_id || p.user_name] = { user_name: p.user_name, tenure_years: p.tenure_years, pools: [], total: 0 };
+                            }
+                            const entry = personTotals[p.user_id || p.user_name];
+                            entry.pools.push({ pool_name: pool.pool_name, amount: p.final_amount });
+                            entry.total += p.final_amount;
+                          });
+                        });
+                        const sorted = Object.values(personTotals).sort((a, b) => b.total - a.total);
+                        return sorted.length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Employee</TableHead>
+                                <TableHead className="text-right">Tenure</TableHead>
+                                {result.pool_breakdowns?.map((pool, i) => (
+                                  <TableHead key={i} className="text-right">{pool.pool_name}</TableHead>
+                                ))}
+                                <TableHead className="text-right">Total Payout</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sorted.map((person, i) => (
+                                <TableRow key={i}>
+                                  <TableCell className="font-medium">{person.user_name}</TableCell>
+                                  <TableCell className="text-right">{person.tenure_years} yrs</TableCell>
+                                  {result.pool_breakdowns?.map((pool, pi) => {
+                                    const poolEntry = person.pools.find(p => p.pool_name === pool.pool_name);
+                                    return <TableCell key={pi} className="text-right text-slate-500">{poolEntry ? fmt(poolEntry.amount) : '—'}</TableCell>;
+                                  })}
+                                  <TableCell className="text-right font-bold text-emerald-700">{fmt(person.total)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : <p className="text-sm text-slate-400">No payouts to summarize</p>;
+                      })()}
+                    </CardContent>
+                  </Card>
+
                   <Card className="border-blue-200 bg-blue-50">
                     <CardContent className="py-4 text-center">
                       <p className="text-sm text-slate-600">Total Employee Payouts</p>
