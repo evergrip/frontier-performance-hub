@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DollarSign, TrendingUp, Calendar } from 'lucide-react';
-import MyQuarterlyScorecard from '../components/varcomp/MyQuarterlyScorecard';
+import AnnualProgressTracker from '../components/varcomp/AnnualProgressTracker';
 
 export default function MyProfitShare() {
   const [user, setUser] = useState(null);
@@ -85,8 +85,8 @@ export default function MyProfitShare() {
         </Card>
       </div>
 
-      {/* Quarterly scorecard */}
-      <MyQuarterlyScorecard userId={user?.id} filterYear={filterYear} />
+      {/* Annual progress tracker */}
+      <AnnualProgressTracker filterYear={filterYear} showPayoutInfo userId={user?.id} />
 
       {/* Payouts table */}
       <Card>
