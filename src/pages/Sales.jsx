@@ -22,6 +22,7 @@ import EditSaleDialog from '../components/sales/EditSaleDialog';
 import ConstructionForecast from '../components/projects/ConstructionForecast';
 import PreconAllocationDialog from '../components/projects/PreconAllocationDialog';
 import ProjectAllocationDialog from '../components/projects/ProjectAllocationDialog';
+import FeasibilityStudiesTab from '../components/feasibility/FeasibilityStudiesTab';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 
 export default function Sales() {
@@ -810,6 +811,10 @@ export default function Sales() {
       <Tabs defaultValue="active" className="w-full">
         <TabsList>
           <TabsTrigger value="active">Active Pre-Construction</TabsTrigger>
+          <TabsTrigger value="feasibility">
+            <FileText className="w-4 h-4 mr-2" />
+            Feasibility Studies
+          </TabsTrigger>
           <TabsTrigger value="closed">
             <Archive className="w-4 h-4 mr-2" />
             Past Projects ({closedPreconSales.length})
@@ -910,6 +915,10 @@ export default function Sales() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="feasibility" className="mt-6">
+          <FeasibilityStudiesTab />
         </TabsContent>
 
         <TabsContent value="closed" className="mt-6">
