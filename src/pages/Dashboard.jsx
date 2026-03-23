@@ -73,7 +73,7 @@ export default function Dashboard() {
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('listSalespeopleForSim');
+      const response = await base44.functions.invoke('listUsersBasic');
       return response.data?.users || [];
     },
     initialData: [],
