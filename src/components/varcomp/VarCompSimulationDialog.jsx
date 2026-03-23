@@ -26,24 +26,20 @@ export default function VarCompSimulationDialog({ open, onOpenChange, rule }) {
   }, [open]);
 
   const loadRealUsers = async () => {
-    console.log('loadRealUsers called');
     setLoadingReal(true);
     try {
-      const users = await base44.entities.User.list();
-      console.log('Loaded users count:', users?.length);
-      const mapped = (users || []).map(u => ({
+      const response = await base44.functions.invoke('listSalespeopleForSim');
+      const users = response.data?.users || [];
+      setSimUsers(users.map(u => ({
         _simId: u.id,
-        full_name: u.full_name || u.email || 'Unknown',
+        full_name: u.full_name,
         hire_date: u.hire_date || '',
         profit_sharing_pools: u.profit_sharing_pools || [],
         profit_sharing_eligible: u.profit_sharing_eligible ?? false,
-      }));
-      setSimUsers(mapped);
+      })));
     } catch (err) {
       console.error('Failed to load users:', err);
-      alert('Failed to load users: ' + (err?.message || String(err)));
     } finally {
-      console.log('loadRealUsers finished');
       setLoadingReal(false);
     }
   };
