@@ -111,6 +111,7 @@ export default function GrossMarginHistory({ open, onOpenChange, project, report
                       <TableHead className="text-xs">Actual Costs</TableHead>
                       <TableHead className="text-xs">Margin %</TableHead>
                       <TableHead className="text-xs">Margin $</TableHead>
+                      <TableHead className="text-xs">% Complete</TableHead>
                       <TableHead className="text-xs">Submitted By</TableHead>
                       <TableHead className="text-xs">Notes</TableHead>
                     </TableRow>
@@ -134,6 +135,9 @@ export default function GrossMarginHistory({ open, onOpenChange, project, report
                         </TableCell>
                         <TableCell className="text-xs">
                           ${(r.gross_margin_dollars || 0).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium">
+                          {r.percent_complete != null ? `${r.percent_complete}%` : '—'}
                         </TableCell>
                         <TableCell className="text-xs text-slate-500">
                           {r.submitted_by_name || '—'}

@@ -7,12 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-export default function GrossMarginReportDialog({ open, onOpenChange, project, currentUser, estimatedMargin }) {
+export default function GrossMarginReportDialog({ open, onOpenChange, project, currentUser, estimatedMargin, reports }) {
   const queryClient = useQueryClient();
+  // Find last report for this project to autofill percent_complete
+  const lastReport = (reports || [])
+    .filter(r => r.project_id === project?.id)
+    .sort((a, b) => b.reporting_date.localeCompare(a.reporting_date))[0];
+
   const [form, setForm] = useState({
     gross_margin_percent: project?.actual_margin || '',
     contract_value: project?.contract_value || '',
     actual_costs: project?.actual_costs || '',
+    percent_complete: lastReport?.percent_complete ?? '',
     notes: ''
   });
 
@@ -22,7 +28,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
       queryClient.invalidateQueries(['gross-margin-reports']);
       toast.success('Gross margin report submitted');
       onOpenChange(false);
-      setForm({ gross_margin_percent: '', contract_value: '', actual_costs: '', notes: '' });
+      setForm({ gross_margin_percent: '', contract_value: '', actual_costs: '', percent_complete: '', notes: '' });
     }
   });
 
@@ -33,6 +39,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
     const actualCosts = parseFloat(form.actual_costs) || 0;
     const marginDollars = contractVal > 0 ? contractVal - actualCosts : 0;
 
+    const pctComplete = parseFloat(form.percent_complete);
     submitMutation.mutate({
       project_id: project.id,
       project_title: project.title,
@@ -41,6 +48,7 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
       actual_costs: actualCosts,
       gross_margin_percent: marginPct,
       gross_margin_dollars: marginDollars,
+      percent_complete: isNaN(pctComplete) ? null : pctComplete,
       submitted_by: currentUser?.id,
       submitted_by_name: currentUser?.full_name || currentUser?.email,
       notes: form.notes
@@ -103,6 +111,22 @@ export default function GrossMarginReportDialog({ open, onOpenChange, project, c
               <p className="text-xs text-slate-500 mt-1">
                 Calculated: {calcMargin.toFixed(1)}% (${(contractVal - actualCosts).toLocaleString()} margin)
               </p>
+            )}
+          </div>
+
+          <div>
+            <Label>Estimated % Complete</Label>
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value={form.percent_complete}
+              onChange={(e) => setForm({ ...form, percent_complete: e.target.value })}
+              placeholder="e.g. 65"
+            />
+            {lastReport?.percent_complete != null && (
+              <p className="text-xs text-slate-500 mt-1">Last reported: {lastReport.percent_complete}%</p>
             )}
           </div>
 
