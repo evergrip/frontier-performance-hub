@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock } from 'lucide-react';
 import ClauseInputForm from './ClauseInputForm';
 
 const SECTIONS = [
@@ -70,29 +70,51 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
     return stats;
   }, [clauses, selectionByClause]);
 
+  // Compute which clauses are required by triggers
+  const triggeredClauseIds = useMemo(() => {
+    const required = new Set();
+    clauses.forEach(clause => {
+      const sel = selectionByClause[clause.id];
+      if (!sel?.included) return;
+      (clause.triggers || []).forEach(trigger => {
+        if (trigger.condition_type === 'clause_selected') {
+          (trigger.target_clause_ids || []).forEach(id => required.add(id));
+        } else if (trigger.condition_type === 'field_value' && trigger.field_key) {
+          const userData = sel.user_data || {};
+          const actual = String(userData[trigger.field_key] || '');
+          if (actual === trigger.field_value) {
+            (trigger.target_clause_ids || []).forEach(id => required.add(id));
+          }
+        }
+      });
+    });
+    return required;
+  }, [clauses, selectionByClause]);
+
   const toggleClause = async (clauseId) => {
     const sel = selectionByClause[clauseId];
-    if (sel) {
-      await base44.entities.FeasibilitySelection.update(sel.id, { included: !sel.included });
-      refetchSelections();
-    }
-  };
-
-  const saveClauseData = async (clauseId, userData, staffNotes) => {
-    const sel = selectionByClause[clauseId];
     if (!sel) return;
-
-    const clause = clauseMap[clauseId];
-    const requiredFields = (clause?.input_fields || []).filter(f => f.required);
-    const allFilled = requiredFields.every(f => userData[f.key] && String(userData[f.key]).trim());
-
-    await base44.entities.FeasibilitySelection.update(sel.id, {
-      user_data: userData,
-      staff_notes: staffNotes,
-      completion_status: allFilled ? 'complete' : 'in_progress'
-    });
+    // Prevent deselecting a clause required by a trigger
+    if (sel.included && triggeredClauseIds.has(clauseId)) return;
+    await base44.entities.FeasibilitySelection.update(sel.id, { included: !sel.included });
     refetchSelections();
   };
+
+  // Auto-include triggered clauses
+  React.useEffect(() => {
+    const autoInclude = async () => {
+      for (const clauseId of triggeredClauseIds) {
+        const sel = selectionByClause[clauseId];
+        if (sel && !sel.included) {
+          await base44.entities.FeasibilitySelection.update(sel.id, { included: true });
+        }
+      }
+      if ([...triggeredClauseIds].some(id => selectionByClause[id] && !selectionByClause[id].included)) {
+        refetchSelections();
+      }
+    };
+    if (triggeredClauseIds.size > 0) autoInclude();
+  }, [triggeredClauseIds]);
 
   const totalIncluded = selections.filter(s => s.included).length;
   const totalComplete = selections.filter(s => s.included && s.completion_status === 'complete').length;
@@ -165,24 +187,34 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
 
                       return (
                         <div key={clause.id} className={`rounded-lg border transition-colors ${isActive ? 'border-blue-300 bg-blue-50' : 'border-transparent hover:bg-slate-50'}`}>
-                          <div className="flex items-start gap-2 px-3 py-2.5">
-                            <button onClick={() => toggleClause(clause.id)} className="mt-0.5 shrink-0">
-                              {included ? (
-                                <CheckCircle2 className={`w-5 h-5 ${COMPLETION_COLORS[status]}`} />
-                              ) : (
-                                <Circle className="w-5 h-5 text-slate-300" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => setActiveClauseId(clause.id)}
-                              className="flex-1 text-left"
-                            >
-                              <p className={`text-sm font-medium ${included ? 'text-slate-900' : 'text-slate-400 line-through'}`}>{clause.title}</p>
+                        <div className="flex items-start gap-2 px-3 py-2.5">
+                          <button onClick={() => toggleClause(clause.id)} className="mt-0.5 shrink-0" disabled={triggeredClauseIds.has(clause.id) && included}>
+                            {triggeredClauseIds.has(clause.id) && included ? (
+                              <Lock className="w-5 h-5 text-amber-500" />
+                            ) : included ? (
+                              <CheckCircle2 className={`w-5 h-5 ${COMPLETION_COLORS[status]}`} />
+                            ) : (
+                              <Circle className="w-5 h-5 text-slate-300" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => setActiveClauseId(clause.id)}
+                            className="flex-1 text-left"
+                          >
+                            <p className={`text-sm font-medium ${included ? 'text-slate-900' : 'text-slate-400 line-through'}`}>{clause.title}</p>
+                            <div className="flex items-center gap-1 mt-1 flex-wrap">
                               {clause.risk_level && (
-                                <Badge variant="outline" className="text-xs mt-1">{clause.risk_level}</Badge>
+                                <Badge variant="outline" className="text-xs">{clause.risk_level}</Badge>
                               )}
-                            </button>
-                          </div>
+                              {triggeredClauseIds.has(clause.id) && (
+                                <span className="inline-flex items-center gap-0.5 text-xs text-amber-600"><Zap className="w-3 h-3" />Required by trigger</span>
+                              )}
+                              {(clause.triggers || []).length > 0 && (
+                                <span className="inline-flex items-center gap-0.5 text-xs text-slate-400"><Zap className="w-3 h-3" />Has triggers</span>
+                              )}
+                            </div>
+                          </button>
+                        </div>
                         </div>
                       );
                     })}
