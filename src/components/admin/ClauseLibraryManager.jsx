@@ -6,9 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Pencil, Trash2, Zap, Copy } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Zap, Copy, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ClauseFormDialog from './ClauseFormDialog';
+import BulkClauseBuilder from './BulkClauseBuilder';
 
 const SECTIONS = [
   'Site & Zoning Analysis',
@@ -26,6 +27,7 @@ export default function ClauseLibraryManager() {
   const [filterSection, setFilterSection] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClause, setEditingClause] = useState(null);
+  const [bulkBuilderOpen, setBulkBuilderOpen] = useState(false);
 
   const { data: clauses = [], isLoading } = useQuery({
     queryKey: ['all-feasibility-clauses'],
@@ -126,7 +128,10 @@ export default function ClauseLibraryManager() {
             {SECTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button onClick={() => { setEditingClause(null); setDialogOpen(true); }} className="gap-2 ml-auto">
+        <Button variant="outline" onClick={() => setBulkBuilderOpen(true)} className="gap-2 ml-auto">
+          <Sparkles className="w-4 h-4" /> Bulk Builder
+        </Button>
+        <Button onClick={() => { setEditingClause(null); setDialogOpen(true); }} className="gap-2">
           <Plus className="w-4 h-4" /> New Clause
         </Button>
       </div>
@@ -204,6 +209,11 @@ export default function ClauseLibraryManager() {
         allClauses={clauses}
         onSave={handleSave}
         saving={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <BulkClauseBuilder
+        open={bulkBuilderOpen}
+        onOpenChange={setBulkBuilderOpen}
       />
     </div>
   );
