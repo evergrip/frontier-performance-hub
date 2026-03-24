@@ -34,60 +34,85 @@ export default function BulkClauseBuilder({ open, onOpenChange }) {
     setParsedClauses(null);
     setRemovedIdxs(new Set());
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a feasibility study clause parser for a construction company. 
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a feasibility study clause parser for a construction company.
 Parse the following raw text into structured feasibility clauses. Each clause should be categorized into one of these sections:
 ${SECTIONS.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
 For each clause, extract:
-- clause_id: A short unique ID like "FS-SZ-001" (FS = feasibility study, then 2-letter section abbreviation, then number)
+- clause_id: Use the clause ID from the text (e.g. "FS-SZ-001"). Prefix with "FS-" if not already present.
 - section: One of the sections listed above (exact match)
-- title: A clear, concise title for the clause
-- template_body: The clause text. If there are variable parts that would change per project, replace them with {{placeholder_name}} placeholders (e.g., {{lot_dimensions}}, {{zoning_classification}})
-- input_fields: An array of objects for each placeholder, with: key (matching the placeholder), label (human-readable), type (text, textarea, number, select, or boolean), and optionally options (for select type) and placeholder text
-- risk_level: "Low", "Medium", or "High" based on the clause content
-- default_include: true if this seems like a standard clause that should be included by default, false for optional/specialized ones
-- sort_order: A number for ordering within the section (10, 20, 30, etc.)
+- title: The title from the text
+- template_body: The template body text from the input. Keep all {{placeholder}} markers as-is.
+- input_fields: An array of objects for each placeholder, with: key (matching the placeholder name), label (human-readable version of the key), type (text, textarea, number, select, or boolean), required (true/false based on "Req" marker)
+- risk_level: "Low", "Medium", or "High" as specified in the text
+- default_include: true if "Yes", false if "No"
+- sort_order: Sequential numbering (10, 20, 30, etc.)
+- triggers: Array of trigger objects. For "When this clause is selected" triggers, use condition_type "clause_selected" and list the target clause IDs (with FS- prefix) in target_clause_ids array. Include a description field.
+
+IMPORTANT: Return ALL clauses from the text. There are 15 clauses in this text.
 
 Raw text to parse:
 ${rawText}`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          clauses: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                clause_id: { type: 'string' },
-                section: { type: 'string' },
-                title: { type: 'string' },
-                template_body: { type: 'string' },
-                input_fields: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      key: { type: 'string' },
-                      label: { type: 'string' },
-                      type: { type: 'string' },
-                      options: { type: 'array', items: { type: 'string' } },
-                      placeholder: { type: 'string' }
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            clauses: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  clause_id: { type: 'string' },
+                  section: { type: 'string' },
+                  title: { type: 'string' },
+                  template_body: { type: 'string' },
+                  input_fields: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        key: { type: 'string' },
+                        label: { type: 'string' },
+                        type: { type: 'string' },
+                        options: { type: 'array', items: { type: 'string' } },
+                        placeholder: { type: 'string' },
+                        required: { type: 'boolean' }
+                      }
+                    }
+                  },
+                  risk_level: { type: 'string' },
+                  default_include: { type: 'boolean' },
+                  sort_order: { type: 'number' },
+                  triggers: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        condition_type: { type: 'string' },
+                        target_clause_ids: { type: 'array', items: { type: 'string' } },
+                        description: { type: 'string' }
+                      }
                     }
                   }
-                },
-                risk_level: { type: 'string' },
-                default_include: { type: 'boolean' },
-                sort_order: { type: 'number' }
+                }
               }
             }
           }
-        }
-      },
-      model: 'claude_sonnet_4_6'
-    });
+        },
+        model: 'claude_sonnet_4_6'
+      });
 
-    setParsedClauses(result.clauses || []);
+      // Handle different response shapes
+      const clauses = result?.clauses || (Array.isArray(result) ? result : []);
+      setParsedClauses(clauses);
+      if (clauses.length === 0) {
+        toast.error('No clauses were parsed. Try again or simplify the input.');
+      }
+    } catch (err) {
+      toast.error('Failed to parse clauses: ' + (err.message || 'Unknown error'));
+      setParsedClauses(null);
+    }
     setParsing(false);
   };
 
