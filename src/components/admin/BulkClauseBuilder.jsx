@@ -35,25 +35,24 @@ export default function BulkClauseBuilder({ open, onOpenChange }) {
     setRemovedIdxs(new Set());
 
     try {
+      // First try direct text parsing for well-structured input
+      const directParsed = parseClausesFromText(rawText);
+      if (directParsed.length > 0) {
+        setParsedClauses(directParsed);
+        toast.success(`Parsed ${directParsed.length} clauses from text`);
+        setParsing(false);
+        return;
+      }
+
+      // Fallback to AI parsing for unstructured input
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are a feasibility study clause parser for a construction company.
 Parse the following raw text into structured feasibility clauses. Each clause should be categorized into one of these sections:
 ${SECTIONS.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
-For each clause, extract:
-- clause_id: Use the clause ID from the text (e.g. "FS-SZ-001"). Prefix with "FS-" if not already present.
-- section: One of the sections listed above (exact match)
-- title: The title from the text
-- template_body: The template body text from the input. Keep all {{placeholder}} markers as-is.
-- input_fields: An array of objects for each placeholder, with: key (matching the placeholder name), label (human-readable version of the key), type (text, textarea, number, select, or boolean), required (true/false based on "Req" marker)
-- risk_level: "Low", "Medium", or "High" as specified in the text
-- default_include: true if "Yes", false if "No"
-- sort_order: Sequential numbering (10, 20, 30, etc.)
-- triggers: Array of trigger objects. For "When this clause is selected" triggers, use condition_type "clause_selected" and list the target clause IDs (with FS- prefix) in target_clause_ids array. Include a description field.
+For each clause extract: clause_id, section, title, template_body, input_fields (array with key, label, type, required), risk_level, default_include, sort_order, triggers (array with condition_type, target_clause_ids, description).
 
-IMPORTANT: Return ALL clauses from the text. There are 15 clauses in this text.
-
-Raw text to parse:
+Raw text:
 ${rawText}`,
         response_json_schema: {
           type: 'object',
@@ -67,50 +66,27 @@ ${rawText}`,
                   section: { type: 'string' },
                   title: { type: 'string' },
                   template_body: { type: 'string' },
-                  input_fields: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        key: { type: 'string' },
-                        label: { type: 'string' },
-                        type: { type: 'string' },
-                        options: { type: 'array', items: { type: 'string' } },
-                        placeholder: { type: 'string' },
-                        required: { type: 'boolean' }
-                      }
-                    }
-                  },
+                  input_fields: { type: 'array', items: { type: 'object', properties: { key: { type: 'string' }, label: { type: 'string' }, type: { type: 'string' }, required: { type: 'boolean' } } } },
                   risk_level: { type: 'string' },
                   default_include: { type: 'boolean' },
                   sort_order: { type: 'number' },
-                  triggers: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        condition_type: { type: 'string' },
-                        target_clause_ids: { type: 'array', items: { type: 'string' } },
-                        description: { type: 'string' }
-                      }
-                    }
-                  }
+                  triggers: { type: 'array', items: { type: 'object', properties: { condition_type: { type: 'string' }, target_clause_ids: { type: 'array', items: { type: 'string' } }, description: { type: 'string' } } } }
                 }
               }
             }
           }
-        },
-        model: 'claude_sonnet_4_6'
+        }
       });
 
-      // Handle different response shapes
+      console.log('LLM result:', JSON.stringify(result));
       const clauses = result?.clauses || (Array.isArray(result) ? result : []);
       setParsedClauses(clauses);
       if (clauses.length === 0) {
-        toast.error('No clauses were parsed. Try again or simplify the input.');
+        toast.error('No clauses were parsed. Check the format and try again.');
       }
     } catch (err) {
-      toast.error('Failed to parse clauses: ' + (err.message || 'Unknown error'));
+      console.error('Parse error:', err);
+      toast.error('Failed to parse: ' + (err.message || 'Unknown error'));
       setParsedClauses(null);
     }
     setParsing(false);
