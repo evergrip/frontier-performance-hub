@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus, Loader2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus, Loader2, ExternalLink, Pencil } from 'lucide-react';
+import FeasibilityStudyFormDialog from './FeasibilityStudyFormDialog';
 import { toast } from 'sonner';
 import ClauseInputForm from './ClauseInputForm';
 import ClauseFormDialog from '../admin/ClauseFormDialog';
@@ -34,6 +35,7 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const [clauseFormOpen, setClauseFormOpen] = useState(false);
   const [editingClause, setEditingClause] = useState(null);
   const [clauseSaving, setClauseSaving] = useState(false);
+  const [editStudyOpen, setEditStudyOpen] = useState(false);
 
   const generateReport = useMutation({
     mutationFn: async () => {
@@ -177,7 +179,12 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
           {/* Header */}
           <div className="px-6 py-4 border-b bg-white">
             <DialogHeader>
-              <DialogTitle className="text-xl">{study?.title || 'Feasibility Study Builder'}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-xl">{study?.title || 'Feasibility Study Builder'}</DialogTitle>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-slate-700" onClick={() => setEditStudyOpen(true)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+              </div>
             </DialogHeader>
             <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
               <span>{study?.property_address}</span>
@@ -322,6 +329,12 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
           allClauses={clauses}
           onSave={handleSaveClause}
           saving={clauseSaving}
+        />
+
+        <FeasibilityStudyFormDialog
+          open={editStudyOpen}
+          onOpenChange={setEditStudyOpen}
+          study={study}
         />
       </DialogContent>
     </Dialog>
