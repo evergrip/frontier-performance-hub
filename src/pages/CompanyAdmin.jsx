@@ -10,6 +10,7 @@ import ProjectsAdminTab from '@/components/admin/ProjectsAdminTab';
 import UsersAdminTab from '@/components/admin/UsersAdminTab';
 import CompanySettingsTab from '@/components/admin/CompanySettingsTab';
 import ReportingRelationshipsTab from '@/components/admin/ReportingRelationshipsTab';
+import ClauseLibraryManager from '@/components/admin/ClauseLibraryManager';
 
 function CollapsibleSection({ title, isOpen, onToggle, children }) {
   return (
@@ -36,6 +37,7 @@ export default function CompanyAdmin() {
     projectsAdmin: true,
     usersAdmin: false,
     reportingRelationships: false,
+    clauseLibrary: false,
     meetingTypes: true,
   });
 
@@ -125,6 +127,13 @@ export default function CompanyAdmin() {
             onToggle={() => toggleSection('reportingRelationships')}
           >
             <ReportingRelationshipsTab />
+          </CollapsibleSection>
+          <CollapsibleSection
+            title="Feasibility Clause Library"
+            isOpen={openSections.clauseLibrary}
+            onToggle={() => toggleSection('clauseLibrary')}
+          >
+            <ClauseLibraryManager />
           </CollapsibleSection>
         </TabsContent>
 
