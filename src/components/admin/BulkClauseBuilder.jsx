@@ -19,6 +19,95 @@ const SECTIONS = [
   'Recommendations & Next Steps'
 ];
 
+function parseClausesFromText(text) {
+  const clauses = [];
+  // Split by "Clause N" or "Clause ID:" patterns
+  const clauseBlocks = text.split(/(?=Clause\s+\d+\s*\n)/i).filter(b => b.trim());
+
+  for (const block of clauseBlocks) {
+    const get = (label) => {
+      const regex = new RegExp(`${label}\\s*:\\s*(.+?)(?=\n[A-Z][a-z]+ ?[A-Z]|\n*$)`, 's');
+      const match = block.match(regex);
+      return match ? match[1].trim() : '';
+    };
+
+    const clauseId = get('Clause ID');
+    const section = get('Section');
+    const title = get('Title');
+    
+    // Extract template body (between "Template Body:" and "Risk Level:")
+    const bodyMatch = block.match(/Template Body:\s*\n([\s\S]*?)(?=\nRisk Level:)/i);
+    const templateBody = bodyMatch ? bodyMatch[1].trim() : '';
+
+    const riskMatch = block.match(/Risk Level:\s*(Low|Medium|High)/i);
+    const riskLevel = riskMatch ? riskMatch[1] : 'Medium';
+
+    const defaultMatch = block.match(/Include by default:\s*(Yes|No)/i);
+    const defaultInclude = defaultMatch ? defaultMatch[1].toLowerCase() === 'yes' : true;
+
+    // Parse input fields
+    const inputFields = [];
+    const fieldSection = block.match(/Input Fields:\s*\n([\s\S]*?)(?=\nTriggers:|$)/i);
+    if (fieldSection) {
+      const fieldLines = fieldSection[1].split('\n').filter(l => l.trim() && l.includes('→'));
+      for (const line of fieldLines) {
+        const parts = line.trim().split('→').map(p => p.trim());
+        if (parts.length >= 3) {
+          const fieldType = parts[0].toLowerCase();
+          const required = parts[1].toLowerCase() === 'req';
+          const keyRaw = parts[2].split('(')[0].trim();
+          inputFields.push({
+            key: keyRaw,
+            label: keyRaw.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+            type: fieldType === 'textarea' ? 'textarea' : fieldType === 'number' ? 'number' : fieldType === 'boolean' ? 'boolean' : fieldType === 'select' ? 'select' : 'text',
+            required,
+            placeholder: parts[2].includes('(') ? parts[2].match(/\((.+)\)/)?.[1] || '' : ''
+          });
+        }
+      }
+    }
+
+    // Parse triggers
+    const triggers = [];
+    const triggerSection = block.match(/Triggers:\s*\n([\s\S]*?)$/i);
+    if (triggerSection && !triggerSection[1].trim().startsWith('None')) {
+      const triggerText = triggerSection[1];
+      if (triggerText.includes('When this clause is selected')) {
+        const targetLines = triggerText.split('\n').filter(l => l.trim().match(/^[A-Z]{2,}-\d+/));
+        const targetIds = targetLines.map(l => {
+          const idMatch = l.trim().match(/^([A-Z]+-\d+)/);
+          return idMatch ? `FS-${idMatch[1]}` : null;
+        }).filter(Boolean);
+
+        if (targetIds.length > 0) {
+          triggers.push({
+            condition_type: 'clause_selected',
+            target_clause_ids: targetIds,
+            description: `When selected, requires ${targetIds.join(', ')}`
+          });
+        }
+      }
+    }
+
+    if (clauseId && title && section) {
+      clauses.push({
+        clause_id: clauseId.startsWith('FS-') ? clauseId : `FS-${clauseId}`,
+        section,
+        title,
+        template_body: templateBody,
+        input_fields: inputFields,
+        risk_level: riskLevel,
+        default_include: defaultInclude,
+        sort_order: clauses.length * 10 + 10,
+        triggers,
+        is_active: true
+      });
+    }
+  }
+
+  return clauses;
+}
+
 export default function BulkClauseBuilder({ open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [rawText, setRawText] = useState('');
