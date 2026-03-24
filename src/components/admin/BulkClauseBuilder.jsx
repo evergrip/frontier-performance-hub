@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles, CheckCircle2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Sparkles, CheckCircle2, X, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import BulkClauseEditForm from './BulkClauseEditForm';
 import { toast } from 'sonner';
 
 const SECTIONS = [
@@ -116,6 +117,8 @@ export default function BulkClauseBuilder({ open, onOpenChange }) {
   const [creating, setCreating] = useState(false);
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [removedIdxs, setRemovedIdxs] = useState(new Set());
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [editingClause, setEditingClause] = useState(null);
 
   const handleParse = async () => {
     if (!rawText.trim()) return;
@@ -264,12 +267,31 @@ Structural Foundation: Visual inspection reveals the foundation is poured concre
 
             {parsedClauses.map((clause, idx) => {
               if (removedIdxs.has(idx)) return null;
+
+              if (editingIdx === idx) {
+                return (
+                  <BulkClauseEditForm
+                    key={idx}
+                    clause={editingClause}
+                    onChange={setEditingClause}
+                    onSave={() => {
+                      const updated = [...parsedClauses];
+                      updated[idx] = editingClause;
+                      setParsedClauses(updated);
+                      setEditingIdx(null);
+                      setEditingClause(null);
+                    }}
+                    onCancel={() => { setEditingIdx(null); setEditingClause(null); }}
+                  />
+                );
+              }
+
               const isExpanded = expandedIdx === idx;
               return (
-                <Card key={idx} className="relative">
+                <Card key={idx} className="relative cursor-pointer hover:border-blue-300 transition-colors" onClick={() => { setEditingIdx(idx); setEditingClause({ ...clause }); setExpandedIdx(null); }}>
                   <CardContent className="p-3">
                     <div className="flex items-start gap-2">
-                      <button onClick={() => setExpandedIdx(isExpanded ? null : idx)} className="flex-1 text-left">
+                      <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-mono text-slate-400">{clause.clause_id}</span>
                           <span className="text-sm font-medium text-slate-900">{clause.title}</span>
@@ -281,36 +303,16 @@ Structural Foundation: Visual inspection reveals the foundation is poured concre
                           )}
                           {clause.default_include && <Badge className="text-xs bg-blue-100 text-blue-700 border-0">Default</Badge>}
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-slate-400">{(clause.input_fields || []).length} input fields</span>
-                          {isExpanded ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+                          <Pencil className="w-3 h-3 text-slate-400" />
+                          <span className="text-xs text-blue-500">Click to edit</span>
                         </div>
-                      </button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => removeClause(idx)}>
+                      </div>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={(e) => { e.stopPropagation(); removeClause(idx); }}>
                         <X className="w-4 h-4 text-red-400" />
                       </Button>
                     </div>
-
-                    {isExpanded && (
-                      <div className="mt-3 pt-3 border-t space-y-2">
-                        <div>
-                          <p className="text-xs font-medium text-slate-500 mb-1">Template Body</p>
-                          <p className="text-xs text-slate-700 bg-slate-50 p-2 rounded whitespace-pre-wrap">{clause.template_body}</p>
-                        </div>
-                        {(clause.input_fields || []).length > 0 && (
-                          <div>
-                            <p className="text-xs font-medium text-slate-500 mb-1">Input Fields</p>
-                            <div className="flex flex-wrap gap-1">
-                              {clause.input_fields.map((f, fi) => (
-                                <span key={fi} className="text-xs bg-slate-100 px-2 py-0.5 rounded">
-                                  {f.label} <span className="text-slate-400">({f.type})</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               );
