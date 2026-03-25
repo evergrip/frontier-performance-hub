@@ -118,66 +118,66 @@ Deno.serve(async (req) => {
     } else {
       const copiedFile = await copyRes.json();
       docId = copiedFile.id;
-    }
 
-    // Build replacement requests for the copied doc
-    const replacements = [];
+      // Build replacement requests for the copied doc
+      const replacements = [];
 
-    // Study-level placeholders
-    const studyReplacements = {
-      '{{study_title}}': study.title || '',
-      '{{client_name}}': clientName,
-      '{{property_address}}': study.property_address || '',
-      '{{jurisdiction}}': study.jurisdiction || '',
-      '{{scope_summary}}': study.scope_summary || '',
-      '{{date}}': new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-      '{{overall_rating}}': ratingLabels[study.overall_feasibility_rating] || '',
-    };
+      // Study-level placeholders
+      const studyReplacements = {
+        '{{study_title}}': study.title || '',
+        '{{client_name}}': clientName,
+        '{{property_address}}': study.property_address || '',
+        '{{jurisdiction}}': study.jurisdiction || '',
+        '{{scope_summary}}': study.scope_summary || '',
+        '{{date}}': new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        '{{overall_rating}}': ratingLabels[study.overall_feasibility_rating] || '',
+      };
 
-    for (const [placeholder, value] of Object.entries(studyReplacements)) {
-      replacements.push({
-        replaceAllText: {
-          containsText: { text: placeholder, matchCase: false },
-          replaceText: value
-        }
+      for (const [placeholder, value] of Object.entries(studyReplacements)) {
+        replacements.push({
+          replaceAllText: {
+            containsText: { text: placeholder, matchCase: false },
+            replaceText: value
+          }
+        });
+      }
+
+      // Section content placeholders  
+      SECTIONS.forEach((section, sIdx) => {
+        const sectionKey = section.replace(/[^a-zA-Z0-9]/g, '_');
+        const content = buildSectionContent(section, sIdx, allClauses, selectionByClause);
+        replacements.push({
+          replaceAllText: {
+            containsText: { text: `{{SECTION_${sectionKey}}}`, matchCase: false },
+            replaceText: content
+          }
+        });
+        replacements.push({
+          replaceAllText: {
+            containsText: { text: `{{SECTION_${section}}}`, matchCase: false },
+            replaceText: content
+          }
+        });
       });
-    }
 
-    // Section content placeholders  
-    SECTIONS.forEach((section, sIdx) => {
-      const sectionKey = section.replace(/[^a-zA-Z0-9]/g, '_');
-      const content = buildSectionContent(section, sIdx, allClauses, selectionByClause);
-      replacements.push({
-        replaceAllText: {
-          containsText: { text: `{{SECTION_${sectionKey}}}`, matchCase: false },
-          replaceText: content
-        }
+      // Apply replacements
+      const batchRes = await fetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${docsToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ requests: replacements })
       });
-      // Also support the full section name as placeholder
-      replacements.push({
-        replaceAllText: {
-          containsText: { text: `{{SECTION_${section}}}`, matchCase: false },
-          replaceText: content
-        }
-      });
-    });
 
-    // Apply replacements
-    const batchRes = await fetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${docsToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ requests: replacements })
-    });
-
-    if (!batchRes.ok) {
-      const err = await batchRes.text();
-      return Response.json({ error: 'Failed to populate document from template', details: err }, { status: 500 });
+      if (!batchRes.ok) {
+        const err = await batchRes.text();
+        return Response.json({ error: 'Failed to populate document from template', details: err }, { status: 500 });
+      }
     }
-
-  } else {
+  }
+  
+  if (!useTemplate) {
     // === NO TEMPLATE: Create from scratch ===
     const createRes = await fetch('https://docs.googleapis.com/v1/documents', {
       method: 'POST',
