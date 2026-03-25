@@ -115,10 +115,10 @@ Deno.serve(async (req) => {
     if (!copyRes.ok) {
       console.warn('Template copy failed, falling back to creating doc from scratch');
       useTemplate = false;
+    } else {
+      const copiedFile = await copyRes.json();
+      docId = copiedFile.id;
     }
-
-    const copiedFile = await copyRes.json();
-    docId = copiedFile.id;
 
     // Build replacement requests for the copied doc
     const replacements = [];
