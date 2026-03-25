@@ -143,6 +143,23 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const totalIncluded = selections.filter(s => s.included).length;
   const totalComplete = selections.filter(s => s.included && s.completion_status === 'complete').length;
 
+  const saveClauseData = async (clauseId, userData, staffNotes) => {
+    const sel = selectionByClause[clauseId];
+    if (!sel) return;
+    setSaving(true);
+    const clause = clauseMap[clauseId];
+    const requiredFields = (clause?.input_fields || []).filter(f => f.required);
+    const allFilled = requiredFields.every(f => userData[f.key] !== undefined && userData[f.key] !== '');
+    await base44.entities.FeasibilitySelection.update(sel.id, {
+      user_data: userData,
+      staff_notes: staffNotes,
+      completion_status: allFilled ? 'complete' : 'in_progress'
+    });
+    refetchSelections();
+    setSaving(false);
+    toast.success('Clause data saved');
+  };
+
   const handleSaveClause = async (formData) => {
     setClauseSaving(true);
     try {
