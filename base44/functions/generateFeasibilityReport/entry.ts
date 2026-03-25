@@ -97,7 +97,9 @@ Deno.serve(async (req) => {
   
   let docId;
 
-  if (templateDocId) {
+  let useTemplate = !!templateDocId;
+
+  if (useTemplate) {
     // === TEMPLATE MODE: Copy the template, then do find-and-replace ===
     const copyRes = await fetch(`https://www.googleapis.com/drive/v3/files/${templateDocId}/copy`, {
       method: 'POST',
@@ -111,8 +113,8 @@ Deno.serve(async (req) => {
     });
 
     if (!copyRes.ok) {
-      const err = await copyRes.text();
-      return Response.json({ error: 'Failed to copy template. Make sure the template document is shared with the connected Google account.', details: err }, { status: 500 });
+      console.warn('Template copy failed, falling back to creating doc from scratch');
+      useTemplate = false;
     }
 
     const copiedFile = await copyRes.json();
