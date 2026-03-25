@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus, Loader2, ExternalLink, Pencil } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronRight, FileText, AlertTriangle, Zap, Lock, Plus, Loader2, ExternalLink, Pencil, Image, Paperclip } from 'lucide-react';
+import AppendixPhotosTab from './AppendixPhotosTab';
 import FeasibilityStudyFormDialog from './FeasibilityStudyFormDialog';
 import { toast } from 'sonner';
 import ClauseInputForm from './ClauseInputForm';
@@ -36,6 +37,7 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const [editingClause, setEditingClause] = useState(null);
   const [clauseSaving, setClauseSaving] = useState(false);
   const [editStudyOpen, setEditStudyOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('clauses');
 
   const generateReport = useMutation({
     mutationFn: async () => {
@@ -236,7 +238,35 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
             </div>
           </div>
 
+          {/* Tab switcher */}
+          <div className="px-6 py-2 border-b bg-slate-50 flex gap-1">
+            <button
+              onClick={() => setActiveTab('clauses')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'clauses' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Clauses</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('appendix')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === 'appendix' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <span className="flex items-center gap-2"><Paperclip className="w-4 h-4" /> Appendix & Photos</span>
+            </button>
+          </div>
+
           {/* Body */}
+          {activeTab === 'appendix' ? (
+            <div className="flex-1 overflow-y-auto">
+              <AppendixPhotosTab
+                study={study}
+                onStudyUpdated={() => queryClient.invalidateQueries(['feasibility-study', studyId])}
+              />
+            </div>
+          ) : (
           <div className="flex flex-1 overflow-hidden">
             {/* Left sidebar — section navigator */}
             <div className="w-64 border-r bg-slate-50 overflow-y-auto shrink-0">
@@ -341,6 +371,7 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
               )}
             </div>
           </div>
+          )}
         </div>
 
         <ClauseFormDialog

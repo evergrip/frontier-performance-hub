@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 const SECTIONS = [
   'Site & Zoning Analysis',
@@ -174,6 +174,9 @@ Deno.serve(async (req) => {
         const err = await batchRes.text();
         return Response.json({ error: 'Failed to populate document from template', details: err }, { status: 500 });
       }
+
+      // Insert appendix and photos into template doc
+      await insertAppendixAndPhotos(docId, docsToken, driveToken, study);
     }
   }
   
@@ -290,6 +293,44 @@ Deno.serve(async (req) => {
       });
     });
 
+    // Appendix and photos in scratch mode — add inline
+    const appendixItems = (study.appendix_items || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const photos = (study.photos || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    if (appendixItems.length > 0 || photos.length > 0) {
+      const appxHeading = 'Appendix\n';
+      const appxStart = idx;
+      insertText(appxHeading);
+      applyHeading(appxStart, idx, 'HEADING_1');
+
+      appendixItems.forEach((item, i) => {
+        if (item.title) {
+          const itemTitle = `${item.title}\n`;
+          const itStart = idx;
+          insertText(itemTitle);
+          applyHeading(itStart, idx, 'HEADING_2');
+        }
+        if (item.content) {
+          insertText(item.content + '\n');
+        }
+        insertText('\n');
+      });
+
+      if (photos.length > 0) {
+        const photoHeading = 'Photo Documentation\n';
+        const phStart = idx;
+        insertText(photoHeading);
+        applyHeading(phStart, idx, 'HEADING_2');
+
+        photos.forEach(photo => {
+          if (photo.caption) {
+            insertText(photo.caption + '\n');
+          }
+          insertText('[Photo: ' + (photo.url || '') + ']\n\n');
+        });
+      }
+    }
+
     const batchRes = await fetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, {
       method: 'POST',
       headers: {
@@ -303,6 +344,9 @@ Deno.serve(async (req) => {
       const err = await batchRes.text();
       return Response.json({ error: 'Failed to populate document', details: err }, { status: 500 });
     }
+
+    // Now insert actual images into the scratch doc
+    await insertPhotosAsImages(docId, docsToken, driveToken, study);
   }
 
   const docUrl = `https://docs.google.com/document/d/${docId}/edit`;
@@ -316,3 +360,182 @@ Deno.serve(async (req) => {
 
   return Response.json({ success: true, doc_url: docUrl, doc_id: docId });
 });
+
+// Insert photos as inline images into the doc by replacing [Photo: url] placeholders
+async function insertPhotosAsImages(docId, docsToken, driveToken, study) {
+  const photos = (study.photos || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  if (photos.length === 0) return;
+
+  for (const photo of photos) {
+    if (!photo.url) continue;
+    const placeholder = '[Photo: ' + photo.url + ']';
+
+    // Get current doc to find location of placeholder
+    const docRes = await fetch(`https://docs.googleapis.com/v1/documents/${docId}`, {
+      headers: { 'Authorization': `Bearer ${docsToken}` }
+    });
+    if (!docRes.ok) continue;
+    const docData = await docRes.json();
+    const fullText = extractFullText(docData);
+    const placeholderIdx = fullText.indexOf(placeholder);
+    if (placeholderIdx === -1) continue;
+
+    // Delete the placeholder text, then insert inline image
+    const deleteReq = {
+      deleteContentRange: {
+        range: { startIndex: placeholderIdx, endIndex: placeholderIdx + placeholder.length }
+      }
+    };
+    const insertReq = {
+      insertInlineImage: {
+        location: { index: placeholderIdx },
+        uri: photo.url,
+        objectSize: {
+          width: { magnitude: 400, unit: 'PT' },
+          height: { magnitude: 300, unit: 'PT' }
+        }
+      }
+    };
+
+    await fetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${docsToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ requests: [deleteReq, insertReq] })
+    });
+  }
+}
+
+function extractFullText(docData) {
+  let text = '';
+  const content = docData.body?.content || [];
+  for (const element of content) {
+    if (element.paragraph) {
+      for (const el of (element.paragraph.elements || [])) {
+        if (el.textRun) text += el.textRun.content;
+      }
+    }
+  }
+  return text;
+}
+
+// For template mode: append appendix and photos at the end of the doc
+async function insertAppendixAndPhotos(docId, docsToken, driveToken, study) {
+  const appendixItems = (study.appendix_items || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  const photos = (study.photos || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  if (appendixItems.length === 0 && photos.length === 0) return;
+
+  // Get current doc end index
+  const docRes = await fetch(`https://docs.googleapis.com/v1/documents/${docId}`, {
+    headers: { 'Authorization': `Bearer ${docsToken}` }
+  });
+  if (!docRes.ok) return;
+  const docData = await docRes.json();
+  const bodyContent = docData.body?.content || [];
+  let endIdx = 1;
+  if (bodyContent.length > 0) {
+    endIdx = bodyContent[bodyContent.length - 1].endIndex - 1;
+  }
+
+  const requests = [];
+  let idx = endIdx;
+
+  const insertText = (text) => {
+    requests.push({ insertText: { location: { index: idx }, text } });
+    idx += text.length;
+  };
+  const applyHeading = (start, end, level) => {
+    requests.push({
+      updateParagraphStyle: {
+        range: { startIndex: start, endIndex: end },
+        paragraphStyle: { namedStyleType: level },
+        fields: 'namedStyleType'
+      }
+    });
+  };
+
+  insertText('\n');
+  const appxStart = idx;
+  insertText('Appendix\n');
+  applyHeading(appxStart, idx, 'HEADING_1');
+
+  appendixItems.forEach(item => {
+    if (item.title) {
+      const s = idx;
+      insertText(item.title + '\n');
+      applyHeading(s, idx, 'HEADING_2');
+    }
+    if (item.content) insertText(item.content + '\n');
+    insertText('\n');
+  });
+
+  if (photos.length > 0) {
+    const phStart = idx;
+    insertText('Photo Documentation\n');
+    applyHeading(phStart, idx, 'HEADING_2');
+
+    photos.forEach(photo => {
+      if (photo.caption) insertText(photo.caption + '\n');
+      // Placeholder for image insertion
+      insertText('[PHOTO_PLACEHOLDER:' + (photo.url || '') + ']\n\n');
+    });
+  }
+
+  // Apply text insertions
+  const batchRes = await fetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${docsToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ requests })
+  });
+
+  if (!batchRes.ok) {
+    console.warn('Failed to insert appendix text into template doc');
+    return;
+  }
+
+  // Now replace photo placeholders with actual images
+  for (const photo of photos) {
+    if (!photo.url) continue;
+    const placeholder = '[PHOTO_PLACEHOLDER:' + photo.url + ']';
+
+    const dr = await fetch(`https://docs.googleapis.com/v1/documents/${docId}`, {
+      headers: { 'Authorization': `Bearer ${docsToken}` }
+    });
+    if (!dr.ok) continue;
+    const dd = await dr.json();
+    const fullText = extractFullText(dd);
+    const pi = fullText.indexOf(placeholder);
+    if (pi === -1) continue;
+
+    const deleteReq = {
+      deleteContentRange: {
+        range: { startIndex: pi, endIndex: pi + placeholder.length }
+      }
+    };
+    const insertReq = {
+      insertInlineImage: {
+        location: { index: pi },
+        uri: photo.url,
+        objectSize: {
+          width: { magnitude: 400, unit: 'PT' },
+          height: { magnitude: 300, unit: 'PT' }
+        }
+      }
+    };
+
+    await fetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${docsToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ requests: [deleteReq, insertReq] })
+    });
+  }
+}
