@@ -40,6 +40,9 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
   const generateReport = useMutation({
     mutationFn: async () => {
       const res = await base44.functions.invoke('generateFeasibilityReport', { studyId });
+      if (res.data?.error) {
+        throw new Error(res.data.error);
+      }
       return res.data;
     },
     onSuccess: (data) => {
@@ -50,7 +53,8 @@ export default function FeasibilityBuilderDialog({ open, onOpenChange, studyId }
       }
     },
     onError: (err) => {
-      toast.error('Failed to generate report: ' + (err?.response?.data?.error || err.message));
+      const msg = err?.response?.data?.error || err?.message || 'Unknown error';
+      toast.error('Failed to generate report: ' + msg);
     }
   });
 
