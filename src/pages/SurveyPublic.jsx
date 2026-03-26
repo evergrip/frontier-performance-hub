@@ -267,12 +267,11 @@ export default function SurveyPublic() {
             <img 
               src={styling.banner_image_url} 
               alt="Banner" 
-              className="w-full"
               style={{
                 display: 'block',
                 width: '100%',
                 ...(styling.banner_fit === 'auto'
-                  ? { height: 'auto', objectFit: 'none', maxWidth: '100%' }
+                  ? { height: 'auto' }
                   : {
                       height: styling.banner_height || '200px',
                       objectFit: styling.banner_fit || 'cover',
