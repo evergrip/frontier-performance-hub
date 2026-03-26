@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import moment from "moment";
 import AIInsightsPanel from "../components/surveys/AIInsightsPanel";
 import ResponseScoreCard from "../components/surveys/ResponseScoreCard";
+import IndividualResponseInsight from "../components/surveys/IndividualResponseInsight";
 import GenerateAgendaButton from "../components/surveys/GenerateAgendaButton";
 
 export default function SurveyResults() {
@@ -214,10 +215,11 @@ export default function SurveyResults() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {r.max_possible_score > 0 && (
-                      <GenerateAgendaButton survey={survey} response={r} />
-                    )}
-                    <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
+                  {r.max_possible_score > 0 && (
+                    <GenerateAgendaButton survey={survey} response={r} />
+                  )}
+                  <IndividualResponseInsight survey={survey} response={r} />
+                  <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-400 hover:text-red-600" onClick={() => { if (confirm("Delete this response? This cannot be undone.")) deleteMutation.mutate(r.id); }}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
