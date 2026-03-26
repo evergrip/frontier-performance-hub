@@ -287,6 +287,17 @@ function ResponseDisplay({ question, answer }) {
   }
 
   if (Array.isArray(answer)) {
+    if (question.type === "ranking") {
+      return (
+        <ol className="list-decimal list-inside text-sm mt-1 space-y-0.5">
+          {answer.map((item, i) => (
+            <li key={i} className="text-slate-700">
+              <span className="font-medium">{item}</span>
+            </li>
+          ))}
+        </ol>
+      );
+    }
     return <p className="text-sm mt-1">{answer.join(", ")}</p>;
   }
 
@@ -396,6 +407,39 @@ function QuestionSummary({ question, responses }) {
     );
   }
 
+  // Ranking questions
+  if (question.type === "ranking") {
+    const opts = question.options || [];
+    const avgRanks = {};
+    opts.forEach(opt => {
+      const ranks = answers.map(a => Array.isArray(a) ? a.indexOf(opt) + 1 : 0).filter(r => r > 0);
+      avgRanks[opt] = ranks.length > 0 ? (ranks.reduce((s, r) => s + r, 0) / ranks.length) : opts.length;
+    });
+    const sorted = Object.entries(avgRanks).sort((a, b) => a[1] - b[1]);
+
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex justify-between items-start mb-3">
+            <p className="font-medium text-sm">{question.text}</p>
+            <Badge variant="outline" className="text-xs">{responseRate}% answered</Badge>
+          </div>
+          <div className="space-y-2">
+            {sorted.map(([opt, avg], i) => (
+              <div key={opt} className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-[#ea7924] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {i + 1}
+                </div>
+                <span className="text-sm font-medium text-slate-700 flex-1">{opt}</span>
+                <span className="text-xs text-slate-500">avg rank {avg.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Text-based questions
   return (
     <Card>
@@ -406,7 +450,7 @@ function QuestionSummary({ question, responses }) {
         </div>
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {answers.slice(0, 10).map((a, i) => (
-            <p key={i} className="text-sm bg-slate-50 rounded px-3 py-1.5">{String(a)}</p>
+            <p key={i} className="text-sm bg-slate-50 rounded px-3 py-1.5">{Array.isArray(a) ? a.join(" → ") : String(a)}</p>
           ))}
           {answers.length > 10 && <p className="text-xs text-slate-400">+{answers.length - 10} more responses</p>}
         </div>

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, Upload, X, Star, Loader2 } from "lucide-react";
 import FileUploadField from "../components/surveys/FileUploadField";
+import RankingInput from "../components/surveys/RankingInput";
 import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
 import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 
@@ -510,6 +511,16 @@ function QuestionInput({ question, value, onChange, accentColor }) {
           onChange={onChange}
           allowedTypes={question.allowed_file_types || ["image", "video", "audio"]}
           maxFiles={question.max_files || 5}
+        />
+      );
+
+    case "ranking":
+      return (
+        <RankingInput
+          options={question.options || []}
+          value={value}
+          onChange={onChange}
+          accentColor={accentColor}
         />
       );
 
