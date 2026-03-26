@@ -86,19 +86,51 @@ function ImageUploadSection({ styling, updateStyling, openPicker }) {
             </SelectContent>
           </Select>
           {styling.banner_fit !== "auto" && (
-            <div className="mt-2">
-              <Label className="text-xs">Banner Height</Label>
-              <Select value={styling.banner_height || "200px"} onValueChange={v => updateStyling("banner_height", v)}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="120px">Small (120px)</SelectItem>
-                  <SelectItem value="160px">Medium (160px)</SelectItem>
-                  <SelectItem value="200px">Large (200px)</SelectItem>
-                  <SelectItem value="280px">Extra Large (280px)</SelectItem>
-                  <SelectItem value="360px">Full (360px)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="mt-2">
+                <Label className="text-xs">Banner Height</Label>
+                <Select value={styling.banner_height || "200px"} onValueChange={v => updateStyling("banner_height", v)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="120px">Small (120px)</SelectItem>
+                    <SelectItem value="160px">Medium (160px)</SelectItem>
+                    <SelectItem value="200px">Large (200px)</SelectItem>
+                    <SelectItem value="280px">Extra Large (280px)</SelectItem>
+                    <SelectItem value="360px">Full (360px)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-2">
+                <Label className="text-xs">Image Alignment</Label>
+                <div className="grid grid-cols-3 gap-1 mt-1">
+                  {[
+                    { value: "left top", label: "↖" },
+                    { value: "center top", label: "↑" },
+                    { value: "right top", label: "↗" },
+                    { value: "left center", label: "←" },
+                    { value: "center center", label: "●" },
+                    { value: "right center", label: "→" },
+                    { value: "left bottom", label: "↙" },
+                    { value: "center bottom", label: "↓" },
+                    { value: "right bottom", label: "↘" },
+                  ].map(pos => (
+                    <button
+                      key={pos.value}
+                      type="button"
+                      onClick={() => updateStyling("banner_position", pos.value)}
+                      className={`h-8 rounded text-sm font-medium border transition-colors ${
+                        (styling.banner_position || "center center") === pos.value
+                          ? "bg-slate-800 text-white border-slate-800"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {pos.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">Choose which part of the image stays visible in the crop area</p>
+              </div>
+            </>
           )}
         </div>
       )}

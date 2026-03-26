@@ -27,7 +27,24 @@ export default function SurveyWelcomePage({ survey, styling, onStart }) {
           <img src={styling.logo_url} alt="Logo" className="h-12 mb-6 mx-auto" />
         )}
         {styling.banner_image_url && (
-          <img src={styling.banner_image_url} alt="Banner" className="w-full mb-6 max-h-48 object-cover" style={{ borderRadius }} />
+          <div className="w-full mb-6" style={{ borderRadius, overflow: 'hidden' }}>
+            <img
+              src={styling.banner_image_url}
+              alt="Banner"
+              style={{
+                display: 'block',
+                width: '100%',
+                ...(styling.banner_fit === 'auto'
+                  ? { height: 'auto' }
+                  : {
+                      height: styling.banner_height || '200px',
+                      objectFit: styling.banner_fit || 'cover',
+                      objectPosition: styling.banner_position || 'center center',
+                    }
+                ),
+              }}
+            />
+          </div>
         )}
 
         <div className="p-8 shadow-sm" style={{ backgroundColor: cardBg, borderRadius, border: `1px solid ${cardBorder}` }}>

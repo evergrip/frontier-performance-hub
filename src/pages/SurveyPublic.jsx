@@ -275,6 +275,7 @@ export default function SurveyPublic() {
                   : {
                       height: styling.banner_height || '200px',
                       objectFit: styling.banner_fit || 'cover',
+                      objectPosition: styling.banner_position || 'center center',
                     }
                 ),
               }}

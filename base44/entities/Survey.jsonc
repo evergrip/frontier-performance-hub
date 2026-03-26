@@ -298,6 +298,10 @@
           "type": "string",
           "description": "Banner height (e.g. 200px)"
         },
+        "banner_position": {
+          "type": "string",
+          "description": "Banner image alignment within crop area (e.g. center, top, bottom)"
+        },
         "font_family": {
           "type": "string"
         },
