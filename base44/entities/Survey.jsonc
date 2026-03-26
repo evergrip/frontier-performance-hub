@@ -1,0 +1,379 @@
+{
+  "name": "Survey",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Survey title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Survey description or introduction text"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused",
+        "closed"
+      ],
+      "default": "draft",
+      "description": "Survey lifecycle status"
+    },
+    "access_type": {
+      "type": "string",
+      "enum": [
+        "public",
+        "link_only",
+        "invite_only"
+      ],
+      "default": "link_only",
+      "description": "Who can access the survey"
+    },
+    "allow_anonymous_responses": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow responses without login"
+    },
+    "allow_multiple_responses": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow same user to respond multiple times"
+    },
+    "headings": {
+      "type": "array",
+      "description": "Section headings for the survey (e.g. Planning, Design, Construction)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "max_score": {
+            "type": "number",
+            "description": "Maximum possible score for this section"
+          }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "description": "Array of question objects",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea",
+              "radio",
+              "checkbox",
+              "dropdown",
+              "number",
+              "date",
+              "rating",
+              "scale",
+              "email",
+              "phone",
+              "url",
+              "file_upload"
+            ]
+          },
+          "category_id": {
+            "type": "string",
+            "description": "ID of the heading/section this question belongs to"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Options for radio, checkbox, dropdown"
+          },
+          "option_scores": {
+            "type": "object",
+            "description": "Map of option text to score value (e.g. {\"Yes\": 10, \"No\": 0})"
+          },
+          "points": {
+            "type": "number",
+            "default": 1,
+            "description": "Default points for this question (used for rating/scale/number types)"
+          },
+          "weight": {
+            "type": "number",
+            "default": 1,
+            "description": "Weight multiplier for this question's score"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "min_value": {
+            "type": "number"
+          },
+          "max_value": {
+            "type": "number"
+          },
+          "min_label": {
+            "type": "string"
+          },
+          "max_label": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "video_url": {
+            "type": "string"
+          },
+          "allowed_file_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "max_files": {
+            "type": "number"
+          },
+          "allow_other": {
+            "type": "boolean"
+          },
+          "is_followup": {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, this question is a section follow-up and hidden by default"
+          },
+          "logic_rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "condition_question_id": {
+                  "type": "string"
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "equals",
+                    "not_equals",
+                    "contains",
+                    "not_contains",
+                    "greater_than",
+                    "less_than",
+                    "is_answered",
+                    "is_not_answered"
+                  ]
+                },
+                "value": {
+                  "type": "string"
+                },
+                "logic_type": {
+                  "type": "string",
+                  "enum": [
+                    "show",
+                    "skip"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "section_followup_rules": {
+      "type": "array",
+      "description": "Rules to show follow-up questions when a section score exceeds a threshold",
+      "items": {
+        "type": "object",
+        "properties": {
+          "heading_id": {
+            "type": "string",
+            "description": "Section heading ID that triggers this rule"
+          },
+          "threshold_score": {
+            "type": "number",
+            "description": "Score threshold that must be met or exceeded"
+          },
+          "followup_question_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Question IDs to reveal when the threshold is met"
+          }
+        }
+      }
+    },
+    "welcome_page_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "welcome_page_content": {
+      "type": "string"
+    },
+    "welcome_page_button_text": {
+      "type": "string",
+      "default": "Start Survey"
+    },
+    "thank_you_page_content": {
+      "type": "string"
+    },
+    "thank_you_show_social_share": {
+      "type": "boolean",
+      "default": false
+    },
+    "styling": {
+      "type": "object",
+      "properties": {
+        "background_color": {
+          "type": "string"
+        },
+        "text_color": {
+          "type": "string"
+        },
+        "accent_color": {
+          "type": "string"
+        },
+        "button_color": {
+          "type": "string"
+        },
+        "button_text_color": {
+          "type": "string"
+        },
+        "card_background_color": {
+          "type": "string"
+        },
+        "card_border_color": {
+          "type": "string"
+        },
+        "input_background_color": {
+          "type": "string"
+        },
+        "input_border_color": {
+          "type": "string"
+        },
+        "input_text_color": {
+          "type": "string"
+        },
+        "heading_color": {
+          "type": "string"
+        },
+        "description_color": {
+          "type": "string"
+        },
+        "progress_bar_color": {
+          "type": "string"
+        },
+        "logo_url": {
+          "type": "string"
+        },
+        "banner_image_url": {
+          "type": "string"
+        },
+        "banner_fit": {
+          "type": "string",
+          "description": "Banner display mode: cover, contain, or auto"
+        },
+        "banner_height": {
+          "type": "string",
+          "description": "Banner height (e.g. 200px)"
+        },
+        "font_family": {
+          "type": "string"
+        },
+        "heading_font_family": {
+          "type": "string"
+        },
+        "font_url": {
+          "type": "string"
+        },
+        "heading_font_url": {
+          "type": "string"
+        },
+        "border_radius": {
+          "type": "string"
+        },
+        "button_border_radius": {
+          "type": "string"
+        },
+        "button_hover_color": {
+          "type": "string"
+        }
+      }
+    },
+    "success_message": {
+      "type": "string",
+      "default": "Thank you for completing this survey!"
+    },
+    "redirect_url": {
+      "type": "string"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_responses": {
+      "type": "number",
+      "default": 0
+    },
+    "share_token": {
+      "type": "string"
+    },
+    "is_template": {
+      "type": "boolean",
+      "default": false
+    },
+    "template_category": {
+      "type": "string",
+      "enum": [
+        "customer_feedback",
+        "employee_satisfaction",
+        "market_research",
+        "event_feedback",
+        "product_feedback",
+        "general",
+        "custom"
+      ]
+    },
+    "template_description": {
+      "type": "string"
+    },
+    "ai_insights": {
+      "type": "string"
+    },
+    "ai_insights_generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ai_insights_response_count": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
