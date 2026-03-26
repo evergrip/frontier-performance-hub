@@ -59,7 +59,7 @@ export default function QuestionEditor({ question, index, totalCount, questionTy
     }
   };
 
-  const hasOptions = ["radio", "checkbox", "dropdown"].includes(question.type);
+  const hasOptions = ["radio", "checkbox", "dropdown", "ranking"].includes(question.type);
   const isFileUpload = question.type === "file_upload";
 
   return (

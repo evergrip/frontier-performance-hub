@@ -21,6 +21,7 @@ const QUESTION_TYPES = [
   { value: "phone", label: "Phone" },
   { value: "url", label: "URL" },
   { value: "file_upload", label: "File Upload" },
+  { value: "ranking", label: "Ranking (Drag to Order)" },
 ];
 
 function generateId() {
@@ -70,7 +71,7 @@ export default function SectionBlock({
       type,
       required: false,
       category_id: heading.id,
-      options: ["radio", "checkbox", "dropdown"].includes(type) ? ["Option 1", "Option 2"] : undefined,
+      options: ["radio", "checkbox", "dropdown", "ranking"].includes(type) ? ["Option 1", "Option 2"] : undefined,
       allowed_file_types: type === "file_upload" ? ["image", "video", "audio"] : undefined,
       max_files: type === "file_upload" ? 5 : undefined,
     };
