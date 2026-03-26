@@ -13,6 +13,7 @@ import { Upload, Loader2, X } from "lucide-react";
 import BrandAssetPicker from "../common/BrandAssetPicker";
 import WelcomePageEditor from "./WelcomePageEditor";
 import ThankYouPageEditor from "./ThankYouPageEditor";
+import FontSection from "./FontSection";
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -212,42 +213,7 @@ function StylingTab({ form, updateStyling, setForm }) {
 
       {/* Typography section */}
       {section === "typography" && (
-        <div className="space-y-3">
-          <div>
-            <Label className="text-xs">Body Font Family</Label>
-            <div className="flex gap-2 items-center">
-              <Input value={s.font_family || ""} onChange={e => updateStyling("font_family", e.target.value)} placeholder="e.g. Inter, Work Sans" className="flex-1" />
-              <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => openPicker("font", "font_family")}>Brand</Button>
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs">Body Font URL (Google Fonts)</Label>
-            <Input value={s.font_url || ""} onChange={e => updateStyling("font_url", e.target.value)} placeholder="https://fonts.googleapis.com/css2?family=..." className="text-xs" />
-            <p className="text-[10px] text-slate-400 mt-1">Paste a Google Fonts import URL to load a custom font</p>
-          </div>
-          <div>
-            <Label className="text-xs">Heading Font Family</Label>
-            <div className="flex gap-2 items-center">
-              <Input value={s.heading_font_family || ""} onChange={e => updateStyling("heading_font_family", e.target.value)} placeholder="e.g. Playfair Display" className="flex-1" />
-              <Button type="button" variant="outline" size="sm" className="shrink-0 text-xs" onClick={() => openPicker("font", "heading_font_family")}>Brand</Button>
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs">Heading Font URL (Google Fonts)</Label>
-            <Input value={s.heading_font_url || ""} onChange={e => updateStyling("heading_font_url", e.target.value)} placeholder="https://fonts.googleapis.com/css2?family=..." className="text-xs" />
-          </div>
-
-          {/* Preview */}
-          {(s.font_family || s.heading_font_family) && (
-            <div className="bg-slate-50 rounded-lg p-3 border">
-              <p className="text-[10px] text-slate-400 mb-2">Preview</p>
-              {s.font_url && <link href={s.font_url} rel="stylesheet" />}
-              {s.heading_font_url && <link href={s.heading_font_url} rel="stylesheet" />}
-              <p className="text-lg font-bold mb-1" style={{ fontFamily: s.heading_font_family || s.font_family || "inherit" }}>Survey Heading</p>
-              <p className="text-sm" style={{ fontFamily: s.font_family || "inherit" }}>This is how your body text will look with the selected fonts.</p>
-            </div>
-          )}
-        </div>
+        <FontSection styling={s} updateStyling={updateStyling} openPicker={openPicker} />
       )}
 
       {/* Images section */}
