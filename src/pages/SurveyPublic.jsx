@@ -367,12 +367,17 @@ function QuestionInput({ question, value, onChange, accentColor }) {
     case "date":
       return <Input type="date" value={value || ""} onChange={e => onChange(e.target.value)} required={question.required} />;
 
-    case "radio":
-      const radioIsOther = value && !(question.options || []).includes(value);
+    case "radio": {
+      const radioOpts = question.options || [];
+      const radioIsOther = value !== undefined && value !== null && value !== "" && !radioOpts.includes(value);
+      const radioSelectedValue = radioIsOther ? "__other__" : (value || "");
       return (
         <div className="space-y-2">
-          <RadioGroup value={radioIsOther ? "__other__" : (value || "")} onValueChange={(v) => onChange(v === "__other__" ? "" : v)}>
-            {(question.options || []).map((opt, i) => (
+          <RadioGroup value={radioSelectedValue} onValueChange={(v) => {
+            if (v === "__other__") onChange("__other__");
+            else onChange(v);
+          }}>
+            {radioOpts.map((opt, i) => (
               <div key={i} className="flex items-center gap-2">
                 <RadioGroupItem value={opt} id={`${question.id}-${i}`} />
                 <Label htmlFor={`${question.id}-${i}`} className="cursor-pointer">{opt}</Label>
@@ -385,18 +390,24 @@ function QuestionInput({ question, value, onChange, accentColor }) {
               </div>
             )}
           </RadioGroup>
-          {question.allow_other && radioIsOther && (
-            <Input placeholder="Please specify..." value={value || ""} onChange={e => onChange(e.target.value)} className="ml-6 max-w-xs" />
+          {question.allow_other && (radioSelectedValue === "__other__" || radioIsOther) && (
+            <Input
+              placeholder="Please specify..."
+              value={radioIsOther && value !== "__other__" ? value : ""}
+              onChange={e => onChange(e.target.value || "__other__")}
+              className="ml-6 max-w-xs"
+              autoFocus
+            />
           )}
         </div>
       );
+    }
 
-    case "checkbox":
+    case "checkbox": {
       const cbOptions = question.options || [];
-      const cbValues = value || [];
-      const cbOtherValues = cbValues.filter(v => !cbOptions.includes(v) && v !== "");
-      const cbOtherText = cbOtherValues.length > 0 ? cbOtherValues[0] : "";
-      const cbOtherChecked = cbOtherValues.length > 0 || (cbValues.includes("__other__"));
+      const cbValues = Array.isArray(value) ? value : [];
+      const cbOtherText = cbValues.find(v => v !== "" && !cbOptions.includes(v) && v !== "__other__") || "";
+      const cbOtherChecked = cbValues.some(v => !cbOptions.includes(v));
       return (
         <div className="space-y-2">
           {cbOptions.map((opt, i) => {
@@ -406,7 +417,11 @@ function QuestionInput({ question, value, onChange, accentColor }) {
                 <Checkbox
                   checked={checked}
                   onCheckedChange={(c) => {
-                    onChange(c ? [...cbValues.filter(v => cbOptions.includes(v) || (v !== "" && !cbOptions.includes(v))), opt] : cbValues.filter(v => v !== opt));
+                    if (c) {
+                      onChange([...cbValues, opt]);
+                    } else {
+                      onChange(cbValues.filter(v => v !== opt));
+                    }
                   }}
                 />
                 {opt}
@@ -419,10 +434,11 @@ function QuestionInput({ question, value, onChange, accentColor }) {
                 <Checkbox
                   checked={cbOtherChecked}
                   onCheckedChange={(c) => {
+                    const known = cbValues.filter(v => cbOptions.includes(v));
                     if (c) {
-                      onChange([...cbValues.filter(v => cbOptions.includes(v)), ""]);
+                      onChange([...known, "__other__"]);
                     } else {
-                      onChange(cbValues.filter(v => cbOptions.includes(v)));
+                      onChange(known);
                     }
                   }}
                 />
@@ -433,16 +449,18 @@ function QuestionInput({ question, value, onChange, accentColor }) {
                   placeholder="Please specify..."
                   value={cbOtherText}
                   onChange={e => {
-                    const knownValues = cbValues.filter(v => cbOptions.includes(v));
-                    onChange(e.target.value ? [...knownValues, e.target.value] : [...knownValues, ""]);
+                    const known = cbValues.filter(v => cbOptions.includes(v));
+                    onChange([...known, e.target.value || "__other__"]);
                   }}
                   className="ml-6 max-w-xs mt-1"
+                  autoFocus
                 />
-              )}
+                )}
             </div>
           )}
         </div>
       );
+    }
 
     case "dropdown":
       const ddIsOther = value && !(question.options || []).includes(value) && value !== "__other__";
