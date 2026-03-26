@@ -263,18 +263,22 @@ export default function SurveyPublic() {
           <img src={styling.logo_url} alt="Logo" className="h-12 mb-4" />
         )}
         {styling.banner_image_url && (
-          <div className="w-full mb-6 overflow-hidden" style={{ 
-            borderRadius,
-            height: styling.banner_fit === "auto" ? "auto" : (styling.banner_height || "200px"),
-          }}>
+          <div className="w-full mb-6" style={{ borderRadius, overflow: 'hidden' }}>
             <img 
               src={styling.banner_image_url} 
               alt="Banner" 
               className="w-full"
-              style={{ 
-                objectFit: styling.banner_fit || "cover",
-                height: styling.banner_fit === "auto" ? "auto" : "100%",
-              }} 
+              style={{
+                display: 'block',
+                width: '100%',
+                ...(styling.banner_fit === 'auto'
+                  ? { height: 'auto', objectFit: 'none', maxWidth: '100%' }
+                  : {
+                      height: styling.banner_height || '200px',
+                      objectFit: styling.banner_fit || 'cover',
+                    }
+                ),
+              }}
             />
           </div>
         )}
