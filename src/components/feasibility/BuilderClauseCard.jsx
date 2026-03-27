@@ -6,10 +6,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, Zap, Save, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, Circle, Lock, Zap, Save, Loader2, Pencil } from 'lucide-react';
 
 export default function BuilderClauseCard({
-  clause, selection, isTriggered, onToggle, onSave
+  clause, selection, isTriggered, onToggle, onSave, onEditClause
 }) {
   const [expanded, setExpanded] = useState(false);
   const [userData, setUserData] = useState({});
@@ -93,8 +93,15 @@ export default function BuilderClauseCard({
           )}
         </div>
         {included && (
-          <div className="shrink-0 text-slate-400">
-            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEditClause?.(clause); }}
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              title="Edit clause definition"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            {expanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
           </div>
         )}
       </div>

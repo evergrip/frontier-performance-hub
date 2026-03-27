@@ -227,6 +227,7 @@ export default function FeasibilityBuilder() {
                     isTriggered={triggeredClauseIds.has(clause.id)}
                     onToggle={toggleClause}
                     onSave={saveClauseData}
+                    onEditClause={(c) => { setEditingClause(c); setClauseFormOpen(true); }}
                   />
                 ))}
               </div>
@@ -269,6 +270,7 @@ export default function FeasibilityBuilder() {
                     isTriggered={triggeredClauseIds.has(clause.id)}
                     onToggle={toggleClause}
                     onSave={saveClauseData}
+                    onEditClause={(c) => { setEditingClause(c); setClauseFormOpen(true); }}
                   />
                 ))}
               </div>
