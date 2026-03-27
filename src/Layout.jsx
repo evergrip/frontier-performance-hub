@@ -57,20 +57,45 @@ export default function Layout({ children, currentPageName }) {
     init();
   }, [currentPageName]);
 
-  const navigation = [
-    { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
-    { name: '1. Clients', icon: Users, page: 'Clients' },
-    { name: '2. Leads', icon: Target, page: 'Leads' },
-    { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales' },
-    { name: '4. Projects', icon: Building2, page: 'Projects' },
-    ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
-    { name: 'Budgets', icon: Wallet, page: 'Budgets' },
-    { name: 'Reports', icon: Settings, page: 'Reports' },
-    { name: 'Meetings', icon: MessageSquare, page: 'Meetings' },
-    { name: 'My Performance', icon: Target, page: 'MyKPIs' },
-    { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
-    { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },
-    { name: 'Resources', icon: FolderOpen, page: 'CompanyResources' },
+  const navigationSections = [
+    {
+      label: null, // no header for top section
+      items: [
+        { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
+      ]
+    },
+    {
+      label: 'Pipeline',
+      items: [
+        { name: '1. Clients', icon: Users, page: 'Clients' },
+        { name: '2. Leads', icon: Target, page: 'Leads' },
+        { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales' },
+        { name: '4. Projects', icon: Building2, page: 'Projects' },
+      ]
+    },
+    {
+      label: 'Operations',
+      items: [
+        ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
+        { name: 'Budgets', icon: Wallet, page: 'Budgets' },
+        { name: 'Meetings', icon: MessageSquare, page: 'Meetings' },
+      ]
+    },
+    {
+      label: 'Insights',
+      items: [
+        { name: 'Reports', icon: Settings, page: 'Reports' },
+        { name: 'My Performance', icon: Target, page: 'MyKPIs' },
+      ]
+    },
+    {
+      label: 'Company',
+      items: [
+        { name: 'Resources', icon: FolderOpen, page: 'CompanyResources' },
+        { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
+        { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },
+      ]
+    },
   ];
 
   const isManager = user?.is_department_manager && user?.managed_departments?.length > 0;
@@ -172,30 +197,39 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.page);
-              return (
-                <Link
-                  key={item.page}
-                  to={createPageUrl(item.page)}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-xl
-                    transition-all duration-200 group
-                    ${active 
-                      ? 'text-white shadow-lg' 
-                      : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
-                    }
-                  `}
-                  style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} style={!active ? {} : {}} />
-                  <span className="font-medium">{item.name}</span>
-                  {active && <ChevronRight className="w-4 h-4 ml-auto" />}
-                </Link>
-              );
-            })}
+            {navigationSections.map((section, sIdx) => (
+              <div key={sIdx}>
+                {section.label && (
+                  <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-3">
+                    {section.label}
+                  </p>
+                )}
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.page);
+                  return (
+                    <Link
+                      key={item.page}
+                      to={createPageUrl(item.page)}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl
+                        transition-all duration-200 group
+                        ${active 
+                          ? 'text-white shadow-lg' 
+                          : 'text-[#333333] hover:bg-slate-50 hover:text-[#333645]'
+                        }
+                      `}
+                      style={active ? { background: `linear-gradient(to right, ${branding.primary_color}, ${branding.accent_color})`, boxShadow: `0 4px 14px ${branding.primary_color}33` } : {}}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-slate-400'}`} />
+                      <span className="font-medium">{item.name}</span>
+                      {active && <ChevronRight className="w-4 h-4 ml-auto" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
 
             {/* User-specific navigation */}
             {user && (
