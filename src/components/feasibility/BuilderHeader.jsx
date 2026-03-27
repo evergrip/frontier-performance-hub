@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileText, ExternalLink, Pencil, Loader2, Paperclip, ClipboardList } from 'lucide-react';
+import { ArrowLeft, FileText, ExternalLink, Pencil, Loader2, Paperclip, ClipboardList, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -26,7 +26,7 @@ const STATUS_COLORS = {
   archived: 'bg-slate-100 text-slate-500'
 };
 
-export default function BuilderHeader({ study, totalIncluded, totalComplete, activeTab, setActiveTab }) {
+export default function BuilderHeader({ study, totalIncluded, totalComplete, activeTab, setActiveTab, onOpenOfflineDialog }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
@@ -82,6 +82,14 @@ export default function BuilderHeader({ study, totalIncluded, totalComplete, act
                   <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-amber-600 hover:text-amber-700"
+                onClick={onOpenOfflineDialog}
+              >
+                <WifiOff className="w-4 h-4" /> Offline
+              </Button>
               {study?.generated_doc_url && (
                 <a href={study.generated_doc_url} target="_blank" rel="noopener noreferrer">
                   <Button variant="ghost" size="sm" className="gap-2 text-blue-600">

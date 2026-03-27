@@ -10,6 +10,7 @@ import BuilderClauseCard from '../components/feasibility/BuilderClauseCard';
 import AppendixPhotosTab from '../components/feasibility/AppendixPhotosTab';
 import ClauseFormDialog from '../components/admin/ClauseFormDialog';
 import OfflineStatusBar from '../components/feasibility/OfflineStatusBar';
+import OfflineReadyDialog from '../components/feasibility/OfflineReadyDialog';
 import { cacheData, getCachedData, queueChange, getQueue, removeFromQueue } from '../lib/offlineStorage';
 
 export default function FeasibilityBuilder() {
@@ -25,6 +26,7 @@ export default function FeasibilityBuilder() {
 
   // Mobile section selector
   const [mobileSectionOpen, setMobileSectionOpen] = useState(false);
+  const [offlineDialogOpen, setOfflineDialogOpen] = useState(false);
 
   // Offline support
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -50,18 +52,35 @@ export default function FeasibilityBuilder() {
       if (queue.length === 0) return;
       setIsSyncing(true);
       let synced = 0;
+      let retries = 0;
+      const maxRetries = 3;
       for (const item of queue) {
-        try {
-          await base44.entities.FeasibilitySelection.update(item.selectionId, item.data);
-          removeFromQueue(item.id);
-          synced++;
-        } catch { break; }
+        let success = false;
+        retries = 0;
+        while (!success && retries < maxRetries) {
+          try {
+            await base44.entities.FeasibilitySelection.update(item.selectionId, item.data);
+            removeFromQueue(item.id);
+            synced++;
+            success = true;
+          } catch (e) {
+            retries++;
+            if (retries < maxRetries) {
+              await new Promise(r => setTimeout(r, 1000 * retries));
+            }
+          }
+        }
+        if (!success) break; // stop processing queue if item fails after retries
       }
       setIsSyncing(false);
-      setPendingSync(getQueue().length);
+      const remaining = getQueue().length;
+      setPendingSync(remaining);
       if (synced > 0) {
         refetchSelections();
         toast.success(`Synced ${synced} offline change${synced > 1 ? 's' : ''}`);
+      }
+      if (remaining > 0) {
+        toast.error(`${remaining} change${remaining > 1 ? 's' : ''} failed to sync — will retry next time`);
       }
     };
     sync();
@@ -257,12 +276,14 @@ export default function FeasibilityBuilder() {
   return (
     <div className="min-h-screen bg-slate-50">
       <OfflineStatusBar isOnline={isOnline} pendingCount={pendingSync} isSyncing={isSyncing} />
+      <OfflineReadyDialog open={offlineDialogOpen} onOpenChange={setOfflineDialogOpen} studyId={studyId} />
       <BuilderHeader
         study={study}
         totalIncluded={totalIncluded}
         totalComplete={totalComplete}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        onOpenOfflineDialog={() => setOfflineDialogOpen(true)}
       />
 
       {activeTab === 'appendix' ? (
