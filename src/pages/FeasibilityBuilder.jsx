@@ -9,6 +9,8 @@ import BuilderSidebar, { SECTIONS } from '../components/feasibility/BuilderSideb
 import BuilderClauseCard from '../components/feasibility/BuilderClauseCard';
 import AppendixPhotosTab from '../components/feasibility/AppendixPhotosTab';
 import ClauseFormDialog from '../components/admin/ClauseFormDialog';
+import OfflineStatusBar from '../components/feasibility/OfflineStatusBar';
+import { cacheData, getCachedData, queueChange, getQueue, removeFromQueue } from '../lib/offlineStorage';
 
 export default function FeasibilityBuilder() {
   const queryClient = useQueryClient();
@@ -24,24 +26,96 @@ export default function FeasibilityBuilder() {
   // Mobile section selector
   const [mobileSectionOpen, setMobileSectionOpen] = useState(false);
 
+  // Offline support
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingSync, setPendingSync] = useState(getQueue().length);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  // Sync queued changes when back online
+  useEffect(() => {
+    if (!isOnline || !studyId) return;
+    const sync = async () => {
+      const queue = getQueue();
+      if (queue.length === 0) return;
+      setIsSyncing(true);
+      let synced = 0;
+      for (const item of queue) {
+        try {
+          await base44.entities.FeasibilitySelection.update(item.selectionId, item.data);
+          removeFromQueue(item.id);
+          synced++;
+        } catch { break; }
+      }
+      setIsSyncing(false);
+      setPendingSync(getQueue().length);
+      if (synced > 0) {
+        refetchSelections();
+        toast.success(`Synced ${synced} offline change${synced > 1 ? 's' : ''}`);
+      }
+    };
+    sync();
+  }, [isOnline, studyId]);
+
   const { data: study } = useQuery({
     queryKey: ['feasibility-study', studyId],
     queryFn: async () => {
-      const studies = await base44.entities.FeasibilityStudy.filter({ id: studyId });
-      return studies[0] || null;
+      try {
+        const studies = await base44.entities.FeasibilityStudy.filter({ id: studyId });
+        const result = studies[0] || null;
+        cacheData(`study_${studyId}`, result);
+        return result;
+      } catch (e) {
+        const cached = getCachedData(`study_${studyId}`);
+        if (cached) return cached;
+        throw e;
+      }
     },
     enabled: !!studyId,
+    retry: isOnline ? 3 : 0,
   });
 
   const { data: clauses = [] } = useQuery({
     queryKey: ['feasibility-clauses'],
-    queryFn: () => base44.entities.FeasibilityClause.filter({ is_active: true }),
+    queryFn: async () => {
+      try {
+        const result = await base44.entities.FeasibilityClause.filter({ is_active: true });
+        cacheData('clauses_all', result);
+        return result;
+      } catch (e) {
+        const cached = getCachedData('clauses_all');
+        if (cached) return cached;
+        throw e;
+      }
+    },
+    retry: isOnline ? 3 : 0,
   });
 
   const { data: selections = [], refetch: refetchSelections } = useQuery({
     queryKey: ['feasibility-selections', studyId],
-    queryFn: () => base44.entities.FeasibilitySelection.filter({ study_id: studyId }),
+    queryFn: async () => {
+      try {
+        const result = await base44.entities.FeasibilitySelection.filter({ study_id: studyId });
+        cacheData(`selections_${studyId}`, result);
+        return result;
+      } catch (e) {
+        const cached = getCachedData(`selections_${studyId}`);
+        if (cached) return cached;
+        throw e;
+      }
+    },
     enabled: !!studyId,
+    retry: isOnline ? 3 : 0,
   });
 
   const clauseMap = useMemo(() => Object.fromEntries(clauses.map(c => [c.id, c])), [clauses]);
@@ -102,11 +176,27 @@ export default function FeasibilityBuilder() {
   const totalIncluded = selections.filter(s => s.included).length;
   const totalComplete = selections.filter(s => s.included && s.completion_status === 'complete').length;
 
+  const updateSelectionsCache = (updater) => {
+    queryClient.setQueryData(['feasibility-selections', studyId], old => {
+      const updated = updater(old || []);
+      cacheData(`selections_${studyId}`, updated);
+      return updated;
+    });
+  };
+
   const toggleClause = async (clauseId) => {
     const sel = selectionByClause[clauseId];
     if (!sel) return;
     if (sel.included && triggeredClauseIds.has(clauseId)) return;
-    await base44.entities.FeasibilitySelection.update(sel.id, { included: !sel.included });
+    const newIncluded = !sel.included;
+    if (!navigator.onLine) {
+      queueChange({ type: 'toggle', selectionId: sel.id, data: { included: newIncluded } });
+      updateSelectionsCache(old => old.map(s => s.id === sel.id ? { ...s, included: newIncluded } : s));
+      setPendingSync(getQueue().length);
+      toast.info('Saved offline');
+      return;
+    }
+    await base44.entities.FeasibilitySelection.update(sel.id, { included: newIncluded });
     refetchSelections();
   };
 
@@ -116,11 +206,16 @@ export default function FeasibilityBuilder() {
     const clause = clauseMap[clauseId];
     const requiredFields = (clause?.input_fields || []).filter(f => f.required);
     const allFilled = requiredFields.every(f => userData[f.key] !== undefined && userData[f.key] !== '');
-    await base44.entities.FeasibilitySelection.update(sel.id, {
-      user_data: userData,
-      staff_notes: staffNotes,
-      completion_status: allFilled ? 'complete' : 'in_progress'
-    });
+    const completionStatus = allFilled ? 'complete' : 'in_progress';
+    const updateData = { user_data: userData, staff_notes: staffNotes, completion_status: completionStatus };
+    if (!navigator.onLine) {
+      queueChange({ type: 'save', selectionId: sel.id, data: updateData });
+      updateSelectionsCache(old => old.map(s => s.id === sel.id ? { ...s, ...updateData } : s));
+      setPendingSync(getQueue().length);
+      toast.info('Saved offline');
+      return;
+    }
+    await base44.entities.FeasibilitySelection.update(sel.id, updateData);
     refetchSelections();
     toast.success('Saved');
   };
@@ -161,6 +256,7 @@ export default function FeasibilityBuilder() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <OfflineStatusBar isOnline={isOnline} pendingCount={pendingSync} isSyncing={isSyncing} />
       <BuilderHeader
         study={study}
         totalIncluded={totalIncluded}
