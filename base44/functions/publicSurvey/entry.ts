@@ -133,40 +133,75 @@ Deno.serve(async (req) => {
         const questions = survey.questions || [];
         const includedQIds = survey.alert_include_question_ids || [];
 
-        // Build highlighted answers section
-        let answersHtml = '';
+        // Helper to resolve a single answer by question ID
+        const getAnswer = (qId) => {
+          const val = responses[qId];
+          return Array.isArray(val) ? val.join(', ') : (val || '(no answer)');
+        };
+
+        // Build highlighted answers table HTML
+        let answersTableHtml = '';
         if (includedQIds.length > 0) {
-          const answerLines = includedQIds.map(qId => {
+          const rows = includedQIds.map(qId => {
             const q = questions.find(qq => qq.id === qId);
             if (!q) return null;
-            const answer = responses[qId];
-            const displayAnswer = Array.isArray(answer) ? answer.join(', ') : (answer || '(no answer)');
-            return `<tr><td style="padding:6px 12px;font-weight:600;color:#333645;white-space:nowrap;vertical-align:top;">${q.text}</td><td style="padding:6px 12px;color:#1e293b;">${displayAnswer}</td></tr>`;
+            return `<tr><td style="padding:6px 12px;font-weight:600;color:#333645;white-space:nowrap;vertical-align:top;">${q.text}</td><td style="padding:6px 12px;color:#1e293b;">${getAnswer(qId)}</td></tr>`;
           }).filter(Boolean);
-          if (answerLines.length > 0) {
-            answersHtml = `<table style="border-collapse:collapse;margin:16px 0;width:100%;">${answerLines.join('')}</table>`;
+          if (rows.length > 0) {
+            answersTableHtml = `<table style="border-collapse:collapse;margin:16px 0;width:100%;">${rows.join('')}</table>`;
           }
         }
 
-        const emailBody = `
-          <div style="font-family:'Work Sans',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;">
-            <div style="background:linear-gradient(135deg,#333645,#ea7924);padding:24px 32px;border-radius:12px 12px 0 0;">
-              <h2 style="color:#fff;margin:0;font-size:18px;">New Survey Response</h2>
-            </div>
-            <div style="background:#ffffff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
-              <p style="color:#333645;font-size:15px;margin:0 0 4px;">A new response was submitted for:</p>
-              <p style="color:#ea7924;font-size:17px;font-weight:600;margin:0 0 16px;">${survey.title}</p>
-              ${answersHtml}
-              <p style="color:#64748b;font-size:13px;margin:16px 0 0;">Total responses: ${(survey.total_responses || 0) + 1}</p>
-            </div>
-          </div>
-        `;
+        // Replace placeholders in a string
+        const resolvePlaceholders = (text) => {
+          let result = text;
+          result = result.replace(/\{\{survey_title\}\}/g, survey.title || '');
+          result = result.replace(/\{\{total_responses\}\}/g, String((survey.total_responses || 0) + 1));
+          result = result.replace(/\{\{answers_table\}\}/g, answersTableHtml);
+          // Replace {{answer:QUESTION_ID}} placeholders
+          result = result.replace(/\{\{answer:([^}]+)\}\}/g, (_, qId) => getAnswer(qId.trim()));
+          return result;
+        };
 
-        // Send emails in parallel, don't block the response
+        // Determine subject and body
+        const customSubject = survey.alert_subject?.trim();
+        const customBody = survey.alert_body?.trim();
+
+        const emailSubject = customSubject
+          ? resolvePlaceholders(customSubject)
+          : `New Response: ${survey.title}`;
+
+        let emailBody;
+        if (customBody) {
+          // Convert newlines to <br> for HTML and resolve placeholders
+          emailBody = `
+            <div style="font-family:'Work Sans',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <div style="background:linear-gradient(135deg,#333645,#ea7924);padding:24px 32px;border-radius:12px 12px 0 0;">
+                <h2 style="color:#fff;margin:0;font-size:18px;">${emailSubject}</h2>
+              </div>
+              <div style="background:#ffffff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
+                ${resolvePlaceholders(customBody).replace(/\n/g, '<br>')}
+              </div>
+            </div>`;
+        } else {
+          emailBody = `
+            <div style="font-family:'Work Sans',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <div style="background:linear-gradient(135deg,#333645,#ea7924);padding:24px 32px;border-radius:12px 12px 0 0;">
+                <h2 style="color:#fff;margin:0;font-size:18px;">New Survey Response</h2>
+              </div>
+              <div style="background:#ffffff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
+                <p style="color:#333645;font-size:15px;margin:0 0 4px;">A new response was submitted for:</p>
+                <p style="color:#ea7924;font-size:17px;font-weight:600;margin:0 0 16px;">${survey.title}</p>
+                ${answersTableHtml}
+                <p style="color:#64748b;font-size:13px;margin:16px 0 0;">Total responses: ${(survey.total_responses || 0) + 1}</p>
+              </div>
+            </div>`;
+        }
+
         const emailPromises = alertRecipients.map(email =>
           base44.asServiceRole.integrations.Core.SendEmail({
             to: email,
-            subject: `New Response: ${survey.title}`,
+            subject: emailSubject,
             body: emailBody,
             from_name: 'Frontier Survey Alerts'
           }).catch(err => console.error('Alert email failed for', email, err.message))

@@ -3,9 +3,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TabsContent } from "@/components/ui/tabs";
-import { Plus, X, Bell, Mail } from "lucide-react";
+import { Plus, X, Bell, Mail, Info } from "lucide-react";
 
 export default function AlertRecipientsTab({ form, setForm, questions }) {
   const [newEmail, setNewEmail] = useState("");
@@ -111,6 +112,50 @@ export default function AlertRecipientsTab({ form, setForm, questions }) {
             })}
           </div>
         )}
+      </div>
+
+      {/* Custom message */}
+      <div className="space-y-3 border-t pt-4">
+        <div className="flex items-start gap-2">
+          <Label className="text-sm font-medium">Custom Alert Message</Label>
+        </div>
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+            <div className="text-xs text-blue-700 space-y-1">
+              <p className="font-medium">Available placeholders:</p>
+              <ul className="list-disc ml-4 space-y-0.5">
+                <li><code className="bg-blue-100 px-1 rounded">{'{{survey_title}}'}</code> — Survey name</li>
+                <li><code className="bg-blue-100 px-1 rounded">{'{{total_responses}}'}</code> — Response count</li>
+                <li><code className="bg-blue-100 px-1 rounded">{'{{answers_table}}'}</code> — Table of selected question answers</li>
+                {availableQuestions.slice(0, 3).map((q, i) => (
+                  <li key={q.id}><code className="bg-blue-100 px-1 rounded">{`{{answer:${q.id}}}`}</code> — Answer to "{q.text.length > 30 ? q.text.slice(0, 30) + '...' : q.text}"</li>
+                ))}
+                {availableQuestions.length > 3 && <li className="text-blue-500">...and more question IDs from the builder</li>}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs">Email Subject</Label>
+          <Input
+            value={form.alert_subject || ''}
+            onChange={e => setForm(prev => ({ ...prev, alert_subject: e.target.value }))}
+            placeholder="New Response: {{survey_title}}"
+          />
+        </div>
+
+        <div>
+          <Label className="text-xs">Email Body</Label>
+          <Textarea
+            value={form.alert_body || ''}
+            onChange={e => setForm(prev => ({ ...prev, alert_body: e.target.value }))}
+            placeholder={`A new response was submitted for {{survey_title}}.\n\n{{answers_table}}\n\nTotal responses: {{total_responses}}`}
+            rows={6}
+          />
+          <p className="text-[10px] text-slate-400 mt-1">Leave blank to use the default alert template.</p>
+        </div>
       </div>
     </TabsContent>
   );

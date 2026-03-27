@@ -238,6 +238,14 @@
         "type": "string"
       }
     },
+    "alert_subject": {
+      "type": "string",
+      "description": "Custom email subject for alert notifications. Supports {{survey_title}} and {{answer:QUESTION_ID}} placeholders."
+    },
+    "alert_body": {
+      "type": "string",
+      "description": "Custom email body for alert notifications. Supports {{survey_title}}, {{answer:QUESTION_ID}}, {{total_responses}}, and {{answers_table}} placeholders."
+    },
     "welcome_page_enabled": {
       "type": "boolean",
       "default": false
