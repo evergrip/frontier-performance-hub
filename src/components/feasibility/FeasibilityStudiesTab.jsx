@@ -6,8 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, ExternalLink, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 import FeasibilityStudyFormDialog from './FeasibilityStudyFormDialog';
-import FeasibilityBuilderDialog from './FeasibilityBuilderDialog';
 
 const STATUS_LABELS = {
   draft: 'Draft',
@@ -35,8 +35,8 @@ const RATING_LABELS = {
 };
 
 export default function FeasibilityStudiesTab() {
+  const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
-  const [builderStudyId, setBuilderStudyId] = useState(null);
   const [search, setSearch] = useState('');
 
   const { data: studies = [], isLoading } = useQuery({
@@ -97,7 +97,7 @@ export default function FeasibilityStudiesTab() {
           {filtered.map(study => {
             const client = clientMap[study.client_id];
             return (
-              <Card key={study.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setBuilderStudyId(study.id)}>
+              <Card key={study.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/FeasibilityBuilder?studyId=${study.id}`)}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -136,16 +136,8 @@ export default function FeasibilityStudiesTab() {
       <FeasibilityStudyFormDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(studyId) => setBuilderStudyId(studyId)}
+        onCreated={(studyId) => navigate(`/FeasibilityBuilder?studyId=${studyId}`)}
       />
-
-      {builderStudyId && (
-        <FeasibilityBuilderDialog
-          open={!!builderStudyId}
-          onOpenChange={(open) => { if (!open) setBuilderStudyId(null); }}
-          studyId={builderStudyId}
-        />
-      )}
     </div>
   );
 }
