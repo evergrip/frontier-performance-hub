@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import AdditionalContactsEditor from '../components/clients/AdditionalContactsEditor';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ export default function Clients() {
     email: '',
     phone: '',
     address: '',
+    additional_contacts: [],
     notes: ''
   });
 
@@ -76,7 +78,7 @@ export default function Clients() {
     onSuccess: (newClient) => {
       queryClient.invalidateQueries(['clients']);
       setClientDialogOpen(false);
-      setClientForm({ company_name: '', contact_name: '', email: '', phone: '', address: '', notes: '' });
+      setClientForm({ company_name: '', contact_name: '', email: '', phone: '', address: '', additional_contacts: [], notes: '' });
       toast.success('Client created successfully');
       if (pendingLeadAfterCreate) {
         setPendingLeadAfterCreate(false);
@@ -158,6 +160,7 @@ export default function Clients() {
       email: client.email || '',
       phone: client.phone || '',
       address: client.address || '',
+      additional_contacts: client.additional_contacts || [],
       notes: client.notes || ''
     });
     setEditClientDialogOpen(true);
@@ -318,7 +321,7 @@ export default function Clients() {
               <Input
                 value={clientForm.contact_name}
                 onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
-                placeholder="John and Jane Smith"
+                placeholder="John Smith"
                 required
               />
             </div>
@@ -346,6 +349,10 @@ export default function Clients() {
                 onChange={(e) => setClientForm({...clientForm, address: e.target.value})}
               />
             </div>
+            <AdditionalContactsEditor
+              contacts={clientForm.additional_contacts}
+              onChange={(contacts) => setClientForm({...clientForm, additional_contacts: contacts})}
+            />
             <div>
               <Label>Notes</Label>
               <Textarea
@@ -386,7 +393,7 @@ export default function Clients() {
               <Input
                 value={clientForm.contact_name}
                 onChange={(e) => setClientForm({...clientForm, contact_name: e.target.value})}
-                placeholder="John and Jane Smith"
+                placeholder="John Smith"
                 required
               />
             </div>
@@ -414,6 +421,10 @@ export default function Clients() {
                 onChange={(e) => setClientForm({...clientForm, address: e.target.value})}
               />
             </div>
+            <AdditionalContactsEditor
+              contacts={clientForm.additional_contacts}
+              onChange={(contacts) => setClientForm({...clientForm, additional_contacts: contacts})}
+            />
             <div>
               <Label>Notes</Label>
               <Textarea
@@ -476,6 +487,25 @@ export default function Clients() {
                       </div>
                     )}
                   </div>
+                  {selectedClient.additional_contacts?.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-amber-200">
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Additional Contacts</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {selectedClient.additional_contacts.map((c, i) => (
+                          <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-white/60 text-sm">
+                            <div className="w-7 h-7 rounded-full bg-amber-200 flex items-center justify-center text-xs font-bold text-amber-700 shrink-0">
+                              {c.name?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-800">{c.name}{c.relationship && <span className="text-slate-400 font-normal"> · {c.relationship}</span>}</p>
+                              {c.email && <p className="text-xs text-slate-500 truncate">{c.email}</p>}
+                              {c.phone && <p className="text-xs text-slate-500">{c.phone}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

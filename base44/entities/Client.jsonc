@@ -1,0 +1,78 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Company or individual name"
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Primary contact person"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Primary email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Primary phone number"
+    },
+    "address": {
+      "type": "string",
+      "description": "Business address"
+    },
+    "additional_contacts": {
+      "type": "array",
+      "description": "Additional family members or contacts associated with this client",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Contact name"
+          },
+          "relationship": {
+            "type": "string",
+            "description": "Relationship to primary contact (e.g. Spouse, Son, Daughter, Business Partner)"
+          },
+          "email": {
+            "type": "string",
+            "description": "Contact email"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Contact phone"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes about this contact"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "archived"
+      ],
+      "default": "active",
+      "description": "Client status"
+    },
+    "total_project_value": {
+      "type": "number",
+      "default": 0,
+      "description": "Lifetime value (calculated)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes"
+    }
+  },
+  "required": [
+    "contact_name"
+  ]
+}
