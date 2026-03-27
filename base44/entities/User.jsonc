@@ -1,0 +1,86 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "department": {
+      "type": "string",
+      "enum": [
+        "Sales",
+        "Preconstruction",
+        "Construction",
+        "Admin",
+        "Management",
+        "Marketing"
+      ],
+      "description": "Employee department"
+    },
+    "departments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Multiple departments assigned to user"
+    },
+    "is_department_manager": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this user is a department manager"
+    },
+    "managed_departments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Departments this user manages"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Section access permissions: pipeline, operations, insights, company, commissions_admin, varcomp_admin, company_admin"
+    },
+    "commission_rule_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Current fiscal year commission rule IDs"
+    },
+    "next_year_commission_rule_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Next fiscal year commission rule IDs"
+    },
+    "is_commission_eligible": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user is eligible for commissions"
+    },
+    "commission_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date for commission tier tracking"
+    },
+    "profit_sharing_eligible": {
+      "type": "boolean",
+      "default": false,
+      "description": "Admin override: whether user is eligible for variable compensation / profit sharing"
+    },
+    "profit_sharing_pools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Which profit sharing pools this user belongs to"
+    },
+    "hire_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Employee hire date (used for tenure calculations)"
+    }
+  },
+  "required": []
+}

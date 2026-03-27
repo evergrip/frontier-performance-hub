@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Mail, UserCog, Search, Shield, User as UserIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import UserPermissionsEditor from '../components/admin/UserPermissionsEditor';
 
 export default function UsersAdmin() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -95,6 +96,7 @@ export default function UsersAdmin() {
     setSelectedUser({ 
       ...user,
       departments: user.departments || [],
+      permissions: user.permissions || [],
       commission_rule_ids: user.commission_rule_ids || [],
       next_year_commission_rule_ids: user.next_year_commission_rule_ids || [],
       commission_start_date: user.commission_start_date ? format(new Date(user.commission_start_date), 'yyyy-MM-dd') : ''
@@ -115,6 +117,7 @@ export default function UsersAdmin() {
       role: selectedUser.role,
       departments: selectedUser.departments,
       department: selectedUser.departments?.[0] || null,
+      permissions: selectedUser.role === 'admin' ? [] : (selectedUser.permissions || []),
       is_department_manager: selectedUser.is_department_manager || false,
       managed_departments: selectedUser.is_department_manager ? (selectedUser.managed_departments || []) : [],
       commission_rule_ids: selectedUser.commission_rule_ids,
@@ -252,6 +255,7 @@ export default function UsersAdmin() {
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Departments</TableHead>
+                <TableHead>Access</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -273,16 +277,25 @@ export default function UsersAdmin() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {user.departments?.map((dept, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
-                          {dept}
-                        </span>
-                      ))}
-                      {(!user.departments || user.departments.length === 0) && (
-                        <span className="text-xs text-slate-400">None</span>
-                      )}
-                    </div>
+                  <div className="flex flex-wrap gap-1">
+                    {user.departments?.map((dept, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
+                        {dept}
+                      </span>
+                    ))}
+                    {(!user.departments || user.departments.length === 0) && (
+                      <span className="text-xs text-slate-400">None</span>
+                    )}
+                  </div>
+                  </TableCell>
+                  <TableCell>
+                  {user.role === 'admin' ? (
+                    <span className="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-700">Full Access</span>
+                  ) : (user.permissions?.length || 0) > 0 ? (
+                    <span className="text-xs text-slate-600">{user.permissions.length} section{user.permissions.length !== 1 ? 's' : ''}</span>
+                  ) : (
+                    <span className="text-xs text-red-400">No access</span>
+                  )}
                   </TableCell>
                   <TableCell className="text-slate-600">
                     {new Date(user.created_date).toLocaleDateString()}
@@ -346,7 +359,7 @@ export default function UsersAdmin() {
               <div>
                 <Label>Departments</Label>
                 <div className="space-y-2 mt-2">
-                  {['sales', 'preconstruction', 'construction', 'admin', 'management'].map(dept => (
+                  {['sales', 'preconstruction', 'construction', 'admin', 'management', 'marketing'].map(dept => (
                     <label key={dept} className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -364,6 +377,14 @@ export default function UsersAdmin() {
                   ))}
                 </div>
               </div>
+
+              {/* Section Access Permissions */}
+              <UserPermissionsEditor
+                permissions={selectedUser.permissions}
+                onChange={(perms) => setSelectedUser({ ...selectedUser, permissions: perms })}
+                isAdmin={selectedUser.role === 'admin'}
+              />
+
               {/* Profit Sharing Eligibility */}
               <div className="space-y-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                 <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
+import { hasPermission } from '@/lib/permissions';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
   Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen 
@@ -59,13 +60,14 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationSections = [
     {
-      label: null, // no header for top section
+      label: null,
       items: [
         { name: 'Dashboard', icon: LayoutDashboard, page: 'Dashboard' },
       ]
     },
     {
       label: 'Pipeline',
+      permission: 'pipeline',
       items: [
         { name: '1. Clients', icon: Users, page: 'Clients' },
         { name: '2. Leads', icon: Target, page: 'Leads' },
@@ -75,6 +77,7 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       label: 'Operations',
+      permission: 'operations',
       items: [
         ...(schedulerEnabled ? [{ name: 'Scheduler', icon: CalendarDays, page: 'Scheduler' }] : []),
         { name: 'Budgets', icon: Wallet, page: 'Budgets' },
@@ -83,6 +86,7 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       label: 'Insights',
+      permission: 'insights',
       items: [
         { name: 'Reports', icon: Settings, page: 'Reports' },
         { name: 'My Performance', icon: Target, page: 'MyKPIs' },
@@ -90,6 +94,7 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       label: 'Company',
+      permission: 'company',
       items: [
         { name: 'Resources', icon: FolderOpen, page: 'CompanyResources' },
         { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
@@ -105,13 +110,22 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const adminNavigation = [
-    { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
-    { name: 'Data Quality', icon: Flag, page: 'DataQuality' },
-    { name: 'Import Historical Data', icon: Upload, page: 'ImportHistoricalData' },
-    ...(schedulerEnabled ? [{ name: 'Subtrades', icon: Wrench, page: 'Subtrades' }] : []),
-    { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
-    { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
-    { name: 'Var Comp Admin', icon: PieChart, page: 'VarCompAdmin' },
+    ...(hasPermission(user, 'company_admin') ? [
+      { name: 'Company Admin', icon: Settings, page: 'CompanyAdmin' },
+      { name: 'Data Quality', icon: Flag, page: 'DataQuality' },
+      { name: 'Import Historical Data', icon: Upload, page: 'ImportHistoricalData' },
+      ...(schedulerEnabled ? [{ name: 'Subtrades', icon: Wrench, page: 'Subtrades' }] : []),
+      { name: 'KPI Definitions', icon: Target, page: 'KPIDefinitions' },
+    ] : []),
+    ...(hasPermission(user, 'insights') ? [
+      { name: 'KPI Dashboard', icon: LayoutDashboard, page: 'KPIDashboard' },
+    ] : []),
+    ...(hasPermission(user, 'varcomp_admin') ? [
+      { name: 'Var Comp Admin', icon: PieChart, page: 'VarCompAdmin' },
+    ] : []),
+    ...(hasPermission(user, 'commissions_admin') ? [
+      { name: 'Commission Rules', icon: DollarSign, page: 'CommissionRules' },
+    ] : []),
   ];
 
   const userNavigation = [
@@ -197,7 +211,7 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navigationSections.map((section, sIdx) => (
+            {navigationSections.filter(section => !section.permission || hasPermission(user, section.permission)).map((section, sIdx) => (
               <div key={sIdx}>
                 {section.label && (
                   <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-3">
@@ -296,8 +310,8 @@ export default function Layout({ children, currentPageName }) {
               </>
             )}
 
-            {/* Admin-only navigation */}
-            {user?.role === 'admin' && (
+            {/* Admin & permission-based navigation */}
+            {user && adminNavigation.length > 0 && (
               <>
                 <div className="h-px bg-slate-200 my-4" />
                 <p className="px-4 py-2 text-xs font-semibold text-[#333333] uppercase tracking-wider">
