@@ -4,7 +4,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -70,6 +70,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'My Performance', icon: Target, page: 'MyKPIs' },
     { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
     { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },
+    { name: 'Resources', icon: FolderOpen, page: 'CompanyResources' },
   ];
 
   const isManager = user?.is_department_manager && user?.managed_departments?.length > 0;

@@ -10,6 +10,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import VarCompAdmin from './pages/VarCompAdmin';
 import MyProfitShare from './pages/MyProfitShare';
 import FeasibilityBuilder from './pages/FeasibilityBuilder';
+import CompanyResources from './pages/CompanyResources';
 
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
       <Route path="/VarCompAdmin" element={<LayoutWrapper currentPageName="VarCompAdmin"><VarCompAdmin /></LayoutWrapper>} />
       <Route path="/MyProfitShare" element={<LayoutWrapper currentPageName="MyProfitShare"><MyProfitShare /></LayoutWrapper>} />
       <Route path="/FeasibilityBuilder" element={<FeasibilityBuilder />} />
+      <Route path="/CompanyResources" element={<LayoutWrapper currentPageName="CompanyResources"><CompanyResources /></LayoutWrapper>} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

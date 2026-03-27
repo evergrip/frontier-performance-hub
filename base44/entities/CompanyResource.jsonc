@@ -1,0 +1,63 @@
+{
+  "name": "CompanyResource",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name of the document, tool, or resource"
+    },
+    "url": {
+      "type": "string",
+      "description": "Direct link to the resource (Google Drive, website, etc.)"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "sales",
+        "operations",
+        "finance",
+        "precon",
+        "projects",
+        "hr",
+        "marketing",
+        "company_wide"
+      ],
+      "description": "Department this resource belongs to"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "process",
+        "template",
+        "guide",
+        "tool",
+        "policy",
+        "reference",
+        "other"
+      ],
+      "description": "Type of resource"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what this resource is for"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Keywords for searching"
+    },
+    "is_pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Pin important resources to the top"
+    }
+  },
+  "required": [
+    "title",
+    "url",
+    "department",
+    "resource_type"
+  ]
+}
