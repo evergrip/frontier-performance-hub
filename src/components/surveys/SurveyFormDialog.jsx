@@ -14,6 +14,7 @@ import BrandAssetPicker from "../common/BrandAssetPicker";
 import WelcomePageEditor from "./WelcomePageEditor";
 import ThankYouPageEditor from "./ThankYouPageEditor";
 import FontSection from "./FontSection";
+import AlertRecipientsTab from "./AlertRecipientsTab";
 
 function generateToken() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -323,6 +324,8 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
     success_message: "Thank you for completing this survey!",
     redirect_url: "",
     styling: {},
+    alert_recipients: [],
+    alert_include_question_ids: [],
     welcome_page_enabled: false,
     welcome_page_content: "",
     welcome_page_button_text: "Start Survey",
@@ -344,6 +347,8 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
         success_message: survey.success_message || "Thank you for completing this survey!",
         redirect_url: survey.redirect_url || "",
         styling: survey.styling || {},
+        alert_recipients: survey.alert_recipients || [],
+        alert_include_question_ids: survey.alert_include_question_ids || [],
         welcome_page_enabled: survey.welcome_page_enabled || false,
         welcome_page_content: survey.welcome_page_content || "",
         welcome_page_button_text: survey.welcome_page_button_text || "Start Survey",
@@ -390,6 +395,7 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
               <TabsTrigger value="welcome" className="flex-1">Welcome</TabsTrigger>
               <TabsTrigger value="thankyou" className="flex-1">Thank You</TabsTrigger>
               <TabsTrigger value="access" className="flex-1">Access</TabsTrigger>
+              <TabsTrigger value="alerts" className="flex-1">Alerts</TabsTrigger>
               <TabsTrigger value="styling" className="flex-1">Styling</TabsTrigger>
             </TabsList>
 
@@ -445,6 +451,8 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
                 <Switch checked={form.allow_multiple_responses} onCheckedChange={v => setForm(p => ({ ...p, allow_multiple_responses: v }))} />
               </div>
             </TabsContent>
+
+            <AlertRecipientsTab form={form} setForm={setForm} questions={survey?.questions} />
 
             <StylingTab form={form} updateStyling={updateStyling} setForm={setForm} />
           </Tabs>

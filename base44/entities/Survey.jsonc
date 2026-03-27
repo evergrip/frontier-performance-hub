@@ -224,6 +224,20 @@
         }
       }
     },
+    "alert_recipients": {
+      "type": "array",
+      "description": "Email addresses to notify when a new response is submitted",
+      "items": {
+        "type": "string"
+      }
+    },
+    "alert_include_question_ids": {
+      "type": "array",
+      "description": "Question IDs whose answers should be included in the alert email",
+      "items": {
+        "type": "string"
+      }
+    },
     "welcome_page_enabled": {
       "type": "boolean",
       "default": false
