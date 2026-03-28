@@ -55,7 +55,7 @@ export default function LeadAlertConfigDialog({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5 text-amber-500" />
@@ -67,7 +67,7 @@ export default function LeadAlertConfigDialog({ open, onOpenChange }) {
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500" />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
             <p className="text-sm text-slate-500">
               Choose which fields to include when a salesperson is notified about a new lead assignment.
             </p>
