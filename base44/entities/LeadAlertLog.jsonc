@@ -1,0 +1,46 @@
+{
+  "name": "LeadAlertLog",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "description": "Link to the Lead entity"
+    },
+    "lead_title": {
+      "type": "string",
+      "description": "Snapshot of lead title at time of alert"
+    },
+    "sent_to_email": {
+      "type": "string",
+      "description": "Email address the alert was sent to"
+    },
+    "sent_to_name": {
+      "type": "string",
+      "description": "Name of the person the alert was sent to"
+    },
+    "sent_to_user_id": {
+      "type": "string",
+      "description": "User ID of the person the alert was sent to"
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": [
+        "new_lead",
+        "reassigned"
+      ],
+      "description": "What triggered the alert"
+    },
+    "fields_included": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Which fields were included in the email"
+    }
+  },
+  "required": [
+    "lead_id",
+    "sent_to_email",
+    "trigger_type"
+  ]
+}

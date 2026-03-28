@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Briefcase, ChevronRight, Pencil, Settings2 } from 'lucide-react';
+import { Target, Briefcase, ChevronRight, Pencil, Settings2, History } from 'lucide-react';
 import LeadAlertConfigDialog from '../components/leads/LeadAlertConfigDialog';
+import LeadAlertLogDialog from '../components/leads/LeadAlertLogDialog';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import EmptyState from '../components/common/EmptyState';
@@ -25,6 +26,7 @@ export default function Leads() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [alertConfigOpen, setAlertConfigOpen] = useState(false);
+  const [alertLogOpen, setAlertLogOpen] = useState(false);
   const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
@@ -278,10 +280,16 @@ export default function Leads() {
               })}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" className="ml-auto gap-2" onClick={() => setAlertConfigOpen(true)}>
-            <Settings2 className="w-4 h-4" />
-            Alert Settings
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setAlertLogOpen(true)}>
+              <History className="w-4 h-4" />
+              Alert Log
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setAlertConfigOpen(true)}>
+              <Settings2 className="w-4 h-4" />
+              Alert Settings
+            </Button>
+          </div>
         </div>
       )}
 
@@ -518,6 +526,9 @@ export default function Leads() {
 
       {/* Lead Alert Config Dialog */}
       <LeadAlertConfigDialog open={alertConfigOpen} onOpenChange={setAlertConfigOpen} />
+
+      {/* Lead Alert Log Dialog */}
+      <LeadAlertLogDialog open={alertLogOpen} onOpenChange={setAlertLogOpen} />
 
       {/* Disqualify Lead Dialog */}
       <Dialog open={disqualifyDialogOpen} onOpenChange={setDisqualifyDialogOpen}>

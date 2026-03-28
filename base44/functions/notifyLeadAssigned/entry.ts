@@ -1,16 +1,25 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
-const DEFAULT_FIELDS = ['title', 'client', 'source', 'estimated_precon_value', 'estimated_construction_value', 'notes'];
+const DEFAULT_FIELDS = ['title', 'client', 'client_email', 'client_phone', 'source', 'estimated_precon_value', 'estimated_construction_value', 'notes'];
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
 
-    const { data } = payload;
+    const { data, old_data, event } = payload;
     if (!data || !data.assigned_to) {
       return Response.json({ skipped: true, reason: 'No assigned salesperson' });
     }
+
+    // For update events, only notify if assigned_to actually changed
+    const isReassignment = event?.type === 'update' && old_data?.assigned_to !== data.assigned_to;
+    const isCreate = event?.type === 'create';
+    if (!isCreate && !isReassignment) {
+      return Response.json({ skipped: true, reason: 'assigned_to did not change' });
+    }
+
+    const triggerType = isReassignment ? 'reassigned' : 'new_lead';
 
     // Load alert field config
     const settings = await base44.asServiceRole.entities.CompanySettings.filter({});
@@ -73,15 +82,17 @@ Deno.serve(async (req) => {
 
     const subjectTitle = data.title || 'Untitled';
     const subjectClient = enabledFields.includes('client') ? ` — ${clientName}` : '';
+    const subjectPrefix = isReassignment ? '🔄 Lead Reassigned' : '🎯 New Lead Assigned';
+    const headerText = isReassignment ? '🔄 Lead Reassigned to You' : '🎯 New Lead Assigned to You';
 
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #ea7924, #d66a1f); padding: 24px; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 22px;">🎯 New Lead Assigned to You</h1>
+          <h1 style="color: white; margin: 0; font-size: 22px;">${headerText}</h1>
         </div>
         <div style="padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
           <p style="color: #334155; font-size: 16px; margin-top: 0;">Hi ${assignee.full_name},</p>
-          <p style="color: #475569;">A new project lead has been assigned to you:</p>
+          <p style="color: #475569;">A project lead has been ${isReassignment ? 'reassigned' : 'assigned'} to you:</p>
           ${tableRows ? `<table style="width: 100%; border-collapse: collapse; margin: 16px 0;">${tableRows}</table>` : ''}
           ${notesHtml}
           <p style="color: #64748b; font-size: 13px; margin-top: 24px;">Log in to the app to view and manage this lead.</p>
@@ -91,11 +102,22 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: assignee.email,
-      subject: `🎯 New Lead Assigned: ${subjectTitle}${subjectClient}`,
+      subject: `${subjectPrefix}: ${subjectTitle}${subjectClient}`,
       body: emailBody,
     });
 
-    return Response.json({ success: true, notified: assignee.email, fields: enabledFields });
+    // Log the alert
+    await base44.asServiceRole.entities.LeadAlertLog.create({
+      lead_id: data.id || event?.entity_id || '',
+      lead_title: data.title || 'Untitled',
+      sent_to_email: assignee.email,
+      sent_to_name: assignee.full_name || '',
+      sent_to_user_id: assignee.id || '',
+      trigger_type: triggerType,
+      fields_included: enabledFields,
+    });
+
+    return Response.json({ success: true, notified: assignee.email, trigger: triggerType, fields: enabledFields });
   } catch (error) {
     console.error('Error in notifyLeadAssigned:', error);
     return Response.json({ error: error.message }, { status: 500 });
