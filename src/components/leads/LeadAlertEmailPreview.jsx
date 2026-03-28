@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 const SAMPLE_DATA = {
   title: 'Kitchen & Bath Renovation — 123 Oak St',
   client: 'Sarah & David Thompson',
+  client_email: 'sarah.thompson@email.com',
+  client_phone: '(555) 234-5678',
+  client_address: '123 Oak St, Oakville, ON L6H 3A7',
   source: 'Referral',
   estimated_precon_value: '$12,500',
   estimated_construction_value: '$385,000',
@@ -14,6 +17,9 @@ const SAMPLE_DATA = {
 const FIELD_LABELS = {
   title: 'Lead Title',
   client: 'Client',
+  client_email: 'Client Email',
+  client_phone: 'Client Phone',
+  client_address: 'Client Address',
   source: 'Source',
   estimated_precon_value: 'Est. Precon Value',
   estimated_construction_value: 'Est. Construction Value',

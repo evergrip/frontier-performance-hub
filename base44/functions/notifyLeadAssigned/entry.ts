@@ -25,12 +25,19 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'Assigned user not found or has no email' });
     }
 
-    // Look up the client name
+    // Look up the client details
     let clientName = 'Unknown Client';
+    let clientEmail = '';
+    let clientPhone = '';
+    let clientAddress = '';
     if (data.client_id) {
       const clients = await base44.asServiceRole.entities.Client.filter({ id: data.client_id });
       if (clients.length > 0) {
-        clientName = clients[0].contact_name || clients[0].company_name || 'Unknown Client';
+        const client = clients[0];
+        clientName = client.contact_name || client.company_name || 'Unknown Client';
+        clientEmail = client.email || '';
+        clientPhone = client.phone || '';
+        clientAddress = client.address || '';
       }
     }
 
@@ -38,6 +45,9 @@ Deno.serve(async (req) => {
     const fieldDefs = [
       { key: 'title', label: 'Lead Title', value: data.title || 'Untitled' },
       { key: 'client', label: 'Client', value: clientName },
+      { key: 'client_email', label: 'Client Email', value: clientEmail || 'N/A' },
+      { key: 'client_phone', label: 'Client Phone', value: clientPhone || 'N/A' },
+      { key: 'client_address', label: 'Client Address', value: clientAddress || 'N/A' },
       { key: 'source', label: 'Source', value: data.source || 'N/A' },
       { key: 'estimated_precon_value', label: 'Est. Precon Value', value: data.estimated_precon_value ? `$${Number(data.estimated_precon_value).toLocaleString()}` : 'N/A' },
       { key: 'estimated_construction_value', label: 'Est. Construction Value', value: data.estimated_construction_value ? `$${Number(data.estimated_construction_value).toLocaleString()}` : 'N/A' },

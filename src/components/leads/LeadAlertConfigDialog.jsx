@@ -9,13 +9,16 @@ import LeadAlertEmailPreview from './LeadAlertEmailPreview';
 const ALL_FIELDS = [
   { key: 'title', label: 'Lead Title' },
   { key: 'client', label: 'Client Name' },
+  { key: 'client_email', label: 'Client Email' },
+  { key: 'client_phone', label: 'Client Phone' },
+  { key: 'client_address', label: 'Client Address' },
   { key: 'source', label: 'Lead Source' },
   { key: 'estimated_precon_value', label: 'Est. Precon Value' },
   { key: 'estimated_construction_value', label: 'Est. Construction Value' },
   { key: 'notes', label: 'Notes' },
 ];
 
-const DEFAULT_FIELDS = ['title', 'client', 'source', 'estimated_precon_value', 'estimated_construction_value', 'notes'];
+const DEFAULT_FIELDS = ['title', 'client', 'client_email', 'client_phone', 'source', 'estimated_precon_value', 'estimated_construction_value', 'notes'];
 
 export default function LeadAlertConfigDialog({ open, onOpenChange }) {
   const [selectedFields, setSelectedFields] = useState(DEFAULT_FIELDS);
