@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Mail } from 'lucide-react';
+import LeadAlertEmailPreview from './LeadAlertEmailPreview';
 
 const ALL_FIELDS = [
   { key: 'title', label: 'Lead Title' },
@@ -55,7 +55,7 @@ export default function LeadAlertConfigDialog({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="w-5 h-5 text-amber-500" />
@@ -94,6 +94,9 @@ export default function LeadAlertConfigDialog({ open, onOpenChange }) {
             {selectedFields.length === 0 && (
               <p className="text-xs text-red-500">Select at least one field to include in the alert.</p>
             )}
+
+            {/* Live Email Preview */}
+            <LeadAlertEmailPreview selectedFields={selectedFields} />
           </div>
         )}
         <DialogFooter>
