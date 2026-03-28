@@ -1,14 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+const DEFAULT_FIELDS = ['title', 'client', 'source', 'estimated_precon_value', 'estimated_construction_value', 'notes'];
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
 
-    const { data, event } = payload;
+    const { data } = payload;
     if (!data || !data.assigned_to) {
       return Response.json({ skipped: true, reason: 'No assigned salesperson' });
     }
+
+    // Load alert field config
+    const settings = await base44.asServiceRole.entities.CompanySettings.filter({});
+    const enabledFields = (settings.length > 0 && settings[0].lead_alert_fields?.length > 0)
+      ? settings[0].lead_alert_fields
+      : DEFAULT_FIELDS;
 
     // Look up the assigned salesperson
     const users = await base44.asServiceRole.entities.User.list();
@@ -26,8 +34,35 @@ Deno.serve(async (req) => {
       }
     }
 
-    const estPrecon = data.estimated_precon_value ? `$${Number(data.estimated_precon_value).toLocaleString()}` : 'N/A';
-    const estConstruction = data.estimated_construction_value ? `$${Number(data.estimated_construction_value).toLocaleString()}` : 'N/A';
+    // Build table rows based on enabled fields
+    const fieldDefs = [
+      { key: 'title', label: 'Lead Title', value: data.title || 'Untitled' },
+      { key: 'client', label: 'Client', value: clientName },
+      { key: 'source', label: 'Source', value: data.source || 'N/A' },
+      { key: 'estimated_precon_value', label: 'Est. Precon Value', value: data.estimated_precon_value ? `$${Number(data.estimated_precon_value).toLocaleString()}` : 'N/A' },
+      { key: 'estimated_construction_value', label: 'Est. Construction Value', value: data.estimated_construction_value ? `$${Number(data.estimated_construction_value).toLocaleString()}` : 'N/A' },
+      { key: 'notes', label: 'Notes', value: data.notes || '' },
+    ];
+
+    const visibleFields = fieldDefs.filter(f => enabledFields.includes(f.key));
+
+    // Build table rows (skip notes from table, show separately)
+    const tableRows = visibleFields
+      .filter(f => f.key !== 'notes')
+      .map(f => `
+        <tr>
+          <td style="padding: 8px 12px; background: #f8fafc; font-weight: 600; color: #334155; border: 1px solid #e2e8f0;">${f.label}</td>
+          <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #475569;">${f.value}</td>
+        </tr>
+      `).join('');
+
+    const notesField = visibleFields.find(f => f.key === 'notes');
+    const notesHtml = (notesField && notesField.value)
+      ? `<p style="color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #ea7924;"><strong>Notes:</strong> ${notesField.value}</p>`
+      : '';
+
+    const subjectTitle = data.title || 'Untitled';
+    const subjectClient = enabledFields.includes('client') ? ` — ${clientName}` : '';
 
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -37,29 +72,8 @@ Deno.serve(async (req) => {
         <div style="padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
           <p style="color: #334155; font-size: 16px; margin-top: 0;">Hi ${assignee.full_name},</p>
           <p style="color: #475569;">A new project lead has been assigned to you:</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-            <tr>
-              <td style="padding: 8px 12px; background: #f8fafc; font-weight: 600; color: #334155; border: 1px solid #e2e8f0;">Lead Title</td>
-              <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #475569;">${data.title || 'Untitled'}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; background: #f8fafc; font-weight: 600; color: #334155; border: 1px solid #e2e8f0;">Client</td>
-              <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #475569;">${clientName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; background: #f8fafc; font-weight: 600; color: #334155; border: 1px solid #e2e8f0;">Est. Precon Value</td>
-              <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #475569;">${estPrecon}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; background: #f8fafc; font-weight: 600; color: #334155; border: 1px solid #e2e8f0;">Est. Construction Value</td>
-              <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #475569;">${estConstruction}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px; background: #f8fafc; font-weight: 600; color: #334155; border: 1px solid #e2e8f0;">Source</td>
-              <td style="padding: 8px 12px; border: 1px solid #e2e8f0; color: #475569;">${data.source || 'N/A'}</td>
-            </tr>
-          </table>
-          ${data.notes ? `<p style="color: #475569; background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #ea7924;"><strong>Notes:</strong> ${data.notes}</p>` : ''}
+          ${tableRows ? `<table style="width: 100%; border-collapse: collapse; margin: 16px 0;">${tableRows}</table>` : ''}
+          ${notesHtml}
           <p style="color: #64748b; font-size: 13px; margin-top: 24px;">Log in to the app to view and manage this lead.</p>
         </div>
       </div>
@@ -67,11 +81,11 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: assignee.email,
-      subject: `🎯 New Lead Assigned: ${data.title || 'Untitled'} — ${clientName}`,
+      subject: `🎯 New Lead Assigned: ${subjectTitle}${subjectClient}`,
       body: emailBody,
     });
 
-    return Response.json({ success: true, notified: assignee.email });
+    return Response.json({ success: true, notified: assignee.email, fields: enabledFields });
   } catch (error) {
     console.error('Error in notifyLeadAssigned:', error);
     return Response.json({ error: error.message }, { status: 500 });

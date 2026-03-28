@@ -1,0 +1,109 @@
+{
+  "name": "CompanySettings",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Company name"
+    },
+    "address": {
+      "type": "string",
+      "description": "Company address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Company phone"
+    },
+    "email": {
+      "type": "string",
+      "description": "Company email"
+    },
+    "website": {
+      "type": "string",
+      "description": "Company website"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Tax ID / EIN"
+    },
+    "fiscal_year_start_month": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 12,
+      "description": "Fiscal year start month (1-12)"
+    },
+    "project_closeout_variance_threshold": {
+      "type": "number",
+      "default": 3,
+      "description": "Percentage threshold for project closeout variance"
+    },
+    "default_currency": {
+      "type": "string",
+      "default": "USD",
+      "description": "Default currency"
+    },
+    "next_year_revenue_target": {
+      "type": "number",
+      "description": "Revenue target for the next fiscal year"
+    },
+    "monthly_capacity_schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "effective_year": {
+            "type": "number"
+          },
+          "effective_month": {
+            "type": "number"
+          },
+          "monthly_capacity": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Schedule of monthly capacity changes"
+    },
+    "scheduler_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the Staff Scheduler module is enabled"
+    },
+    "minimum_meeting_notice_hours": {
+      "type": "number",
+      "default": 24,
+      "description": "Minimum hours of notice required when scheduling a meeting."
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL of the company logo displayed in the sidebar header"
+    },
+    "primary_color": {
+      "type": "string",
+      "description": "Primary brand color (hex), used for active nav items and accents"
+    },
+    "accent_color": {
+      "type": "string",
+      "description": "Secondary accent color (hex), used for the sidebar icon gradient"
+    },
+    "feasibility_template_doc_id": {
+      "type": "string",
+      "description": "Google Docs document ID to use as a template for feasibility reports."
+    },
+    "lead_alert_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Which fields to include in lead assignment alert emails. Options: title, client, source, estimated_precon_value, estimated_construction_value, notes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": []
+}
