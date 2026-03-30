@@ -1,10 +1,9 @@
-import React, { useRef } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 import moment from "moment";
 
 export default function PrintableResponse({ survey, response, responseNumber }) {
-  const printRef = useRef();
 
   const handlePrint = () => {
     const questions = survey.questions || [];
@@ -47,6 +46,33 @@ export default function PrintableResponse({ survey, response, responseNumber }) 
       </div>
     ` : "";
 
+    // Convert markdown AI insight to simple HTML for print
+    const aiInsight = r.ai_insight;
+    let aiHtml = "";
+    if (aiInsight) {
+      const converted = aiInsight
+        .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:700;margin:12px 0 6px;color:#1e293b;">$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2 style="font-size:15px;font-weight:700;margin:14px 0 6px;color:#1e293b;">$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1 style="font-size:16px;font-weight:700;margin:16px 0 8px;color:#1e293b;">$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^- (.+)$/gm, '<li style="margin-left:16px;font-size:13px;">$1</li>')
+        .replace(/^(\d+)\. (.+)$/gm, '<li style="margin-left:16px;font-size:13px;">$2</li>')
+        .replace(/\n\n/g, '<br/><br/>');
+
+      aiHtml = `
+        <div style="margin-top: 28px; page-break-before: auto;">
+          <div style="border-bottom: 2px solid #7c3aed; padding-bottom: 8px; margin-bottom: 16px;">
+            <h2 style="margin: 0; font-size: 16px; color: #7c3aed;">AI Analysis</h2>
+            ${r.ai_insight_generated_at ? `<div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Generated ${moment(r.ai_insight_generated_at).format("MMMM D, YYYY h:mm A")}</div>` : ""}
+          </div>
+          <div style="font-size: 13px; color: #334155; line-height: 1.6;">
+            ${converted}
+          </div>
+        </div>
+      `;
+    }
+
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -72,6 +98,7 @@ export default function PrintableResponse({ survey, response, responseNumber }) 
         </div>
         ${scoreHtml}
         ${answersHtml}
+        ${aiHtml}
         <div style="margin-top: 32px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8;">
           Printed on ${moment().format("MMMM D, YYYY h:mm A")}
         </div>

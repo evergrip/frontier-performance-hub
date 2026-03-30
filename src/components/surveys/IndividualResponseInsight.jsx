@@ -5,15 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, Loader2, RefreshCw, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
-export default function IndividualResponseInsight({ survey, response }) {
-  const [insight, setInsight] = useState(null);
+export default function IndividualResponseInsight({ survey, response, onInsightChange }) {
+  const [insight, setInsight] = useState(response.ai_insight || null);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!response.ai_insight);
 
   const generateInsight = async () => {
     setLoading(true);
     setOpen(true);
 
+    try {
     const questions = survey.questions || [];
     const headings = survey.headings || [];
 
@@ -60,7 +61,18 @@ Use markdown formatting. Be specific, reference their actual answers, and keep i
     });
 
     setInsight(result);
-    setLoading(false);
+
+    // Persist to the response entity
+    await base44.entities.SurveyResponse.update(response.id, {
+      ai_insight: result,
+      ai_insight_generated_at: new Date().toISOString(),
+    });
+    if (onInsightChange) onInsightChange(response.id, result);
+    } catch (error) {
+      console.error('AI insight generation failed:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!open) {

@@ -1,0 +1,68 @@
+{
+  "name": "SurveyResponse",
+  "type": "object",
+  "properties": {
+    "survey_id": {
+      "type": "string",
+      "description": "Link to Survey entity"
+    },
+    "respondent_user_id": {
+      "type": "string"
+    },
+    "respondent_email": {
+      "type": "string"
+    },
+    "respondent_name": {
+      "type": "string"
+    },
+    "responses": {
+      "type": "object",
+      "description": "Key-value map of question_id to answer"
+    },
+    "total_score": {
+      "type": "number",
+      "default": 0,
+      "description": "Total calculated qualification score"
+    },
+    "max_possible_score": {
+      "type": "number",
+      "default": 0,
+      "description": "Maximum possible score for this survey"
+    },
+    "score_percentage": {
+      "type": "number",
+      "default": 0,
+      "description": "Score as percentage (0-100)"
+    },
+    "category_scores": {
+      "type": "object",
+      "description": "Scores per heading/section"
+    },
+    "ai_insight": {
+      "type": "string",
+      "description": "Persisted AI analysis of this individual response"
+    },
+    "ai_insight_generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the AI insight was last generated"
+    },
+    "invitation_token": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completion_time_seconds": {
+      "type": "number"
+    },
+    "is_complete": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "survey_id"
+  ]
+}

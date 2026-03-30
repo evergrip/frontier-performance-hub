@@ -219,7 +219,7 @@ export default function SurveyResults() {
                   {r.max_possible_score > 0 && (
                     <GenerateAgendaButton survey={survey} response={r} />
                   )}
-                  <IndividualResponseInsight survey={survey} response={r} />
+                  <IndividualResponseInsight survey={survey} response={r} onInsightChange={() => queryClient.invalidateQueries({ queryKey: ['survey-responses', surveyId] })} />
                   <PrintableResponse survey={survey} response={r} responseNumber={responses.length - i} />
                   <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-400 hover:text-red-600" onClick={() => { if (confirm("Delete this response? This cannot be undone.")) deleteMutation.mutate(r.id); }}>
