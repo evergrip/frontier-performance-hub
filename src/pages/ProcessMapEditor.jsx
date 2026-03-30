@@ -3,11 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SectionEditor from "../components/processmaps/SectionEditor";
 import StepFormDialog from "../components/processmaps/StepFormDialog";
+import AIProcessMapBuilder from "../components/processmaps/AIProcessMapBuilder";
 
 const DEFAULT_STEP_TYPES = [
   { key: "task", label: "Task", icon: "✅", color: "#3b82f6" },
@@ -30,6 +31,7 @@ export default function ProcessMapEditor() {
   const [saved, setSaved] = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [stepDialog, setStepDialog] = useState({ open: false, sectionIdx: null, step: null, stepIdx: null });
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   const { data: processMap, isLoading } = useQuery({
     queryKey: ["processMap", mapId],
@@ -47,6 +49,24 @@ export default function ProcessMapEditor() {
   });
 
   const stepTypes = settings?.process_step_types?.length > 0 ? settings.process_step_types : DEFAULT_STEP_TYPES;
+
+  const handleAIApply = async ({ sections: aiSections, mode, objective, scope }) => {
+    if (mode === "replace") {
+      setSections(aiSections);
+    } else {
+      setSections(prev => [...prev, ...aiSections.map((s, i) => ({ ...s, sort_order: prev.length + i }))]);
+    }
+    // Update objective/scope if empty
+    if (objective || scope) {
+      const updates = {};
+      if (objective && !processMap.objective) updates.objective = objective;
+      if (scope && !processMap.scope) updates.scope = scope;
+      if (Object.keys(updates).length > 0) {
+        await base44.entities.ProcessMap.update(mapId, updates);
+        queryClient.invalidateQueries({ queryKey: ["processMap", mapId] });
+      }
+    }
+  };
 
   useEffect(() => {
     if (processMap?.sections) {
@@ -183,6 +203,9 @@ export default function ProcessMapEditor() {
             </p>
           </div>
         </div>
+        <Button variant="outline" onClick={() => setAiDialogOpen(true)} className="gap-1">
+          <Sparkles className="w-4 h-4" /> AI Builder
+        </Button>
         <Button onClick={handleSave} disabled={saving} className="gap-1">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saved ? "Saved ✓" : "Save"}
@@ -246,6 +269,14 @@ export default function ProcessMapEditor() {
         stepTypes={stepTypes}
         allSteps={sections.flatMap(s => s.section_steps || [])}
         onSave={saveStep}
+      />
+
+      <AIProcessMapBuilder
+        open={aiDialogOpen}
+        onOpenChange={setAiDialogOpen}
+        processMap={processMap}
+        stepTypes={stepTypes}
+        onApply={handleAIApply}
       />
     </div>
   );
