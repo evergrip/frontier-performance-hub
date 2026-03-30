@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { hasPermission } from '@/lib/permissions';
+import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
   Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map 
@@ -14,45 +15,41 @@ const PUBLIC_PAGES = ['SurveyPublic'];
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [schedulerEnabled, setSchedulerEnabled] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [branding, setBranding] = useState({ company_name: 'Frontier Building Group', logo_url: '', primary_color: '#ea7924', accent_color: '#d66a1f' });
+
+  // Use react-query for CompanySettings — shared cache with Dashboard
+  const { data: settingsList = [] } = useQuery({
+    queryKey: ['companySettings'],
+    queryFn: () => base44.entities.CompanySettings.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const settings = settingsList[0] || {};
+  const schedulerEnabled = !!settings.scheduler_enabled;
+  const branding = {
+    company_name: settings.company_name || 'Frontier Building Group',
+    logo_url: settings.logo_url || '',
+    primary_color: settings.primary_color || '#ea7924',
+    accent_color: settings.accent_color || '#d66a1f',
+  };
 
   useEffect(() => {
     const init = async () => {
-      // Load branding and auth in parallel
-      const [, settingsResult] = await Promise.allSettled([
-        (async () => {
-          try {
-            const isAuth = await base44.auth.isAuthenticated();
-            if (isAuth) {
-              const currentUser = await base44.auth.me();
-              setUser(currentUser);
-            } else if (!PUBLIC_PAGES.includes(currentPageName)) {
-              base44.auth.redirectToLogin();
-              return;
-            }
-          } catch (error) {
-            if (!PUBLIC_PAGES.includes(currentPageName)) {
-              base44.auth.redirectToLogin();
-              return;
-            }
-          }
-        })(),
-        base44.entities.CompanySettings.list().catch(() => [])
-      ]);
-
-      if (settingsResult.status === 'fulfilled' && settingsResult.value?.length > 0) {
-        const s = settingsResult.value[0];
-        setSchedulerEnabled(!!s.scheduler_enabled);
-        setBranding({
-          company_name: s.company_name || 'Frontier Building Group',
-          logo_url: s.logo_url || '',
-          primary_color: s.primary_color || '#ea7924',
-          accent_color: s.accent_color || '#d66a1f',
-        });
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (isAuth) {
+          const currentUser = await base44.auth.me();
+          setUser(currentUser);
+        } else if (!PUBLIC_PAGES.includes(currentPageName)) {
+          base44.auth.redirectToLogin();
+          return;
+        }
+      } catch (error) {
+        if (!PUBLIC_PAGES.includes(currentPageName)) {
+          base44.auth.redirectToLogin();
+          return;
+        }
       }
-
       setAuthChecked(true);
     };
     init();

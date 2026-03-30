@@ -57,19 +57,19 @@ export default function Dashboard() {
   const { data: companySettings = [], isLoading: settingsLoading } = useQuery({
     queryKey: ['companySettings'],
     queryFn: () => base44.entities.CompanySettings.list(),
-    initialData: [],
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: fiscalGoals = [] } = useQuery({
     queryKey: ['fiscalGoals'],
     queryFn: () => base44.entities.FiscalGoal.list(),
-    initialData: [],
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: allMeetings = [] } = useQuery({
     queryKey: ['meetings'],
     queryFn: () => base44.entities.Meeting.list('-created_date'),
-    initialData: [],
+    staleTime: 60 * 1000,
   });
 
   const { data: allUsers = [] } = useQuery({
@@ -78,7 +78,7 @@ export default function Dashboard() {
       const response = await base44.functions.invoke('listUsersBasic');
       return response.data?.users || [];
     },
-    initialData: [],
+    staleTime: 5 * 60 * 1000,
   });
 
   // Filter meetings for privacy
@@ -95,31 +95,31 @@ export default function Dashboard() {
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
     queryFn: () => base44.entities.Client.list(),
-    initialData: [],
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: leads = [], isLoading: leadsLoading } = useQuery({
     queryKey: ['leads'],
     queryFn: () => base44.entities.Lead.list(),
-    initialData: [],
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: sales = [], isLoading: salesLoading } = useQuery({
     queryKey: ['sales'],
     queryFn: () => base44.entities.Sale.list(),
-    initialData: [],
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    initialData: [],
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: gmReports = [] } = useQuery({
     queryKey: ['gross-margin-reports'],
     queryFn: () => base44.entities.GrossMarginReport.list('-reporting_date'),
-    initialData: [],
+    staleTime: 5 * 60 * 1000,
   });
 
   const queryClient = useQueryClient();
