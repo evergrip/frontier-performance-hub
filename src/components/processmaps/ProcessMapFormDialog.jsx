@@ -52,17 +52,21 @@ export default function ProcessMapFormDialog({ open, onOpenChange, processMap, u
 
     if (processMap) {
       await base44.entities.ProcessMap.update(processMap.id, data);
+      setSaving(false);
+      onOpenChange(false);
+      onSaved?.();
     } else {
       data.status = "draft";
       data.version = "1.0";
       data.is_current = true;
       data.sections = [];
-      await base44.entities.ProcessMap.create(data);
+      const created = await base44.entities.ProcessMap.create(data);
+      setSaving(false);
+      onOpenChange(false);
+      onSaved?.();
+      // Navigate to editor immediately
+      window.location.href = `/ProcessMapEditor?id=${created.id}`;
     }
-
-    setSaving(false);
-    onOpenChange(false);
-    onSaved?.();
   };
 
   return (

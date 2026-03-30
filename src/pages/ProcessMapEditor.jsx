@@ -3,13 +3,22 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Save, Loader2, GripVertical, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SectionEditor from "../components/processmaps/SectionEditor";
 import StepFormDialog from "../components/processmaps/StepFormDialog";
+
+const DEFAULT_STEP_TYPES = [
+  { key: "task", label: "Task", icon: "✅", color: "#3b82f6" },
+  { key: "deliverable", label: "Deliverable", icon: "📄", color: "#10b981" },
+  { key: "milestone", label: "Milestone", icon: "🏁", color: "#8b5cf6" },
+  { key: "meeting", label: "Meeting", icon: "👥", color: "#f59e0b" },
+  { key: "decision", label: "Decision Point", icon: "❓", color: "#ef4444" },
+  { key: "information_hand_off", label: "Information Handoff", icon: "🔄", color: "#6366f1" },
+  { key: "admin_requirement", label: "Admin Requirement", icon: "📋", color: "#64748b" },
+  { key: "client_signature_required", label: "Client Signature Required", icon: "✍️", color: "#ec4899" },
+];
 
 export default function ProcessMapEditor() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -18,6 +27,8 @@ export default function ProcessMapEditor() {
 
   const [sections, setSections] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [newSectionTitle, setNewSectionTitle] = useState("");
   const [stepDialog, setStepDialog] = useState({ open: false, sectionIdx: null, step: null, stepIdx: null });
 
   const { data: processMap, isLoading } = useQuery({
@@ -35,7 +46,7 @@ export default function ProcessMapEditor() {
     },
   });
 
-  const stepTypes = settings?.process_step_types || DEFAULT_STEP_TYPES;
+  const stepTypes = settings?.process_step_types?.length > 0 ? settings.process_step_types : DEFAULT_STEP_TYPES;
 
   useEffect(() => {
     if (processMap?.sections) {
@@ -48,15 +59,26 @@ export default function ProcessMapEditor() {
     await base44.entities.ProcessMap.update(mapId, { sections });
     queryClient.invalidateQueries({ queryKey: ["processMap", mapId] });
     setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const addSection = () => {
+    const title = newSectionTitle.trim() || `Section ${sections.length + 1}`;
     setSections(prev => [...prev, {
-      section_title: `New Section ${prev.length + 1}`,
+      section_title: title,
       section_description: "",
       sort_order: prev.length,
       section_steps: [],
     }]);
+    setNewSectionTitle("");
+  };
+
+  const handleSectionKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addSection();
+    }
   };
 
   const updateSection = (idx, field, value) => {
@@ -72,10 +94,16 @@ export default function ProcessMapEditor() {
     setSections(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const addStep = (sectionIdx) => {
-    setStepDialog({ open: true, sectionIdx, step: null, stepIdx: null });
+  // Quick-add step directly (no dialog)
+  const quickAddStep = (sectionIdx, step) => {
+    setSections(prev => {
+      const copy = JSON.parse(JSON.stringify(prev));
+      copy[sectionIdx].section_steps.push(step);
+      return copy;
+    });
   };
 
+  // Open dialog for detailed editing
   const editStep = (sectionIdx, stepIdx) => {
     const step = sections[sectionIdx].section_steps[stepIdx];
     setStepDialog({ open: true, sectionIdx, step, stepIdx });
@@ -139,6 +167,8 @@ export default function ProcessMapEditor() {
     return <div className="text-center py-20 text-slate-500">Process map not found.</div>;
   }
 
+  const totalSteps = sections.reduce((sum, s) => sum + (s.section_steps || []).length, 0);
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -148,18 +178,15 @@ export default function ProcessMapEditor() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-800">{processMap.title}</h1>
-            <p className="text-sm text-slate-500">Edit sections and steps</p>
+            <p className="text-sm text-slate-500">
+              {sections.length} section{sections.length !== 1 ? "s" : ""} · {totalSteps} step{totalSteps !== 1 ? "s" : ""}
+            </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={addSection} className="gap-1">
-            <Plus className="w-4 h-4" /> Add Section
-          </Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-1">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={saving} className="gap-1">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saved ? "Saved ✓" : "Save"}
+        </Button>
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
@@ -177,7 +204,7 @@ export default function ProcessMapEditor() {
                         stepTypes={stepTypes}
                         onUpdate={updateSection}
                         onRemove={removeSection}
-                        onAddStep={addStep}
+                        onAddStep={quickAddStep}
                         onEditStep={editStep}
                         onRemoveStep={removeStep}
                       />
@@ -191,10 +218,24 @@ export default function ProcessMapEditor() {
         </Droppable>
       </DragDropContext>
 
+      {/* Inline add section */}
+      <div className="mt-4 flex gap-2 items-center">
+        <Input
+          value={newSectionTitle}
+          onChange={e => setNewSectionTitle(e.target.value)}
+          onKeyDown={handleSectionKeyDown}
+          placeholder="New section name... (press Enter)"
+          className="flex-1 h-10"
+        />
+        <Button variant="outline" onClick={addSection} className="gap-1 h-10 shrink-0">
+          <Plus className="w-4 h-4" /> Add Section
+        </Button>
+      </div>
+
       {sections.length === 0 && (
-        <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-xl">
-          <p className="text-slate-500 mb-3">No sections yet. Start building your process.</p>
-          <Button onClick={addSection} className="gap-1"><Plus className="w-4 h-4" /> Add First Section</Button>
+        <div className="text-center py-12 mt-4 border-2 border-dashed border-slate-200 rounded-xl">
+          <p className="text-slate-500 mb-1">No sections yet.</p>
+          <p className="text-sm text-slate-400">Type a section name above and press Enter to start.</p>
         </div>
       )}
 
@@ -209,14 +250,3 @@ export default function ProcessMapEditor() {
     </div>
   );
 }
-
-const DEFAULT_STEP_TYPES = [
-  { key: "task", label: "Task", icon: "✅", color: "#3b82f6" },
-  { key: "deliverable", label: "Deliverable", icon: "📄", color: "#10b981" },
-  { key: "milestone", label: "Milestone", icon: "🏁", color: "#8b5cf6" },
-  { key: "meeting", label: "Meeting", icon: "👥", color: "#f59e0b" },
-  { key: "decision", label: "Decision Point", icon: "❓", color: "#ef4444" },
-  { key: "information_hand_off", label: "Information Handoff", icon: "🔄", color: "#6366f1" },
-  { key: "admin_requirement", label: "Admin Requirement", icon: "📋", color: "#64748b" },
-  { key: "client_signature_required", label: "Client Signature Required", icon: "✍️", color: "#ec4899" },
-];

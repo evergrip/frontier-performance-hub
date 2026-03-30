@@ -3,12 +3,45 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GripVertical, Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import StepCard from "./StepCard";
 
 export default function SectionEditor({ section, sectionIdx, dragHandleProps, stepTypes, onUpdate, onRemove, onAddStep, onEditStep, onRemoveStep }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [newStepText, setNewStepText] = useState("");
+  const [newStepType, setNewStepType] = useState("task");
+
+  const handleQuickAdd = () => {
+    if (!newStepText.trim()) return;
+    const step = {
+      step_id: "",
+      step_description: newStepText.trim(),
+      step_type: newStepType,
+      sort_order: (section.section_steps || []).length,
+      responsible_roles: [],
+      accountable_role: "",
+      consulted_roles: [],
+      informed_roles: [],
+      inputs: [],
+      outputs: [],
+      resources: [],
+      prerequisites: [],
+      is_decision_point: false,
+      decision_options: [],
+      notes: "",
+    };
+    onAddStep(sectionIdx, step);
+    setNewStepText("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleQuickAdd();
+    }
+  };
 
   return (
     <Card className="border-slate-200">
@@ -45,7 +78,7 @@ export default function SectionEditor({ section, sectionIdx, dragHandleProps, st
 
           <Droppable droppableId={`steps-${sectionIdx}`} type="step">
             {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2 min-h-[40px]">
+              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2 min-h-[8px]">
                 {(section.section_steps || []).map((step, stepIdx) => (
                   <Draggable key={`step-${sectionIdx}-${stepIdx}`} draggableId={`step-${sectionIdx}-${stepIdx}`} index={stepIdx}>
                     {(dragProv) => (
@@ -66,9 +99,31 @@ export default function SectionEditor({ section, sectionIdx, dragHandleProps, st
             )}
           </Droppable>
 
-          <Button variant="outline" size="sm" onClick={() => onAddStep(sectionIdx)} className="gap-1 text-xs w-full border-dashed">
-            <Plus className="w-3.5 h-3.5" /> Add Step
-          </Button>
+          {/* Inline quick-add */}
+          <div className="flex gap-2 items-center pt-1">
+            <Select value={newStepType} onValueChange={setNewStepType}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {stepTypes.map(t => (
+                  <SelectItem key={t.key} value={t.key}>
+                    <span className="flex items-center gap-1.5">{t.icon} {t.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              value={newStepText}
+              onChange={e => setNewStepText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type step description & press Enter..."
+              className="flex-1 h-8 text-sm"
+            />
+            <Button variant="outline" size="sm" onClick={handleQuickAdd} disabled={!newStepText.trim()} className="h-8 gap-1 text-xs shrink-0">
+              <Plus className="w-3.5 h-3.5" /> Add
+            </Button>
+          </div>
         </CardContent>
       )}
     </Card>
