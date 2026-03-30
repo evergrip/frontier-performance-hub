@@ -11,6 +11,9 @@ import VarCompAdmin from './pages/VarCompAdmin';
 import MyProfitShare from './pages/MyProfitShare';
 import FeasibilityBuilder from './pages/FeasibilityBuilder';
 import CompanyResources from './pages/CompanyResources';
+import ProcessMaps from './pages/ProcessMaps';
+import ProcessMapEditor from './pages/ProcessMapEditor';
+import ProcessMapView from './pages/ProcessMapView';
 
 
 const { Pages, Layout, mainPage } = pagesConfig;
@@ -67,6 +70,9 @@ const AuthenticatedApp = () => {
       <Route path="/MyProfitShare" element={<LayoutWrapper currentPageName="MyProfitShare"><MyProfitShare /></LayoutWrapper>} />
       <Route path="/FeasibilityBuilder" element={<FeasibilityBuilder />} />
       <Route path="/CompanyResources" element={<LayoutWrapper currentPageName="CompanyResources"><CompanyResources /></LayoutWrapper>} />
+      <Route path="/ProcessMaps" element={<LayoutWrapper currentPageName="ProcessMaps"><ProcessMaps /></LayoutWrapper>} />
+      <Route path="/ProcessMapEditor" element={<LayoutWrapper currentPageName="ProcessMapEditor"><ProcessMapEditor /></LayoutWrapper>} />
+      <Route path="/ProcessMapView" element={<LayoutWrapper currentPageName="ProcessMapView"><ProcessMapView /></LayoutWrapper>} />
 
       <Route path="*" element={<PageNotFound />} />
     </Routes>

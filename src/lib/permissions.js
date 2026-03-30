@@ -30,6 +30,12 @@ export const PERMISSION_SECTIONS = [
     pages: ['CompanyResources', 'MarketingCampaigns', 'Surveys', 'SurveyBuilder', 'SurveyResults'],
   },
   {
+    key: 'process_maps',
+    label: 'Process Maps',
+    description: 'View and manage process maps and SOPs',
+    pages: ['ProcessMaps', 'ProcessMapView', 'ProcessMapEditor'],
+  },
+  {
     key: 'commissions_admin',
     label: 'Commissions Admin',
     description: 'View and manage all commissions',

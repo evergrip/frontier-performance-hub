@@ -98,7 +98,58 @@
       "items": {
         "type": "string"
       },
-      "description": "Which fields to include in lead assignment alert emails. Options: title, client, source, estimated_precon_value, estimated_construction_value, notes"
+      "description": "Which fields to include in lead assignment alert emails."
+    },
+    "raci_definitions": {
+      "type": "object",
+      "description": "Global RACI role definitions",
+      "properties": {
+        "responsible": {
+          "type": "string",
+          "default": "Role(s) that perform the work (do the task)"
+        },
+        "accountable": {
+          "type": "string",
+          "default": "Role ultimately answerable for completion and quality"
+        },
+        "consulted": {
+          "type": "string",
+          "default": "Roles whose input is actively sought before proceeding"
+        },
+        "informed": {
+          "type": "string",
+          "default": "Roles kept up-to-date on progress/outcomes"
+        }
+      }
+    },
+    "process_step_types": {
+      "type": "array",
+      "description": "Global step type definitions for process maps",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "process_map_review_frequency_days": {
+      "type": "number",
+      "default": 365,
+      "description": "Default review frequency for process maps in days"
     },
     "notes": {
       "type": "string",

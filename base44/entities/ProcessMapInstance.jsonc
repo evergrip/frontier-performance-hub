@@ -1,0 +1,124 @@
+{
+  "name": "ProcessMapInstance",
+  "type": "object",
+  "properties": {
+    "process_map_id": {
+      "type": "string",
+      "description": "Link to the ProcessMap template"
+    },
+    "process_map_version": {
+      "type": "string",
+      "description": "Version of the ProcessMap at time of creation"
+    },
+    "title": {
+      "type": "string",
+      "description": "Instance title (e.g. 'Pre-Con: Smith Renovation')"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Link to Project entity (optional)"
+    },
+    "sale_id": {
+      "type": "string",
+      "description": "Link to Sale entity (optional)"
+    },
+    "client_id": {
+      "type": "string",
+      "description": "Link to Client entity (optional)"
+    },
+    "instance_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_progress",
+        "completed",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "assigned_staff_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User IDs authorized to update this instance"
+    },
+    "step_completions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "in_progress",
+              "completed",
+              "skipped"
+            ],
+            "default": "not_started"
+          },
+          "completed_by": {
+            "type": "string"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actual_duration_minutes": {
+            "type": "number"
+          },
+          "evidence_url": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "overall_progress": {
+      "type": "number",
+      "default": 0,
+      "description": "Percentage 0-100"
+    },
+    "actual_kpis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "actual_value": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "process_map_id",
+    "title"
+  ]
+}

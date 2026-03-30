@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { hasPermission } from '@/lib/permissions';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -99,6 +99,13 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Resources', icon: FolderOpen, page: 'CompanyResources' },
         { name: 'Marketing', icon: Megaphone, page: 'MarketingCampaigns' },
         { name: 'Surveys', icon: ClipboardList, page: 'Surveys' },
+      ]
+    },
+    {
+      label: 'Processes',
+      permission: 'process_maps',
+      items: [
+        { name: 'Process Maps', icon: Map, page: 'ProcessMaps' },
       ]
     },
   ];
