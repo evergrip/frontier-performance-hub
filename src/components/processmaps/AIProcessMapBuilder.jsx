@@ -13,6 +13,7 @@ export default function AIProcessMapBuilder({ open, onOpenChange, processMap, st
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [showImprovements, setShowImprovements] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("");
   const fileRef = useRef(null);
 
   const handleFileChange = (e) => {
@@ -26,125 +27,50 @@ export default function AIProcessMapBuilder({ open, onOpenChange, processMap, st
     if (!file && !additionalContext.trim()) return;
     setLoading(true);
     setResult(null);
+    setLoadingStatus("Uploading document...");
 
-    let fileContent = null;
-    let fileUrl = null;
-    if (file) {
-      const uploaded = await base44.integrations.Core.UploadFile({ file });
-      fileUrl = uploaded.file_url;
-      // Extract text content from the file for better reliability
-      const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url: fileUrl,
-        json_schema: {
-          type: "object",
-          properties: {
-            full_text: { type: "string", description: "The complete text content of the document, preserving table structure and formatting" }
-          }
-        }
-      });
-      if (extracted?.status === "success" && extracted?.output) {
-        fileContent = extracted.output.full_text || JSON.stringify(extracted.output);
+    try {
+      let fileUrl = null;
+      if (file) {
+        const uploaded = await base44.integrations.Core.UploadFile({ file });
+        fileUrl = uploaded.file_url;
       }
-    }
 
-    const stepTypeList = stepTypes.map(t => `${t.key}: ${t.label} - ${t.description || ""}`).join("\n");
+      setLoadingStatus("AI is analyzing your document... This may take 1-2 minutes.");
 
-    const prompt = `You are an expert process improvement consultant for the construction/renovation industry.
-Analyze the following document content and extract a structured process map.
+      const response = await base44.functions.invoke('buildProcessMap', {
+        fileUrl,
+        additionalContext,
+        processMapTitle: processMap?.title,
+        processMapDescription: processMap?.description,
+        processMapDepartment: processMap?.department,
+        stepTypes: stepTypes.map(t => ({ key: t.key, label: t.label })),
+      });
 
-${fileContent ? `=== DOCUMENT CONTENT ===\n${fileContent}\n=== END DOCUMENT ===\n` : ""}
-${additionalContext ? `ADDITIONAL CONTEXT FROM USER:\n${additionalContext}\n` : ""}
+      const data = response.data;
 
-AVAILABLE STEP TYPES (use ONLY these keys for step_type):
-${stepTypeList}
+      if (data?.error) {
+        setResult({ error: true, message: data.error });
+        setLoading(false);
+        setLoadingStatus("");
+        return;
+      }
 
-CURRENT PROCESS MAP CONTEXT:
-Title: ${processMap?.title || "N/A"}
-Description: ${processMap?.description || "N/A"}
-Department: ${processMap?.department || "N/A"}
+      if (!data?.sections || data.sections.length === 0) {
+        setResult({ error: true, message: "AI did not return any sections. Try adding more context or a different document." });
+        setLoading(false);
+        setLoadingStatus("");
+        return;
+      }
 
-INSTRUCTIONS:
-1. Group the steps into logical sections/phases (e.g. "Sales Handoff", "Feasibility", "Design", "Permitting", etc.)
-2. For EACH step, assign the correct step_type from the available types above
-3. For RACI: look at the document's participant list and assign responsible_roles, accountable_role, consulted_roles, informed_roles
-4. Mark decision points (Go/No-Go, approval gates) with is_decision_point: true and list decision_options
-5. Include inputs (what's needed) and outputs (what's produced) for each step
-6. Generate step IDs like SEC1-001, SEC1-002, SEC2-001 etc.
-7. Be thorough — capture ALL steps from the document, don't skip any
-8. In the "improvements" section, suggest industry best practices that could enhance this process
-
-IMPORTANT: Return ALL sections and ALL steps. This document has ~28 steps — make sure every single one is included.`;
-
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          sections: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                section_title: { type: "string" },
-                section_description: { type: "string" },
-                section_steps: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      step_id: { type: "string" },
-                      step_description: { type: "string" },
-                      step_type: { type: "string" },
-                      responsible_roles: { type: "array", items: { type: "string" } },
-                      accountable_role: { type: "string" },
-                      consulted_roles: { type: "array", items: { type: "string" } },
-                      informed_roles: { type: "array", items: { type: "string" } },
-                      estimated_duration_minutes: { type: "number" },
-                      inputs: { type: "array", items: { type: "string" } },
-                      outputs: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            name: { type: "string" },
-                            description: { type: "string" },
-                          },
-                        },
-                      },
-                      is_decision_point: { type: "boolean" },
-                      decision_options: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            option: { type: "string" },
-                            description: { type: "string" },
-                          },
-                        },
-                      },
-                      notes: { type: "string" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          improvements: { type: "string" },
-          objective: { type: "string" },
-          scope: { type: "string" },
-        },
-      },
-      model: "claude_sonnet_4_6",
-    });
-
-    if (!response?.sections || response.sections.length === 0) {
-      setResult({ error: true, message: "AI did not return any sections. Try adding more context or a different document." });
+      setResult(data);
       setLoading(false);
-      return;
+      setLoadingStatus("");
+    } catch (err) {
+      setResult({ error: true, message: err?.response?.data?.error || err.message || "An unexpected error occurred." });
+      setLoading(false);
+      setLoadingStatus("");
     }
-
-    setResult(response);
-    setLoading(false);
   };
 
   const handleReset = () => {
@@ -161,25 +87,35 @@ IMPORTANT: Return ALL sections and ALL steps. This document has ~28 steps — ma
       section_title: sec.section_title,
       section_description: sec.section_description || "",
       sort_order: sIdx,
-      section_steps: (sec.section_steps || []).map((step, stIdx) => ({
-        step_id: step.step_id || `${sIdx + 1}-${stIdx + 1}`,
-        step_description: step.step_description || "",
-        step_type: step.step_type || "task",
-        sort_order: stIdx,
-        responsible_roles: step.responsible_roles || [],
-        accountable_role: step.accountable_role || "",
-        consulted_roles: step.consulted_roles || [],
-        informed_roles: step.informed_roles || [],
-        estimated_duration_minutes: step.estimated_duration_minutes || null,
-        prerequisites: [],
-        inputs: step.inputs || [],
-        outputs: step.outputs || [],
-        resources: [],
-        is_decision_point: step.is_decision_point || false,
-        decision_options: step.decision_options || [],
-        notes: step.notes || "",
-        custom_fields: {},
-      })),
+      section_steps: (sec.section_steps || []).map((step, stIdx) => {
+        // Normalize outputs: could be strings or objects
+        const outputs = (step.outputs || []).map(o => 
+          typeof o === "string" ? { name: o, description: "" } : o
+        );
+        // Normalize decision_options: could be strings or objects
+        const decisionOpts = (step.decision_options || []).map(d => 
+          typeof d === "string" ? { option: d, next_step_id: "", description: "" } : d
+        );
+        return {
+          step_id: step.step_id || `${sIdx + 1}-${stIdx + 1}`,
+          step_description: step.step_description || "",
+          step_type: step.step_type || "task",
+          sort_order: stIdx,
+          responsible_roles: step.responsible_roles || [],
+          accountable_role: step.accountable_role || "",
+          consulted_roles: step.consulted_roles || [],
+          informed_roles: step.informed_roles || [],
+          estimated_duration_minutes: step.estimated_duration_minutes || null,
+          prerequisites: [],
+          inputs: step.inputs || [],
+          outputs,
+          resources: [],
+          is_decision_point: step.is_decision_point || false,
+          decision_options: decisionOpts,
+          notes: step.notes || "",
+          custom_fields: {},
+        };
+      }),
     }));
 
     onApply({ sections, mode, objective: result.objective, scope: result.scope });
@@ -253,6 +189,9 @@ IMPORTANT: Return ALL sections and ALL steps. This document has ~28 steps — ma
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {loading ? "Analyzing..." : "Generate Process Map"}
               </Button>
+              {loading && loadingStatus && (
+                <p className="text-xs text-slate-500 text-right">{loadingStatus}</p>
+              )}
             </div>
           </div>
         ) : result?.error ? (
