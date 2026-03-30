@@ -97,7 +97,7 @@ export default function AIProcessMapBuilder({ open, onOpenChange, processMap, st
           typeof d === "string" ? { option: d, next_step_id: "", description: "" } : d
         );
         return {
-          step_id: step.step_id || `${sIdx + 1}-${stIdx + 1}`,
+          step_id: String(step.step_id || `${sIdx + 1}-${stIdx + 1}`),
           step_description: step.step_description || "",
           step_type: step.step_type || "task",
           sort_order: stIdx,
