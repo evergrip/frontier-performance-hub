@@ -14,6 +14,7 @@ import AIInsightsPanel from "../components/surveys/AIInsightsPanel";
 import ResponseScoreCard from "../components/surveys/ResponseScoreCard";
 import IndividualResponseInsight from "../components/surveys/IndividualResponseInsight";
 import GenerateAgendaButton from "../components/surveys/GenerateAgendaButton";
+import PrintableResponse from "../components/surveys/PrintableResponse";
 
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -219,6 +220,7 @@ export default function SurveyResults() {
                     <GenerateAgendaButton survey={survey} response={r} />
                   )}
                   <IndividualResponseInsight survey={survey} response={r} />
+                  <PrintableResponse survey={survey} response={r} responseNumber={responses.length - i} />
                   <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-400 hover:text-red-600" onClick={() => { if (confirm("Delete this response? This cannot be undone.")) deleteMutation.mutate(r.id); }}>
                       <Trash2 className="w-3.5 h-3.5" />

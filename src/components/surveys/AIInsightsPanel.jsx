@@ -17,33 +17,34 @@ export default function AIInsightsPanel({ survey, responses, onExportPdf }) {
 
   const generateInsights = async () => {
     setLoading(true);
-    const questions = survey.questions || [];
+    try {
+      const questions = survey.questions || [];
 
-    const dataSummary = questions.map(q => {
-      const answers = responses.map(r => r.responses?.[q.id]).filter(a => a !== undefined && a !== null && a !== "");
-      let summary = { question: q.text, type: q.type, response_count: answers.length };
+      const dataSummary = questions.map(q => {
+        const answers = responses.map(r => r.responses?.[q.id]).filter(a => a !== undefined && a !== null && a !== "");
+        let summary = { question: q.text, type: q.type, response_count: answers.length };
 
-      if (["radio", "dropdown"].includes(q.type)) {
-        const counts = {};
-        answers.forEach(a => { counts[a] = (counts[a] || 0) + 1; });
-        summary.distribution = counts;
-      } else if (q.type === "checkbox") {
-        const counts = {};
-        answers.forEach(arr => { (Array.isArray(arr) ? arr : []).forEach(a => { counts[a] = (counts[a] || 0) + 1; }); });
-        summary.distribution = counts;
-      } else if (["rating", "scale", "number"].includes(q.type)) {
-        const nums = answers.map(Number).filter(n => !isNaN(n));
-        summary.average = nums.length > 0 ? (nums.reduce((s, n) => s + n, 0) / nums.length).toFixed(1) : null;
-        summary.min = nums.length > 0 ? Math.min(...nums) : null;
-        summary.max = nums.length > 0 ? Math.max(...nums) : null;
-      } else if (["text", "textarea"].includes(q.type)) {
-        summary.sample_answers = answers.slice(0, 20).map(String);
-      }
-      return summary;
-    });
+        if (["radio", "dropdown"].includes(q.type)) {
+          const counts = {};
+          answers.forEach(a => { counts[a] = (counts[a] || 0) + 1; });
+          summary.distribution = counts;
+        } else if (q.type === "checkbox") {
+          const counts = {};
+          answers.forEach(arr => { (Array.isArray(arr) ? arr : []).forEach(a => { counts[a] = (counts[a] || 0) + 1; }); });
+          summary.distribution = counts;
+        } else if (["rating", "scale", "number"].includes(q.type)) {
+          const nums = answers.map(Number).filter(n => !isNaN(n));
+          summary.average = nums.length > 0 ? (nums.reduce((s, n) => s + n, 0) / nums.length).toFixed(1) : null;
+          summary.min = nums.length > 0 ? Math.min(...nums) : null;
+          summary.max = nums.length > 0 ? Math.max(...nums) : null;
+        } else if (["text", "textarea"].includes(q.type)) {
+          summary.sample_answers = answers.slice(0, 20).map(String);
+        }
+        return summary;
+      });
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are a survey data analyst. Analyze these survey results and provide insights.
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a survey data analyst. Analyze these survey results and provide insights.
 
 Survey: "${survey.title}"
 Total responses: ${responses.length}
@@ -58,16 +59,21 @@ Provide a comprehensive analysis with these sections:
 4. **Actionable Recommendations** - 3-5 specific recommendations based on the data
 
 Use markdown formatting. Be specific and reference actual data points.`,
-    });
+      });
 
-    setInsights(result);
-    setLoading(false);
+      setInsights(result);
 
-    await base44.entities.Survey.update(survey.id, {
-      ai_insights: result,
-      ai_insights_generated_at: new Date().toISOString(),
-      ai_insights_response_count: responses.length,
-    });
+      await base44.entities.Survey.update(survey.id, {
+        ai_insights: result,
+        ai_insights_generated_at: new Date().toISOString(),
+        ai_insights_response_count: responses.length,
+      });
+    } catch (error) {
+      console.error('AI insights generation failed:', error);
+      setInsights(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startEditing = () => {
