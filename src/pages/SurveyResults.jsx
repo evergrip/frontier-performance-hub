@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2, FileSpreadsheet, Target } from "lucide-react";
+import { ArrowLeft, BarChart3, List, Users, Clock, Star, FileImage, FileVideo, Music, Download, Loader2, Trash2, FileSpreadsheet, Target, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -20,7 +20,19 @@ export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
   const surveyId = urlParams.get("id");
   const [exporting, setExporting] = useState(false);
+  const [expandedIds, setExpandedIds] = useState(new Set());
   const queryClient = useQueryClient();
+
+  const toggleExpanded = (id) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll = () => setExpandedIds(new Set(responses.map(r => r.id)));
+  const collapseAll = () => setExpandedIds(new Set());
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.SurveyResponse.delete(id),
@@ -200,51 +212,60 @@ export default function SurveyResults() {
           ))}
         </TabsContent>
 
-        <TabsContent value="individual" className="space-y-4 mt-4">
-          {responses.map((r, i) => (
-            <Card key={r.id}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-sm">
-                      Response #{responses.length - i}
-                      {r.respondent_name && ` — ${r.respondent_name}`}
-                      {!r.respondent_name && r.respondent_email && ` — ${r.respondent_email}`}
-                    </CardTitle>
-                    {r.max_possible_score > 0 && (
-                      <ResponseScoreCard response={r} compact />
-                    )}
+        <TabsContent value="individual" className="space-y-2 mt-4">
+          {responses.length > 1 && (
+            <div className="flex justify-end gap-2 mb-2">
+              <Button variant="ghost" size="sm" className="text-xs text-slate-500" onClick={expandAll}>Expand All</Button>
+              <Button variant="ghost" size="sm" className="text-xs text-slate-500" onClick={collapseAll}>Collapse All</Button>
+            </div>
+          )}
+          {responses.map((r, i) => {
+            const isExpanded = expandedIds.has(r.id);
+            return (
+              <Card key={r.id}>
+                <div
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50/50 transition-colors"
+                  onClick={() => toggleExpanded(r.id)}
+                >
+                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                  <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-slate-700">#{responses.length - i}</span>
+                    <span className="text-sm text-slate-700 truncate">{r.respondent_name || r.respondent_email || "Anonymous"}</span>
+                    {r.max_possible_score > 0 && <ResponseScoreCard response={r} compact />}
+                    {r.ai_insight && <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">AI</Badge>}
                   </div>
-                  <div className="flex items-center gap-2">
-                  {r.max_possible_score > 0 && (
-                    <GenerateAgendaButton survey={survey} response={r} />
-                  )}
-                  <IndividualResponseInsight survey={survey} response={r} onInsightChange={() => queryClient.invalidateQueries({ queryKey: ['survey-responses', surveyId] })} />
-                  <PrintableResponse survey={survey} response={r} responseNumber={responses.length - i} />
-                  <span className="text-xs text-slate-400">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <span className="text-xs text-slate-400 hidden sm:inline">{moment(r.submitted_at || r.created_date).format("MMM D, YYYY h:mm A")}</span>
+                    <PrintableResponse survey={survey} response={r} responseNumber={responses.length - i} />
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-red-400 hover:text-red-600" onClick={() => { if (confirm("Delete this response? This cannot be undone.")) deleteMutation.mutate(r.id); }}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {r.max_possible_score > 0 && (
-                  <div className="mb-4">
-                    <ResponseScoreCard response={r} />
-                  </div>
-                )}
-                <div className="space-y-3">
-                  {questions.map(q => (
-                    <div key={q.id}>
-                      <p className="text-xs font-medium text-slate-500">{q.text}</p>
-                      <ResponseDisplay question={q} answer={r.responses?.[q.id]} />
+                {isExpanded && (
+                  <CardContent className="pt-0 pb-4">
+                    <div className="border-t pt-4">
+                      <div className="flex items-center gap-2 mb-4 flex-wrap">
+                        {r.max_possible_score > 0 && <GenerateAgendaButton survey={survey} response={r} />}
+                        <IndividualResponseInsight survey={survey} response={r} onInsightChange={() => queryClient.invalidateQueries({ queryKey: ['survey-responses', surveyId] })} />
+                      </div>
+                      {r.max_possible_score > 0 && (
+                        <div className="mb-4"><ResponseScoreCard response={r} /></div>
+                      )}
+                      <div className="space-y-3">
+                        {questions.map(q => (
+                          <div key={q.id}>
+                            <p className="text-xs font-medium text-slate-500">{q.text}</p>
+                            <ResponseDisplay question={q} answer={r.responses?.[q.id]} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
           {responses.length === 0 && (
             <Card className="p-8 text-center text-slate-500">No responses yet</Card>
           )}
