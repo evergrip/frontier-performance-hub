@@ -57,7 +57,7 @@ Provide a focused analysis with these sections:
 7. **Meeting Preparation Tips** — 3-5 specific talking points or strategies for the sales meeting with this client.
 
 Use markdown formatting. Be specific, reference their actual answers, and keep it actionable.`,
-      model: "gemini_3_pro",
+      model: "claude_sonnet_4_6",
     });
 
     setInsight(result);

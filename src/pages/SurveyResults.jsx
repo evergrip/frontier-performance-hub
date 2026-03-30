@@ -221,6 +221,8 @@ export default function SurveyResults() {
           )}
           {responses.map((r, i) => {
             const isExpanded = expandedIds.has(r.id);
+            const fullNameQ = questions.find(q => /full\s*name/i.test(q.text));
+            const displayName = r.respondent_name || (fullNameQ && r.responses?.[fullNameQ.id]) || r.respondent_email || "Anonymous";
             return (
               <Card key={r.id}>
                 <div
@@ -230,7 +232,7 @@ export default function SurveyResults() {
                   {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />}
                   <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-slate-700">#{responses.length - i}</span>
-                    <span className="text-sm text-slate-700 truncate">{r.respondent_name || r.respondent_email || "Anonymous"}</span>
+                    <span className="text-sm text-slate-700 truncate">{displayName}</span>
                     {r.max_possible_score > 0 && <ResponseScoreCard response={r} compact />}
                     {r.ai_insight && <Badge variant="outline" className="text-xs text-purple-600 border-purple-200">AI</Badge>}
                   </div>
