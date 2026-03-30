@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Briefcase, ChevronRight, Pencil, Settings2, History } from 'lucide-react';
+import { Target, Briefcase, ChevronRight, Pencil, Settings2, History, Trash2 } from 'lucide-react';
 import LeadAlertConfigDialog from '../components/leads/LeadAlertConfigDialog';
 import LeadAlertLogDialog from '../components/leads/LeadAlertLogDialog';
 import { toast } from 'sonner';
@@ -121,6 +121,15 @@ export default function Leads() {
       queryClient.invalidateQueries(['leads']);
       toast.success('Timeline dates updated');
     }
+  });
+
+  const deleteLeadMutation = useMutation({
+    mutationFn: (leadId) => base44.entities.Lead.delete(leadId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['leads']);
+      toast.success('Lead deleted');
+    },
+    onError: () => toast.error('Failed to delete lead')
   });
 
   const disqualifyLeadMutation = useMutation({
@@ -521,6 +530,7 @@ export default function Leads() {
         }}
         onConvert={(lead) => openSaleDialog(lead)}
         onDisqualify={(lead) => openDisqualifyDialog(lead)}
+        onDelete={(lead) => deleteLeadMutation.mutate(lead.id)}
         onViewTimeline={(lead) => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
       />
 

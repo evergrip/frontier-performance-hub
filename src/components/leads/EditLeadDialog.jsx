@@ -8,13 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ChevronRight, Briefcase } from 'lucide-react';
+import { ChevronRight, Briefcase, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import LeadSourcePicker from '../common/LeadSourcePicker';
 import EditLogViewer from '../common/EditLogViewer';
 import { computeChanges, logEdit } from '../common/editLogUtils';
 
-export default function EditLeadDialog({ open, onOpenChange, lead, clients, users, onAdvance, onConvert, onDisqualify, onViewTimeline }) {
+export default function EditLeadDialog({ open, onOpenChange, lead, clients, users, onAdvance, onConvert, onDisqualify, onDelete, onViewTimeline }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({});
 
@@ -203,6 +203,13 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
             {onDisqualify && (
               <Button size="sm" variant="outline" className="text-xs border-red-200 text-red-600 hover:bg-red-50" onClick={() => { onOpenChange(false); onDisqualify(lead); }}>
                 Disqualify
+              </Button>
+            )}
+            {onDelete && (
+              <Button size="sm" variant="outline" className="text-xs border-red-300 text-red-600 hover:bg-red-50" onClick={() => {
+                if (confirm('Permanently delete this lead? This cannot be undone.')) { onOpenChange(false); onDelete(lead); }
+              }}>
+                <Trash2 className="w-3 h-3 mr-1" /> Delete
               </Button>
             )}
           </div>
