@@ -27,18 +27,35 @@ export default function AIProcessMapBuilder({ open, onOpenChange, processMap, st
     setLoading(true);
     setResult(null);
 
+    let fileContent = null;
     let fileUrl = null;
     if (file) {
       const uploaded = await base44.integrations.Core.UploadFile({ file });
       fileUrl = uploaded.file_url;
+      // Extract text content from the file for better reliability
+      const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url: fileUrl,
+        json_schema: {
+          type: "object",
+          properties: {
+            full_text: { type: "string", description: "The complete text content of the document, preserving table structure and formatting" }
+          }
+        }
+      });
+      if (extracted?.status === "success" && extracted?.output) {
+        fileContent = extracted.output.full_text || JSON.stringify(extracted.output);
+      }
     }
 
     const stepTypeList = stepTypes.map(t => `${t.key}: ${t.label} - ${t.description || ""}`).join("\n");
 
-    const prompt = `You are an expert process improvement consultant for the construction/renovation industry. 
-Analyze the uploaded document${additionalContext ? " and additional context" : ""} and extract a structured process map.
+    const prompt = `You are an expert process improvement consultant for the construction/renovation industry.
+Analyze the following document content and extract a structured process map.
 
-AVAILABLE STEP TYPES:
+${fileContent ? `=== DOCUMENT CONTENT ===\n${fileContent}\n=== END DOCUMENT ===\n` : ""}
+${additionalContext ? `ADDITIONAL CONTEXT FROM USER:\n${additionalContext}\n` : ""}
+
+AVAILABLE STEP TYPES (use ONLY these keys for step_type):
 ${stepTypeList}
 
 CURRENT PROCESS MAP CONTEXT:
@@ -46,42 +63,20 @@ Title: ${processMap?.title || "N/A"}
 Description: ${processMap?.description || "N/A"}
 Department: ${processMap?.department || "N/A"}
 
-${additionalContext ? `ADDITIONAL CONTEXT FROM USER:\n${additionalContext}\n` : ""}
+INSTRUCTIONS:
+1. Group the steps into logical sections/phases (e.g. "Sales Handoff", "Feasibility", "Design", "Permitting", etc.)
+2. For EACH step, assign the correct step_type from the available types above
+3. For RACI: look at the document's participant list and assign responsible_roles, accountable_role, consulted_roles, informed_roles
+4. Mark decision points (Go/No-Go, approval gates) with is_decision_point: true and list decision_options
+5. Include inputs (what's needed) and outputs (what's produced) for each step
+6. Generate step IDs like SEC1-001, SEC1-002, SEC2-001 etc.
+7. Be thorough — capture ALL steps from the document, don't skip any
+8. In the "improvements" section, suggest industry best practices that could enhance this process
 
-Return a JSON response with:
-1. "sections" - array of process sections, each with:
-   - "section_title": string
-   - "section_description": string
-   - "section_steps": array of steps, each with:
-     - "step_description": string (clear, actionable description)
-     - "step_type": one of the available step type keys
-     - "responsible_roles": array of role names
-     - "accountable_role": single role name
-     - "consulted_roles": array of role names  
-     - "informed_roles": array of role names
-     - "estimated_duration_minutes": number or null
-     - "inputs": array of strings (what's needed to start)
-     - "outputs": array of objects with "name" and "description"
-     - "is_decision_point": boolean
-     - "decision_options": array of objects with "option" and "description" (only if decision point)
-     - "notes": string
-
-2. "improvements" - a markdown string with suggested improvements based on construction industry best practices, including:
-   - Missing steps or controls
-   - Opportunities for automation
-   - Risk mitigation suggestions
-   - RACI improvements
-   - Quality checkpoints that should be added
-   - Industry standard benchmarks
-
-3. "objective" - suggested objective if the process map doesn't have one
-4. "scope" - suggested scope if the process map doesn't have one
-
-Be thorough and detailed. Generate step IDs in format SEC-001, SEC-002 etc. per section.`;
+IMPORTANT: Return ALL sections and ALL steps. This document has ~28 steps — make sure every single one is included.`;
 
     const response = await base44.integrations.Core.InvokeLLM({
       prompt,
-      file_urls: fileUrl ? [fileUrl] : undefined,
       response_json_schema: {
         type: "object",
         properties: {
@@ -142,8 +137,21 @@ Be thorough and detailed. Generate step IDs in format SEC-001, SEC-002 etc. per 
       model: "claude_sonnet_4_6",
     });
 
+    if (!response?.sections || response.sections.length === 0) {
+      setResult({ error: true, message: "AI did not return any sections. Try adding more context or a different document." });
+      setLoading(false);
+      return;
+    }
+
     setResult(response);
     setLoading(false);
+  };
+
+  const handleReset = () => {
+    setResult(null);
+    setFile(null);
+    setAdditionalContext("");
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const handleApply = (mode) => {
@@ -247,6 +255,19 @@ Be thorough and detailed. Generate step IDs in format SEC-001, SEC-002 etc. per 
               </Button>
             </div>
           </div>
+        ) : result?.error ? (
+          <div className="space-y-4 mt-2">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-red-800">Generation failed</p>
+                <p className="text-sm text-red-600 mt-1">{result.message}</p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={handleReset}>Try Again</Button>
+            </div>
+          </div>
         ) : (
           <div className="space-y-4 mt-2">
             {/* Preview results */}
@@ -303,7 +324,7 @@ Be thorough and detailed. Generate step IDs in format SEC-001, SEC-002 etc. per 
 
             {/* Apply buttons */}
             <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button variant="outline" onClick={() => { setResult(null); }}>
+              <Button variant="outline" onClick={handleReset}>
                 ← Back to Edit
               </Button>
               <Button variant="outline" onClick={() => handleApply("append")}>
