@@ -21,7 +21,7 @@ export default function ResponseScoreCard({ response, compact = false }) {
   if (!max_possible_score && max_possible_score !== 0) return null;
   if (max_possible_score === 0) return null;
 
-  const categories = Object.entries(category_scores || {});
+  const categories = Object.entries(category_scores || {}).filter(([, cat]) => cat.max > 0);
 
   if (compact) {
     return (
