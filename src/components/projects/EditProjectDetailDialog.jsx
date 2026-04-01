@@ -14,7 +14,7 @@ import { computeChanges, logEdit } from '../common/editLogUtils';
 const TRACKED_FIELDS = [
   'title', 'contract_value',
   'start_date', 'target_completion_date', 'project_manager_id',
-  'crew_assignment', 'notes'
+  'gm_report_assignee_id', 'crew_assignment', 'notes'
 ];
 
 export default function EditProjectDetailDialog({ open, onOpenChange, project, clients, users }) {
@@ -31,6 +31,7 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
         start_date: project.start_date || '',
         target_completion_date: project.target_completion_date || '',
         project_manager_id: project.project_manager_id || '',
+        gm_report_assignee_id: project.gm_report_assignee_id || '',
         crew_assignment: project.crew_assignment || 'unassigned',
         notes: project.notes || '',
         client_id: project.client_id || '',
@@ -42,9 +43,9 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
     mutationFn: async (data) => {
       const changes = computeChanges(project, data, TRACKED_FIELDS);
 
-      // Resolve user names for project_manager_id changes
+      // Resolve user names for ID-based fields
       changes.forEach(c => {
-        if (c.field === 'project_manager_id') {
+        if (c.field === 'project_manager_id' || c.field === 'gm_report_assignee_id') {
           c.old_value = users?.find(u => u.id === c.old_value)?.full_name || c.old_value || '';
           c.new_value = users?.find(u => u.id === c.new_value)?.full_name || c.new_value || '';
         }
@@ -130,6 +131,20 @@ export default function EditProjectDetailDialog({ open, onOpenChange, project, c
               <SelectTrigger><SelectValue placeholder="Select PM" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
+                {(users || []).map(u => (
+                  <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>GM Report Assignee</Label>
+            <p className="text-xs text-slate-500 mb-1">Person responsible for weekly gross margin reports (defaults to PM if not set)</p>
+            <Select value={form.gm_report_assignee_id || 'none'} onValueChange={(v) => set('gm_report_assignee_id', v === 'none' ? '' : v)}>
+              <SelectTrigger><SelectValue placeholder="Same as PM" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Same as PM</SelectItem>
                 {(users || []).map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.full_name}</SelectItem>
                 ))}

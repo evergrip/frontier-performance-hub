@@ -1,12 +1,12 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
-export default function GrossMarginReportBadge({ project, reports }) {
+export default function GrossMarginReportBadge({ project, reports, companySettings }) {
   if (!project || !reports) return null;
 
-  // Only show for active projects (not awaiting or closed)
-  const activeStatuses = ['mobilization', 'active_construction', 'substantial_completion_closeout'];
-  if (!activeStatuses.includes(project.status)) return null;
+  // Only show for Active Construction and Substantial Completion & Closeout
+  const gmStatuses = ['active_construction', 'substantial_completion_closeout'];
+  if (!gmStatuses.includes(project.status)) return null;
 
   const projectReports = reports
     .filter(r => r.project_id === project.id)
@@ -15,15 +15,16 @@ export default function GrossMarginReportBadge({ project, reports }) {
   const latestReport = projectReports[0];
   const latestGM = latestReport?.gross_margin_percent;
 
-  // Find last due date (Tuesday or Friday)
+  // Weekly due date based on configurable day (default Friday = 5)
+  const dueDay = companySettings?.gm_report_due_day ?? 5;
   const today = new Date();
   const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
   let lastDueDate = new Date(todayDate);
   for (let i = 0; i < 7; i++) {
     const d = new Date(todayDate);
     d.setDate(d.getDate() - i);
-    const dow = d.getDay();
-    if (dow === 2 || dow === 5) {
+    if (d.getDay() === dueDay) {
       lastDueDate = d;
       break;
     }

@@ -46,6 +46,13 @@
       "type": "number",
       "description": "Revenue target for the next fiscal year"
     },
+    "gm_report_due_day": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 6,
+      "default": 5,
+      "description": "Day of week GM reports are due (0=Sunday, 1=Monday, ..., 5=Friday, 6=Saturday)"
+    },
     "monthly_capacity_schedule": {
       "type": "array",
       "items": {

@@ -41,6 +41,7 @@ export default function CompanySettings() {
     project_closeout_variance_threshold: 3,
     default_currency: 'USD',
     next_year_revenue_target: '',
+    gm_report_due_day: 5,
     notes: ''
   });
 
@@ -71,6 +72,7 @@ export default function CompanySettings() {
         project_closeout_variance_threshold: setting.project_closeout_variance_threshold || 3,
         default_currency: setting.default_currency || 'USD',
         next_year_revenue_target: setting.next_year_revenue_target || '',
+        gm_report_due_day: setting.gm_report_due_day ?? 5,
         notes: setting.notes || ''
       });
     }
@@ -141,7 +143,8 @@ export default function CompanySettings() {
       fiscal_year_start_month: formData.fiscal_year_start_month ? Number(formData.fiscal_year_start_month) : null,
       project_closeout_variance_threshold: formData.project_closeout_variance_threshold ? Number(formData.project_closeout_variance_threshold) : 3,
       default_currency: formData.default_currency,
-      next_year_revenue_target: formData.next_year_revenue_target ? Number(formData.next_year_revenue_target) : null
+      next_year_revenue_target: formData.next_year_revenue_target ? Number(formData.next_year_revenue_target) : null,
+      gm_report_due_day: formData.gm_report_due_day != null ? Number(formData.gm_report_due_day) : 5
     });
   };
 
@@ -333,6 +336,29 @@ export default function CompanySettings() {
                 onChange={(e) => setFormData({...formData, next_year_revenue_target: e.target.value})}
                 placeholder="6000000" 
               />
+            </div>
+            <div>
+              <Label>GM Report Due Day</Label>
+              <p className="text-xs text-slate-500 mb-2">
+                Day of the week that weekly Gross Margin reports are due for active construction projects
+              </p>
+              <Select
+                value={String(formData.gm_report_due_day ?? 5)}
+                onValueChange={(value) => setFormData({...formData, gm_report_due_day: Number(value)})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select day" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Sunday</SelectItem>
+                  <SelectItem value="1">Monday</SelectItem>
+                  <SelectItem value="2">Tuesday</SelectItem>
+                  <SelectItem value="3">Wednesday</SelectItem>
+                  <SelectItem value="4">Thursday</SelectItem>
+                  <SelectItem value="5">Friday</SelectItem>
+                  <SelectItem value="6">Saturday</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={saveSettingsMutation.isPending}>

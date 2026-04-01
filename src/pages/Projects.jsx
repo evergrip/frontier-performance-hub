@@ -786,7 +786,7 @@ export default function Projects() {
                                         className="inline-flex items-center gap-0.5"
                                         onClick={(e) => { e.stopPropagation(); setGmHistoryProject(project); setGmHistoryOpen(true); }}
                                       >
-                                        <GrossMarginReportBadge project={project} reports={grossMarginReports} />
+                                        <GrossMarginReportBadge project={project} reports={grossMarginReports} companySettings={companySettings} />
                                       </button>
                                       <button
                                         className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"

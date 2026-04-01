@@ -1,0 +1,236 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Link to Client entity (SSOT hub)"
+    },
+    "sale_id": {
+      "type": "string",
+      "description": "Link to originating Sale"
+    },
+    "project_type": {
+      "type": "string",
+      "enum": [
+        "preconstruction",
+        "construction"
+      ],
+      "description": "Project type"
+    },
+    "title": {
+      "type": "string",
+      "description": "Project name"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "awaiting_to_be_scheduled",
+        "mobilization",
+        "active_construction",
+        "substantial_completion_closeout",
+        "closed"
+      ],
+      "default": "awaiting_to_be_scheduled",
+      "description": "Project stage"
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "entered_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "History of status transitions with timestamps"
+    },
+    "contract_value": {
+      "type": "number",
+      "description": "Total contract value"
+    },
+    "actual_costs": {
+      "type": "number",
+      "default": 0,
+      "description": "Actual costs incurred"
+    },
+    "actual_margin": {
+      "type": "number",
+      "description": "Calculated margin percentage"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Project start date"
+    },
+    "target_completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected completion"
+    },
+    "actual_completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Actual completion date"
+    },
+    "project_manager_id": {
+      "type": "string",
+      "description": "User ID of project manager"
+    },
+    "gm_report_assignee_id": {
+      "type": "string",
+      "description": "User ID responsible for submitting weekly gross margin reports"
+    },
+    "crew_assignment": {
+      "type": "string",
+      "enum": [
+        "crew_a",
+        "crew_b",
+        "crew_c",
+        "crew_d",
+        "unassigned"
+      ],
+      "default": "unassigned",
+      "description": "Assigned construction crew"
+    },
+    "color": {
+      "type": "string",
+      "description": "Hex color code for visual identification"
+    },
+    "monthly_revenue_allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Period in YYYY-MM format"
+          },
+          "year": {
+            "type": "number",
+            "description": "Year of allocation"
+          },
+          "month": {
+            "type": "number",
+            "description": "Month of allocation (1-12)"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage of contract value allocated to this period"
+          }
+        }
+      },
+      "description": "Monthly revenue recognition allocations"
+    },
+    "monthly_sub_allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Period in YYYY-MM format"
+          },
+          "year": {
+            "type": "number",
+            "description": "Year"
+          },
+          "month": {
+            "type": "number",
+            "description": "Month (1-12)"
+          },
+          "sub_percentage": {
+            "type": "number",
+            "description": "Percentage of that month's revenue allocated to subs (0-100). Remainder is in-house."
+          }
+        }
+      },
+      "description": "Monthly sub vs in-house split. sub_percentage is % to subs, remainder is in-house."
+    },
+    "monthly_work_allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Period in YYYY-MM format"
+          },
+          "year": {
+            "type": "number",
+            "description": "Year of allocation"
+          },
+          "month": {
+            "type": "number",
+            "description": "Month of allocation (1-12)"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage of work allocated to this period"
+          }
+        }
+      },
+      "description": "Monthly work allocation percentages for staff scheduling"
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "hours_logged": {
+            "type": "number"
+          },
+          "budget": {
+            "type": "number"
+          },
+          "actual_cost": {
+            "type": "number"
+          },
+          "is_invoiceable": {
+            "type": "boolean"
+          },
+          "invoice_amount": {
+            "type": "number"
+          },
+          "invoice_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "commission_processed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "description": "Project phases with tracking"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Project notes"
+    }
+  },
+  "required": [
+    "client_id",
+    "sale_id",
+    "project_type",
+    "title"
+  ]
+}
