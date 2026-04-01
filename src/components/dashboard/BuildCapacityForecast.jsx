@@ -14,7 +14,11 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
     preconInHouse = 0, preconSub = 0, preconMixed = 0,
     excludedProjectsCount = 0, excludedSalesCount = 0,
     bookedBacklog = 0,
+    preconConversionRate = 0.5, closedWonPrecon = 0, totalClosedPrecon = 0,
+    inHouseLoad = 0,
   } = capacityForecast;
+  const convRatePct = (preconConversionRate * 100).toFixed(0);
+  const isDefaultRate = totalClosedPrecon < 3;
 
   const totalInHouse = activeInHouse + preconInHouse;
   const totalSub = activeSub + preconSub;
@@ -59,7 +63,7 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Monthly Capacity — click to edit */}
           <ClickableCard className="bg-white border border-blue-200" onClick={() => openDialog('capacity')} title="Click to edit capacity">
-            <p className="text-xs text-slate-600 mb-1">Monthly Capacity</p>
+            <p className="text-xs text-slate-600 mb-1">In-House Monthly Capacity</p>
             <p className="text-2xl font-bold text-blue-700">
               ${(capacityForecast.monthlyCapacity / 1000).toFixed(0)}K
             </p>
@@ -69,6 +73,7 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
                 <> · Next: ${(capacityForecast.nextYearMonthlyCapacity / 1000).toFixed(0)}K</>
               )}
             </p>
+            <p className="text-[10px] text-blue-600 mt-1">Sub work excluded from capacity</p>
           </ClickableCard>
           
           {/* Active Projects — click to see project list */}
@@ -93,7 +98,16 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
             <p className="text-2xl font-bold text-emerald-700">
               ${(capacityForecast.preconPipelineValue / 1000).toFixed(0)}K
             </p>
-            <p className="text-xs text-slate-500 mt-1">Not yet contracted — estimated</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Adjusted at <span className="font-semibold text-emerald-700">{convRatePct}%</span> conversion
+              {isDefaultRate
+                ? <span className="text-amber-500"> (default — need 3+ closed precon)</span>
+                : <> ({closedWonPrecon}/{totalClosedPrecon} converted)</>
+              }
+            </p>
+            {capacityForecast.preconPipelineValueRaw && capacityForecast.preconPipelineValueRaw !== capacityForecast.preconPipelineValue && (
+              <p className="text-[10px] text-slate-400 mt-0.5">Raw pipeline: ${(capacityForecast.preconPipelineValueRaw / 1000).toFixed(0)}K before conversion</p>
+            )}
             {(preconInHouse > 0 || preconSub > 0) && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {preconInHouse > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">🏠 ${(preconInHouse / 1000).toFixed(0)}K in-house</span>}
@@ -105,17 +119,17 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
           
           {/* Wait Time — clear breakdown */}
           <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border-2 border-slate-300">
-            <p className="text-xs text-slate-600 mb-1 font-semibold">New Client Wait Time</p>
+            <p className="text-xs text-slate-600 mb-1 font-semibold">New Client Wait Time (In-House)</p>
             <div className="space-y-2">
               <div>
                 <p className="text-2xl font-bold text-slate-900">{bookedBacklog.toFixed(1)} <span className="text-sm font-medium text-slate-500">mo</span></p>
                 <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wide">Booked Only</p>
-                <p className="text-[10px] text-slate-500">Contracted work that must complete first</p>
+                <p className="text-[10px] text-slate-500">Contracted in-house work</p>
               </div>
               <div className="border-t border-slate-200 pt-2">
                 <p className="text-lg font-bold text-slate-600">{capacityForecast.monthsOfBacklog.toFixed(1)} <span className="text-xs font-medium text-slate-400">mo</span></p>
-                <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">If all precon converts</p>
-                <p className="text-[10px] text-slate-500">Booked + potential pipeline</p>
+                <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">+ Pipeline at {convRatePct}% conversion</p>
+                <p className="text-[10px] text-slate-500">In-house load only · subs excluded</p>
               </div>
             </div>
           </div>
@@ -126,9 +140,14 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
           <p className="text-sm text-blue-900">
             <strong>Total Pipeline:</strong> ${(capacityForecast.totalPipeline / 1000).toFixed(0)}K
             <span className="mx-2">•</span>
-            Booked backlog: <strong>{Math.ceil(bookedBacklog)} months</strong>
+            <strong>In-House Load:</strong> ${(inHouseLoad / 1000).toFixed(0)}K
             <span className="mx-2">•</span>
-            Full pipeline: <strong>{Math.ceil(capacityForecast.monthsOfBacklog)} months</strong>
+            Conversion: <strong>{convRatePct}%</strong>{isDefaultRate ? ' (default)' : ` (${closedWonPrecon}/${totalClosedPrecon})`}
+          </p>
+          <p className="text-sm text-blue-900 mt-1">
+            Booked in-house: <strong>{Math.ceil(bookedBacklog)} months</strong>
+            <span className="mx-2">•</span>
+            Full in-house: <strong>{Math.ceil(capacityForecast.monthsOfBacklog)} months</strong>
           </p>
           {(totalInHouse > 0 || totalSub > 0 || totalMixed > 0) && (
             <div className="flex flex-wrap gap-3 mt-2 text-xs">

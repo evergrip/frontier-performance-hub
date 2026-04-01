@@ -352,6 +352,13 @@ export default function Dashboard() {
     const nextYearMonthlyCapacity = nextYearCapacity || (settings.next_year_revenue_target ? settings.next_year_revenue_target / 12 : currentYearMonthlyCapacity);
     const hasManualCapacity = !!currentCapacity;
 
+    // Dynamic precon→construction conversion rate
+    const closedWonPrecon = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status === 'closed_won').length;
+    const closedLostPrecon = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status === 'closed_lost').length;
+    const totalClosedPrecon = closedWonPrecon + closedLostPrecon;
+    // Need 3+ closed precon sales for meaningful data; default to 50% otherwise
+    const preconConversionRate = totalClosedPrecon >= 3 ? closedWonPrecon / totalClosedPrecon : 0.5;
+
     // Filter projects by include_in_forecast (default true)
     const forecastProjects = scopedProjects.filter(p => p.include_in_forecast !== false && p.status !== 'closed');
     const excludedProjectsCount = scopedProjects.filter(p => p.include_in_forecast === false && p.status !== 'closed').length;
@@ -377,51 +384,64 @@ export default function Dashboard() {
         return sum + remaining;
       }, 0);
 
-    // Filter precon sales by include_in_forecast (default true)
+    // Filter precon sales
     const forecastSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost' && s.include_in_forecast !== false);
     const excludedSalesCount = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost' && s.include_in_forecast === false).length;
 
-    let preconInHouse = 0, preconSub = 0, preconMixed = 0;
-    const preconPipelineValue = forecastSales
+    let preconInHouseRaw = 0, preconSubRaw = 0, preconMixedRaw = 0;
+    const preconPipelineValueRaw = forecastSales
       .reduce((sum, s) => {
         const val = s.estimated_construction_budget || 0;
         const buildType = s.forecast_build_type || 'in_house';
-        if (buildType === 'in_house') preconInHouse += val;
-        else if (buildType === 'subcontractor') preconSub += val;
-        else preconMixed += val;
+        if (buildType === 'in_house') preconInHouseRaw += val;
+        else if (buildType === 'subcontractor') preconSubRaw += val;
+        else preconMixedRaw += val;
         return sum + val;
       }, 0);
 
+    // Apply conversion rate to precon pipeline
+    const preconPipelineValue = preconPipelineValueRaw * preconConversionRate;
+    const preconInHouse = preconInHouseRaw * preconConversionRate;
+    const preconSub = preconSubRaw * preconConversionRate;
+    const preconMixed = preconMixedRaw * preconConversionRate;
+
     const totalPipeline = activeProjectsValue + preconPipelineValue;
 
-    // Booked backlog (active projects only — contracted work)
-    let bookedRemaining = activeProjectsValue;
+    // In-house load only — sub work doesn't count against crew capacity
+    // Mixed = 50% in-house assumption
+    const activeInHouseLoad = activeInHouse + (activeMixed * 0.5);
+    const preconInHouseLoad = preconInHouse + (preconMixed * 0.5);
+
+    // Booked in-house backlog (active projects only)
+    let bookedRemaining = activeInHouseLoad;
     let bookedBacklog = 0;
     const bookedCapYR = currentYearMonthlyCapacity * monthsLeftInYear;
     if (bookedRemaining > bookedCapYR) {
       bookedBacklog += monthsLeftInYear;
       bookedRemaining -= bookedCapYR;
-      bookedBacklog += bookedRemaining / nextYearMonthlyCapacity;
+      bookedBacklog += nextYearMonthlyCapacity > 0 ? bookedRemaining / nextYearMonthlyCapacity : 0;
     } else {
       bookedBacklog = currentYearMonthlyCapacity > 0 ? bookedRemaining / currentYearMonthlyCapacity : 0;
     }
 
-    // Total backlog (booked + potential precon pipeline)
-    let remainingPipeline = totalPipeline;
+    // Total in-house backlog (booked + adjusted precon)
+    let remainingPipeline = activeInHouseLoad + preconInHouseLoad;
     let monthsOfBacklog = 0;
     const currentYearCapacityTotal = currentYearMonthlyCapacity * monthsLeftInYear;
     if (remainingPipeline > currentYearCapacityTotal) {
       monthsOfBacklog += monthsLeftInYear;
       remainingPipeline -= currentYearCapacityTotal;
-      monthsOfBacklog += remainingPipeline / nextYearMonthlyCapacity;
+      monthsOfBacklog += nextYearMonthlyCapacity > 0 ? remainingPipeline / nextYearMonthlyCapacity : 0;
     } else {
       monthsOfBacklog = currentYearMonthlyCapacity > 0 ? remainingPipeline / currentYearMonthlyCapacity : 0;
     }
 
     return {
       monthlyCapacity: currentYearMonthlyCapacity, nextYearMonthlyCapacity,
-      activeProjectsValue, preconPipelineValue, totalPipeline, monthsOfBacklog,
+      activeProjectsValue, preconPipelineValue, preconPipelineValueRaw, totalPipeline, monthsOfBacklog,
       bookedBacklog,
+      preconConversionRate, closedWonPrecon, totalClosedPrecon,
+      inHouseLoad: activeInHouseLoad + preconInHouseLoad,
       usingGrowthForecast: !!settings.next_year_revenue_target || !!nextYearCapacity,
       hasManualCapacity,
       activeInHouse, activeSub, activeMixed,
