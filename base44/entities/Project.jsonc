@@ -102,6 +102,21 @@
       "type": "string",
       "description": "Hex color code for visual identification"
     },
+    "include_in_forecast": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this project is included in the build capacity forecast"
+    },
+    "forecast_build_type": {
+      "type": "string",
+      "enum": [
+        "in_house",
+        "subcontractor",
+        "mixed"
+      ],
+      "default": "in_house",
+      "description": "How this project is built \u2014 in-house crew, subcontractor, or mixed"
+    },
     "monthly_revenue_allocations": {
       "type": "array",
       "items": {

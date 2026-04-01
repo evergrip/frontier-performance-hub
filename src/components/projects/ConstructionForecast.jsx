@@ -1,13 +1,40 @@
 import React, { useState, useMemo } from 'react'; 
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TableBody, TableCell, TableHead, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CalendarRange, Building2, Wrench } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, CalendarRange, Building2, Wrench, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
 
 export default function ConstructionForecast({ projects, clients, sales, companySettings, onProjectClick, preconSales, onPreconSaleClick }) {
+  const queryClient = useQueryClient();
   const fiscalStartMonth = companySettings?.fiscal_year_start_month || 1;
+
+  const toggleForecastMutation = useMutation({
+    mutationFn: ({ id, isPrecon, include_in_forecast }) => {
+      if (isPrecon) return base44.entities.Sale.update(id, { include_in_forecast });
+      return base44.entities.Project.update(id, { include_in_forecast });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['sales']);
+    }
+  });
+
+  const updateBuildTypeMutation = useMutation({
+    mutationFn: ({ id, isPrecon, forecast_build_type }) => {
+      if (isPrecon) return base44.entities.Sale.update(id, { forecast_build_type });
+      return base44.entities.Project.update(id, { forecast_build_type });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['sales']);
+    }
+  });
 
   // Determine current fiscal year
   const defaultFY = useMemo(() => {
@@ -87,6 +114,8 @@ export default function ConstructionForecast({ projects, clients, sales, company
         hasAnyInFY,
         isPrecon: false,
         totalAllocPct,
+        includeInForecast: project.include_in_forecast !== false,
+        forecastBuildType: project.forecast_build_type || 'in_house',
       });
     });
 
@@ -130,6 +159,8 @@ export default function ConstructionForecast({ projects, clients, sales, company
           hasAnyInFY,
           isPrecon: true,
           totalAllocPct,
+          includeInForecast: sale.include_in_forecast !== false,
+          forecastBuildType: sale.forecast_build_type || 'in_house',
         });
       });
     }
@@ -216,7 +247,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
 
   const fmt = (val) => val > 0 ? `$${val.toLocaleString()}` : '-';
 
-  const totalCols = 3 + fiscalMonths.length + 1; // project + contract + alloc + months + FY total
+  const totalCols = 5 + fiscalMonths.length + 1; // project + fcst + build + contract + alloc + months + FY total
 
   return (
     <Card className="mt-6">
@@ -242,9 +273,11 @@ export default function ConstructionForecast({ projects, clients, sales, company
           <table className="w-full caption-bottom text-sm">
             <thead className="sticky top-0 z-20 [&_tr]:border-b">
               <TableRow className="bg-slate-50">
-                <TableHead className="sticky left-0 bg-slate-50 z-30 min-w-[200px] text-xs">Project</TableHead>
-                <TableHead className="sticky left-[200px] bg-slate-50 z-30 min-w-[80px] text-xs text-right">Contract</TableHead>
-                <TableHead className="sticky left-[280px] bg-slate-50 z-30 min-w-[55px] text-xs text-right">Alloc</TableHead>
+                <TableHead className="sticky left-0 bg-slate-50 z-30 min-w-[220px] text-xs">Project</TableHead>
+                <TableHead className="bg-slate-50 z-20 min-w-[60px] text-xs text-center">Fcst</TableHead>
+                <TableHead className="bg-slate-50 z-20 min-w-[80px] text-xs text-center">Build</TableHead>
+                <TableHead className="bg-slate-50 z-20 min-w-[80px] text-xs text-right">Contract</TableHead>
+                <TableHead className="bg-slate-50 z-20 min-w-[55px] text-xs text-right">Alloc</TableHead>
                 {fiscalMonths.map((fm, i) => (
                   <TableHead key={i} className="bg-slate-50 text-right text-xs whitespace-nowrap min-w-[90px]">{fm.label}</TableHead>
                 ))}
@@ -254,7 +287,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={14 + 1} className="text-center py-8 text-slate-400">
+                  <TableCell colSpan={totalCols} className="text-center py-8 text-slate-400">
                     No active projects to forecast.
                   </TableCell>
                 </TableRow>
@@ -272,14 +305,15 @@ export default function ConstructionForecast({ projects, clients, sales, company
                       const showHeader = row.status !== lastStage;
                       lastStage = row.status;
                       const stageCfg = stageLabels[row.status] || { label: row.status, color: 'bg-gray-50 text-gray-600 border-gray-200' };
-                      // Compute stage subtotal
                       const stageRows = showHeader ? rows.filter(r => r.status === row.status) : [];
                       const stageTotal = showHeader ? stageRows.reduce((sum, r) => sum + fiscalMonths.reduce((s, fm) => s + (r.monthValues[`${fm.year}-${fm.month}`] || 0), 0), 0) : 0;
+                      const entityId = row.isPrecon ? row.saleId : row.projectId;
+                      const buildTypeColors = { in_house: 'text-blue-700', subcontractor: 'text-orange-700', mixed: 'text-purple-700' };
                       return (
                         <React.Fragment key={rowKey}>
                           {showHeader && (
                             <TableRow className={`border-t-2 ${stageCfg.color}`}>
-                              <TableCell colSpan={3} className={`sticky left-0 z-10 ${stageCfg.color} py-1.5 px-4`}>
+                              <TableCell colSpan={5} className={`sticky left-0 z-10 ${stageCfg.color} py-1.5 px-4`}>
                                 <span className="text-xs font-bold uppercase tracking-wide">{stageCfg.label}</span>
                                 <span className="text-[10px] ml-2 opacity-70">({stageRows.length})</span>
                               </TableCell>
@@ -291,18 +325,42 @@ export default function ConstructionForecast({ projects, clients, sales, company
                               </TableCell>
                             </TableRow>
                           )}
-                          <TableRow className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''} ${row.isPrecon ? 'border-l-2 border-l-amber-400' : ''}`} onClick={handleRowClick}>
-                            <TableCell className="sticky left-0 bg-white z-10 min-w-[200px]">
+                          <TableRow className={`cursor-pointer hover:bg-slate-50 ${!row.hasAnyInFY ? 'opacity-50' : ''} ${!row.includeInForecast ? 'opacity-40 bg-slate-50' : ''} ${row.isPrecon ? 'border-l-2 border-l-amber-400' : ''}`} onClick={handleRowClick}>
+                            <TableCell className="sticky left-0 bg-white z-10 min-w-[220px]">
                               <div className={`text-sm font-medium truncate ${row.isPrecon ? 'text-amber-700 italic' : 'text-slate-900'}`}>{row.clientName}</div>
                               <div className="flex items-center gap-1">
                                 <span className={`text-xs truncate ${row.isPrecon ? 'text-amber-500 italic' : 'text-slate-500'}`}>{row.projectName}</span>
                                 {row.isPrecon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">Pre-Con</span>}
                               </div>
                             </TableCell>
-                            <TableCell className="sticky left-[200px] bg-white z-10 text-right text-xs font-medium text-slate-700">
+                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                className={`p-1 rounded transition-colors ${row.includeInForecast ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-300 hover:bg-slate-100'}`}
+                                title={row.includeInForecast ? 'Included in forecast — click to exclude' : 'Excluded from forecast — click to include'}
+                                onClick={() => toggleForecastMutation.mutate({ id: entityId, isPrecon: row.isPrecon, include_in_forecast: !row.includeInForecast })}
+                              >
+                                {row.includeInForecast ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                              </button>
+                            </TableCell>
+                            <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                              <Select
+                                value={row.forecastBuildType}
+                                onValueChange={(val) => updateBuildTypeMutation.mutate({ id: entityId, isPrecon: row.isPrecon, forecast_build_type: val })}
+                              >
+                                <SelectTrigger className={`h-6 text-[10px] w-[75px] border-0 bg-transparent px-1 ${buildTypeColors[row.forecastBuildType] || 'text-slate-600'}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="in_house">In-House</SelectItem>
+                                  <SelectItem value="subcontractor">Sub</SelectItem>
+                                  <SelectItem value="mixed">Mixed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="text-right text-xs font-medium text-slate-700">
                               ${(row.contractValue / 1000).toFixed(0)}k
                             </TableCell>
-                            <TableCell className={`sticky left-[280px] bg-white z-10 text-right text-xs font-medium ${row.totalAllocPct >= 99.9 ? 'text-emerald-600' : row.totalAllocPct > 0 ? 'text-amber-600' : 'text-red-400'}`}>
+                            <TableCell className={`text-right text-xs font-medium ${row.totalAllocPct >= 99.9 ? 'text-emerald-600' : row.totalAllocPct > 0 ? 'text-amber-600' : 'text-red-400'}`}>
                               {row.totalAllocPct > 0 ? `${row.totalAllocPct.toFixed(0)}%` : '—'}
                             </TableCell>
                             {fiscalMonths.map((fm, i) => {
@@ -333,14 +391,12 @@ export default function ConstructionForecast({ projects, clients, sales, company
 
                   {/* In-House Revenue Row */}
                   <TableRow className="bg-blue-50 border-t-2 border-slate-300">
-                    <TableCell className="sticky left-0 bg-blue-50 z-10 text-xs font-semibold text-blue-800">
+                    <TableCell colSpan={3} className="sticky left-0 bg-blue-50 z-10 text-xs font-semibold text-blue-800">
                       <div className="flex items-center gap-1.5">
                         <Building2 className="w-3.5 h-3.5" />
                         In-House Revenue
                       </div>
                     </TableCell>
-                    <TableCell className="sticky left-[200px] bg-blue-50 z-10"></TableCell>
-                    <TableCell className="sticky left-[280px] bg-blue-50 z-10"></TableCell>
                     {fiscalMonths.map((fm, i) => {
                       const val = monthlyInHouseTotals[`${fm.year}-${fm.month}`] || 0;
                       return (
@@ -356,14 +412,12 @@ export default function ConstructionForecast({ projects, clients, sales, company
 
                   {/* Sub Revenue Row */}
                   <TableRow className="bg-orange-50">
-                    <TableCell className="sticky left-0 bg-orange-50 z-10 text-xs font-semibold text-orange-800">
+                    <TableCell colSpan={3} className="sticky left-0 bg-orange-50 z-10 text-xs font-semibold text-orange-800">
                       <div className="flex items-center gap-1.5">
                         <Wrench className="w-3.5 h-3.5" />
                         Sub Revenue
                       </div>
                     </TableCell>
-                    <TableCell className="sticky left-[200px] bg-orange-50 z-10"></TableCell>
-                    <TableCell className="sticky left-[280px] bg-orange-50 z-10"></TableCell>
                     {fiscalMonths.map((fm, i) => {
                       const val = monthlySubTotals[`${fm.year}-${fm.month}`] || 0;
                       return (
@@ -379,13 +433,13 @@ export default function ConstructionForecast({ projects, clients, sales, company
 
                   {/* Monthly Totals Row */}
                   <TableRow className="bg-slate-100">
-                    <TableCell className="sticky left-0 bg-slate-100 z-10 font-bold text-sm text-slate-900">
+                    <TableCell colSpan={3} className="sticky left-0 bg-slate-100 z-10 font-bold text-sm text-slate-900">
                       Monthly Totals
                     </TableCell>
-                    <TableCell className="sticky left-[200px] bg-slate-100 z-10 text-right text-xs font-bold text-slate-700">
+                    <TableCell className="bg-slate-100 z-10 text-right text-xs font-bold text-slate-700">
                       ${(rows.reduce((s, r) => s + r.contractValue, 0) / 1000).toFixed(0)}k
                     </TableCell>
-                    <TableCell className="sticky left-[280px] bg-slate-100 z-10"></TableCell>
+                    <TableCell className="bg-slate-100 z-10"></TableCell>
                     {fiscalMonths.map((fm, i) => {
                       const key = `${fm.year}-${fm.month}`;
                       const val = monthlyTotals[key] || 0;

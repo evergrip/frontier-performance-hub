@@ -352,8 +352,12 @@ export default function Dashboard() {
     const nextYearMonthlyCapacity = nextYearCapacity || (settings.next_year_revenue_target ? settings.next_year_revenue_target / 12 : currentYearMonthlyCapacity);
     const hasManualCapacity = !!currentCapacity;
 
-    const activeProjectsValue = scopedProjects
-      .filter(p => p.status !== 'closed')
+    // Filter projects by include_in_forecast (default true)
+    const forecastProjects = scopedProjects.filter(p => p.include_in_forecast !== false && p.status !== 'closed');
+    const excludedProjectsCount = scopedProjects.filter(p => p.include_in_forecast === false && p.status !== 'closed').length;
+
+    let activeInHouse = 0, activeSub = 0, activeMixed = 0;
+    const activeProjectsValue = forecastProjects
       .reduce((sum, p) => {
         const contractVal = p.contract_value || 0;
         const pastAllocPct = (p.monthly_revenue_allocations || [])
@@ -365,12 +369,28 @@ export default function Dashboard() {
             return (aYear < currentYear) || (aYear === currentYear && aMonth < currentMonth);
           })
           .reduce((s, a) => s + (a.percentage || 0), 0);
-        return sum + contractVal - (contractVal * pastAllocPct / 100);
+        const remaining = contractVal - (contractVal * pastAllocPct / 100);
+        const buildType = p.forecast_build_type || 'in_house';
+        if (buildType === 'in_house') activeInHouse += remaining;
+        else if (buildType === 'subcontractor') activeSub += remaining;
+        else activeMixed += remaining;
+        return sum + remaining;
       }, 0);
 
-    const preconPipelineValue = scopedSales
-      .filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost')
-      .reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
+    // Filter precon sales by include_in_forecast (default true)
+    const forecastSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost' && s.include_in_forecast !== false);
+    const excludedSalesCount = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost' && s.include_in_forecast === false).length;
+
+    let preconInHouse = 0, preconSub = 0, preconMixed = 0;
+    const preconPipelineValue = forecastSales
+      .reduce((sum, s) => {
+        const val = s.estimated_construction_budget || 0;
+        const buildType = s.forecast_build_type || 'in_house';
+        if (buildType === 'in_house') preconInHouse += val;
+        else if (buildType === 'subcontractor') preconSub += val;
+        else preconMixed += val;
+        return sum + val;
+      }, 0);
 
     const totalPipeline = activeProjectsValue + preconPipelineValue;
 
@@ -389,7 +409,10 @@ export default function Dashboard() {
       monthlyCapacity: currentYearMonthlyCapacity, nextYearMonthlyCapacity,
       activeProjectsValue, preconPipelineValue, totalPipeline, monthsOfBacklog,
       usingGrowthForecast: !!settings.next_year_revenue_target || !!nextYearCapacity,
-      hasManualCapacity
+      hasManualCapacity,
+      activeInHouse, activeSub, activeMixed,
+      preconInHouse, preconSub, preconMixed,
+      excludedProjectsCount, excludedSalesCount,
     };
   }, [currentFiscalGoal, scopedProjects, scopedSales, settings, fiscalYear, fiscalYearStartMonth]);
 

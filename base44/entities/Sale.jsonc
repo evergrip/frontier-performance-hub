@@ -1,0 +1,258 @@
+{
+  "name": "Sale",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Link to Client entity (SSOT hub)"
+    },
+    "lead_id": {
+      "type": "string",
+      "description": "Link to originating Lead"
+    },
+    "sale_type": {
+      "type": "string",
+      "enum": [
+        "preconstruction",
+        "construction"
+      ],
+      "description": "Type of sale"
+    },
+    "title": {
+      "type": "string",
+      "description": "Sale/project title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "feasibility",
+        "design_material_selections",
+        "engineering_permits",
+        "pending_construction_sale",
+        "closed_won",
+        "closed_lost"
+      ],
+      "default": "feasibility",
+      "description": "Preconstruction pipeline stage or sale status"
+    },
+    "phase_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "entered_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "History of phase transitions with timestamps"
+    },
+    "contract_value": {
+      "type": "number",
+      "description": "Total contract value"
+    },
+    "deposits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "deposit_number": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "date_received": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "List of deposits received for preconstruction work"
+    },
+    "invoices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "invoice_number": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "date_issued": {
+            "type": "string",
+            "format": "date"
+          },
+          "date_paid": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "paid",
+              "overdue"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "List of invoices issued for this preconstruction sale"
+    },
+    "minimum_draw_threshold": {
+      "type": "number",
+      "description": "Minimum balance threshold to trigger draw alert (in dollars)"
+    },
+    "estimated_construction_budget": {
+      "type": "number",
+      "description": "Projected construction costs, refined through preconstruction phases"
+    },
+    "estimated_margin": {
+      "type": "number",
+      "description": "Expected margin percentage"
+    },
+    "close_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected or actual close date"
+    },
+    "target_precon_completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Target pre-construction completion date, updated as project progresses"
+    },
+    "linked_precon_sale_id": {
+      "type": "string",
+      "description": "If construction sale, link to related preconstruction sale"
+    },
+    "converted_to_project_id": {
+      "type": "string",
+      "description": "Link to Project if sale closed (enforces forward flow)"
+    },
+    "sale_contributors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "commission_split": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Team members and commission splits"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Primary salesperson user ID"
+    },
+    "commission_processed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether commission has been calculated and banked"
+    },
+    "commission_transaction_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Links to CommissionTransaction records"
+    },
+    "monthly_revenue_allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Period in YYYY-MM format"
+          },
+          "year": {
+            "type": "number",
+            "description": "Year of allocation"
+          },
+          "month": {
+            "type": "number",
+            "description": "Month of allocation (1-12)"
+          },
+          "percentage": {
+            "type": "number",
+            "description": "Percentage of estimated construction value allocated to this period"
+          }
+        }
+      },
+      "description": "Monthly forecast allocations for scheduling (used on pre-con sales for construction forecasting)"
+    },
+    "monthly_sub_allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Period in YYYY-MM format"
+          },
+          "year": {
+            "type": "number",
+            "description": "Year"
+          },
+          "month": {
+            "type": "number",
+            "description": "Month (1-12)"
+          },
+          "sub_percentage": {
+            "type": "number",
+            "description": "Percentage of that month's revenue allocated to subs (0-100). Remainder is in-house."
+          }
+        }
+      },
+      "description": "Monthly sub vs in-house split for pre-con forecasting."
+    },
+    "include_in_forecast": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this sale is included in the build capacity forecast"
+    },
+    "forecast_build_type": {
+      "type": "string",
+      "enum": [
+        "in_house",
+        "subcontractor",
+        "mixed"
+      ],
+      "default": "in_house",
+      "description": "How this project will be built \u2014 in-house crew, subcontractor, or mixed"
+    },
+    "precon_costs_finalized": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether preconstruction costs have been fully finalized (all final bills received)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Sale notes"
+    }
+  },
+  "required": [
+    "client_id",
+    "sale_type",
+    "title"
+  ]
+}
