@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Clock, Building2, Wrench, Layers } from 'lucide-react';
 import { getFiscalYearLabel } from '../utils/fiscalYear';
+import ForecastProjectListDialog from './ForecastProjectListDialog';
 
-export default function BuildCapacityForecast({ capacityForecast, currentFiscalGoal, fiscalYear, fiscalYearStartMonth, settings }) {
+export default function BuildCapacityForecast({ capacityForecast, currentFiscalGoal, fiscalYear, fiscalYearStartMonth, settings, projects, preconSales, clients, sales }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
   if (!capacityForecast) return null;
 
   const buildTypeColors = {
@@ -24,7 +26,8 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
   const totalExcluded = excludedProjectsCount + excludedSalesCount;
 
   return (
-    <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+    <>
+    <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setDialogOpen(true)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" />
@@ -123,5 +126,14 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
         </div>
       </CardContent>
     </Card>
+    <ForecastProjectListDialog
+      open={dialogOpen}
+      onOpenChange={setDialogOpen}
+      projects={projects}
+      preconSales={preconSales}
+      clients={clients}
+      sales={sales}
+    />
+    </>
   );
 }

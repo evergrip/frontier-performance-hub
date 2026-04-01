@@ -627,6 +627,10 @@ export default function Dashboard() {
         fiscalYear={fiscalYear}
         fiscalYearStartMonth={fiscalYearStartMonth}
         settings={settings}
+        projects={scopedProjects}
+        preconSales={scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status !== 'closed_won' && s.status !== 'closed_lost')}
+        clients={clients}
+        sales={scopedSales}
       />
 
       {/* Fiscal Goal Progress */}
