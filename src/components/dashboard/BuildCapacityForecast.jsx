@@ -1,23 +1,19 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Clock, Building2, Wrench, Layers } from 'lucide-react';
+import { Clock, Building2, Wrench, Layers, Pencil } from 'lucide-react';
 import { getFiscalYearLabel } from '../utils/fiscalYear';
 import ForecastProjectListDialog from './ForecastProjectListDialog';
 
 export default function BuildCapacityForecast({ capacityForecast, currentFiscalGoal, fiscalYear, fiscalYearStartMonth, settings, projects, preconSales, clients, sales }) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTab, setDialogTab] = useState('projects');
   if (!capacityForecast) return null;
-
-  const buildTypeColors = {
-    in_house: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', label: 'In-House' },
-    subcontractor: { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700', label: 'Subcontractor' },
-    mixed: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', label: 'Mixed' },
-  };
 
   const {
     activeInHouse = 0, activeSub = 0, activeMixed = 0,
     preconInHouse = 0, preconSub = 0, preconMixed = 0,
     excludedProjectsCount = 0, excludedSalesCount = 0,
+    bookedBacklog = 0,
   } = capacityForecast;
 
   const totalInHouse = activeInHouse + preconInHouse;
@@ -25,9 +21,25 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
   const totalMixed = activeMixed + preconMixed;
   const totalExcluded = excludedProjectsCount + excludedSalesCount;
 
+  const openDialog = (tab) => {
+    setDialogTab(tab);
+    setDialogOpen(true);
+  };
+
+  const ClickableCard = ({ children, className, onClick, title }) => (
+    <div
+      className={`p-4 rounded-lg cursor-pointer hover:shadow-md transition-all group relative ${className}`}
+      onClick={onClick}
+      title={title || 'Click to edit'}
+    >
+      <Pencil className="w-3 h-3 absolute top-2 right-2 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+      {children}
+    </div>
+  );
+
   return (
     <>
-    <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setDialogOpen(true)}>
+    <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" />
@@ -44,8 +56,9 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-4 bg-white rounded-lg border border-blue-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Monthly Capacity — click to edit */}
+          <ClickableCard className="bg-white border border-blue-200" onClick={() => openDialog('capacity')} title="Click to edit capacity">
             <p className="text-xs text-slate-600 mb-1">Monthly Capacity</p>
             <p className="text-2xl font-bold text-blue-700">
               ${(capacityForecast.monthlyCapacity / 1000).toFixed(0)}K
@@ -56,29 +69,31 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
                 <> · Next: ${(capacityForecast.nextYearMonthlyCapacity / 1000).toFixed(0)}K</>
               )}
             </p>
-          </div>
+          </ClickableCard>
           
-          <div className="p-4 bg-white rounded-lg border border-amber-200">
-            <p className="text-xs text-slate-600 mb-1">Active Projects</p>
+          {/* Active Projects — click to see project list */}
+          <ClickableCard className="bg-white border border-amber-200" onClick={() => openDialog('projects')} title="Click to view & edit projects">
+            <p className="text-xs text-slate-600 mb-1">Booked Work (Active Projects)</p>
             <p className="text-2xl font-bold text-amber-700">
               ${(capacityForecast.activeProjectsValue / 1000).toFixed(0)}K
             </p>
-            <p className="text-xs text-slate-500 mt-1">In construction</p>
+            <p className="text-xs text-slate-500 mt-1">Contracted — remaining to complete</p>
             {(activeInHouse > 0 || activeSub > 0) && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {activeInHouse > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">{Building2 && '🏠'} ${(activeInHouse / 1000).toFixed(0)}K in-house</span>}
+                {activeInHouse > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">🏠 ${(activeInHouse / 1000).toFixed(0)}K in-house</span>}
                 {activeSub > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">🔧 ${(activeSub / 1000).toFixed(0)}K sub</span>}
                 {activeMixed > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">⚙️ ${(activeMixed / 1000).toFixed(0)}K mixed</span>}
               </div>
             )}
-          </div>
+          </ClickableCard>
           
-          <div className="p-4 bg-white rounded-lg border border-emerald-200">
-            <p className="text-xs text-slate-600 mb-1">Precon Pipeline</p>
+          {/* Precon Pipeline — click to see precon list */}
+          <ClickableCard className="bg-white border border-emerald-200" onClick={() => openDialog('projects')} title="Click to view & edit pipeline">
+            <p className="text-xs text-slate-600 mb-1">Potential Work (Precon Pipeline)</p>
             <p className="text-2xl font-bold text-emerald-700">
               ${(capacityForecast.preconPipelineValue / 1000).toFixed(0)}K
             </p>
-            <p className="text-xs text-slate-500 mt-1">Expected construction</p>
+            <p className="text-xs text-slate-500 mt-1">Not yet contracted — estimated</p>
             {(preconInHouse > 0 || preconSub > 0) && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {preconInHouse > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">🏠 ${(preconInHouse / 1000).toFixed(0)}K in-house</span>}
@@ -86,23 +101,34 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
                 {preconMixed > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">⚙️ ${(preconMixed / 1000).toFixed(0)}K mixed</span>}
               </div>
             )}
-          </div>
+          </ClickableCard>
           
+          {/* Wait Time — clear breakdown */}
           <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border-2 border-slate-300">
             <p className="text-xs text-slate-600 mb-1 font-semibold">New Client Wait Time</p>
-            <p className="text-3xl font-bold text-slate-900">
-              {capacityForecast.monthsOfBacklog.toFixed(1)}
-            </p>
-            <p className="text-xs text-slate-600 mt-1">Months backlog</p>
+            <div className="space-y-2">
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{bookedBacklog.toFixed(1)} <span className="text-sm font-medium text-slate-500">mo</span></p>
+                <p className="text-[10px] text-amber-700 font-semibold uppercase tracking-wide">Booked Only</p>
+                <p className="text-[10px] text-slate-500">Contracted work that must complete first</p>
+              </div>
+              <div className="border-t border-slate-200 pt-2">
+                <p className="text-lg font-bold text-slate-600">{capacityForecast.monthsOfBacklog.toFixed(1)} <span className="text-xs font-medium text-slate-400">mo</span></p>
+                <p className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">If all precon converts</p>
+                <p className="text-[10px] text-slate-500">Booked + potential pipeline</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Summary bar with in-house vs sub breakdown */}
+        {/* Summary bar */}
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-900">
             <strong>Total Pipeline:</strong> ${(capacityForecast.totalPipeline / 1000).toFixed(0)}K
             <span className="mx-2">•</span>
-            New clients can expect to start construction in approximately <strong>{Math.ceil(capacityForecast.monthsOfBacklog)} months</strong>
+            Booked backlog: <strong>{Math.ceil(bookedBacklog)} months</strong>
+            <span className="mx-2">•</span>
+            Full pipeline: <strong>{Math.ceil(capacityForecast.monthsOfBacklog)} months</strong>
           </p>
           {(totalInHouse > 0 || totalSub > 0 || totalMixed > 0) && (
             <div className="flex flex-wrap gap-3 mt-2 text-xs">
@@ -129,10 +155,12 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
     <ForecastProjectListDialog
       open={dialogOpen}
       onOpenChange={setDialogOpen}
+      defaultTab={dialogTab}
       projects={projects}
       preconSales={preconSales}
       clients={clients}
       sales={sales}
+      settings={settings}
     />
     </>
   );

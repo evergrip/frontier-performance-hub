@@ -394,6 +394,19 @@ export default function Dashboard() {
 
     const totalPipeline = activeProjectsValue + preconPipelineValue;
 
+    // Booked backlog (active projects only — contracted work)
+    let bookedRemaining = activeProjectsValue;
+    let bookedBacklog = 0;
+    const bookedCapYR = currentYearMonthlyCapacity * monthsLeftInYear;
+    if (bookedRemaining > bookedCapYR) {
+      bookedBacklog += monthsLeftInYear;
+      bookedRemaining -= bookedCapYR;
+      bookedBacklog += bookedRemaining / nextYearMonthlyCapacity;
+    } else {
+      bookedBacklog = currentYearMonthlyCapacity > 0 ? bookedRemaining / currentYearMonthlyCapacity : 0;
+    }
+
+    // Total backlog (booked + potential precon pipeline)
     let remainingPipeline = totalPipeline;
     let monthsOfBacklog = 0;
     const currentYearCapacityTotal = currentYearMonthlyCapacity * monthsLeftInYear;
@@ -402,12 +415,13 @@ export default function Dashboard() {
       remainingPipeline -= currentYearCapacityTotal;
       monthsOfBacklog += remainingPipeline / nextYearMonthlyCapacity;
     } else {
-      monthsOfBacklog = remainingPipeline / currentYearMonthlyCapacity;
+      monthsOfBacklog = currentYearMonthlyCapacity > 0 ? remainingPipeline / currentYearMonthlyCapacity : 0;
     }
 
     return {
       monthlyCapacity: currentYearMonthlyCapacity, nextYearMonthlyCapacity,
       activeProjectsValue, preconPipelineValue, totalPipeline, monthsOfBacklog,
+      bookedBacklog,
       usingGrowthForecast: !!settings.next_year_revenue_target || !!nextYearCapacity,
       hasManualCapacity,
       activeInHouse, activeSub, activeMixed,
