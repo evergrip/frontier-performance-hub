@@ -14,7 +14,7 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
     preconInHouse = 0, preconSub = 0, preconMixed = 0,
     excludedProjectsCount = 0, excludedSalesCount = 0,
     bookedBacklog = 0,
-    preconConversionRate = 0.5, closedWonPrecon = 0, totalClosedPrecon = 0,
+    preconConversionRate = 0.5, convertedToConstruction = 0, totalClosedPrecon = 0,
     inHouseLoad = 0,
   } = capacityForecast;
   const convRatePct = (preconConversionRate * 100).toFixed(0);
@@ -102,7 +102,7 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
               Adjusted at <span className="font-semibold text-emerald-700">{convRatePct}%</span> conversion
               {isDefaultRate
                 ? <span className="text-amber-500"> (default — need 3+ closed precon)</span>
-                : <> ({closedWonPrecon}/{totalClosedPrecon} converted)</>
+                : <> ({convertedToConstruction}/{totalClosedPrecon} converted to construction)</>
               }
             </p>
             {capacityForecast.preconPipelineValueRaw && capacityForecast.preconPipelineValueRaw !== capacityForecast.preconPipelineValue && (
@@ -142,7 +142,7 @@ export default function BuildCapacityForecast({ capacityForecast, currentFiscalG
             <span className="mx-2">•</span>
             <strong>In-House Load:</strong> ${(inHouseLoad / 1000).toFixed(0)}K
             <span className="mx-2">•</span>
-            Conversion: <strong>{convRatePct}%</strong>{isDefaultRate ? ' (default)' : ` (${closedWonPrecon}/${totalClosedPrecon})`}
+            Conversion: <strong>{convRatePct}%</strong>{isDefaultRate ? ' (default)' : ` (${convertedToConstruction}/${totalClosedPrecon})`}
           </p>
           <p className="text-sm text-blue-900 mt-1">
             Booked in-house: <strong>{Math.ceil(bookedBacklog)} months</strong>

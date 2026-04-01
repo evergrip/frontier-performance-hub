@@ -353,11 +353,17 @@ export default function Dashboard() {
     const hasManualCapacity = !!currentCapacity;
 
     // Dynamic precon→construction conversion rate
-    const closedWonPrecon = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status === 'closed_won').length;
-    const closedLostPrecon = scopedSales.filter(s => s.sale_type === 'preconstruction' && s.status === 'closed_lost').length;
-    const totalClosedPrecon = closedWonPrecon + closedLostPrecon;
+    // "Converted" = closed_won precon sale that has a construction sale linked to it
+    // "Not converted" = closed_won precon-only (no construction link) + closed_lost
+    const closedPreconSales = scopedSales.filter(s => s.sale_type === 'preconstruction' && ['closed_won', 'closed_lost'].includes(s.status));
+    const convertedToConstruction = closedPreconSales.filter(s => {
+      if (s.status !== 'closed_won') return false;
+      return scopedSales.some(cs => cs.linked_precon_sale_id === s.id);
+    }).length;
+    const totalClosedPrecon = closedPreconSales.length;
+    const notConverted = totalClosedPrecon - convertedToConstruction;
     // Need 3+ closed precon sales for meaningful data; default to 50% otherwise
-    const preconConversionRate = totalClosedPrecon >= 3 ? closedWonPrecon / totalClosedPrecon : 0.5;
+    const preconConversionRate = totalClosedPrecon >= 3 ? convertedToConstruction / totalClosedPrecon : 0.5;
 
     // Filter projects by include_in_forecast (default true)
     const forecastProjects = scopedProjects.filter(p => p.include_in_forecast !== false && p.status !== 'closed');
@@ -440,7 +446,7 @@ export default function Dashboard() {
       monthlyCapacity: currentYearMonthlyCapacity, nextYearMonthlyCapacity,
       activeProjectsValue, preconPipelineValue, preconPipelineValueRaw, totalPipeline, monthsOfBacklog,
       bookedBacklog,
-      preconConversionRate, closedWonPrecon, totalClosedPrecon,
+      preconConversionRate, convertedToConstruction, totalClosedPrecon,
       inHouseLoad: activeInHouseLoad + preconInHouseLoad,
       usingGrowthForecast: !!settings.next_year_revenue_target || !!nextYearCapacity,
       hasManualCapacity,
