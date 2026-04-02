@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,14 +28,8 @@ export default function SurveyPublic() {
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
     queryFn: async () => {
-      const res = await fetch(`/api/functions/publicSurvey`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "get", token }),
-      });
-      if (!res.ok) throw new Error("Failed to load survey");
-      const data = await res.json();
-      return data?.survey || null;
+      const res = await base44.functions.invoke("publicSurvey", { action: "get", token });
+      return res.data?.survey || null;
     },
     enabled: !!token,
     staleTime: 5 * 60 * 1000,
@@ -190,18 +185,14 @@ export default function SurveyPublic() {
     e.preventDefault();
     setSubmitting(true);
 
-    await fetch(`/api/functions/publicSurvey`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "submit",
-        token,
-        invite: inviteToken || "",
-        responseData: {
-          responses: answers,
-          completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
-        },
-      }),
+    await base44.functions.invoke("publicSurvey", {
+      action: "submit",
+      token,
+      invite: inviteToken || "",
+      responseData: {
+        responses: answers,
+        completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
+      },
     });
 
     setSubmitted(true);
