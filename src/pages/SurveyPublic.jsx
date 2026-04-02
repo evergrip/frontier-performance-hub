@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,8 +15,6 @@ import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
 import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 
 export default function SurveyPublic() {
-  const baseUrl = localStorage.getItem('base44_app_base_url') || window.location.origin;
-  const FUNCTION_URL = `${baseUrl}/functions/publicSurvey`;
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
   const inviteToken = urlParams.get("invite");
@@ -29,14 +28,8 @@ export default function SurveyPublic() {
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
     queryFn: async () => {
-      const res = await fetch(FUNCTION_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "get", token }),
-      });
-      if (!res.ok) throw new Error(`Failed to load survey (${res.status})`);
-      const data = await res.json();
-      return data?.survey || null;
+      const res = await base44.functions.invoke('publicSurvey', { action: "get", token });
+      return res.data?.survey || null;
     },
     enabled: !!token,
     staleTime: 5 * 60 * 1000,
@@ -192,18 +185,14 @@ export default function SurveyPublic() {
     e.preventDefault();
     setSubmitting(true);
 
-    await fetch(FUNCTION_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "submit",
-        token,
-        invite: inviteToken || "",
-        responseData: {
-          responses: answers,
-          completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
-        },
-      }),
+    await base44.functions.invoke('publicSurvey', {
+      action: "submit",
+      token,
+      invite: inviteToken || "",
+      responseData: {
+        responses: answers,
+        completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
+      },
     });
 
     setSubmitted(true);
