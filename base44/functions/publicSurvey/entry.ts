@@ -133,8 +133,16 @@ function calculateScores(survey, responses) {
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const { action, token, invite, responseData } = await req.json();
+    // Clone request so we can read body twice if needed, and always create client from request
+    const body = await req.json();
+    const { action, token, invite, responseData } = body;
+
+    // Reconstruct a new Request with the body so createClientFromRequest can read headers
+    const base44 = createClientFromRequest(new Request(req.url, {
+      method: req.method,
+      headers: req.headers,
+      body: JSON.stringify(body),
+    }));
 
     if (action === "get") {
       const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token }, '-created_date', 1);
