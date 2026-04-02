@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { appParams } from "@/lib/app-params";
 
-const FUNCTION_URL = `${appParams.appBaseUrl || ''}/functions/publicSurvey`;
+const FUNCTION_URL = `${appParams.appBaseUrl || window.location.origin}/functions/publicSurvey`;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

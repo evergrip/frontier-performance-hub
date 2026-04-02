@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { appParams } from "@/lib/app-params";
 import SurveyFormDialog from "../components/surveys/SurveyFormDialog";
 import SurveyTemplateLibrary, { SaveAsTemplateDialog } from "../components/surveys/SurveyTemplateLibrary";
 import AIGenerateSurveyDialog from "../components/surveys/AIGenerateSurveyDialog";
@@ -61,7 +62,8 @@ export default function Surveys() {
   const [copiedId, setCopiedId] = useState(null);
 
   const getSurveyLink = (survey) => {
-    return `${window.location.origin}${createPageUrl("SurveyPublic")}?token=${survey.share_token}`;
+    const base = appParams.appBaseUrl || window.location.origin;
+    return `${base}/SurveyPublic?token=${survey.share_token}`;
   };
 
   const copyLink = (survey) => {
