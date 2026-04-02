@@ -157,7 +157,10 @@ Deno.serve(async (req) => {
       }
 
       let user = null;
-      try { user = await base44.auth.me(); } catch (e) {}
+      try {
+        const isAuth = await base44.auth.isAuthenticated();
+        if (isAuth) user = await base44.auth.me();
+      } catch (e) {}
 
       // Calculate scores
       const { totalScore, maxPossibleScore, scorePercentage, categoryScores } = calculateScores(survey, responseData.responses || {});
