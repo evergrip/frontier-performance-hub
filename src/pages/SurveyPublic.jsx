@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { appParams } from "@/lib/app-params";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +14,7 @@ import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
 import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 
 export default function SurveyPublic() {
-  const FUNCTION_URL = `${appParams.appBaseUrl || window.location.origin}/functions/publicSurvey`;
+  const FUNCTION_URL = `${window.location.origin}/functions/publicSurvey`;
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
   const inviteToken = urlParams.get("invite");
