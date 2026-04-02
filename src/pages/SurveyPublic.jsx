@@ -71,55 +71,8 @@ export default function SurveyPublic() {
     });
   };
 
-  // Calculate real-time section scores from current answers
-  const calculateSectionScores = () => {
-    if (!survey) return {};
-    const questions = survey.questions || [];
-    const headings = survey.headings || [];
-    const scores = {};
-    headings.forEach(h => { scores[h.id] = { score: 0, max: 0 }; });
-
-    for (const q of questions) {
-      if (!q.category_id || !scores[q.category_id]) continue;
-      // Skip questions not visible to the respondent
-      if (!evaluateLogic(q)) continue;
-
-      const answer = answers[q.id];
-      const weight = q.weight || 1;
-      let qScore = 0;
-      let qMax = 0;
-
-      if (q.type === 'scale' && q.option_scores && Object.keys(q.option_scores).length > 0) {
-        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
-        qMax = vals.length > 0 ? Math.max(...vals) : (q.max_value || 10);
-        const key = String(answer);
-        if (answer != null && q.option_scores[key] !== undefined) qScore = Number(q.option_scores[key]) || 0;
-      } else if ((q.type === 'radio' || q.type === 'dropdown') && q.option_scores && Object.keys(q.option_scores).length > 0) {
-        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
-        qMax = vals.length > 0 ? Math.max(...vals) : 0;
-        if (answer && q.option_scores[answer] !== undefined) qScore = Number(q.option_scores[answer]) || 0;
-      } else if (q.type === 'checkbox' && q.option_scores && Object.keys(q.option_scores).length > 0) {
-        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
-        qMax = vals.reduce((s, v) => s + Math.max(0, v), 0);
-        if (Array.isArray(answer)) answer.forEach(a => { if (q.option_scores[a] !== undefined) qScore += Number(q.option_scores[a]) || 0; });
-      } else if (q.type === 'rating') {
-        qMax = q.points || 5;
-        qScore = Math.min(Number(answer) || 0, qMax);
-      } else if (q.type === 'scale') {
-        qMax = q.max_value || 10;
-        qScore = Math.min(Number(answer) || 0, qMax);
-      } else if (q.type === 'number') {
-        qMax = q.points || 0;
-        qScore = Math.min(Number(answer) || 0, qMax);
-      }
-
-      scores[q.category_id].score += qScore * weight;
-      scores[q.category_id].max += qMax * weight;
-    }
-    return scores;
-  };
-
-  const sectionScores = calculateSectionScores();
+  // Forward-declare sectionScores — computed after evaluateLogic is defined
+  let sectionScores = {};
 
   // Check if a follow-up question should be visible based on section score rules
   const isFollowupVisible = (question) => {
@@ -180,6 +133,55 @@ export default function SurveyPublic() {
       return rule.logic_type === "show" ? conditionMet : !conditionMet;
     });
   };
+
+  // Calculate real-time section scores (must be after evaluateLogic)
+  const calculateSectionScores = () => {
+    if (!survey) return {};
+    const questions = survey.questions || [];
+    const headings = survey.headings || [];
+    const scores = {};
+    headings.forEach(h => { scores[h.id] = { score: 0, max: 0 }; });
+
+    for (const q of questions) {
+      if (!q.category_id || !scores[q.category_id]) continue;
+      if (!evaluateLogic(q)) continue;
+
+      const answer = answers[q.id];
+      const weight = q.weight || 1;
+      let qScore = 0;
+      let qMax = 0;
+
+      if (q.type === 'scale' && q.option_scores && Object.keys(q.option_scores).length > 0) {
+        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
+        qMax = vals.length > 0 ? Math.max(...vals) : (q.max_value || 10);
+        const key = String(answer);
+        if (answer != null && q.option_scores[key] !== undefined) qScore = Number(q.option_scores[key]) || 0;
+      } else if ((q.type === 'radio' || q.type === 'dropdown') && q.option_scores && Object.keys(q.option_scores).length > 0) {
+        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
+        qMax = vals.length > 0 ? Math.max(...vals) : 0;
+        if (answer && q.option_scores[answer] !== undefined) qScore = Number(q.option_scores[answer]) || 0;
+      } else if (q.type === 'checkbox' && q.option_scores && Object.keys(q.option_scores).length > 0) {
+        const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
+        qMax = vals.reduce((s, v) => s + Math.max(0, v), 0);
+        if (Array.isArray(answer)) answer.forEach(a => { if (q.option_scores[a] !== undefined) qScore += Number(q.option_scores[a]) || 0; });
+      } else if (q.type === 'rating') {
+        qMax = q.points || 5;
+        qScore = Math.min(Number(answer) || 0, qMax);
+      } else if (q.type === 'scale') {
+        qMax = q.max_value || 10;
+        qScore = Math.min(Number(answer) || 0, qMax);
+      } else if (q.type === 'number') {
+        qMax = q.points || 0;
+        qScore = Math.min(Number(answer) || 0, qMax);
+      }
+
+      scores[q.category_id].score += qScore * weight;
+      scores[q.category_id].max += qMax * weight;
+    }
+    return scores;
+  };
+
+  sectionScores = calculateSectionScores();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
