@@ -46,17 +46,13 @@ const AuthenticatedApp = () => {
   const isPublicPage = PUBLIC_PATHS.some(p => location.pathname.startsWith(p));
 
   // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    // For public pages, don't block on auth loading
-    if (isPublicPage && !isLoadingPublicSettings) {
-      // Let it render even while auth is loading
-    } else {
-      return (
-        <div className="fixed inset-0 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-        </div>
-      );
-    }
+  // Public pages skip ALL auth gates — render immediately
+  if (!isPublicPage && (isLoadingPublicSettings || isLoadingAuth)) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   // Handle authentication errors — skip for public pages
