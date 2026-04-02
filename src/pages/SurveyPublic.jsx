@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,14 +28,14 @@ export default function SurveyPublic() {
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
     queryFn: async () => {
-      const res = await fetch(`/functions/publicSurvey`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "get", token }),
-      });
-      if (!res.ok) throw new Error("Failed to load survey");
-      const data = await res.json();
-      return data?.survey || null;
+      try {
+        const res = await base44.functions.invoke("publicSurvey", { action: "get", token });
+        console.log("Survey fetch result:", res.status, res.data);
+        return res.data?.survey || null;
+      } catch (err) {
+        console.error("Survey fetch error:", err.message, err.response?.status, err.response?.data);
+        throw err;
+      }
     },
     enabled: !!token,
     staleTime: 5 * 60 * 1000,
@@ -190,18 +191,14 @@ export default function SurveyPublic() {
     e.preventDefault();
     setSubmitting(true);
 
-    await fetch(`/functions/publicSurvey`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "submit",
-        token,
-        invite: inviteToken || "",
-        responseData: {
-          responses: answers,
-          completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
-        },
-      }),
+    await base44.functions.invoke("publicSurvey", {
+      action: "submit",
+      token,
+      invite: inviteToken || "",
+      responseData: {
+        responses: answers,
+        completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
+      },
     });
 
     setSubmitted(true);
@@ -223,8 +220,9 @@ export default function SurveyPublic() {
 
   if (!survey) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-slate-500">Survey not found or no longer available.</p>
+        <p className="text-xs text-slate-400">Token: {token || '(none)'} | Query: {window.location.search} | Error: {error?.message || '(none)'}</p>
       </div>
     );
   }
