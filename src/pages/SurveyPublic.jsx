@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { appParams } from "@/lib/app-params";
+
+const FUNCTION_URL = `${appParams.appBaseUrl || ''}/functions/publicSurvey`;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +30,7 @@ export default function SurveyPublic() {
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
     queryFn: async () => {
-      const res = await fetch("/functions/publicSurvey", {
+      const res = await fetch(FUNCTION_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "get", token }),
@@ -191,7 +193,7 @@ export default function SurveyPublic() {
     e.preventDefault();
     setSubmitting(true);
 
-    await fetch("/functions/publicSurvey", {
+    await fetch(FUNCTION_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
