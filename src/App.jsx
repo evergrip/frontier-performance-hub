@@ -16,6 +16,7 @@ const CompanyResources = lazy(() => import('./pages/CompanyResources'));
 const ProcessMaps = lazy(() => import('./pages/ProcessMaps'));
 const ProcessMapEditor = lazy(() => import('./pages/ProcessMapEditor'));
 const ProcessMapView = lazy(() => import('./pages/ProcessMapView'));
+const SurveyPublicPage = lazy(() => import('./pages/SurveyPublic'));
 
 
 
@@ -91,6 +92,7 @@ const AuthenticatedApp = () => {
         <Route path="/VarCompAdmin" element={<LayoutWrapper currentPageName="VarCompAdmin"><VarCompAdmin /></LayoutWrapper>} />
         <Route path="/MyProfitShare" element={<LayoutWrapper currentPageName="MyProfitShare"><MyProfitShare /></LayoutWrapper>} />
         <Route path="/FeasibilityBuilder" element={<FeasibilityBuilder />} />
+        <Route path="/SurveyPublic" element={<PageSuspense><SurveyPublicPage /></PageSuspense>} />
         <Route path="/CompanyResources" element={<LayoutWrapper currentPageName="CompanyResources"><CompanyResources /></LayoutWrapper>} />
         <Route path="/ProcessMaps" element={<LayoutWrapper currentPageName="ProcessMaps"><ProcessMaps /></LayoutWrapper>} />
         <Route path="/ProcessMapEditor" element={<LayoutWrapper currentPageName="ProcessMapEditor"><ProcessMapEditor /></LayoutWrapper>} />

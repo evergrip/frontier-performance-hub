@@ -80,7 +80,7 @@ const ScheduleView = lazy(() => import('./pages/ScheduleView'));
 const Scheduler = lazy(() => import('./pages/Scheduler'));
 const Subtrades = lazy(() => import('./pages/Subtrades'));
 const SurveyBuilder = lazy(() => import('./pages/SurveyBuilder'));
-const SurveyPublic = lazy(() => import('./pages/SurveyPublic'));
+// SurveyPublic is handled directly in App.jsx without Layout wrapper
 const SurveyResults = lazy(() => import('./pages/SurveyResults'));
 const Surveys = lazy(() => import('./pages/Surveys'));
 const UsersAdmin = lazy(() => import('./pages/UsersAdmin'));
@@ -119,7 +119,6 @@ export const PAGES = {
     "Scheduler": Scheduler,
     "Subtrades": Subtrades,
     "SurveyBuilder": SurveyBuilder,
-    "SurveyPublic": SurveyPublic,
     "SurveyResults": SurveyResults,
     "Surveys": Surveys,
     "UsersAdmin": UsersAdmin,
