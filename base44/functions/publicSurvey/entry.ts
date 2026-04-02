@@ -158,9 +158,10 @@ Deno.serve(async (req) => {
 
       let user = null;
       try {
-        const isAuth = await base44.auth.isAuthenticated();
-        if (isAuth) user = await base44.auth.me();
-      } catch (e) {}
+        user = await base44.auth.me();
+      } catch (e) {
+        // Not authenticated — that's fine for public surveys
+      }
 
       // Calculate scores
       const { totalScore, maxPossibleScore, scorePercentage, categoryScores } = calculateScores(survey, responseData.responses || {});
