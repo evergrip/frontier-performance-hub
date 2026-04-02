@@ -133,14 +133,17 @@ function calculateScores(survey, responses) {
 
 Deno.serve(async (req) => {
   try {
-    // Clone request so we can read body twice if needed, and always create client from request
     const body = await req.json();
     const { action, token, invite, responseData } = body;
 
-    // Reconstruct a new Request with the body so createClientFromRequest can read headers
+    // Strip auth headers so the SDK doesn't try to validate a stale/missing user token.
+    // This function uses asServiceRole for all operations, so user auth is not needed.
+    const cleanHeaders = new Headers(req.headers);
+    cleanHeaders.delete('Authorization');
+    cleanHeaders.delete('authorization');
     const base44 = createClientFromRequest(new Request(req.url, {
       method: req.method,
-      headers: req.headers,
+      headers: cleanHeaders,
       body: JSON.stringify(body),
     }));
 
