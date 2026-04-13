@@ -58,7 +58,7 @@ export default function SurveyTemplateLibrary({ open, onOpenChange, onCreated })
     },
   });
 
-  const useTemplate = (template) => {
+  const applyTemplate = (template) => {
     createMutation.mutate({
       title: `${template.title} (Copy)`,
       description: template.description,
@@ -178,7 +178,7 @@ Make the questions professional, well-structured, and comprehensive for the stat
                         <p className="text-xs text-slate-500 line-clamp-2 mb-2">{t.template_description}</p>
                       )}
                       <p className="text-xs text-slate-400 mb-3">{t.questions?.length || 0} questions</p>
-                      <Button size="sm" variant="outline" className="w-full" onClick={() => useTemplate(t)} disabled={createMutation.isPending}>
+                      <Button size="sm" variant="outline" className="w-full" onClick={() => applyTemplate(t)} disabled={createMutation.isPending}>
                         <Copy className="w-3.5 h-3.5 mr-1" /> Use Template
                       </Button>
                     </CardContent>

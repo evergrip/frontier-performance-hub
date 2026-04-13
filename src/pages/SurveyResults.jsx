@@ -326,6 +326,17 @@ function ResponseDisplay({ question, answer }) {
     return <p className="text-sm mt-1">{answer.join(", ")}</p>;
   }
 
+  if (question.type === "url" && Array.isArray(answer)) {
+    const urls = answer.filter(Boolean);
+    return (
+      <div className="space-y-0.5 mt-1">
+        {urls.map((u, i) => (
+          <a key={i} href={u} target="_blank" rel="noopener noreferrer" className="block text-sm text-blue-600 underline truncate">{u}</a>
+        ))}
+      </div>
+    );
+  }
+
   return <p className="text-sm mt-1">{String(answer)}</p>;
 }
 

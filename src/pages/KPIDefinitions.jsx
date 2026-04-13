@@ -28,22 +28,11 @@ export default function KPIDefinitions() {
     base44.auth.me().then(setCurrentUser).catch(() => {});
   }, []);
 
-  if (currentUser && !isAdmin && !isManager) {
-    return (
-      <div className="max-w-4xl mx-auto py-12 text-center">
-        <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-slate-900">Access Required</h1>
-        <p className="text-slate-500 mt-2">Only administrators and department managers can manage KPI definitions.</p>
-      </div>
-    );
-  }
-
   const { data: kpis = [], isLoading } = useQuery({
     queryKey: ['kpis'],
     queryFn: async () => {
       const allKPIs = await base44.entities.KPI.list('-created_date');
       if (isAdmin) return allKPIs;
-      // Managers see company + their department KPIs + their own personal
       return allKPIs.filter(kpi => 
         kpi.scope === 'company' ||
         (kpi.scope === 'department' && currentUser?.managed_departments?.includes(kpi.category)) ||
@@ -81,8 +70,17 @@ export default function KPIDefinitions() {
     }
   });
 
+  if (currentUser && !isAdmin && !isManager) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center">
+        <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-slate-900">Access Required</h1>
+        <p className="text-slate-500 mt-2">Only administrators and department managers can manage KPI definitions.</p>
+      </div>
+    );
+  }
+
   const handleSubmit = (submitData) => {
-    // Managers default to department scope
     if (!isAdmin && isManager && !submitData.scope) {
       submitData.scope = 'department';
     }

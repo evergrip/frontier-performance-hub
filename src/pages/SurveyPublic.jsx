@@ -13,6 +13,7 @@ import FileUploadField from "../components/surveys/FileUploadField";
 import RankingInput from "../components/surveys/RankingInput";
 import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
 import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
+import MultiUrlInput from "../components/surveys/MultiUrlInput";
 
 export default function SurveyPublic() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -370,8 +371,10 @@ function QuestionInput({ question, value, onChange, accentColor }) {
     case "text":
     case "email":
     case "phone":
-    case "url":
       return <Input type={question.type === "text" ? "text" : question.type} value={value || ""} onChange={e => onChange(e.target.value)} placeholder={question.placeholder || ""} required={question.required} />;
+
+    case "url":
+      return <MultiUrlInput value={value} onChange={onChange} required={question.required} />;
 
     case "textarea":
       return <Textarea value={value || ""} onChange={e => onChange(e.target.value)} rows={4} required={question.required} />;

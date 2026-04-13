@@ -26,15 +26,6 @@ export default function KPIDashboard() {
 
   React.useEffect(() => { base44.auth.me().then(setUser).catch(() => {}); }, []);
 
-  if (user && user.role !== 'admin') {
-    return (
-      <div className="max-w-4xl mx-auto py-12 text-center">
-        <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-slate-900">Admin Access Required</h1>
-      </div>
-    );
-  }
-
   const { data: kpis = [] } = useQuery({ queryKey: ['active-kpis'], queryFn: () => base44.entities.KPI.filter({ is_active: true }) });
   const { data: allEntries = [] } = useQuery({ queryKey: ['all-kpi-entries'], queryFn: () => base44.entities.KPIEntry.list('-reporting_period_start_date') });
   const { data: allUsers = [] } = useQuery({ queryKey: ['all-users'], queryFn: () => base44.entities.User.list() });
@@ -52,6 +43,15 @@ export default function KPIDashboard() {
       toast.success('Review saved');
     }
   });
+
+  if (user && user.role !== 'admin') {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center">
+        <Target className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-slate-900">Admin Access Required</h1>
+      </div>
+    );
+  }
 
   const handleRecalculate = async () => {
     setRecalculating(true);
