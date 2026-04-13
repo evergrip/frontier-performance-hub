@@ -18,7 +18,11 @@ export default function PrintableResponse({ survey, response, responseNumber }) 
           if (q.type === "ranking") {
             answerText = answer.map((item, i) => `${i + 1}. ${item}`).join("<br/>");
           } else if (q.type === "file_upload") {
-            answerText = `${answer.length} file(s) uploaded`;
+            const imageUrls = answer.filter(u => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(u));
+            const otherCount = answer.length - imageUrls.length;
+            const imgTags = imageUrls.map(u => `<img src="${u}" style="max-width:200px;max-height:150px;border-radius:6px;border:1px solid #e2e8f0;margin:4px 4px 4px 0;" />`).join("");
+            const otherText = otherCount > 0 ? `<div style="font-size:12px;color:#64748b;margin-top:4px;">${otherCount} non-image file(s)</div>` : "";
+            answerText = imgTags ? `<div style="display:flex;flex-wrap:wrap;align-items:flex-start;">${imgTags}</div>${otherText}` : `${answer.length} file(s) uploaded`;
           } else {
             answerText = answer.join(", ");
           }
