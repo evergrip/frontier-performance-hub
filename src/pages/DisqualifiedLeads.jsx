@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import moment from 'moment';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
@@ -74,6 +75,7 @@ export default function DisqualifiedLeads() {
                 <tr className="border-b bg-slate-50">
                   <th className="text-left px-4 py-2.5 font-medium text-slate-600">Lead</th>
                   <th className="text-left px-4 py-2.5 font-medium text-slate-600">Client</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-slate-600">Disqualified</th>
                   <th className="text-left px-4 py-2.5 font-medium text-slate-600">Reason</th>
                   <th className="text-right px-4 py-2.5 font-medium text-slate-600"></th>
                 </tr>
@@ -83,6 +85,12 @@ export default function DisqualifiedLeads() {
                   <tr key={lead.id} className="border-b last:border-0 hover:bg-slate-50">
                     <td className="px-4 py-2.5 font-medium text-slate-900">{lead.title}</td>
                     <td className="px-4 py-2.5 text-slate-500">{getClientName(lead.client_id)}</td>
+                    <td className="px-4 py-2.5 text-slate-500 text-xs whitespace-nowrap">
+                      {(() => {
+                        const dqEntry = [...(lead.status_history || [])].reverse().find(h => h.status === 'disqualified');
+                        return dqEntry?.entered_date ? moment(dqEntry.entered_date).format('MMM D, YYYY') : '—';
+                      })()}
+                    </td>
                     <td className="px-4 py-2.5 text-red-600 text-xs max-w-xs truncate">{lead.disqualification_reason || '—'}</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex gap-1 justify-end">
