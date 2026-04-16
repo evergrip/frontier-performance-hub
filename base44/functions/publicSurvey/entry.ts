@@ -1,7 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 function evaluateVisibility(question, responses, allQuestions) {
-  // Check logic_rules — if any exist, ALL must pass for the question to be visible
   const rules = question.logic_rules;
   if (!rules || rules.length === 0) return true;
 
@@ -49,7 +48,6 @@ function scoreQuestion(q, answer) {
   let questionMax = 0;
 
   if (q.type === 'scale' && q.option_scores && Object.keys(q.option_scores).length > 0) {
-    // Scale with explicit option_scores — use those instead of raw value
     const vals = Object.values(q.option_scores).map(Number).filter(n => !isNaN(n));
     questionMax = vals.length > 0 ? Math.max(...vals) : (q.max_value || 10);
     const key = String(answer);
@@ -104,7 +102,6 @@ function calculateScores(survey, responses) {
     const answer = responses[q.id];
     const weight = q.weight || 1;
 
-    // Skip questions that were not visible to the respondent
     if (!evaluateVisibility(q, responses, questions)) continue;
 
     const { questionScore, questionMax } = scoreQuestion(q, answer);
@@ -131,13 +128,20 @@ function calculateScores(survey, responses) {
   return { totalScore, maxPossibleScore, scorePercentage, categoryScores };
 }
 
+function generateResumeToken() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 Deno.serve(async (req) => {
   try {
     const body = await req.json();
-    const { action, token, invite, responseData } = body;
+    const { action, token, invite, responseData, resumeToken } = body;
 
-    // Strip auth headers so the SDK doesn't try to validate a stale/missing user token.
-    // This function uses asServiceRole for all operations, so user auth is not needed.
     const cleanHeaders = new Headers(req.headers);
     cleanHeaders.delete('Authorization');
     cleanHeaders.delete('authorization');
@@ -157,6 +161,97 @@ Deno.serve(async (req) => {
       return Response.json({ survey: surveyData });
     }
 
+    // Load an in-progress response (for resuming)
+    if (action === "load_progress") {
+      const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token }, '-created_date', 1);
+      const survey = surveys[0] || null;
+      if (!survey) {
+        return Response.json({ error: "Survey not found" }, { status: 404 });
+      }
+
+      let existing = null;
+
+      // Try by resume_token first (anonymous users)
+      if (resumeToken) {
+        const byToken = await base44.asServiceRole.entities.SurveyResponse.filter(
+          { survey_id: survey.id, resume_token: resumeToken, status: 'in_progress' },
+          '-updated_date', 1
+        );
+        existing = byToken[0] || null;
+      }
+
+      // Try by authenticated user
+      if (!existing) {
+        let user = null;
+        try {
+          const origBase44 = createClientFromRequest(req);
+          user = await origBase44.auth.me();
+        } catch (e) { /* not authenticated */ }
+
+        if (user) {
+          const byUser = await base44.asServiceRole.entities.SurveyResponse.filter(
+            { survey_id: survey.id, respondent_user_id: user.id, status: 'in_progress' },
+            '-updated_date', 1
+          );
+          existing = byUser[0] || null;
+        }
+      }
+
+      if (existing) {
+        return Response.json({
+          found: true,
+          response_id: existing.id,
+          responses: existing.responses || {},
+          resume_token: existing.resume_token || '',
+        });
+      }
+
+      return Response.json({ found: false });
+    }
+
+    // Save progress (create or update in-progress response)
+    if (action === "save_progress") {
+      const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token }, '-created_date', 1);
+      const survey = surveys[0] || null;
+      if (!survey) {
+        return Response.json({ error: "Survey not found" }, { status: 404 });
+      }
+
+      let user = null;
+      try {
+        const origBase44 = createClientFromRequest(req);
+        user = await origBase44.auth.me();
+      } catch (e) { /* not authenticated */ }
+
+      const responseId = body.response_id;
+      const responses = responseData?.responses || {};
+
+      if (responseId) {
+        // Update existing in-progress response
+        await base44.asServiceRole.entities.SurveyResponse.update(responseId, {
+          responses,
+          status: 'in_progress',
+          is_complete: false,
+        });
+        return Response.json({ success: true, response_id: responseId });
+      } else {
+        // Create new in-progress response
+        const newResumeToken = generateResumeToken();
+        const created = await base44.asServiceRole.entities.SurveyResponse.create({
+          survey_id: survey.id,
+          respondent_user_id: user?.id || '',
+          respondent_email: user?.email || '',
+          respondent_name: user?.full_name || '',
+          responses,
+          resume_token: newResumeToken,
+          invitation_token: invite || '',
+          status: 'in_progress',
+          is_complete: false,
+        });
+        return Response.json({ success: true, response_id: created.id, resume_token: newResumeToken });
+      }
+    }
+
     if (action === "submit") {
       const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token });
       const survey = surveys[0] || null;
@@ -169,29 +264,46 @@ Deno.serve(async (req) => {
 
       let user = null;
       try {
-        user = await base44.auth.me();
-      } catch (e) {
-        // Not authenticated — that's fine for public surveys
-      }
+        const origBase44 = createClientFromRequest(req);
+        user = await origBase44.auth.me();
+      } catch (e) { /* Not authenticated */ }
 
-      // Calculate scores
       const { totalScore, maxPossibleScore, scorePercentage, categoryScores } = calculateScores(survey, responseData.responses || {});
 
-      await base44.asServiceRole.entities.SurveyResponse.create({
-        survey_id: survey.id,
-        respondent_user_id: user?.id || "",
-        respondent_email: user?.email || "",
-        respondent_name: user?.full_name || "",
-        responses: responseData.responses,
-        total_score: totalScore,
-        max_possible_score: maxPossibleScore,
-        score_percentage: scorePercentage,
-        category_scores: categoryScores,
-        invitation_token: invite || "",
-        submitted_at: new Date().toISOString(),
-        completion_time_seconds: responseData.completion_time_seconds || 0,
-        is_complete: true,
-      });
+      const responseId = body.response_id;
+
+      if (responseId) {
+        // Finalize an existing in-progress response
+        await base44.asServiceRole.entities.SurveyResponse.update(responseId, {
+          responses: responseData.responses,
+          total_score: totalScore,
+          max_possible_score: maxPossibleScore,
+          score_percentage: scorePercentage,
+          category_scores: categoryScores,
+          submitted_at: new Date().toISOString(),
+          completion_time_seconds: responseData.completion_time_seconds || 0,
+          is_complete: true,
+          status: 'submitted',
+        });
+      } else {
+        // Create a new completed response directly
+        await base44.asServiceRole.entities.SurveyResponse.create({
+          survey_id: survey.id,
+          respondent_user_id: user?.id || "",
+          respondent_email: user?.email || "",
+          respondent_name: user?.full_name || "",
+          responses: responseData.responses,
+          total_score: totalScore,
+          max_possible_score: maxPossibleScore,
+          score_percentage: scorePercentage,
+          category_scores: categoryScores,
+          invitation_token: invite || "",
+          submitted_at: new Date().toISOString(),
+          completion_time_seconds: responseData.completion_time_seconds || 0,
+          is_complete: true,
+          status: 'submitted',
+        });
+      }
 
       await base44.asServiceRole.entities.Survey.update(survey.id, {
         total_responses: (survey.total_responses || 0) + 1,
@@ -204,13 +316,11 @@ Deno.serve(async (req) => {
         const questions = survey.questions || [];
         const includedQIds = survey.alert_include_question_ids || [];
 
-        // Helper to resolve a single answer by question ID
         const getAnswer = (qId) => {
           const val = responses[qId];
           return Array.isArray(val) ? val.join(', ') : (val || '(no answer)');
         };
 
-        // Build highlighted answers table HTML
         let answersTableHtml = '';
         if (includedQIds.length > 0) {
           const rows = includedQIds.map(qId => {
@@ -223,18 +333,15 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Replace placeholders in a string
         const resolvePlaceholders = (text) => {
           let result = text;
           result = result.replace(/\{\{survey_title\}\}/g, survey.title || '');
           result = result.replace(/\{\{total_responses\}\}/g, String((survey.total_responses || 0) + 1));
           result = result.replace(/\{\{answers_table\}\}/g, answersTableHtml);
-          // Replace {{answer:QUESTION_ID}} placeholders
           result = result.replace(/\{\{answer:([^}]+)\}\}/g, (_, qId) => getAnswer(qId.trim()));
           return result;
         };
 
-        // Determine subject and body
         const customSubject = survey.alert_subject?.trim();
         const customBody = survey.alert_body?.trim();
 
@@ -244,7 +351,6 @@ Deno.serve(async (req) => {
 
         let emailBody;
         if (customBody) {
-          // Convert newlines to <br> for HTML and resolve placeholders
           emailBody = `
             <div style="font-family:'Work Sans',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;">
               <div style="background:linear-gradient(135deg,#333645,#ea7924);padding:24px 32px;border-radius:12px 12px 0 0;">

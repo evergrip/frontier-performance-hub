@@ -48,11 +48,14 @@ export default function SurveyResults() {
     enabled: !!surveyId,
   });
 
-  const { data: responses = [] } = useQuery({
+  const { data: allResponses = [] } = useQuery({
     queryKey: ["survey-responses", surveyId],
     queryFn: () => base44.entities.SurveyResponse.filter({ survey_id: surveyId }, "-created_date"),
     enabled: !!surveyId,
   });
+
+  // Filter to only show submitted (complete) responses, exclude in-progress drafts
+  const responses = allResponses.filter(r => r.is_complete !== false);
 
   if (!survey) {
     return <div className="max-w-4xl mx-auto text-center text-slate-500 mt-12">Loading...</div>;

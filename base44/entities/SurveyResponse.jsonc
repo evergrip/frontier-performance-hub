@@ -50,6 +50,10 @@
     "invitation_token": {
       "type": "string"
     },
+    "resume_token": {
+      "type": "string",
+      "description": "Token for anonymous users to resume an in-progress survey"
+    },
     "submitted_at": {
       "type": "string",
       "format": "date-time"
@@ -59,7 +63,16 @@
     },
     "is_complete": {
       "type": "boolean",
-      "default": true
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "submitted"
+      ],
+      "default": "in_progress",
+      "description": "Status of the survey response"
     }
   },
   "required": [

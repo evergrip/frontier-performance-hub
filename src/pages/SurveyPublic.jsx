@@ -14,17 +14,27 @@ import RankingInput from "../components/surveys/RankingInput";
 import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
 import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 import MultiUrlInput from "../components/surveys/MultiUrlInput";
+import SurveyProgressBanner from "../components/surveys/SurveyProgressBanner";
+import { toast } from "sonner";
 
 export default function SurveyPublic() {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
   const inviteToken = urlParams.get("invite");
+  const resumeParam = urlParams.get("resume");
 
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
   const [showWelcome, setShowWelcome] = useState(true);
+
+  // Save/resume state
+  const [responseId, setResponseId] = useState(null);
+  const [resumeToken, setResumeToken] = useState(resumeParam || localStorage.getItem(`survey_resume_${token}`) || '');
+  const [saving, setSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [progressLoaded, setProgressLoaded] = useState(false);
 
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
@@ -60,6 +70,75 @@ export default function SurveyPublic() {
 
   const setAnswer = (qId, value) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
+  };
+
+  // Load saved progress on mount
+  useEffect(() => {
+    if (!token || progressLoaded) return;
+    const loadProgress = async () => {
+      const res = await base44.functions.invoke('publicSurvey', {
+        action: 'load_progress',
+        token,
+        resumeToken: resumeToken || undefined,
+      });
+      if (res.data?.found) {
+        setAnswers(res.data.responses || {});
+        setResponseId(res.data.response_id);
+        if (res.data.resume_token) {
+          setResumeToken(res.data.resume_token);
+          localStorage.setItem(`survey_resume_${token}`, res.data.resume_token);
+        }
+        setShowWelcome(false); // skip welcome if resuming
+        setLastSaved('previously');
+      }
+      setProgressLoaded(true);
+    };
+    loadProgress();
+  }, [token]);
+
+  // Auto-save every 60 seconds if answers have changed
+  const answersRef = useRef(answers);
+  const lastAutoSaveRef = useRef(JSON.stringify({}));
+  useEffect(() => { answersRef.current = answers; }, [answers]);
+
+  useEffect(() => {
+    if (!token || !progressLoaded) return;
+    const interval = setInterval(async () => {
+      const currentJson = JSON.stringify(answersRef.current);
+      if (currentJson === lastAutoSaveRef.current) return; // no changes
+      if (Object.keys(answersRef.current).length === 0) return; // nothing to save
+      lastAutoSaveRef.current = currentJson;
+      await saveProgress(true);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [token, progressLoaded, responseId]);
+
+  const saveProgress = async (silent = false) => {
+    if (Object.keys(answers).length === 0 && !silent) {
+      toast.info('No answers to save yet.');
+      return;
+    }
+    setSaving(true);
+    const res = await base44.functions.invoke('publicSurvey', {
+      action: 'save_progress',
+      token,
+      invite: inviteToken || '',
+      response_id: responseId || undefined,
+      responseData: { responses: answers },
+    });
+    if (res.data?.response_id) {
+      setResponseId(res.data.response_id);
+    }
+    if (res.data?.resume_token) {
+      setResumeToken(res.data.resume_token);
+      localStorage.setItem(`survey_resume_${token}`, res.data.resume_token);
+    }
+    setSaving(false);
+    const now = new Date();
+    setLastSaved(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    if (!silent) {
+      toast.success('Progress saved! You can close this page and return later.');
+    }
   };
 
   // Piped text: replace {{q_xxx}} with actual answer values
@@ -192,11 +271,15 @@ export default function SurveyPublic() {
       action: "submit",
       token,
       invite: inviteToken || "",
+      response_id: responseId || undefined,
       responseData: {
         responses: answers,
         completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
       },
     });
+
+    // Clean up local resume token on successful submit
+    localStorage.removeItem(`survey_resume_${token}`);
 
     setSubmitted(true);
     setSubmitting(false);
@@ -307,6 +390,19 @@ export default function SurveyPublic() {
           <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${styling.progress_bar_color || accentColor}20` }}>
             <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progressPct}%`, backgroundColor: styling.progress_bar_color || accentColor }} />
           </div>
+        </div>
+
+        {/* Save progress banner */}
+        <div className="mb-6">
+          <SurveyProgressBanner
+            saving={saving}
+            lastSaved={lastSaved}
+            onSave={() => saveProgress(false)}
+            resumeUrl={resumeToken ? `${window.location.origin}/SurveyPublic?token=${token}&resume=${resumeToken}` : null}
+            buttonColor={buttonColor}
+            buttonTextColor={buttonTextColor}
+            btnRadius={btnRadius}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
