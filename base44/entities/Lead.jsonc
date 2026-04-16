@@ -1,0 +1,104 @@
+{
+  "name": "Lead",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Link to Client entity (SSOT hub)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Lead title/description"
+    },
+    "source": {
+      "type": "string",
+      "description": "How the lead originated (referral, website, cold_call, networking, advertisement, other, or custom)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new_project_lead",
+        "initial_video_consult",
+        "initial_inperson_consultation",
+        "preconstruction_proposal",
+        "followup",
+        "converted",
+        "disqualified"
+      ],
+      "default": "new_project_lead",
+      "description": "Lead pipeline stage"
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "entered_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "History of status transitions with timestamps"
+    },
+    "lead_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 50,
+      "description": "Qualification score (0-100)"
+    },
+    "estimated_precon_value": {
+      "type": "number",
+      "description": "Estimated preconstruction revenue"
+    },
+    "estimated_construction_value": {
+      "type": "number",
+      "description": "Estimated construction revenue"
+    },
+    "converted_to_sale_id": {
+      "type": "string",
+      "description": "Link to Sale if converted (enforces forward flow)"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "User ID of assigned salesperson"
+    },
+    "disqualification_reason": {
+      "type": "string",
+      "description": "Reason the lead was disqualified"
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Files attached to this lead",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "File URL"
+          },
+          "name": {
+            "type": "string",
+            "description": "Original file name"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Lead notes"
+    }
+  },
+  "required": [
+    "client_id",
+    "title"
+  ]
+}
