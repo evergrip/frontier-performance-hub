@@ -17,24 +17,21 @@ export default function LeadAttachments({ lead, onUpdate }) {
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
+    // Reset input immediately so the same file can be re-selected
+    if (inputRef.current) inputRef.current.value = '';
     setUploading(true);
-    try {
-      const uploaded = await Promise.all(
-        files.map(async (file) => {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          return { url: file_url, name: file.name, uploaded_at: new Date().toISOString() };
-        })
-      );
-      const updated = [...attachments, ...uploaded];
-      await base44.entities.Lead.update(lead.id, { attachments: updated });
-      onUpdate();
-      toast.success(`${uploaded.length} file(s) uploaded`);
-    } catch {
-      toast.error('Upload failed');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
+
+    const uploaded = await Promise.all(
+      files.map(async (file) => {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        return { url: result.file_url, name: file.name, uploaded_at: new Date().toISOString() };
+      })
+    );
+    const updated = [...attachments, ...uploaded];
+    await base44.entities.Lead.update(lead.id, { attachments: updated });
+    onUpdate();
+    setUploading(false);
+    toast.success(`${uploaded.length} file(s) uploaded`);
   };
 
   const handleDelete = async (index) => {
