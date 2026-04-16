@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Paperclip, Upload, Trash2, FileText, Image, Loader2, ExternalLink } from 'lucide-react';
@@ -12,12 +12,16 @@ function getFileIcon(name) {
 export default function LeadAttachments({ lead, onUpdate }) {
   const inputRef = useRef();
   const [uploading, setUploading] = useState(false);
-  const attachments = lead?.attachments || [];
+  const [attachments, setAttachments] = useState(lead?.attachments || []);
+
+  // Sync from prop when lead changes (e.g. opening a different lead)
+  useEffect(() => {
+    setAttachments(lead?.attachments || []);
+  }, [lead?.id, lead?.attachments]);
 
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    // Reset input immediately so the same file can be re-selected
     if (inputRef.current) inputRef.current.value = '';
     setUploading(true);
 
@@ -29,6 +33,7 @@ export default function LeadAttachments({ lead, onUpdate }) {
     );
     const updated = [...attachments, ...uploaded];
     await base44.entities.Lead.update(lead.id, { attachments: updated });
+    setAttachments(updated);
     onUpdate();
     setUploading(false);
     toast.success(`${uploaded.length} file(s) uploaded`);
@@ -37,11 +42,13 @@ export default function LeadAttachments({ lead, onUpdate }) {
   const handleDelete = async (index) => {
     const updated = attachments.filter((_, i) => i !== index);
     await base44.entities.Lead.update(lead.id, { attachments: updated });
+    setAttachments(updated);
     onUpdate();
   };
 
   return (
     <div className="space-y-2">
+      <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFiles} />
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
           <Paperclip className="w-3.5 h-3.5" /> Attachments ({attachments.length})
@@ -57,7 +64,6 @@ export default function LeadAttachments({ lead, onUpdate }) {
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-1" />}
           Upload
         </Button>
-        <input ref={inputRef} type="file" multiple className="hidden" onChange={handleFiles} />
       </div>
 
       {attachments.length === 0 && (
