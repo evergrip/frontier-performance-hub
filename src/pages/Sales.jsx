@@ -17,6 +17,7 @@ import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import { createPageUrl } from '../utils';
 import { useNavigate } from 'react-router-dom';
+import { hasPermission } from '@/lib/permissions';
 import AuditItemFixer from '../components/common/AuditItemFixer';
 import EditSaleDialog from '../components/sales/EditSaleDialog';
 import ConstructionForecast from '../components/projects/ConstructionForecast';
@@ -35,6 +36,7 @@ export default function Sales() {
   }, []);
 
   const isAdmin = currentUser?.role === 'admin';
+  const hasFullPreconAccess = isAdmin || hasPermission(currentUser, 'pipeline_precon');
   const [filterSalesperson, setFilterSalesperson] = useState('all');
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [constructionDialogOpen, setConstructionDialogOpen] = useState(false);
@@ -321,9 +323,9 @@ export default function Sales() {
     return client?.company_name || client?.contact_name || 'Unknown Client';
   };
 
-  // Non-admin users only see sales assigned to them; admins can filter
-  const scopedSales = isAdmin ? sales : sales.filter(s => s.assigned_to === currentUser?.id);
-  const filteredSales = isAdmin && filterSalesperson !== 'all'
+  // Users with full precon access see all sales; others only see their own
+  const scopedSales = hasFullPreconAccess ? sales : sales.filter(s => s.assigned_to === currentUser?.id);
+  const filteredSales = hasFullPreconAccess && filterSalesperson !== 'all'
     ? scopedSales.filter(s => s.assigned_to === filterSalesperson)
     : scopedSales;
   const preconstructionSales = filteredSales.filter(s => s.sale_type === 'preconstruction' && !['closed_won', 'closed_lost'].includes(s.status));
@@ -657,7 +659,7 @@ export default function Sales() {
 
   const totalPreconValue = preconstructionSales.reduce((sum, s) => sum + (s.contract_value || 0), 0);
   const totalConstructionValue = preconstructionSales.reduce((sum, s) => sum + (s.estimated_construction_budget || 0), 0);
-  const scopedProjects = isAdmin ? projects : projects.filter(p => {
+  const scopedProjects = hasFullPreconAccess ? projects : projects.filter(p => {
     const sale = sales.find(s => s.id === p.sale_id);
     return sale?.assigned_to === currentUser?.id;
   });
@@ -757,8 +759,8 @@ export default function Sales() {
         <p className="text-lg text-slate-500">Converted leads appear here — track them through feasibility, design, engineering & permits before converting to construction</p>
       </div>
 
-      {/* Salesperson Filter - admin only */}
-      {isAdmin && (
+      {/* Salesperson Filter - users with full precon access */}
+      {hasFullPreconAccess && (
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-slate-600">Filter by Salesperson:</span>
           <Select value={filterSalesperson} onValueChange={setFilterSalesperson}>

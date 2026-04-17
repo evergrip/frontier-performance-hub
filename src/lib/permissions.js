@@ -4,12 +4,39 @@
  * When adding a new section, add it to PERMISSION_SECTIONS below.
  */
 
+// Legacy 'pipeline' key is expanded into granular keys at check time (see hasPermission / hasPageAccess).
+export const LEGACY_EXPANSION = {
+  pipeline: ['pipeline_clients', 'pipeline_leads', 'pipeline_precon', 'pipeline_projects'],
+};
+
 export const PERMISSION_SECTIONS = [
   {
-    key: 'pipeline',
-    label: 'Pipeline',
-    description: 'Clients, Leads, Pre-Construction, Projects',
-    pages: ['Clients', 'Leads', 'Sales', 'Projects'],
+    key: 'pipeline_clients',
+    label: 'Pipeline — Clients',
+    description: 'View and manage clients',
+    pages: ['Clients'],
+    group: 'Pipeline',
+  },
+  {
+    key: 'pipeline_leads',
+    label: 'Pipeline — Leads',
+    description: 'View and manage leads',
+    pages: ['Leads'],
+    group: 'Pipeline',
+  },
+  {
+    key: 'pipeline_precon',
+    label: 'Pipeline — Pre-Construction',
+    description: 'View and manage pre-construction sales & feasibility',
+    pages: ['Sales'],
+    group: 'Pipeline',
+  },
+  {
+    key: 'pipeline_projects',
+    label: 'Pipeline — Projects',
+    description: 'View and manage construction projects',
+    pages: ['Projects'],
+    group: 'Pipeline',
   },
   {
     key: 'operations',
@@ -62,6 +89,21 @@ export const ALWAYS_ACCESSIBLE_PAGES = [
 ];
 
 /**
+ * Expand a user's stored permission keys, resolving any legacy bundle keys.
+ */
+function expandPermissions(userPerms) {
+  const expanded = [];
+  for (const key of userPerms) {
+    if (LEGACY_EXPANSION[key]) {
+      expanded.push(...LEGACY_EXPANSION[key]);
+    } else {
+      expanded.push(key);
+    }
+  }
+  return expanded;
+}
+
+/**
  * Check if a user has access to a specific page.
  * Admins always have full access.
  */
@@ -70,7 +112,7 @@ export function hasPageAccess(user, pageName) {
   if (user.role === 'admin') return true;
   if (ALWAYS_ACCESSIBLE_PAGES.includes(pageName)) return true;
 
-  const userPerms = user.permissions || [];
+  const userPerms = expandPermissions(user.permissions || []);
   return PERMISSION_SECTIONS.some(
     section => userPerms.includes(section.key) && section.pages.includes(pageName)
   );
@@ -83,5 +125,6 @@ export function hasPageAccess(user, pageName) {
 export function hasPermission(user, permissionKey) {
   if (!user) return false;
   if (user.role === 'admin') return true;
-  return (user.permissions || []).includes(permissionKey);
+  const userPerms = expandPermissions(user.permissions || []);
+  return userPerms.includes(permissionKey);
 }

@@ -65,12 +65,11 @@ export default function Layout({ children, currentPageName }) {
     },
     {
       label: 'Pipeline',
-      permission: 'pipeline',
       items: [
-        { name: '1. Clients', icon: Users, page: 'Clients' },
-        { name: '2. Leads', icon: Target, page: 'Leads' },
-        { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales' },
-        { name: '4. Projects', icon: Building2, page: 'Projects' },
+        { name: '1. Clients', icon: Users, page: 'Clients', permission: 'pipeline_clients' },
+        { name: '2. Leads', icon: Target, page: 'Leads', permission: 'pipeline_leads' },
+        { name: '3. Pre-Construction', icon: Briefcase, page: 'Sales', permission: 'pipeline_precon' },
+        { name: '4. Projects', icon: Building2, page: 'Projects', permission: 'pipeline_projects' },
       ]
     },
     {
@@ -222,14 +221,23 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navigationSections.filter(section => !section.permission || hasPermission(user, section.permission)).map((section, sIdx) => (
+            {navigationSections.filter(section => {
+                if (!section.permission) {
+                  // If section has no top-level permission, check if at least one item is accessible
+                  if (section.items?.some(i => i.permission)) {
+                    return section.items.some(i => hasPermission(user, i.permission));
+                  }
+                  return true;
+                }
+                return hasPermission(user, section.permission);
+              }).map((section, sIdx) => (
               <div key={sIdx}>
                 {section.label && (
                   <p className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-3">
                     {section.label}
                   </p>
                 )}
-                {section.items.map((item) => {
+                {section.items.filter(item => !item.permission || hasPermission(user, item.permission)).map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.page);
                   return (
