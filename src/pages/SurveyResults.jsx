@@ -15,6 +15,7 @@ import ResponseScoreCard from "../components/surveys/ResponseScoreCard";
 import IndividualResponseInsight from "../components/surveys/IndividualResponseInsight";
 import GenerateAgendaButton from "../components/surveys/GenerateAgendaButton";
 import PrintableResponse from "../components/surveys/PrintableResponse";
+import InProgressResponses from "../components/surveys/InProgressResponses";
 
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -54,8 +55,9 @@ export default function SurveyResults() {
     enabled: !!surveyId,
   });
 
-  // Filter to only show submitted (complete) responses, exclude in-progress drafts
+  // Split into submitted vs in-progress
   const responses = allResponses.filter(r => r.is_complete !== false);
+  const inProgressResponses = allResponses.filter(r => r.is_complete === false);
 
   if (!survey) {
     return <div className="max-w-4xl mx-auto text-center text-slate-500 mt-12">Loading...</div>;
@@ -190,6 +192,11 @@ export default function SurveyResults() {
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="insights">AI Insights</TabsTrigger>
           <TabsTrigger value="individual">Individual Responses</TabsTrigger>
+          {inProgressResponses.length > 0 && (
+            <TabsTrigger value="in_progress">
+              In Progress ({inProgressResponses.length})
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="insights" className="mt-4">
@@ -275,6 +282,16 @@ export default function SurveyResults() {
             <Card className="p-8 text-center text-slate-500">No responses yet</Card>
           )}
         </TabsContent>
+
+        {inProgressResponses.length > 0 && (
+          <TabsContent value="in_progress" className="mt-4">
+            <InProgressResponses
+              inProgressResponses={inProgressResponses}
+              questions={questions}
+              surveyId={surveyId}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
