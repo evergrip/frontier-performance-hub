@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark, Sparkles } from "lucide-react";
+import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark, Sparkles, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { appParams } from "@/lib/app-params";
@@ -39,6 +39,18 @@ export default function Surveys() {
     queryKey: ["surveys"],
     queryFn: () => base44.entities.Survey.list("-created_date"),
   });
+
+  // Fetch in-progress response counts per survey
+  const { data: inProgressResponses = [] } = useQuery({
+    queryKey: ["survey-in-progress-counts"],
+    queryFn: () => base44.entities.SurveyResponse.filter({ status: "in_progress" }, "-created_date"),
+    staleTime: 60000,
+  });
+
+  const inProgressCountBySurvey = inProgressResponses.reduce((acc, r) => {
+    acc[r.survey_id] = (acc[r.survey_id] || 0) + 1;
+    return acc;
+  }, {});
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Survey.delete(id),
@@ -134,13 +146,21 @@ export default function Surveys() {
                 )}
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+                <div className="flex items-center gap-2 text-xs text-slate-500 mb-3 flex-wrap">
                   <span>{accessLabels[survey.access_type] || "Link Only"}</span>
                   <span>•</span>
                   <span>{survey.questions?.length || 0} questions</span>
                   <span>•</span>
                   <span>{survey.total_responses || 0} responses</span>
                 </div>
+                {(inProgressCountBySurvey[survey.id] || 0) > 0 && (
+                  <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                    <span className="text-xs font-medium text-amber-700">
+                      {inProgressCountBySurvey[survey.id]} incomplete {inProgressCountBySurvey[survey.id] === 1 ? 'response' : 'responses'}
+                    </span>
+                  </div>
+                )}
                 {survey.share_token && (
                   <div className="mb-3">
                     <p className="text-xs font-medium text-slate-500 mb-1">Public Link:</p>
