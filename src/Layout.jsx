@@ -6,7 +6,7 @@ import { hasPermission } from '@/lib/permissions';
 import { useQuery } from '@tanstack/react-query';
 import { 
   LayoutDashboard, Users, Target, Briefcase, Building2, 
-  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map 
+  Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map, Bug 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -103,6 +103,12 @@ export default function Layout({ children, currentPageName }) {
       permission: 'process_maps',
       items: [
         { name: 'Process Maps', icon: Map, page: 'ProcessMaps' },
+      ]
+    },
+    {
+      label: 'Development',
+      items: [
+        { name: 'Dev Log', icon: Bug, page: 'DevelopmentLog' },
       ]
     },
   ];

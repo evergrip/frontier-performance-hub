@@ -1,0 +1,81 @@
+{
+  "name": "DevelopmentLog",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Brief summary of the feature, bug fix, or request"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "feature_added",
+        "bug_repaired",
+        "bug_feature_request"
+      ],
+      "description": "Type of log entry"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed explanation"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new_request",
+        "open",
+        "in_progress",
+        "resolved",
+        "verified",
+        "rejected"
+      ],
+      "default": "new_request",
+      "description": "Lifecycle status"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Priority level"
+    },
+    "reported_by": {
+      "type": "string",
+      "description": "User ID of the reporter"
+    },
+    "reported_by_name": {
+      "type": "string",
+      "description": "Name of the reporter"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "User ID assigned to this item"
+    },
+    "related_area": {
+      "type": "string",
+      "description": "Which area of the app this relates to (e.g. Dashboard, Leads, Surveys)"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Target completion date"
+    },
+    "resolution_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date resolved or verified"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes"
+    }
+  },
+  "required": [
+    "title",
+    "type"
+  ]
+}
