@@ -9,6 +9,7 @@ import {
   Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map, Bug 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import FloatingReportButton from '@/components/devlog/FloatingReportButton';
 
 const PUBLIC_PAGES = ['SurveyPublic'];
 
@@ -411,6 +412,8 @@ export default function Layout({ children, currentPageName }) {
           {children}
         </main>
       </div>
+
+      <FloatingReportButton />
     </div>
   );
 }

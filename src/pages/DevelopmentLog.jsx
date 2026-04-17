@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, FileText, Bug, Lightbulb, Download } from 'lucide-react';
+import { Plus, Search, FileText, Lightbulb, Download, Bug } from 'lucide-react';
 import DevLogTable from '@/components/devlog/DevLogTable';
 import DevLogFormDialog from '@/components/devlog/DevLogFormDialog';
-import ReportBugFeatureDialog from '@/components/devlog/ReportBugFeatureDialog';
+
 
 export default function DevelopmentLog() {
   const queryClient = useQueryClient();
@@ -17,7 +17,7 @@ export default function DevelopmentLog() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
-  const [showReport, setShowReport] = useState(false);
+
   const [editItem, setEditItem] = useState(null);
 
   useEffect(() => {
@@ -76,9 +76,7 @@ export default function DevelopmentLog() {
           <p className="text-sm text-slate-500">Track features, bug fixes, and requests</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => setShowReport(true)}>
-            <Bug className="w-4 h-4 mr-1" /> Report Bug / Request
-          </Button>
+
           {isAdmin && (
             <Button onClick={() => { setEditItem(null); setShowForm(true); }}>
               <Plus className="w-4 h-4 mr-1" /> Add Entry
@@ -153,7 +151,7 @@ export default function DevelopmentLog() {
       </Tabs>
 
       <DevLogFormDialog open={showForm} onOpenChange={setShowForm} editItem={editItem} users={users} />
-      <ReportBugFeatureDialog open={showReport} onOpenChange={setShowReport} user={user} />
+
     </div>
   );
 }
