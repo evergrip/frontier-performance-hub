@@ -76,20 +76,24 @@ export default function SurveyPublic() {
   useEffect(() => {
     if (!token || progressLoaded) return;
     const loadProgress = async () => {
-      const res = await base44.functions.invoke('publicSurvey', {
-        action: 'load_progress',
-        token,
-        resumeToken: resumeToken || undefined,
-      });
-      if (res.data?.found) {
-        setAnswers(res.data.responses || {});
-        setResponseId(res.data.response_id);
-        if (res.data.resume_token) {
-          setResumeToken(res.data.resume_token);
-          localStorage.setItem(`survey_resume_${token}`, res.data.resume_token);
+      try {
+        const res = await base44.functions.invoke('publicSurvey', {
+          action: 'load_progress',
+          token,
+          resumeToken: resumeToken || undefined,
+        });
+        if (res.data?.found) {
+          setAnswers(res.data.responses || {});
+          setResponseId(res.data.response_id);
+          if (res.data.resume_token) {
+            setResumeToken(res.data.resume_token);
+            localStorage.setItem(`survey_resume_${token}`, res.data.resume_token);
+          }
+          setShowWelcome(false); // skip welcome if resuming
+          setLastSaved('previously');
         }
-        setShowWelcome(false); // skip welcome if resuming
-        setLastSaved('previously');
+      } catch (e) {
+        console.warn('Could not load progress:', e.message);
       }
       setProgressLoaded(true);
     };
