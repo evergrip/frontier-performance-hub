@@ -100,22 +100,26 @@ export default function SurveyPublic() {
     loadProgress();
   }, [token]);
 
-  // Auto-save every 60 seconds if answers have changed
-  const answersRef = useRef(answers);
-  const lastAutoSaveRef = useRef(JSON.stringify({}));
-  useEffect(() => { answersRef.current = answers; }, [answers]);
+  // Auto-save after each answer change (debounced 2s)
+  const prevAnswersRef = useRef(JSON.stringify({}));
+  const autoSaveTimerRef = useRef(null);
 
   useEffect(() => {
     if (!token || !progressLoaded) return;
-    const interval = setInterval(async () => {
-      const currentJson = JSON.stringify(answersRef.current);
-      if (currentJson === lastAutoSaveRef.current) return; // no changes
-      if (Object.keys(answersRef.current).length === 0) return; // nothing to save
-      lastAutoSaveRef.current = currentJson;
-      await saveProgress(true);
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [token, progressLoaded, responseId]);
+    const currentJson = JSON.stringify(answers);
+    if (currentJson === prevAnswersRef.current) return;
+    if (Object.keys(answers).length === 0) return;
+    prevAnswersRef.current = currentJson;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      saveProgress(true);
+    }, 2000);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [answers, token, progressLoaded]);
 
   const saveProgress = async (silent = false) => {
     if (Object.keys(answers).length === 0 && !silent) {
