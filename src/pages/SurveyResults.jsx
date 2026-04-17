@@ -289,6 +289,7 @@ export default function SurveyResults() {
               inProgressResponses={inProgressResponses}
               questions={questions}
               surveyId={surveyId}
+              shareToken={survey.share_token}
             />
           </TabsContent>
         )}

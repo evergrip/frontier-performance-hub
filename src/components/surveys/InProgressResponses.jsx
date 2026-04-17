@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, ChevronDown, ChevronRight, Clock, AlertCircle } from "lucide-react";
+import { Trash2, ChevronDown, ChevronRight, Clock, AlertCircle, ExternalLink } from "lucide-react";
 import moment from "moment";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-export default function InProgressResponses({ inProgressResponses, questions, surveyId }) {
+export default function InProgressResponses({ inProgressResponses, questions, surveyId, shareToken }) {
   const [expandedIds, setExpandedIds] = useState(new Set());
   const queryClient = useQueryClient();
 
@@ -69,6 +69,18 @@ export default function InProgressResponses({ inProgressResponses, questions, su
                 <span className="text-xs text-slate-400 hidden sm:inline flex items-center gap-1">
                   <Clock className="w-3 h-3 inline" /> {moment(lastUpdated).fromNow()}
                 </span>
+                {shareToken && (
+                  <a
+                    href={`${window.location.origin}/SurveyPublic?token=${shareToken}&response_id=${r.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                      <ExternalLink className="w-3 h-3" />
+                      Continue / Edit
+                    </Button>
+                  </a>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"

@@ -171,8 +171,18 @@ Deno.serve(async (req) => {
 
       let existing = null;
 
-      // Try by resume_token first (anonymous users)
-      if (resumeToken) {
+      // Try by explicit response_id first (staff editing on behalf)
+      const responseId = body.response_id;
+      if (responseId) {
+        const byId = await base44.asServiceRole.entities.SurveyResponse.filter(
+          { id: responseId, survey_id: survey.id, status: 'in_progress' },
+          '-updated_date', 1
+        );
+        existing = byId[0] || null;
+      }
+
+      // Try by resume_token (anonymous users)
+      if (!existing && resumeToken) {
         const byToken = await base44.asServiceRole.entities.SurveyResponse.filter(
           { survey_id: survey.id, resume_token: resumeToken, status: 'in_progress' },
           '-updated_date', 1

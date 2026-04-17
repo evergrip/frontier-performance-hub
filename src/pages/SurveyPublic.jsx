@@ -22,6 +22,7 @@ export default function SurveyPublic() {
   const token = urlParams.get("token");
   const inviteToken = urlParams.get("invite");
   const resumeParam = urlParams.get("resume");
+  const responseIdParam = urlParams.get("response_id");
 
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -30,7 +31,7 @@ export default function SurveyPublic() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   // Save/resume state
-  const [responseId, setResponseId] = useState(null);
+  const [responseId, setResponseId] = useState(responseIdParam || null);
   const [resumeToken, setResumeToken] = useState(resumeParam || localStorage.getItem(`survey_resume_${token}`) || '');
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -80,6 +81,7 @@ export default function SurveyPublic() {
         const res = await base44.functions.invoke('publicSurvey', {
           action: 'load_progress',
           token,
+          response_id: responseIdParam || undefined,
           resumeToken: resumeToken || undefined,
         });
         if (res.data?.found) {
