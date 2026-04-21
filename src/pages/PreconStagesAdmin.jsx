@@ -4,8 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Plus, Pencil, Archive, RotateCcw } from 'lucide-react';
+import { GripVertical, Plus, Pencil, Archive, RotateCcw, BarChart3, ShieldCheck, Calendar } from 'lucide-react';
 import PreconStageFormDialog from '@/components/precon/PreconStageFormDialog';
+import CONFIGS from '@/components/precon/deliverableFormConfigs';
 
 export default function PreconStagesAdmin() {
   const queryClient = useQueryClient();
@@ -73,6 +74,62 @@ export default function PreconStagesAdmin() {
         </div>
       </div>
 
+      {/* Overview stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-slate-800 to-slate-700">
+          <CardContent className="p-4 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{activeStages.length}</p>
+                <p className="text-xs text-slate-300">Active Stages</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{activeStages.filter(s => CONFIGS[s.stage_order]).length}</p>
+                <p className="text-xs text-slate-500">With Form Configs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{activeStages.filter(s => s.due_date_logic).length}</p>
+                <p className="text-xs text-slate-500">With Due Date Logic</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                <Archive className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{activeStages.filter(s => s.approval_gate).length}</p>
+                <p className="text-xs text-slate-500">Approval Gates</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Active stages table */}
       <Card>
         <CardContent className="p-0">
@@ -87,6 +144,8 @@ export default function PreconStagesAdmin() {
                   <th className="p-3 text-left text-xs font-semibold text-slate-500">Main Deliverable</th>
                   <th className="p-3 text-left text-xs font-semibold text-slate-500">Gate</th>
                   <th className="p-3 text-left text-xs font-semibold text-slate-500">R / A / C / I</th>
+                  <th className="p-3 text-left text-xs font-semibold text-slate-500">Form</th>
+                  <th className="p-3 text-left text-xs font-semibold text-slate-500">Due Logic</th>
                   <th className="w-20 p-3"></th>
                 </tr>
               </thead>
@@ -124,6 +183,24 @@ export default function PreconStagesAdmin() {
                                 <span>{stage.raci_consulted || '-'}</span>
                                 {' / '}
                                 <span>{stage.raci_informed || '-'}</span>
+                              </td>
+                              <td className="p-3">
+                                {CONFIGS[stage.stage_order] ? (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                                    {CONFIGS[stage.stage_order].fields.length} fields
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400">—</span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                {stage.due_date_logic ? (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium truncate max-w-[100px] inline-block">
+                                    {stage.due_date_logic}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400">—</span>
+                                )}
                               </td>
                               <td className="p-3">
                                 <div className="flex gap-1">
