@@ -56,6 +56,29 @@
     "notes": {
       "type": "string",
       "description": "Internal notes"
+    },
+    "form_data": {
+      "type": "object",
+      "description": "Structured deliverable form data (key-value pairs specific to each stage)"
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Files attached to this stage deliverable",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
     }
   },
   "required": [

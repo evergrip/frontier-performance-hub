@@ -95,7 +95,7 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setActiveTab('details'); }}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className={`${activeTab === 'precon' ? 'max-w-3xl' : 'max-w-lg'} max-h-[85vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>

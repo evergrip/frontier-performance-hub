@@ -4,8 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, Circle, Clock, AlertTriangle, ChevronDown, ChevronRight, SkipForward } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, AlertTriangle, ChevronDown, ChevronRight, SkipForward, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import DeliverableForm from './DeliverableForm';
 
 function parseValidationRules(rulesText) {
   if (!rulesText) return [];
@@ -33,6 +34,7 @@ function checkValidation(progress, rules) {
 export default function PreconProcessTab({ leadId }) {
   const queryClient = useQueryClient();
   const [expandedStage, setExpandedStage] = useState(null);
+  const [showForm, setShowForm] = useState(null); // stage id showing deliverable form
 
   const { data: stages = [] } = useQuery({
     queryKey: ['precon-stages'],
@@ -44,6 +46,29 @@ export default function PreconProcessTab({ leadId }) {
     queryFn: () => base44.entities.PreconProgress.filter({ lead_id: leadId }),
     enabled: !!leadId,
   });
+
+  // Fetch lead + client + sale for auto-population
+  const { data: allLeads = [] } = useQuery({
+    queryKey: ['leads'],
+    queryFn: () => base44.entities.Lead.list('-created_date', 500),
+    staleTime: 60000,
+  });
+  const leadData = allLeads.find(l => l.id === leadId) || null;
+
+  const { data: allClients = [] } = useQuery({
+    queryKey: ['clients'],
+    queryFn: () => base44.entities.Client.list('-created_date', 500),
+    staleTime: 60000,
+  });
+  const clientData = leadData?.client_id ? allClients.find(c => c.id === leadData.client_id) || null : null;
+
+  const { data: allSales = [] } = useQuery({
+    queryKey: ['sales'],
+    queryFn: () => base44.entities.Sale.list('-created_date', 500),
+    staleTime: 60000,
+    enabled: !!leadData?.converted_to_sale_id,
+  });
+  const saleData = leadData?.converted_to_sale_id ? allSales.find(s => s.id === leadData.converted_to_sale_id) || null : null;
 
   const activeStages = stages.filter(s => s.is_active !== false).sort((a, b) => a.stage_order - b.stage_order);
   const progressMap = {};
@@ -122,12 +147,13 @@ export default function PreconProcessTab({ leadId }) {
 
       {/* Stage list */}
       <div className="space-y-1">
-        {activeStages.map((stage, idx) => {
+        {activeStages.map((stage) => {
           const prog = progressMap[stage.id];
           const status = prog?.status || 'not_started';
           const isExpanded = expandedStage === stage.id;
           const rules = parseValidationRules(stage.validation_rules);
           const failures = checkValidation(prog, rules);
+          const isFormOpen = showForm === stage.id;
 
           return (
             <div key={stage.id} className={`border rounded-lg transition-colors ${
@@ -225,6 +251,33 @@ export default function PreconProcessTab({ leadId }) {
                         </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Deliverable Form toggle */}
+                  {status !== 'skipped' && (
+                    <div className="border-t border-slate-100 pt-2">
+                      <Button
+                        type="button" variant="outline" size="sm" className="text-xs w-full"
+                        onClick={() => setShowForm(isFormOpen ? null : stage.id)}
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        {isFormOpen ? 'Hide Deliverable Form' : 'Open Deliverable Form'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Embedded deliverable form */}
+                  {isFormOpen && status !== 'skipped' && (
+                    <DeliverableForm
+                      stage={stage}
+                      progress={prog}
+                      leadId={leadId}
+                      allProgress={progress}
+                      stages={stages}
+                      leadData={leadData}
+                      clientData={clientData}
+                      saleData={saleData}
+                    />
                   )}
 
                   {/* Actions */}
