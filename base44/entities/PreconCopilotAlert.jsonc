@@ -1,0 +1,66 @@
+{
+  "name": "PreconCopilotAlert",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "description": "Link to Lead entity"
+    },
+    "lead_title": {
+      "type": "string",
+      "description": "Snapshot of lead title"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Client name"
+    },
+    "stage_order": {
+      "type": "number",
+      "description": "Stage number"
+    },
+    "stage_name": {
+      "type": "string",
+      "description": "Stage name"
+    },
+    "alert_type": {
+      "type": "string",
+      "enum": [
+        "overdue",
+        "missing_fields",
+        "missing_approval",
+        "budget_drift",
+        "risk",
+        "suggestion"
+      ],
+      "description": "Type of alert"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "low",
+      "description": "Alert severity"
+    },
+    "message": {
+      "type": "string",
+      "description": "Alert message"
+    },
+    "suggestion": {
+      "type": "string",
+      "description": "Suggested action"
+    },
+    "is_dismissed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the user has dismissed this alert"
+    }
+  },
+  "required": [
+    "lead_id",
+    "alert_type",
+    "message"
+  ]
+}

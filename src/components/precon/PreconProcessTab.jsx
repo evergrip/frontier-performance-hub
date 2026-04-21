@@ -4,17 +4,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, Clock, AlertTriangle, ChevronDown, ChevronRight, SkipForward, FileText, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, ChevronDown, ChevronRight, SkipForward, FileText, ShieldAlert, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import DeliverableForm from './DeliverableForm';
 import PreconVisualTimeline from './PreconVisualTimeline';
 import PreconHandoffPackage from './PreconHandoffPackage';
 import { fullGuardrailCheck, extractFinancialSummary } from './preconGuardrails';
+import StageAssistantChat from './StageAssistantChat';
+import CopilotAlertsBanner from './CopilotAlertsBanner';
 
 export default function PreconProcessTab({ leadId }) {
   const queryClient = useQueryClient();
   const [expandedStage, setExpandedStage] = useState(null);
   const [showForm, setShowForm] = useState(null);
+  const [showChat, setShowChat] = useState(null);
   const [viewMode, setViewMode] = useState('timeline'); // 'timeline' | 'detail'
 
   const { data: stages = [] } = useQuery({
@@ -150,6 +153,9 @@ export default function PreconProcessTab({ leadId }) {
         </div>
       </div>
 
+      {/* Co-Pilot Alerts */}
+      <CopilotAlertsBanner leadId={leadId} />
+
       {/* Visual Timeline View */}
       {viewMode === 'timeline' && (
         <PreconVisualTimeline
@@ -170,6 +176,7 @@ export default function PreconProcessTab({ leadId }) {
             const isExpanded = expandedStage === stage.id;
             const { canComplete, failures } = fullGuardrailCheck(stage, prog);
             const isFormOpen = showForm === stage.id;
+            const isChatOpen = showChat === stage.id;
 
             return (
               <div key={stage.id} className={`border rounded-lg transition-colors ${
@@ -275,15 +282,23 @@ export default function PreconProcessTab({ leadId }) {
                       </div>
                     )}
 
-                    {/* Deliverable Form toggle */}
+                    {/* Deliverable Form + Co-Pilot toggle */}
                     {status !== 'skipped' && (
-                      <div className="border-t border-slate-100 pt-2">
+                      <div className="border-t border-slate-100 pt-2 flex gap-2">
                         <Button
-                          type="button" variant="outline" size="sm" className="text-xs w-full"
+                          type="button" variant="outline" size="sm" className="text-xs flex-1"
                           onClick={() => setShowForm(isFormOpen ? null : stage.id)}
                         >
                           <FileText className="w-3 h-3 mr-1" />
-                          {isFormOpen ? 'Hide Deliverable Form' : 'Open Deliverable Form'}
+                          {isFormOpen ? 'Hide Form' : 'Open Form'}
+                        </Button>
+                        <Button
+                          type="button" variant={isChatOpen ? 'default' : 'outline'} size="sm"
+                          className={`text-xs flex-1 ${isChatOpen ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
+                          onClick={() => setShowChat(isChatOpen ? null : stage.id)}
+                        >
+                          <Bot className="w-3 h-3 mr-1" />
+                          {isChatOpen ? 'Hide Co-Pilot' : 'Co-Pilot'}
                         </Button>
                       </div>
                     )}
@@ -298,6 +313,19 @@ export default function PreconProcessTab({ leadId }) {
                         leadData={leadData}
                         clientData={clientData}
                         saleData={saleData}
+                      />
+                    )}
+
+                    {/* Co-Pilot Chat */}
+                    {isChatOpen && status !== 'skipped' && (
+                      <StageAssistantChat
+                        stage={stage}
+                        progress={prog}
+                        leadData={leadData}
+                        clientData={clientData}
+                        saleData={saleData}
+                        allProgress={progress}
+                        stages={stages}
                       />
                     )}
 
