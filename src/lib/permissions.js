@@ -78,14 +78,14 @@ export const PERMISSION_SECTIONS = [
     key: 'precon_process',
     label: 'Precon Process',
     description: 'View and manage the pre-construction process tracker on leads',
-    pages: ['PreconStagesAdmin', 'PreconAnalytics'],
+    pages: ['PreconStagesAdmin'],
     group: null,
   },
   {
     key: 'company_admin',
     label: 'Company Admin',
     description: 'Company settings, Data Quality, Import, Subtrades, KPI Definitions, Users',
-    pages: ['CompanyAdmin', 'DataQuality', 'ImportHistoricalData', 'Subtrades', 'KPIDefinitions', 'CompanySettings', 'PreconStagesAdmin', 'PreconAnalytics'],
+    pages: ['CompanyAdmin', 'DataQuality', 'ImportHistoricalData', 'Subtrades', 'KPIDefinitions', 'CompanySettings', 'PreconStagesAdmin'],
   },
 ];
 

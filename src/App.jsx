@@ -19,7 +19,6 @@ const ProcessMapView = lazy(() => import('./pages/ProcessMapView'));
 const SurveyPublicPage = lazy(() => import('./pages/SurveyPublic'));
 const DevelopmentLogPage = lazy(() => import('./pages/DevelopmentLog'));
 const PreconStagesAdminPage = lazy(() => import('./pages/PreconStagesAdmin'));
-const PreconAnalyticsPage = lazy(() => import('./pages/PreconAnalytics'));
 
 
 
@@ -98,7 +97,6 @@ const AuthenticatedApp = () => {
         <Route path="/ProcessMapView" element={<LayoutWrapper currentPageName="ProcessMapView"><ProcessMapView /></LayoutWrapper>} />
         <Route path="/DevelopmentLog" element={<LayoutWrapper currentPageName="DevelopmentLog"><DevelopmentLogPage /></LayoutWrapper>} />
         <Route path="/PreconStagesAdmin" element={<LayoutWrapper currentPageName="PreconStagesAdmin"><PreconStagesAdminPage /></LayoutWrapper>} />
-        <Route path="/PreconAnalytics" element={<LayoutWrapper currentPageName="PreconAnalytics"><PreconAnalyticsPage /></LayoutWrapper>} />
 
         <Route path="*" element={<PageNotFound />} />
       </Routes>

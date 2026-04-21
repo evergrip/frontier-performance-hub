@@ -12,7 +12,6 @@ import PreconHandoffPackage from './PreconHandoffPackage';
 import { fullGuardrailCheck, extractFinancialSummary } from './preconGuardrails';
 import StageAssistantChat from './StageAssistantChat';
 import CopilotAlertsBanner from './CopilotAlertsBanner';
-import BuildertrendAnalyzer from './BuildertrendAnalyzer';
 
 export default function PreconProcessTab({ leadId }) {
   const queryClient = useQueryClient();
@@ -281,16 +280,6 @@ export default function PreconProcessTab({ leadId }) {
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {/* Buildertrend Analyzer */}
-                    {status !== 'skipped' && (
-                      <BuildertrendAnalyzer
-                        stage={stage}
-                        leadId={leadId}
-                        leadData={leadData}
-                        progress={prog}
-                      />
                     )}
 
                     {/* Deliverable Form + Co-Pilot toggle */}

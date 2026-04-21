@@ -6,7 +6,7 @@ import { hasPermission } from '@/lib/permissions';
 import { useQuery } from '@tanstack/react-query';
 import { 
 LayoutDashboard, Users, Target, Briefcase, Building2, 
-Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map, Bug, ListChecks, BarChart3 
+Settings, Menu, X, ChevronRight, LogOut, DollarSign, CalendarDays, Upload, Flag, Wrench, MessageSquare, Megaphone, ClipboardList, Wallet, Bell, PieChart, FileText, FolderOpen, Map, Bug, ListChecks 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FloatingReportButton from '@/components/devlog/FloatingReportButton';
@@ -138,7 +138,6 @@ export default function Layout({ children, currentPageName }) {
     ] : []),
     ...(hasPermission(user, 'company_admin') || hasPermission(user, 'precon_process') ? [
     { name: 'Precon Stages', icon: ListChecks, page: 'PreconStagesAdmin' },
-    { name: 'Precon Analytics', icon: BarChart3, page: 'PreconAnalytics' },
     ] : []),
   ];
 
