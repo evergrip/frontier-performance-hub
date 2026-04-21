@@ -25,7 +25,6 @@ import PreconAllocationDialog from '../components/projects/PreconAllocationDialo
 import ProjectAllocationDialog from '../components/projects/ProjectAllocationDialog';
 import FeasibilityStudiesTab from '../components/feasibility/FeasibilityStudiesTab';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
-import PreconProcessTab from '../components/precon/PreconProcessTab';
 
 export default function Sales() {
   const queryClient = useQueryClient();
@@ -59,7 +58,6 @@ export default function Sales() {
   const [editTargetDate, setEditTargetDate] = useState('');
   const [editSaleDialogOpen, setEditSaleDialogOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
-  const [detailTab, setDetailTab] = useState('details');
   const [preconAllocDialogOpen, setPreconAllocDialogOpen] = useState(false);
   const [allocatingSale, setAllocatingSale] = useState(null);
   const [projectAllocDialogOpen, setProjectAllocDialogOpen] = useState(false);
@@ -688,7 +686,6 @@ export default function Sales() {
   const openDetailDialog = (sale) => {
     setSelectedSale(sale);
     setEditTargetDate(sale.target_precon_completion_date || '');
-    setDetailTab('details');
     setDetailDialogOpen(true);
   };
 
@@ -1712,7 +1709,7 @@ export default function Sales() {
 
       {/* Detail Dialog - Phase Timeline & Actions */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className={`${detailTab === 'precon' ? 'max-w-3xl' : 'max-w-2xl'} max-h-[85vh] overflow-y-auto`}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedSale?.title}</DialogTitle>
           </DialogHeader>
@@ -1720,28 +1717,6 @@ export default function Sales() {
             const nextStatus = getNextStatus(selectedSale.status);
             return (
             <div className="space-y-4">
-              {/* Tabs: Details vs Precon Process */}
-              {selectedSale.lead_id && (
-                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
-                  <button
-                    className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${detailTab === 'details' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                    onClick={() => setDetailTab('details')}
-                  >
-                    Details
-                  </button>
-                  <button
-                    className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${detailTab === 'precon' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-                    onClick={() => setDetailTab('precon')}
-                  >
-                    Precon Process
-                  </button>
-                </div>
-              )}
-
-              {detailTab === 'precon' && selectedSale.lead_id ? (
-                <PreconProcessTab leadId={selectedSale.lead_id} />
-              ) : (
-              <>
               <div className="p-3 bg-slate-50 rounded-lg">
                 <p className="text-xs text-slate-500">{getClientName(selectedSale.client_id)}</p>
                 <div className="grid grid-cols-3 gap-4 mt-2">
@@ -1854,8 +1829,6 @@ export default function Sales() {
                   Close
                 </Button>
               </div>
-              </>
-              )}
             </div>
             );
           })()}

@@ -14,16 +14,10 @@ import LeadSourcePicker from '../common/LeadSourcePicker';
 import EditLogViewer from '../common/EditLogViewer';
 import { computeChanges, logEdit } from '../common/editLogUtils';
 import LeadAttachments from './LeadAttachments';
-import { hasPermission } from '@/lib/permissions';
 
 export default function EditLeadDialog({ open, onOpenChange, lead, clients, users, onAdvance, onConvert, onDisqualify, onDelete, onViewTimeline }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({});
-  const [currentUser, setCurrentUser] = useState(null);
-
-  React.useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (lead) {
@@ -95,7 +89,6 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Title *</Label>
