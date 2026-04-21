@@ -14,13 +14,11 @@ import LeadSourcePicker from '../common/LeadSourcePicker';
 import EditLogViewer from '../common/EditLogViewer';
 import { computeChanges, logEdit } from '../common/editLogUtils';
 import LeadAttachments from './LeadAttachments';
-import PreconProcessTab from '../precon/PreconProcessTab';
 import { hasPermission } from '@/lib/permissions';
 
 export default function EditLeadDialog({ open, onOpenChange, lead, clients, users, onAdvance, onConvert, onDisqualify, onDelete, onViewTimeline }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({});
-  const [activeTab, setActiveTab] = useState('details');
   const [currentUser, setCurrentUser] = useState(null);
 
   React.useEffect(() => {
@@ -89,39 +87,15 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
-  const showPreconTab = hasPermission(currentUser, 'precon_process') || hasPermission(currentUser, 'pipeline_precon');
-
   if (!lead) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setActiveTab('details'); }}>
-      <DialogContent className={`${activeTab === 'precon' ? 'max-w-3xl' : 'max-w-lg'} max-h-[85vh] overflow-y-auto`}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Lead</DialogTitle>
         </DialogHeader>
 
-        {/* Tabs */}
-        {showPreconTab && (
-          <div className="flex gap-1 p-1 bg-slate-100 rounded-lg mb-2">
-            <button
-              className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${activeTab === 'details' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setActiveTab('details')}
-            >
-              Details
-            </button>
-            <button
-              className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${activeTab === 'precon' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
-              onClick={() => setActiveTab('precon')}
-            >
-              Precon Process
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'precon' && showPreconTab ? (
-          <PreconProcessTab leadId={lead.id} />
-        ) : (
-        <>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Title *</Label>
@@ -253,8 +227,6 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
             )}
           </div>
         </div>
-        </>
-        )}
       </DialogContent>
     </Dialog>
   );
