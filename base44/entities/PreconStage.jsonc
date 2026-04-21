@@ -1,0 +1,67 @@
+{
+  "name": "PreconStage",
+  "type": "object",
+  "properties": {
+    "stage_order": {
+      "type": "number",
+      "description": "Numeric sort order (1-based)"
+    },
+    "stage_name": {
+      "type": "string",
+      "description": "Name of the preconstruction stage"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Purpose of this stage"
+    },
+    "main_deliverable": {
+      "type": "string",
+      "description": "Primary deliverable for this stage"
+    },
+    "approval_gate": {
+      "type": "string",
+      "description": "Approval/Gate type (e.g. DG, IA, CS, AR)"
+    },
+    "raci_responsible": {
+      "type": "string",
+      "description": "RACI \u2014 Responsible role(s)"
+    },
+    "raci_accountable": {
+      "type": "string",
+      "description": "RACI \u2014 Accountable role"
+    },
+    "raci_consulted": {
+      "type": "string",
+      "description": "RACI \u2014 Consulted roles"
+    },
+    "raci_informed": {
+      "type": "string",
+      "description": "RACI \u2014 Informed roles"
+    },
+    "required_tools_templates": {
+      "type": "string",
+      "description": "Required tools, templates, or links"
+    },
+    "ai_prompt_template": {
+      "type": "string",
+      "description": "AI prompt template for this stage"
+    },
+    "validation_rules": {
+      "type": "string",
+      "description": "Rules that must be satisfied to complete this stage"
+    },
+    "due_date_logic": {
+      "type": "string",
+      "description": "Logic for calculating due date relative to project start or previous stage"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this stage is active or archived"
+    }
+  },
+  "required": [
+    "stage_order",
+    "stage_name"
+  ]
+}

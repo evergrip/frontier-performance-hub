@@ -20,7 +20,6 @@ import EditLeadDialog from '../components/leads/EditLeadDialog';
 import { createPageUrl } from '../utils';
 
 export default function Leads() {
-  // Force rebuild
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [disqualifyDialogOpen, setDisqualifyDialogOpen] = useState(false);
   const [timelineDialogOpen, setTimelineDialogOpen] = useState(false);

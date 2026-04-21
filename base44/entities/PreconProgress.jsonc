@@ -1,0 +1,65 @@
+{
+  "name": "PreconProgress",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "description": "Link to the Lead entity"
+    },
+    "stage_id": {
+      "type": "string",
+      "description": "Link to the PreconStage entity"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "complete",
+        "skipped"
+      ],
+      "default": "not_started",
+      "description": "Status of this stage for this lead"
+    },
+    "completed_by": {
+      "type": "string",
+      "description": "User ID who marked this complete"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this stage was completed"
+    },
+    "deliverable_notes": {
+      "type": "string",
+      "description": "Notes on the deliverable / evidence"
+    },
+    "deliverable_url": {
+      "type": "string",
+      "description": "URL to the deliverable file"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        ""
+      ],
+      "default": "",
+      "description": "Gate approval status if applicable"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "User ID who approved the gate"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes"
+    }
+  },
+  "required": [
+    "lead_id",
+    "stage_id"
+  ]
+}
