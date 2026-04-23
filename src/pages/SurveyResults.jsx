@@ -16,6 +16,7 @@ import IndividualResponseInsight from "../components/surveys/IndividualResponseI
 import GenerateAgendaButton from "../components/surveys/GenerateAgendaButton";
 import PrintableResponse from "../components/surveys/PrintableResponse";
 import InProgressResponses from "../components/surveys/InProgressResponses";
+import ImageLightbox from "../components/surveys/ImageLightbox";
 
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -299,16 +300,19 @@ export default function SurveyResults() {
 }
 
 function ResponseDisplay({ question, answer }) {
+  const [lightboxIndex, setLightboxIndex] = React.useState(null);
+
   if (answer === undefined || answer === null || answer === "") {
     return <p className="text-sm text-slate-400 italic">No answer</p>;
   }
 
   if (question.type === "file_upload" && Array.isArray(answer)) {
+    const imageUrls = answer.filter(url => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(url));
     return (
       <div className="flex gap-2 flex-wrap mt-1">
         {answer.map((url, i) => {
           if (/\.(jpg|jpeg|png|gif|webp|svg)/i.test(url)) {
-            return <img key={i} src={url} alt="" className="h-16 rounded border" />;
+            return <img key={i} src={url} alt="" className="h-16 rounded border cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setLightboxIndex(imageUrls.indexOf(url))} />;
           }
           if (/\.(mp4|mov|avi|webm)/i.test(url)) {
             return <video key={i} src={url} controls className="h-16 rounded border" />;
@@ -318,6 +322,14 @@ function ResponseDisplay({ question, answer }) {
           }
           return <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm underline">File {i + 1}</a>;
         })}
+        {lightboxIndex !== null && (
+          <ImageLightbox
+            images={imageUrls}
+            currentIndex={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onNavigate={(idx) => setLightboxIndex(idx)}
+          />
+        )}
       </div>
     );
   }
@@ -443,24 +455,9 @@ function QuestionSummary({ question, responses }) {
 
   if (question.type === "file_upload") {
     const allFiles = answers.flat();
+    const imageFiles = allFiles.filter(url => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(url));
     return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-2">
-            <p className="font-medium text-sm">{question.text}</p>
-            <Badge variant="outline" className="text-xs">{allFiles.length} files</Badge>
-          </div>
-          <div className="flex gap-2 flex-wrap mt-2">
-            {allFiles.slice(0, 12).map((url, i) => {
-              if (/\.(jpg|jpeg|png|gif|webp|svg)/i.test(url)) {
-                return <img key={i} src={url} alt="" className="h-16 w-16 rounded border object-cover" />;
-              }
-              return <div key={i} className="h-16 w-16 rounded border flex items-center justify-center bg-slate-50"><FileImage className="w-6 h-6 text-slate-400" /></div>;
-            })}
-            {allFiles.length > 12 && <Badge variant="outline">+{allFiles.length - 12} more</Badge>}
-          </div>
-        </CardContent>
-      </Card>
+      <FileUploadSummary question={question} allFiles={allFiles} imageFiles={imageFiles} />
     );
   }
 
@@ -511,6 +508,37 @@ function QuestionSummary({ question, responses }) {
           ))}
           {answers.length > 10 && <p className="text-xs text-slate-400">+{answers.length - 10} more responses</p>}
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FileUploadSummary({ question, allFiles, imageFiles }) {
+  const [lightboxIndex, setLightboxIndex] = React.useState(null);
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <p className="font-medium text-sm">{question.text}</p>
+          <Badge variant="outline" className="text-xs">{allFiles.length} files</Badge>
+        </div>
+        <div className="flex gap-2 flex-wrap mt-2">
+          {allFiles.slice(0, 12).map((url, i) => {
+            if (/\.(jpg|jpeg|png|gif|webp|svg)/i.test(url)) {
+              return <img key={i} src={url} alt="" className="h-16 w-16 rounded border object-cover cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setLightboxIndex(imageFiles.indexOf(url))} />;
+            }
+            return <div key={i} className="h-16 w-16 rounded border flex items-center justify-center bg-slate-50"><FileImage className="w-6 h-6 text-slate-400" /></div>;
+          })}
+          {allFiles.length > 12 && <Badge variant="outline">+{allFiles.length - 12} more</Badge>}
+        </div>
+        {lightboxIndex !== null && (
+          <ImageLightbox
+            images={imageFiles}
+            currentIndex={lightboxIndex}
+            onClose={() => setLightboxIndex(null)}
+            onNavigate={(idx) => setLightboxIndex(idx)}
+          />
+        )}
       </CardContent>
     </Card>
   );
