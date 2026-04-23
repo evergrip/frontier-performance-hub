@@ -273,8 +273,41 @@ export default function SurveyPublic() {
 
   sectionScores = calculateSectionScores();
 
+  const [validationErrors, setValidationErrors] = useState({});
+  const errorRefs = useRef({});
+
+  const validateRequiredQuestions = () => {
+    const errors = {};
+    for (const q of visibleQuestions) {
+      if (!q.required) continue;
+      const a = answers[q.id];
+      const isEmpty = a === undefined || a === null || a === "" || 
+        (Array.isArray(a) && a.length === 0) ||
+        a === "__other__";
+      if (isEmpty) {
+        errors[q.id] = true;
+      }
+    }
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const errors = validateRequiredQuestions();
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast.error(`Please answer all required questions (${Object.keys(errors).length} remaining)`);
+      // Scroll to first unanswered required question
+      const firstErrorId = Object.keys(errors)[0];
+      const el = errorRefs.current[firstErrorId];
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
     setSubmitting(true);
 
     await base44.functions.invoke('publicSurvey', {
@@ -429,7 +462,14 @@ export default function SurveyPublic() {
                 <div className="h-px mt-3" style={{ backgroundColor: `${accentColor}30` }} />
               </div>
             )}
-            <div className="p-6 shadow-sm survey-input" style={{ backgroundColor: cardBg, borderRadius, border: `1px solid ${cardBorder}` }}>
+            <div
+              ref={el => { errorRefs.current[q.id] = el; }}
+              className="p-6 shadow-sm survey-input"
+              style={{
+                backgroundColor: cardBg,
+                borderRadius,
+                border: validationErrors[q.id] ? `2px solid #ef4444` : `1px solid ${cardBorder}`,
+              }}>
               <div className="mb-3">
                 <Label className="text-base font-medium" style={{ color: headingColor, fontFamily: headingFont }}>
                   {pipedText(q.text)}
@@ -443,9 +483,17 @@ export default function SurveyPublic() {
               <QuestionInput
                 question={q}
                 value={answers[q.id]}
-                onChange={(val) => setAnswer(q.id, val)}
+                onChange={(val) => {
+                  setAnswer(q.id, val);
+                  if (validationErrors[q.id]) {
+                    setValidationErrors(prev => { const n = {...prev}; delete n[q.id]; return n; });
+                  }
+                }}
                 accentColor={accentColor}
               />
+              {validationErrors[q.id] && (
+                <p className="text-sm mt-2 font-medium" style={{ color: '#ef4444' }}>This question is required</p>
+              )}
             </div>
             </React.Fragment>
             );

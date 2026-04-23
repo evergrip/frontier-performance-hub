@@ -278,14 +278,35 @@ Deno.serve(async (req) => {
         user = await origBase44.auth.me();
       } catch (e) { /* Not authenticated */ }
 
-      const { totalScore, maxPossibleScore, scorePercentage, categoryScores } = calculateScores(survey, responseData.responses || {});
+      // Validate required questions are answered
+      const responses = responseData.responses || {};
+      const questions = survey.questions || [];
+      const missingRequired = [];
+      for (const q of questions) {
+        if (!q.required) continue;
+        if (!evaluateVisibility(q, responses, questions)) continue;
+        const a = responses[q.id];
+        const isEmpty = a === undefined || a === null || a === '' ||
+          (Array.isArray(a) && a.length === 0) || a === '__other__';
+        if (isEmpty) {
+          missingRequired.push(q.text || q.id);
+        }
+      }
+      if (missingRequired.length > 0) {
+        return Response.json({
+          error: `Please answer all required questions. Missing: ${missingRequired.join(', ')}`,
+          missing_count: missingRequired.length,
+        }, { status: 400 });
+      }
+
+      const { totalScore, maxPossibleScore, scorePercentage, categoryScores } = calculateScores(survey, responses);
 
       const responseId = body.response_id;
 
       if (responseId) {
         // Finalize an existing in-progress response
         await base44.asServiceRole.entities.SurveyResponse.update(responseId, {
-          responses: responseData.responses,
+          responses,
           total_score: totalScore,
           max_possible_score: maxPossibleScore,
           score_percentage: scorePercentage,
@@ -302,7 +323,7 @@ Deno.serve(async (req) => {
           respondent_user_id: user?.id || "",
           respondent_email: user?.email || "",
           respondent_name: user?.full_name || "",
-          responses: responseData.responses,
+          responses,
           total_score: totalScore,
           max_possible_score: maxPossibleScore,
           score_percentage: scorePercentage,
