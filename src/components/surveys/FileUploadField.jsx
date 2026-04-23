@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Upload, X, FileImage, FileVideo, Music, Loader2 } from "lucide-react";
+import ImageLightbox from "./ImageLightbox";
 
 const ACCEPT_MAP = {
   image: "image/*",
@@ -18,6 +19,7 @@ function getFileIcon(url) {
 
 export default function FileUploadField({ value = [], onChange, allowedTypes = [], maxFiles = 5 }) {
   const [uploading, setUploading] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
 
   const acceptString = allowedTypes.map(t => ACCEPT_MAP[t]).filter(Boolean).join(",");
 
@@ -57,7 +59,12 @@ export default function FileUploadField({ value = [], onChange, allowedTypes = [
           {value.map((url, i) => (
             <div key={i} className="relative group rounded-lg border bg-slate-50 overflow-hidden">
               {isImage(url) ? (
-                <img src={url} alt="" className="w-full h-24 object-cover" />
+                <img
+                  src={url}
+                  alt=""
+                  className="w-full h-24 object-cover cursor-pointer"
+                  onClick={() => setLightboxIndex(i)}
+                />
               ) : isVideo(url) ? (
                 <video src={url} className="w-full h-24 object-cover" />
               ) : isAudio(url) ? (
@@ -111,6 +118,21 @@ export default function FileUploadField({ value = [], onChange, allowedTypes = [
             </>
           )}
         </label>
+      )}
+      {lightboxIndex !== null && (
+        <ImageLightbox
+          images={value.filter(u => isImage(u))}
+          currentIndex={(() => {
+            const imageUrls = value.filter(u => isImage(u));
+            return imageUrls.indexOf(value[lightboxIndex]);
+          })()}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={(idx) => {
+            const imageUrls = value.filter(u => isImage(u));
+            const originalIdx = value.indexOf(imageUrls[idx]);
+            setLightboxIndex(originalIdx);
+          }}
+        />
       )}
     </div>
   );
