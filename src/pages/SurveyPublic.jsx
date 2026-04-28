@@ -361,10 +361,11 @@ export default function SurveyPublic() {
 
   const surveyHeadings = survey.headings || [];
   const visibleQuestions = (survey.questions || []).filter(q => evaluateLogic(q));
-  const totalQuestions = visibleQuestions.length;
-  const answeredCount = visibleQuestions.filter(q => {
+  const visibleRequired = visibleQuestions.filter(q => q.required);
+  const totalQuestions = visibleRequired.length;
+  const answeredCount = visibleRequired.filter(q => {
     const a = answers[q.id];
-    return a !== undefined && a !== null && a !== "" && (!Array.isArray(a) || a.length > 0);
+    return a !== undefined && a !== null && a !== "" && a !== "__other__" && (!Array.isArray(a) || a.length > 0);
   }).length;
   const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
