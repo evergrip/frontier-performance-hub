@@ -151,6 +151,17 @@ Deno.serve(async (req) => {
       body: JSON.stringify(body),
     }));
 
+    // Try to get authenticated user once (reuse across actions)
+    let authenticatedUser = null;
+    try {
+      const origBase44 = createClientFromRequest(new Request(req.url, {
+        method: req.method,
+        headers: req.headers,
+        body: JSON.stringify(body),
+      }));
+      authenticatedUser = await origBase44.auth.me();
+    } catch (e) { /* Not authenticated — expected for public surveys */ }
+
     if (action === "get") {
       const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token }, '-created_date', 1);
       const survey = surveys[0] || null;
@@ -191,20 +202,12 @@ Deno.serve(async (req) => {
       }
 
       // Try by authenticated user
-      if (!existing) {
-        let user = null;
-        try {
-          const origBase44 = createClientFromRequest(req);
-          user = await origBase44.auth.me();
-        } catch (e) { /* not authenticated */ }
-
-        if (user) {
-          const byUser = await base44.asServiceRole.entities.SurveyResponse.filter(
-            { survey_id: survey.id, respondent_user_id: user.id, status: 'in_progress' },
-            '-updated_date', 1
-          );
-          existing = byUser[0] || null;
-        }
+      if (!existing && authenticatedUser) {
+        const byUser = await base44.asServiceRole.entities.SurveyResponse.filter(
+          { survey_id: survey.id, respondent_user_id: authenticatedUser.id, status: 'in_progress' },
+          '-updated_date', 1
+        );
+        existing = byUser[0] || null;
       }
 
       if (existing) {
@@ -227,12 +230,6 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Survey not found" }, { status: 404 });
       }
 
-      let user = null;
-      try {
-        const origBase44 = createClientFromRequest(req);
-        user = await origBase44.auth.me();
-      } catch (e) { /* not authenticated */ }
-
       const responseId = body.response_id;
       const responses = responseData?.responses || {};
 
@@ -249,9 +246,9 @@ Deno.serve(async (req) => {
         const newResumeToken = generateResumeToken();
         const created = await base44.asServiceRole.entities.SurveyResponse.create({
           survey_id: survey.id,
-          respondent_user_id: user?.id || '',
-          respondent_email: user?.email || '',
-          respondent_name: user?.full_name || '',
+          respondent_user_id: authenticatedUser?.id || '',
+          respondent_email: authenticatedUser?.email || '',
+          respondent_name: authenticatedUser?.full_name || '',
           responses,
           resume_token: newResumeToken,
           invitation_token: invite || '',
@@ -271,12 +268,6 @@ Deno.serve(async (req) => {
       if (survey.status !== "active") {
         return Response.json({ error: "Survey is not accepting responses" }, { status: 400 });
       }
-
-      let user = null;
-      try {
-        const origBase44 = createClientFromRequest(req);
-        user = await origBase44.auth.me();
-      } catch (e) { /* Not authenticated */ }
 
       // Validate required questions are answered
       const responses = responseData.responses || {};
@@ -320,9 +311,9 @@ Deno.serve(async (req) => {
         // Create a new completed response directly
         await base44.asServiceRole.entities.SurveyResponse.create({
           survey_id: survey.id,
-          respondent_user_id: user?.id || "",
-          respondent_email: user?.email || "",
-          respondent_name: user?.full_name || "",
+          respondent_user_id: authenticatedUser?.id || "",
+          respondent_email: authenticatedUser?.email || "",
+          respondent_name: authenticatedUser?.full_name || "",
           responses,
           total_score: totalScore,
           max_possible_score: maxPossibleScore,

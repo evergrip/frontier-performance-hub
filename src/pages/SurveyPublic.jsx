@@ -300,7 +300,6 @@ export default function SurveyPublic() {
 
     if (Object.keys(errors).length > 0) {
       toast.error(`Please answer all required questions (${Object.keys(errors).length} remaining)`);
-      // Scroll to first unanswered required question
       const firstErrorId = Object.keys(errors)[0];
       const el = errorRefs.current[firstErrorId];
       if (el) {
@@ -309,27 +308,39 @@ export default function SurveyPublic() {
       return;
     }
 
+    // Stop auto-save during submission
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+
     setSubmitting(true);
 
-    await base44.functions.invoke('publicSurvey', {
-      action: "submit",
-      token,
-      invite: inviteToken || "",
-      response_id: responseId || undefined,
-      responseData: {
-        responses: answers,
-        completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
-      },
-    });
+    try {
+      const res = await base44.functions.invoke('publicSurvey', {
+        action: "submit",
+        token,
+        invite: inviteToken || "",
+        response_id: responseId || undefined,
+        responseData: {
+          responses: answers,
+          completion_time_seconds: Math.round((Date.now() - startTime) / 1000),
+        },
+      });
 
-    // Clean up local resume token on successful submit
-    localStorage.removeItem(`survey_resume_${token}`);
+      if (res.data?.error) {
+        toast.error(res.data.error);
+        setSubmitting(false);
+        return;
+      }
 
-    setSubmitted(true);
-    setSubmitting(false);
+      localStorage.removeItem(`survey_resume_${token}`);
+      setSubmitted(true);
+      setSubmitting(false);
 
-    if (survey.redirect_url) {
-      setTimeout(() => { window.location.href = survey.redirect_url; }, 2000);
+      if (survey.redirect_url) {
+        setTimeout(() => { window.location.href = survey.redirect_url; }, 2000);
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Failed to submit survey. Please try again.");
+      setSubmitting(false);
     }
   };
 
