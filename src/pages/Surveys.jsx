@@ -187,8 +187,15 @@ export default function Surveys() {
                     </Button>
                   </Link>
                   {survey.share_token && (
+                    <Link to={createPageUrl("SurveyPublic") + `?token=${survey.share_token}&preview=true`} target="_blank">
+                      <Button variant="ghost" size="sm" title="Preview survey">
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                    </Link>
+                  )}
+                  {survey.share_token && survey.status === "active" && (
                     <Link to={createPageUrl("SurveyPublic") + `?token=${survey.share_token}`} target="_blank">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" title="Open live survey">
                         <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
                     </Link>

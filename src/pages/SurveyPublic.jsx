@@ -23,6 +23,7 @@ export default function SurveyPublic() {
   const inviteToken = urlParams.get("invite");
   const resumeParam = urlParams.get("resume");
   const responseIdParam = urlParams.get("response_id");
+  const isPreview = urlParams.get("preview") === "true";
 
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
@@ -350,7 +351,7 @@ export default function SurveyPublic() {
     );
   }
 
-  if (survey.status !== "active") {
+  if (survey.status !== "active" && !isPreview) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
         <p style={{ color: textColor }}>This survey is not currently accepting responses.</p>
@@ -499,6 +500,11 @@ export default function SurveyPublic() {
             );
           })}
 
+          {isPreview && (
+            <div className="p-3 rounded-lg text-center text-sm font-medium" style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px dashed ${accentColor}` }}>
+              Preview Mode — submissions are disabled
+            </div>
+          )}
           <button
             type="submit"
             className="w-full py-4 text-lg font-semibold transition-colors"
@@ -506,10 +512,11 @@ export default function SurveyPublic() {
               backgroundColor: btnHovered && btnHover ? btnHover : buttonColor,
               color: buttonTextColor,
               borderRadius: btnRadius,
+              ...(isPreview ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
             }}
             onMouseEnter={() => setBtnHovered(true)}
             onMouseLeave={() => setBtnHovered(false)}
-            disabled={submitting}
+            disabled={submitting || isPreview}
           >
             {submitting ? <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> : null}
             {submitting ? "Submitting..." : "Submit Survey"}
