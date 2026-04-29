@@ -16,6 +16,7 @@ import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 import MultiUrlInput from "../components/surveys/MultiUrlInput";
 import SurveyProgressBanner from "../components/surveys/SurveyProgressBanner";
 import SurveySectionTabs from "../components/surveys/SurveySectionTabs";
+import FeasibilityScoreSummary from "../components/surveys/FeasibilityScoreSummary";
 import { toast } from "sonner";
 
 export default function SurveyPublic() {
@@ -83,39 +84,87 @@ export default function SurveyPublic() {
     });
   };
 
-  // For feasibility surveys: auto-add "Risk Assessment" to scope when concerning answers appear
+  // Parse trigger metadata from survey (stored in ai_insights for feasibility surveys)
+  const triggerMetaRef = useRef({ key: null, value: null });
+  const aiInsights = survey?.ai_insights;
+  if (triggerMetaRef.current.key !== aiInsights) {
+    triggerMetaRef.current.key = aiInsights;
+    try { triggerMetaRef.current.value = aiInsights ? JSON.parse(aiInsights) : null; } catch { triggerMetaRef.current.value = null; }
+  }
+  const triggerMeta = triggerMetaRef.current.value;
+
+  // Data-driven auto-trigger: reads rules from survey metadata instead of hardcoding
   const autoTriggerSections = (currentAnswers) => {
     if (!survey?.questions) return;
-    const questions = survey.questions;
-    
-    // Find the scope selector question (first checkbox in the first section)
-    const firstHeading = (survey.headings || [])[0];
-    const scopeQ = firstHeading && questions.find(q => q.category_id === firstHeading.id && q.type === "checkbox");
-    if (!scopeQ) return;
+    const meta = triggerMeta;
+    const scopeQId = meta?.scope_question_id;
+    if (!scopeQId) {
+      // Fallback: find scope question from first heading
+      const firstHeading = (survey.headings || [])[0];
+      const scopeQ = firstHeading && survey.questions.find(q => q.category_id === firstHeading.id && q.type === "checkbox");
+      if (!scopeQ) return;
+      // Use legacy hardcoded logic
+      return autoTriggerSectionsLegacy(currentAnswers, scopeQ.id);
+    }
 
-    const currentScope = Array.isArray(currentAnswers[scopeQ.id]) ? [...currentAnswers[scopeQ.id]] : [];
+    const currentScope = Array.isArray(currentAnswers[scopeQId]) ? [...currentAnswers[scopeQId]] : [];
     let changed = false;
 
-    // Check all questions for trigger descriptions that mention "Risk Assessment"
-    for (const q of questions) {
-      if (!q.description?.includes("will trigger the Risk Assessment") && 
-          !q.description?.includes("will add the Risk Assessment")) continue;
-      const answer = currentAnswers[q.id];
+    // 1. Process explicit trigger rules
+    const rules = meta.auto_trigger_rules || [];
+    for (const rule of rules) {
+      const answer = currentAnswers[rule.source_question_id];
       if (!answer) continue;
-      
-      const triggerValues = ["Poor", "Unsafe", "High", "Significant concerns", "Significant infrastructure work required"];
-      const answerStr = String(answer);
-      const shouldTrigger = triggerValues.some(tv => answerStr.includes(tv));
-      
-      if (shouldTrigger && !currentScope.includes("Risk Assessment")) {
-        currentScope.push("Risk Assessment");
-        changed = true;
+      const answerArr = Array.isArray(answer) ? answer : [String(answer)];
+      const shouldTrigger = rule.trigger_values.some(tv => answerArr.some(a => String(a).includes(tv)));
+      if (shouldTrigger) {
+        for (const section of (rule.sections_to_add || [])) {
+          if (!currentScope.includes(section)) {
+            currentScope.push(section);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    // 2. Global risk-trigger: any answer matching risk values auto-adds Risk Assessment
+    const riskValues = meta.risk_trigger_values || [];
+    if (riskValues.length > 0) {
+      for (const q of survey.questions) {
+        const answer = currentAnswers[q.id];
+        if (!answer) continue;
+        const answerStr = Array.isArray(answer) ? answer.join(' ') : String(answer);
+        const shouldTrigger = riskValues.some(tv => answerStr.includes(tv));
+        if (shouldTrigger && !currentScope.includes("Risk Assessment")) {
+          currentScope.push("Risk Assessment");
+          changed = true;
+          break;
+        }
       }
     }
 
     if (changed) {
-      currentAnswers[scopeQ.id] = currentScope;
+      currentAnswers[scopeQId] = currentScope;
     }
+  };
+
+  // Legacy fallback for surveys without trigger metadata
+  const autoTriggerSectionsLegacy = (currentAnswers, scopeQId) => {
+    const currentScope = Array.isArray(currentAnswers[scopeQId]) ? [...currentAnswers[scopeQId]] : [];
+    let changed = false;
+    const triggerValues = ["Poor", "Unsafe", "High", "Significant concerns", "Significant infrastructure work required"];
+    for (const q of survey.questions) {
+      if (!q.description?.includes("will trigger the Risk Assessment") && 
+          !q.description?.includes("will add the Risk Assessment")) continue;
+      const answer = currentAnswers[q.id];
+      if (!answer) continue;
+      const answerStr = String(answer);
+      if (triggerValues.some(tv => answerStr.includes(tv)) && !currentScope.includes("Risk Assessment")) {
+        currentScope.push("Risk Assessment");
+        changed = true;
+      }
+    }
+    if (changed) currentAnswers[scopeQId] = currentScope;
   };
 
   // Load saved progress on mount
@@ -355,11 +404,37 @@ export default function SurveyPublic() {
     setValidationErrors(errors);
 
     if (Object.keys(errors).length > 0) {
-      toast.error(`Please answer all required questions (${Object.keys(errors).length} remaining)`);
-      const firstErrorId = Object.keys(errors)[0];
-      const el = errorRefs.current[firstErrorId];
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // For feasibility/tab surveys, show section-specific counts
+      if (useTabs && isFeasibilityType) {
+        const sectionErrors = {};
+        for (const qId of Object.keys(errors)) {
+          const q = visibleQuestions.find(vq => vq.id === qId);
+          if (q?.category_id) {
+            const heading = surveyHeadings.find(h => h.id === q.category_id);
+            const name = heading?.title || 'Unknown';
+            sectionErrors[name] = (sectionErrors[name] || 0) + 1;
+          }
+        }
+        const summary = Object.entries(sectionErrors).map(([s, c]) => `${s}: ${c}`).join(', ');
+        toast.error(`Incomplete sections — ${summary}`, { duration: 6000 });
+      } else {
+        toast.error(`Please answer all required questions (${Object.keys(errors).length} remaining)`);
+      }
+      // Navigate to section with first error if in tab mode
+      if (useTabs) {
+        const firstErrorId = Object.keys(errors)[0];
+        const firstErrorQ = visibleQuestions.find(q => q.id === firstErrorId);
+        if (firstErrorQ?.category_id && firstErrorQ.category_id !== activeSection) {
+          setActiveSection(firstErrorQ.category_id);
+        }
+        setTimeout(() => {
+          const el = errorRefs.current[firstErrorId];
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 200);
+      } else {
+        const firstErrorId = Object.keys(errors)[0];
+        const el = errorRefs.current[firstErrorId];
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       return;
     }
@@ -452,6 +527,19 @@ export default function SurveyPublic() {
     }).length;
     sectionProgress[h.id] = { answered: sectionAnswered, total: sectionReq.length };
   }
+
+  // Determine which sections are risk-triggered (score < 45%)
+  const riskTriggeredSections = (() => {
+    const triggered = [];
+    for (const h of surveyHeadings) {
+      const sc = sectionScores[h.id];
+      if (sc && sc.max > 0) {
+        const pct = (sc.score / sc.max) * 100;
+        if (pct < 45) triggered.push(h.title);
+      }
+    }
+    return triggered;
+  })();
 
   const activeSectionIdx = visibleSections.findIndex(s => s.id === activeSection);
   const isLastSection = activeSectionIdx === visibleSections.length - 1;
@@ -569,6 +657,16 @@ export default function SurveyPublic() {
           />
         </div>
 
+        {/* Feasibility score summary */}
+        {isFeasibilityType && useTabs && (
+          <FeasibilityScoreSummary
+            sections={visibleSections}
+            sectionScores={sectionScores}
+            accentColor={accentColor}
+            textColor={textColor}
+          />
+        )}
+
         {/* Section tabs */}
         {useTabs && visibleSections.length > 0 && (
           <SurveySectionTabs
@@ -576,6 +674,8 @@ export default function SurveyPublic() {
             activeSection={activeSection}
             onSelectSection={setActiveSection}
             sectionProgress={sectionProgress}
+            sectionScores={sectionScores}
+            riskTriggeredSections={riskTriggeredSections}
             accentColor={accentColor}
             headingFont={headingFont}
             headingColor={headingColor}
