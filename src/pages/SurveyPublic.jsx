@@ -39,6 +39,9 @@ export default function SurveyPublic() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [progressLoaded, setProgressLoaded] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [activeSection, setActiveSection] = useState(null);
+  const errorRefs = useRef({});
 
   const { data: survey, isLoading, error } = useQuery({
     queryKey: ["survey-public", token],
@@ -377,10 +380,6 @@ export default function SurveyPublic() {
   };
 
   sectionScores = calculateSectionScores();
-
-  const [validationErrors, setValidationErrors] = useState({});
-  const errorRefs = useRef({});
-  const [activeSection, setActiveSection] = useState(null);
 
   const validateRequiredQuestions = () => {
     const errors = {};
