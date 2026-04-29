@@ -381,6 +381,47 @@ export default function SurveyPublic() {
 
   sectionScores = calculateSectionScores();
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-[#ea7924]" />
+        <p className="text-sm text-slate-400">Loading survey...</p>
+      </div>
+    );
+  }
+
+  if (!survey) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-500">Survey not found or no longer available.</p>
+        <p className="text-xs text-slate-400">Token: {token || '(none)'} | Query: {window.location.search} | Error: {error?.message || '(none)'}</p>
+      </div>
+    );
+  }
+
+  if (survey.status !== "active" && !isPreview) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
+        <p style={{ color: textColor }}>This survey is not currently accepting responses.</p>
+      </div>
+    );
+  }
+
+  const surveyHeadings = survey.headings || [];
+  const visibleQuestions = (survey.questions || []).filter(q => evaluateLogic(q));
+  const visibleRequired = visibleQuestions.filter(q => q.required);
+  const totalQuestions = visibleRequired.length;
+  const answeredCount = visibleRequired.filter(q => {
+    const a = answers[q.id];
+    return a !== undefined && a !== null && a !== "" && a !== "__other__" && (!Array.isArray(a) || a.length > 0);
+  }).length;
+  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+
+  const isFeasibilityType = survey.survey_type === "feasibility" || survey.survey_type === "assessment";
+  const useTabs = surveyHeadings.length > 1 || (isFeasibilityType && surveyHeadings.length >= 1);
+  const visibleSections = surveyHeadings.filter(h => visibleQuestions.some(q => q.category_id === h.id));
+  const unassignedVisible = visibleQuestions.filter(q => !q.category_id || !surveyHeadings.find(h => h.id === q.category_id));
+
   const validateRequiredQuestions = () => {
     const errors = {};
     for (const q of visibleQuestions) {
@@ -473,48 +514,6 @@ export default function SurveyPublic() {
       setSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-[#ea7924]" />
-        <p className="text-sm text-slate-400">Loading survey...</p>
-      </div>
-    );
-  }
-
-  if (!survey) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-slate-500">Survey not found or no longer available.</p>
-        <p className="text-xs text-slate-400">Token: {token || '(none)'} | Query: {window.location.search} | Error: {error?.message || '(none)'}</p>
-      </div>
-    );
-  }
-
-  if (survey.status !== "active" && !isPreview) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: bgColor }}>
-        <p style={{ color: textColor }}>This survey is not currently accepting responses.</p>
-      </div>
-    );
-  }
-
-  const surveyHeadings = survey.headings || [];
-  const visibleQuestions = (survey.questions || []).filter(q => evaluateLogic(q));
-  const visibleRequired = visibleQuestions.filter(q => q.required);
-  const totalQuestions = visibleRequired.length;
-  const answeredCount = visibleRequired.filter(q => {
-    const a = answers[q.id];
-    return a !== undefined && a !== null && a !== "" && a !== "__other__" && (!Array.isArray(a) || a.length > 0);
-  }).length;
-  const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
-
-  // Tab mode: use tabs when survey has multiple sections, or is a feasibility/assessment type
-  const isFeasibilityType = survey.survey_type === "feasibility" || survey.survey_type === "assessment";
-  const useTabs = surveyHeadings.length > 1 || (isFeasibilityType && surveyHeadings.length >= 1);
-  const visibleSections = surveyHeadings.filter(h => visibleQuestions.some(q => q.category_id === h.id));
-  const unassignedVisible = visibleQuestions.filter(q => !q.category_id || !surveyHeadings.find(h => h.id === q.category_id));
 
   // Per-section progress
   const sectionProgress = {};
