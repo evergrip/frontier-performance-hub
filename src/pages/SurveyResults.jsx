@@ -16,7 +16,7 @@ import IndividualResponseInsight from "../components/surveys/IndividualResponseI
 import GenerateAgendaButton from "../components/surveys/GenerateAgendaButton";
 import PrintableResponse from "../components/surveys/PrintableResponse";
 import InProgressResponses from "../components/surveys/InProgressResponses";
-import ImageLightbox from "../components/surveys/ImageLightbox";
+import MediaLightbox from "../components/surveys/MediaLightbox";
 
 export default function SurveyResults() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -307,15 +307,22 @@ function ResponseDisplay({ question, answer }) {
   }
 
   if (question.type === "file_upload" && Array.isArray(answer)) {
-    const imageUrls = answer.filter(url => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(url));
+    const mediaUrls = answer.filter(url => /\.(jpg|jpeg|png|gif|webp|svg|mp4|mov|avi|webm)/i.test(url));
     return (
       <div className="flex gap-2 flex-wrap mt-1">
         {answer.map((url, i) => {
           if (/\.(jpg|jpeg|png|gif|webp|svg)/i.test(url)) {
-            return <img key={i} src={url} alt="" className="h-16 rounded border cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setLightboxIndex(imageUrls.indexOf(url))} />;
+            return <img key={i} src={url} alt="" className="h-16 rounded border cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setLightboxIndex(mediaUrls.indexOf(url))} />;
           }
           if (/\.(mp4|mov|avi|webm)/i.test(url)) {
-            return <video key={i} src={url} controls className="h-16 rounded border" />;
+            return (
+              <div key={i} className="relative cursor-pointer" onClick={() => setLightboxIndex(mediaUrls.indexOf(url))}>
+                <video src={url} className="h-16 rounded border" muted />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
+                  <FileVideo className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            );
           }
           if (/\.(mp3|wav|ogg|aac)/i.test(url)) {
             return <audio key={i} src={url} controls className="h-8" />;
@@ -323,8 +330,8 @@ function ResponseDisplay({ question, answer }) {
           return <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-sm underline">File {i + 1}</a>;
         })}
         {lightboxIndex !== null && (
-          <ImageLightbox
-            images={imageUrls}
+          <MediaLightbox
+            items={mediaUrls}
             currentIndex={lightboxIndex}
             onClose={() => setLightboxIndex(null)}
             onNavigate={(idx) => setLightboxIndex(idx)}
@@ -532,8 +539,8 @@ function FileUploadSummary({ question, allFiles, imageFiles }) {
           {allFiles.length > 12 && <Badge variant="outline">+{allFiles.length - 12} more</Badge>}
         </div>
         {lightboxIndex !== null && (
-          <ImageLightbox
-            images={imageFiles}
+          <MediaLightbox
+            items={imageFiles}
             currentIndex={lightboxIndex}
             onClose={() => setLightboxIndex(null)}
             onNavigate={(idx) => setLightboxIndex(idx)}

@@ -147,6 +147,11 @@ export default function Surveys() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-3 flex-wrap">
+                  {survey.survey_type && survey.survey_type !== "general" && (
+                    <Badge className="bg-blue-100 text-blue-700 text-[10px]">
+                      {survey.survey_type === "feasibility" ? "Feasibility" : survey.survey_type === "assessment" ? "Assessment" : "Feedback"}
+                    </Badge>
+                  )}
                   <span>{accessLabels[survey.access_type] || "Link Only"}</span>
                   <span>•</span>
                   <span>{survey.questions?.length || 0} questions</span>

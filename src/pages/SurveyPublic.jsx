@@ -8,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Upload, X, Star, Loader2 } from "lucide-react";
+import { CheckCircle2, Upload, X, Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import FileUploadField from "../components/surveys/FileUploadField";
 import RankingInput from "../components/surveys/RankingInput";
 import SurveyWelcomePage from "../components/surveys/SurveyWelcomePage";
 import SurveyThankYouPage from "../components/surveys/SurveyThankYouPage";
 import MultiUrlInput from "../components/surveys/MultiUrlInput";
 import SurveyProgressBanner from "../components/surveys/SurveyProgressBanner";
+import SurveySectionTabs from "../components/surveys/SurveySectionTabs";
 import { toast } from "sonner";
 
 export default function SurveyPublic() {
@@ -123,6 +124,17 @@ export default function SurveyPublic() {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
   }, [answers, token, progressLoaded]);
+
+  // Initialize active section for tab mode (must be before early returns)
+  useEffect(() => {
+    if (!survey) return;
+    const headings = survey.headings || [];
+    const isFeasibility = survey.survey_type === "feasibility" || survey.survey_type === "assessment";
+    const shouldUseTabs = headings.length > 1 || (isFeasibility && headings.length >= 1);
+    if (shouldUseTabs && !activeSection && headings.length > 0) {
+      setActiveSection(headings[0].id);
+    }
+  }, [survey, activeSection]);
 
   const saveProgress = async (silent = false) => {
     if (Object.keys(answers).length === 0 && !silent) {
@@ -276,6 +288,7 @@ export default function SurveyPublic() {
 
   const [validationErrors, setValidationErrors] = useState({});
   const errorRefs = useRef({});
+  const [activeSection, setActiveSection] = useState(null);
 
   const validateRequiredQuestions = () => {
     const errors = {};
@@ -380,6 +393,58 @@ export default function SurveyPublic() {
   }).length;
   const progressPct = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
+  // Tab mode: use tabs when survey has multiple sections, or is a feasibility/assessment type
+  const isFeasibilityType = survey.survey_type === "feasibility" || survey.survey_type === "assessment";
+  const useTabs = surveyHeadings.length > 1 || (isFeasibilityType && surveyHeadings.length >= 1);
+  const visibleSections = surveyHeadings.filter(h => visibleQuestions.some(q => q.category_id === h.id));
+  const unassignedVisible = visibleQuestions.filter(q => !q.category_id || !surveyHeadings.find(h => h.id === q.category_id));
+
+  // Per-section progress
+  const sectionProgress = {};
+  for (const h of surveyHeadings) {
+    const sectionReq = visibleQuestions.filter(q => q.category_id === h.id && q.required);
+    const sectionAnswered = sectionReq.filter(q => {
+      const a = answers[q.id];
+      return a !== undefined && a !== null && a !== "" && a !== "__other__" && (!Array.isArray(a) || a.length > 0);
+    }).length;
+    sectionProgress[h.id] = { answered: sectionAnswered, total: sectionReq.length };
+  }
+
+  const activeSectionIdx = visibleSections.findIndex(s => s.id === activeSection);
+  const isLastSection = activeSectionIdx === visibleSections.length - 1;
+  const isFirstSection = activeSectionIdx <= 0;
+
+  const goToNextSection = () => {
+    if (!isLastSection) {
+      // Validate current section first
+      const currentSectionQuestions = visibleQuestions.filter(q => q.category_id === activeSection);
+      const errors = {};
+      for (const q of currentSectionQuestions) {
+        if (!q.required) continue;
+        const a = answers[q.id];
+        const isEmpty = a === undefined || a === null || a === "" || (Array.isArray(a) && a.length === 0) || a === "__other__";
+        if (isEmpty) errors[q.id] = true;
+      }
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(prev => ({ ...prev, ...errors }));
+        toast.error(`Please answer all required questions in this section (${Object.keys(errors).length} remaining)`);
+        const firstErrorId = Object.keys(errors)[0];
+        const el = errorRefs.current[firstErrorId];
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      setActiveSection(visibleSections[activeSectionIdx + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const goToPrevSection = () => {
+    if (!isFirstSection) {
+      setActiveSection(visibleSections[activeSectionIdx - 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const fontImports = [styling.font_url, styling.heading_font_url].filter(Boolean);
 
   if (submitted) {
@@ -461,21 +526,88 @@ export default function SurveyPublic() {
           />
         </div>
 
+        {/* Section tabs */}
+        {useTabs && visibleSections.length > 0 && (
+          <SurveySectionTabs
+            sections={visibleSections}
+            activeSection={activeSection}
+            onSelectSection={setActiveSection}
+            sectionProgress={sectionProgress}
+            accentColor={accentColor}
+            headingFont={headingFont}
+            headingColor={headingColor}
+            cardBg={cardBg}
+            cardBorder={cardBorder}
+            textColor={textColor}
+          />
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
-          {visibleQuestions.map((q, idx) => {
-            // Show section heading before first question in each section
-            const heading = surveyHeadings.find(h => h.id === q.category_id);
-            const isFirstInSection = heading && (idx === 0 || visibleQuestions[idx - 1]?.category_id !== q.category_id);
-            return (
-            <React.Fragment key={q.id}>
-            {isFirstInSection && (
-              <div className="pt-4 pb-1">
-                <h2 className="text-xl font-bold" style={{ color: headingColor, fontFamily: headingFont }}>{heading.title}</h2>
-                {heading.description && <p className="text-sm mt-1" style={{ color: descColor || `${textColor}99` }}>{heading.description}</p>}
-                <div className="h-px mt-3" style={{ backgroundColor: `${accentColor}30` }} />
+          {(() => {
+            // Determine which questions to show
+            const questionsToShow = useTabs && activeSection
+              ? visibleQuestions.filter(q => q.category_id === activeSection)
+              : visibleQuestions;
+
+            return questionsToShow.map((q, idx) => {
+              // Show section heading before first question in each section (non-tab mode only)
+              const heading = surveyHeadings.find(h => h.id === q.category_id);
+              const isFirstInSection = !useTabs && heading && (idx === 0 || questionsToShow[idx - 1]?.category_id !== q.category_id);
+
+              // In tab mode, show section heading at top of active tab
+              const isTabHeader = useTabs && idx === 0 && heading;
+
+              return (
+              <React.Fragment key={q.id}>
+              {(isFirstInSection || isTabHeader) && (
+                <div className="pt-4 pb-1">
+                  <h2 className="text-xl font-bold" style={{ color: headingColor, fontFamily: headingFont }}>{heading.title}</h2>
+                  {heading.description && <p className="text-sm mt-1" style={{ color: descColor || `${textColor}99` }}>{heading.description}</p>}
+                  <div className="h-px mt-3" style={{ backgroundColor: `${accentColor}30` }} />
+                </div>
+              )}
+              <div
+                ref={el => { errorRefs.current[q.id] = el; }}
+                className="p-6 shadow-sm survey-input"
+                style={{
+                  backgroundColor: cardBg,
+                  borderRadius,
+                  border: validationErrors[q.id] ? `2px solid #ef4444` : `1px solid ${cardBorder}`,
+                }}>
+                <div className="mb-3">
+                  <Label className="text-base font-medium" style={{ color: headingColor, fontFamily: headingFont }}>
+                    {pipedText(q.text)}
+                    {q.required && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
+                  {q.description && <p className="text-sm mt-1" style={{ color: descColor || `${textColor}99` }}>{pipedText(q.description)}</p>}
+                  {q.image_url && <img src={q.image_url} alt="" className="mt-3 max-h-64 object-contain" style={{ borderRadius }} />}
+                  {q.video_url && <video src={q.video_url} controls className="mt-3 max-h-64 w-full" style={{ borderRadius }} />}
+                </div>
+
+                <QuestionInput
+                  question={q}
+                  value={answers[q.id]}
+                  onChange={(val) => {
+                    setAnswer(q.id, val);
+                    if (validationErrors[q.id]) {
+                      setValidationErrors(prev => { const n = {...prev}; delete n[q.id]; return n; });
+                    }
+                  }}
+                  accentColor={accentColor}
+                />
+                {validationErrors[q.id] && (
+                  <p className="text-sm mt-2 font-medium" style={{ color: '#ef4444' }}>This question is required</p>
+                )}
               </div>
-            )}
+              </React.Fragment>
+              );
+            });
+          })()}
+
+          {/* Unassigned questions (shown below tabs, always visible in tab mode) */}
+          {useTabs && unassignedVisible.length > 0 && !activeSection && unassignedVisible.map((q) => (
             <div
+              key={q.id}
               ref={el => { errorRefs.current[q.id] = el; }}
               className="p-6 shadow-sm survey-input"
               style={{
@@ -489,50 +621,89 @@ export default function SurveyPublic() {
                   {q.required && <span className="text-red-500 ml-1">*</span>}
                 </Label>
                 {q.description && <p className="text-sm mt-1" style={{ color: descColor || `${textColor}99` }}>{pipedText(q.description)}</p>}
-                {q.image_url && <img src={q.image_url} alt="" className="mt-3 max-h-64 object-contain" style={{ borderRadius }} />}
-                {q.video_url && <video src={q.video_url} controls className="mt-3 max-h-64 w-full" style={{ borderRadius }} />}
               </div>
+              <QuestionInput question={q} value={answers[q.id]} onChange={(val) => setAnswer(q.id, val)} accentColor={accentColor} />
+            </div>
+          ))}
 
-              <QuestionInput
-                question={q}
-                value={answers[q.id]}
-                onChange={(val) => {
-                  setAnswer(q.id, val);
-                  if (validationErrors[q.id]) {
-                    setValidationErrors(prev => { const n = {...prev}; delete n[q.id]; return n; });
-                  }
+          {/* Tab navigation buttons */}
+          {useTabs && visibleSections.length > 1 && (
+            <div className="flex justify-between items-center pt-2">
+              <button
+                type="button"
+                onClick={goToPrevSection}
+                disabled={isFirstSection}
+                className="flex items-center gap-2 px-5 py-3 rounded-lg font-medium text-sm transition-all disabled:opacity-30"
+                style={{
+                  backgroundColor: cardBg,
+                  color: textColor,
+                  border: `1px solid ${cardBorder}`,
+                  borderRadius: btnRadius,
                 }}
-                accentColor={accentColor}
-              />
-              {validationErrors[q.id] && (
-                <p className="text-sm mt-2 font-medium" style={{ color: '#ef4444' }}>This question is required</p>
+              >
+                <ChevronLeft className="w-4 h-4" /> Previous
+              </button>
+
+              {!isLastSection ? (
+                <button
+                  type="button"
+                  onClick={goToNextSection}
+                  className="flex items-center gap-2 px-5 py-3 rounded-lg font-medium text-sm transition-colors"
+                  style={{
+                    backgroundColor: buttonColor,
+                    color: buttonTextColor,
+                    borderRadius: btnRadius,
+                  }}
+                >
+                  Next Section <ChevronRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-5 py-3 rounded-lg font-semibold text-sm transition-colors"
+                  style={{
+                    backgroundColor: btnHovered && btnHover ? btnHover : buttonColor,
+                    color: buttonTextColor,
+                    borderRadius: btnRadius,
+                    ...(isPreview ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
+                  }}
+                  onMouseEnter={() => setBtnHovered(true)}
+                  onMouseLeave={() => setBtnHovered(false)}
+                  disabled={submitting || isPreview}
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {submitting ? "Submitting..." : "Submit"}
+                </button>
               )}
             </div>
-            </React.Fragment>
-            );
-          })}
-
-          {isPreview && (
-            <div className="p-3 rounded-lg text-center text-sm font-medium" style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px dashed ${accentColor}` }}>
-              Preview Mode — submissions are disabled
-            </div>
           )}
-          <button
-            type="submit"
-            className="w-full py-4 text-lg font-semibold transition-colors"
-            style={{
-              backgroundColor: btnHovered && btnHover ? btnHover : buttonColor,
-              color: buttonTextColor,
-              borderRadius: btnRadius,
-              ...(isPreview ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
-            }}
-            onMouseEnter={() => setBtnHovered(true)}
-            onMouseLeave={() => setBtnHovered(false)}
-            disabled={submitting || isPreview}
-          >
-            {submitting ? <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> : null}
-            {submitting ? "Submitting..." : "Submit Survey"}
-          </button>
+
+          {/* Non-tab mode: single submit button */}
+          {!useTabs && (
+            <>
+              {isPreview && (
+                <div className="p-3 rounded-lg text-center text-sm font-medium" style={{ backgroundColor: `${accentColor}15`, color: accentColor, border: `1px dashed ${accentColor}` }}>
+                  Preview Mode — submissions are disabled
+                </div>
+              )}
+              <button
+                type="submit"
+                className="w-full py-4 text-lg font-semibold transition-colors"
+                style={{
+                  backgroundColor: btnHovered && btnHover ? btnHover : buttonColor,
+                  color: buttonTextColor,
+                  borderRadius: btnRadius,
+                  ...(isPreview ? { opacity: 0.5, cursor: 'not-allowed' } : {}),
+                }}
+                onMouseEnter={() => setBtnHovered(true)}
+                onMouseLeave={() => setBtnHovered(false)}
+                disabled={submitting || isPreview}
+              >
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> : null}
+                {submitting ? "Submitting..." : "Submit Survey"}
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>

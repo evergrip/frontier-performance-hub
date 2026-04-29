@@ -10,6 +10,17 @@
       "type": "string",
       "description": "Survey description or introduction text"
     },
+    "survey_type": {
+      "type": "string",
+      "enum": [
+        "general",
+        "feasibility",
+        "feedback",
+        "assessment"
+      ],
+      "default": "general",
+      "description": "Type of survey \u2014 determines UI mode (e.g. feasibility uses tab navigation)"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -93,7 +104,8 @@
               "email",
               "phone",
               "url",
-              "file_upload"
+              "file_upload",
+              "ranking"
             ]
           },
           "category_id": {
@@ -113,12 +125,12 @@
           },
           "option_scores": {
             "type": "object",
-            "description": "Map of option text to score value (e.g. {\"Yes\": 10, \"No\": 0})"
+            "description": "Map of option text to score value"
           },
           "points": {
             "type": "number",
             "default": 1,
-            "description": "Default points for this question (used for rating/scale/number types)"
+            "description": "Default points for this question"
           },
           "weight": {
             "type": "number",
@@ -207,19 +219,16 @@
         "type": "object",
         "properties": {
           "heading_id": {
-            "type": "string",
-            "description": "Section heading ID that triggers this rule"
+            "type": "string"
           },
           "threshold_score": {
-            "type": "number",
-            "description": "Score threshold that must be met or exceeded"
+            "type": "number"
           },
           "followup_question_ids": {
             "type": "array",
             "items": {
               "type": "string"
-            },
-            "description": "Question IDs to reveal when the threshold is met"
+            }
           }
         }
       }
@@ -240,11 +249,11 @@
     },
     "alert_subject": {
       "type": "string",
-      "description": "Custom email subject for alert notifications. Supports {{survey_title}} and {{answer:QUESTION_ID}} placeholders."
+      "description": "Custom email subject for alert notifications."
     },
     "alert_body": {
       "type": "string",
-      "description": "Custom email body for alert notifications. Supports {{survey_title}}, {{answer:QUESTION_ID}}, {{total_responses}}, and {{answers_table}} placeholders."
+      "description": "Custom email body for alert notifications."
     },
     "welcome_page_enabled": {
       "type": "boolean",
@@ -313,16 +322,13 @@
           "type": "string"
         },
         "banner_fit": {
-          "type": "string",
-          "description": "Banner display mode: cover, contain, or auto"
+          "type": "string"
         },
         "banner_height": {
-          "type": "string",
-          "description": "Banner height (e.g. 200px)"
+          "type": "string"
         },
         "banner_position": {
-          "type": "string",
-          "description": "Banner image alignment within crop area (e.g. center, top, bottom)"
+          "type": "string"
         },
         "font_family": {
           "type": "string"

@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Upload, X, FileImage, FileVideo, Music, Loader2 } from "lucide-react";
-import ImageLightbox from "./ImageLightbox";
+import { Upload, X, FileImage, FileVideo, Music, Loader2, Camera, Video } from "lucide-react";
+import MediaLightbox from "./MediaLightbox";
 
 const ACCEPT_MAP = {
   image: "image/*",
@@ -12,7 +12,7 @@ const ACCEPT_MAP = {
 
 function getFileIcon(url) {
   if (/\.(jpg|jpeg|png|gif|webp|svg)/i.test(url)) return FileImage;
-  if (/\.(mp4|mov|avi|webm)/i.test(url)) return FileVideo;
+  if (/\.(mp4|mov|avi|webm|mkv)/i.test(url)) return FileVideo;
   if (/\.(mp3|wav|ogg|aac)/i.test(url)) return Music;
   return Upload;
 }
@@ -20,26 +20,32 @@ function getFileIcon(url) {
 export default function FileUploadField({ value = [], onChange, allowedTypes = [], maxFiles = 5 }) {
   const [uploading, setUploading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const fileInputRef = useRef(null);
+  const capturePhotoRef = useRef(null);
+  const captureVideoRef = useRef(null);
 
   const acceptString = allowedTypes.map(t => ACCEPT_MAP[t]).filter(Boolean).join(",");
+  const canUploadMore = value.length < maxFiles;
+  const allowsImages = allowedTypes.includes("image");
+  const allowsVideo = allowedTypes.includes("video");
 
-  const handleUpload = async (e) => {
-    const files = Array.from(e.target.files);
+  const processFiles = async (files) => {
     if (files.length === 0) return;
-
     const remaining = maxFiles - value.length;
-    const toUpload = files.slice(0, remaining);
+    const toUpload = Array.from(files).slice(0, remaining);
 
     setUploading(true);
     const newUrls = [];
-
     for (const file of toUpload) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       newUrls.push(file_url);
     }
-
     onChange([...value, ...newUrls]);
     setUploading(false);
+  };
+
+  const handleUpload = async (e) => {
+    await processFiles(e.target.files);
     e.target.value = "";
   };
 
@@ -48,8 +54,11 @@ export default function FileUploadField({ value = [], onChange, allowedTypes = [
   };
 
   const isImage = (url) => /\.(jpg|jpeg|png|gif|webp|svg)/i.test(url);
-  const isVideo = (url) => /\.(mp4|mov|avi|webm)/i.test(url);
+  const isVideoFile = (url) => /\.(mp4|mov|avi|webm|mkv)/i.test(url);
   const isAudio = (url) => /\.(mp3|wav|ogg|aac)/i.test(url);
+
+  // For lightbox: only images and videos
+  const mediaUrls = value.filter(u => isImage(u) || isVideoFile(u));
 
   return (
     <div className="space-y-3">
@@ -63,13 +72,24 @@ export default function FileUploadField({ value = [], onChange, allowedTypes = [
                   src={url}
                   alt=""
                   className="w-full h-24 object-cover cursor-pointer"
-                  onClick={() => setLightboxIndex(i)}
+                  onClick={() => setLightboxIndex(mediaUrls.indexOf(url))}
                 />
-              ) : isVideo(url) ? (
-                <video src={url} className="w-full h-24 object-cover" />
+              ) : isVideoFile(url) ? (
+                <div
+                  className="relative cursor-pointer"
+                  onClick={() => setLightboxIndex(mediaUrls.indexOf(url))}
+                >
+                  <video src={url} className="w-full h-24 object-cover" muted />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="bg-white/90 rounded-full p-1.5">
+                      <Video className="w-4 h-4 text-slate-700" />
+                    </div>
+                  </div>
+                </div>
               ) : isAudio(url) ? (
-                <div className="h-24 flex items-center justify-center">
-                  <Music className="w-8 h-8 text-slate-400" />
+                <div className="h-24 flex flex-col items-center justify-center gap-1 p-2">
+                  <Music className="w-6 h-6 text-slate-400" />
+                  <audio src={url} controls className="w-full h-6" />
                 </div>
               ) : (
                 <div className="h-24 flex items-center justify-center">
@@ -90,48 +110,80 @@ export default function FileUploadField({ value = [], onChange, allowedTypes = [
         </div>
       )}
 
-      {/* Upload button */}
-      {value.length < maxFiles && (
-        <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg p-6 cursor-pointer hover:border-slate-400 hover:bg-slate-50 transition-colors">
-          <input
-            type="file"
-            accept={acceptString}
-            multiple
-            className="hidden"
-            onChange={handleUpload}
-            disabled={uploading}
-          />
-          {uploading ? (
-            <>
-              <Loader2 className="w-8 h-8 text-slate-400 animate-spin mb-2" />
-              <span className="text-sm text-slate-500">Uploading...</span>
-            </>
-          ) : (
-            <>
-              <Upload className="w-8 h-8 text-slate-400 mb-2" />
-              <span className="text-sm text-slate-500">
-                Click to upload ({value.length}/{maxFiles})
-              </span>
-              <span className="text-xs text-slate-400 mt-1">
-                {allowedTypes.join(", ")} files accepted
-              </span>
-            </>
+      {/* Upload controls */}
+      {canUploadMore && (
+        <div className="space-y-2">
+          {/* Main file picker */}
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-lg p-6 cursor-pointer hover:border-slate-400 hover:bg-slate-50 transition-colors">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={acceptString}
+              multiple
+              className="hidden"
+              onChange={handleUpload}
+              disabled={uploading}
+            />
+            {uploading ? (
+              <>
+                <Loader2 className="w-8 h-8 text-slate-400 animate-spin mb-2" />
+                <span className="text-sm text-slate-500">Uploading...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                <span className="text-sm text-slate-500">
+                  Tap to choose from device ({value.length}/{maxFiles})
+                </span>
+                <span className="text-xs text-slate-400 mt-1">
+                  {allowedTypes.join(", ")} files accepted
+                </span>
+              </>
+            )}
+          </label>
+
+          {/* Camera capture buttons (mobile-friendly) */}
+          {(allowsImages || allowsVideo) && !uploading && (
+            <div className="flex gap-2">
+              {allowsImages && (
+                <label className="flex-1 flex items-center justify-center gap-2 border border-slate-300 rounded-lg p-3 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <input
+                    ref={capturePhotoRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleUpload}
+                  />
+                  <Camera className="w-5 h-5 text-slate-500" />
+                  <span className="text-sm text-slate-600 font-medium">Take Photo</span>
+                </label>
+              )}
+              {allowsVideo && (
+                <label className="flex-1 flex items-center justify-center gap-2 border border-slate-300 rounded-lg p-3 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <input
+                    ref={captureVideoRef}
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleUpload}
+                  />
+                  <Video className="w-5 h-5 text-slate-500" />
+                  <span className="text-sm text-slate-600 font-medium">Record Video</span>
+                </label>
+              )}
+            </div>
           )}
-        </label>
+        </div>
       )}
-      {lightboxIndex !== null && (
-        <ImageLightbox
-          images={value.filter(u => isImage(u))}
-          currentIndex={(() => {
-            const imageUrls = value.filter(u => isImage(u));
-            return imageUrls.indexOf(value[lightboxIndex]);
-          })()}
+
+      {lightboxIndex !== null && lightboxIndex >= 0 && (
+        <MediaLightbox
+          items={mediaUrls}
+          currentIndex={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
-          onNavigate={(idx) => {
-            const imageUrls = value.filter(u => isImage(u));
-            const originalIdx = value.indexOf(imageUrls[idx]);
-            setLightboxIndex(originalIdx);
-          }}
+          onNavigate={(idx) => setLightboxIndex(idx)}
         />
       )}
     </div>

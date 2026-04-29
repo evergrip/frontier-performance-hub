@@ -317,6 +317,7 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
   const defaultForm = {
     title: "",
     description: "",
+    survey_type: "general",
     status: "draft",
     access_type: "link_only",
     allow_anonymous_responses: false,
@@ -342,6 +343,7 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
       setForm({
         title: survey.title || "",
         description: survey.description || "",
+        survey_type: survey.survey_type || "general",
         status: survey.status || "draft",
         access_type: survey.access_type || "link_only",
         allow_anonymous_responses: survey.allow_anonymous_responses || false,
@@ -411,6 +413,23 @@ export default function SurveyFormDialog({ open, onOpenChange, survey }) {
               <div>
                 <Label>Description</Label>
                 <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} />
+              </div>
+              <div>
+                <Label>Survey Type</Label>
+                <Select value={form.survey_type || "general"} onValueChange={v => setForm(p => ({ ...p, survey_type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General Survey</SelectItem>
+                    <SelectItem value="feasibility">Feasibility Study</SelectItem>
+                    <SelectItem value="feedback">Feedback Form</SelectItem>
+                    <SelectItem value="assessment">Assessment</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {form.survey_type === "feasibility" 
+                    ? "Feasibility studies use tab navigation for sections with per-section progress tracking"
+                    : "Sections are displayed as scroll-through groups"}
+                </p>
               </div>
               <div>
                 <Label>Status</Label>
