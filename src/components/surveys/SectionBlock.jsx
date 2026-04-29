@@ -42,8 +42,9 @@ export default function SectionBlock({
   onDuplicateQuestion,
   onAddQuestion,
   onUpdateFollowupRules,
+  defaultCollapsed = false,
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   const [showSettings, setShowSettings] = useState(false);
 
   const sectionQuestions = questions.filter(q => q.category_id === heading.id);

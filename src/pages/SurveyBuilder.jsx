@@ -4,12 +4,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ArrowLeft, Save, Upload, Layers } from "lucide-react";
+import { Plus, ArrowLeft, Save, Upload, Layers, ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import QuestionEditor from "../components/surveys/QuestionEditor";
 import ImportQuestionsDialog from "../components/surveys/ImportQuestionsDialog";
 import SectionBlock from "../components/surveys/SectionBlock";
+import UnassignedSection from "../components/surveys/UnassignedSection";
 
 const QUESTION_TYPES = [
   { value: "text", label: "Short Text" },
@@ -146,6 +147,9 @@ export default function SurveyBuilder() {
   // Unassigned questions (no section)
   const unassignedQuestions = questions.filter(q => !q.category_id || !headings.find(h => h.id === q.category_id));
 
+  // For large surveys, default all sections to collapsed so we don't render 600+ editors at once
+  const isLargeSurvey = questions.length > 50;
+
   if (isLoading) {
     return <div className="max-w-4xl mx-auto p-6"><div className="animate-pulse h-8 bg-slate-200 rounded w-1/3 mb-4" /></div>;
   }
@@ -201,6 +205,7 @@ export default function SurveyBuilder() {
             onDuplicateQuestion={duplicateQuestion}
             onAddQuestion={addQuestionToSection}
             onUpdateFollowupRules={(rules) => { setFollowupRules(rules); setHasChanges(true); }}
+            defaultCollapsed={isLargeSurvey}
           />
         ))}
       </div>
@@ -208,34 +213,16 @@ export default function SurveyBuilder() {
       {/* Unassigned Questions */}
       {(unassignedQuestions.length > 0 || headings.length === 0) && (
         <div className="mb-6">
-          {headings.length > 0 && (
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="text-sm font-semibold text-slate-600">Unassigned Questions</h2>
-              <Badge variant="outline" className="text-xs">{unassignedQuestions.length}</Badge>
-              <p className="text-xs text-slate-400">— these questions are not in any section</p>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {unassignedQuestions.map((q) => {
-              const globalIndex = questions.findIndex(aq => aq.id === q.id);
-              return (
-                <QuestionEditor
-                  key={q.id}
-                  question={q}
-                  index={globalIndex}
-                  totalCount={questions.length}
-                  questionTypes={QUESTION_TYPES}
-                  onChange={(updated) => updateQuestion(globalIndex, updated)}
-                  onRemove={() => removeQuestion(globalIndex)}
-                  onMove={(dir) => moveQuestion(globalIndex, dir)}
-                  onDuplicate={() => duplicateQuestion(globalIndex)}
-                  allQuestions={questions}
-                  headings={headings}
-                />
-              );
-            })}
-          </div>
+          <UnassignedSection
+            unassignedQuestions={unassignedQuestions}
+            questions={questions}
+            headings={headings}
+            isLargeSurvey={isLargeSurvey}
+            updateQuestion={updateQuestion}
+            removeQuestion={removeQuestion}
+            moveQuestion={moveQuestion}
+            duplicateQuestion={duplicateQuestion}
+          />
 
           {/* Add unassigned question */}
           <Card className="border-dashed border-2 border-slate-300 bg-slate-50/50 mt-4">
