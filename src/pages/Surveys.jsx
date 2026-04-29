@@ -197,18 +197,18 @@ export default function Surveys() {
                     </Button>
                   </Link>
                   {survey.share_token && (
-                    <Link to={createPageUrl("SurveyPublic") + `?token=${survey.share_token}&preview=true`} target="_blank">
+                    <a href={`/SurveyPublic?token=${survey.share_token}&preview=true`} target="_blank" rel="noopener noreferrer">
                       <Button variant="ghost" size="sm" title="Preview survey">
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                    </Link>
+                    </a>
                   )}
                   {survey.share_token && survey.status === "active" && (
-                    <Link to={createPageUrl("SurveyPublic") + `?token=${survey.share_token}`} target="_blank">
+                    <a href={`/SurveyPublic?token=${survey.share_token}`} target="_blank" rel="noopener noreferrer">
                       <Button variant="ghost" size="sm" title="Open live survey">
                         <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
-                    </Link>
+                    </a>
                   )}
                   <Link to={createPageUrl("SurveyResults") + `?id=${survey.id}`}>
                     <Button variant="ghost" size="sm">
