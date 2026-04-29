@@ -72,7 +72,50 @@ export default function SurveyPublic() {
   const [btnHovered, setBtnHovered] = useState(false);
 
   const setAnswer = (qId, value) => {
-    setAnswers(prev => ({ ...prev, [qId]: value }));
+    setAnswers(prev => {
+      const next = { ...prev, [qId]: value };
+      // Auto-trigger sections: if a feasibility survey has trigger values,
+      // automatically add sections to the scope checkbox
+      if (survey?.survey_type === "feasibility") {
+        autoTriggerSections(next);
+      }
+      return next;
+    });
+  };
+
+  // For feasibility surveys: auto-add "Risk Assessment" to scope when concerning answers appear
+  const autoTriggerSections = (currentAnswers) => {
+    if (!survey?.questions) return;
+    const questions = survey.questions;
+    
+    // Find the scope selector question (first checkbox in the first section)
+    const firstHeading = (survey.headings || [])[0];
+    const scopeQ = firstHeading && questions.find(q => q.category_id === firstHeading.id && q.type === "checkbox");
+    if (!scopeQ) return;
+
+    const currentScope = Array.isArray(currentAnswers[scopeQ.id]) ? [...currentAnswers[scopeQ.id]] : [];
+    let changed = false;
+
+    // Check all questions for trigger descriptions that mention "Risk Assessment"
+    for (const q of questions) {
+      if (!q.description?.includes("will trigger the Risk Assessment") && 
+          !q.description?.includes("will add the Risk Assessment")) continue;
+      const answer = currentAnswers[q.id];
+      if (!answer) continue;
+      
+      const triggerValues = ["Poor", "Unsafe", "High", "Significant concerns", "Significant infrastructure work required"];
+      const answerStr = String(answer);
+      const shouldTrigger = triggerValues.some(tv => answerStr.includes(tv));
+      
+      if (shouldTrigger && !currentScope.includes("Risk Assessment")) {
+        currentScope.push("Risk Assessment");
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      currentAnswers[scopeQ.id] = currentScope;
+    }
   };
 
   // Load saved progress on mount

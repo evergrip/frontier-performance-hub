@@ -12,6 +12,7 @@ import { appParams } from "@/lib/app-params";
 import SurveyFormDialog from "../components/surveys/SurveyFormDialog";
 import SurveyTemplateLibrary, { SaveAsTemplateDialog } from "../components/surveys/SurveyTemplateLibrary";
 import AIGenerateSurveyDialog from "../components/surveys/AIGenerateSurveyDialog";
+import CreateFeasibilityDialog from "../components/surveys/CreateFeasibilityDialog";
 
 const statusColors = {
   draft: "bg-slate-100 text-slate-700",
@@ -33,6 +34,7 @@ export default function Surveys() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [templateSurvey, setTemplateSurvey] = useState(null);
   const [showAIGenerate, setShowAIGenerate] = useState(false);
+  const [showFeasibility, setShowFeasibility] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: surveys = [], isLoading } = useQuery({
@@ -94,6 +96,9 @@ export default function Surveys() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowTemplates(true)}>
             <BookOpen className="w-4 h-4 mr-2" /> Templates
+          </Button>
+          <Button variant="outline" onClick={() => setShowFeasibility(true)} className="gap-2">
+            <ClipboardList className="w-4 h-4" /> Feasibility Study
           </Button>
           <Button variant="outline" onClick={() => setShowAIGenerate(true)}>
             <Sparkles className="w-4 h-4 mr-2" /> AI Generate
@@ -238,6 +243,11 @@ export default function Surveys() {
       <AIGenerateSurveyDialog
         open={showAIGenerate}
         onOpenChange={setShowAIGenerate}
+      />
+
+      <CreateFeasibilityDialog
+        open={showFeasibility}
+        onOpenChange={setShowFeasibility}
       />
 
       {templateSurvey && (
