@@ -154,13 +154,17 @@ Deno.serve(async (req) => {
     // Try to get authenticated user once (reuse across actions)
     let authenticatedUser = null;
     try {
-      const origBase44 = createClientFromRequest(new Request(req.url, {
-        method: req.method,
-        headers: req.headers,
-        body: JSON.stringify(body),
-      }));
-      authenticatedUser = await origBase44.auth.me();
-    } catch (e) { /* Not authenticated — expected for public surveys */ }
+      const origHeaders = new Headers(req.headers);
+      const hasAuth = origHeaders.has('Authorization') || origHeaders.has('authorization');
+      if (hasAuth) {
+        const origBase44 = createClientFromRequest(new Request(req.url, {
+          method: req.method,
+          headers: origHeaders,
+          body: JSON.stringify(body),
+        }));
+        authenticatedUser = await origBase44.auth.me();
+      }
+    } catch (_e) { /* Not authenticated — expected for public surveys */ }
 
     if (action === "get") {
       const surveys = await base44.asServiceRole.entities.Survey.filter({ share_token: token }, '-created_date', 1);
