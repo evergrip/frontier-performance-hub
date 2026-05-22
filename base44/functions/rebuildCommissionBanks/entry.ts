@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -13,11 +13,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Get all transactions
+    // Get all transactions and users (for anniversary-based YTD filtering)
     const allTransactions = await base44.asServiceRole.entities.CommissionTransaction.list();
+    const allUsers = await base44.asServiceRole.entities.User.list();
     const sortedTransactions = [...allTransactions].sort((a, b) => 
       new Date(a.created_date) - new Date(b.created_date)
     );
+
+    // Build a map of user anniversary windows
+    const userAnniversaryStart = {};
+    for (const u of allUsers) {
+      if (u.commission_start_date) {
+        const start = new Date(u.commission_start_date);
+        const startMonth = start.getUTCMonth();
+        const startDay = start.getUTCDate();
+        const now = new Date();
+        // Find the most recent anniversary date
+        let anniversaryYear = now.getUTCFullYear();
+        let anniversary = new Date(Date.UTC(anniversaryYear, startMonth, startDay));
+        if (anniversary > now) {
+          anniversaryYear--;
+          anniversary = new Date(Date.UTC(anniversaryYear, startMonth, startDay));
+        }
+        userAnniversaryStart[u.id] = anniversary;
+      }
+    }
 
     // Aggregate in memory first, then write once per bank
     const bankAggregates = {};
@@ -36,6 +56,11 @@ Deno.serve(async (req) => {
           ytd_preconstruction_volume: 0,
         };
       }
+
+      // Determine if this transaction is within the user's current anniversary year
+      const anniversaryStart = userAnniversaryStart[userId];
+      const txDate = new Date(transaction.created_date);
+      const isInCurrentYear = anniversaryStart ? txDate >= anniversaryStart : true;
 
       const agg = bankAggregates[userId];
       const amount = transaction.amount || 0;
@@ -62,9 +87,12 @@ Deno.serve(async (req) => {
         agg.total_earned += amount;
         agg.current_bank_balance += effectiveBanked;
         agg.available_balance += immediateAvailable;
-        agg.ytd_sales_volume += saleAmount;
-        if (saleType === 'construction') agg.ytd_construction_volume += saleAmount;
-        if (saleType === 'preconstruction') agg.ytd_preconstruction_volume += saleAmount;
+        // Only count towards YTD if within current anniversary year
+        if (isInCurrentYear) {
+          agg.ytd_sales_volume += saleAmount;
+          if (saleType === 'construction') agg.ytd_construction_volume += saleAmount;
+          if (saleType === 'preconstruction') agg.ytd_preconstruction_volume += saleAmount;
+        }
       }
     }
 

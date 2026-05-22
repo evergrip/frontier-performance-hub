@@ -213,12 +213,14 @@ Deno.serve(async (req) => {
     });
     
     // CLOSEOUT MODE: adjust commission based on delta between original and final amount,
-    // using the same effective tier rate from the initial commission
+    // using the same effective tier rate from the initial commission.
+    // Works for BOTH construction closeouts and preconstruction final adjustments.
     if (is_closeout && existingTransactions.length > 0) {
       const existingTransaction = existingTransactions[0];
       const originalSaleAmount = existingTransaction.sale_amount || 0;
       const originalCommission = existingTransaction.amount || 0;
       const originalBankedAmount = existingTransaction.banked_amount || 0;
+      const originalAvailableAmount = existingTransaction.immediate_payout_amount || existingTransaction.amount_made_available || 0;
 
       // Calculate effective rate from original transaction
       const effectiveRate = originalSaleAmount > 0 ? (originalCommission / originalSaleAmount) : 0;
@@ -232,7 +234,21 @@ Deno.serve(async (req) => {
       // Adjustment uses the SAME rate as the initial commission
       const adjustment = delta * effectiveRate;
       const newCommissionAmount = originalCommission + adjustment;
-      const newBankedAmount = newCommissionAmount; // 100% banked for construction
+
+      // Determine available/banked split based on current phase availability
+      let closeoutAvailPct = 0;
+      let closeoutBankedPct = 100;
+      if (sale_type === 'preconstruction') {
+        const phaseAvail = commissionRule.precon_phase_availability || [];
+        const mp = phaseAvail.find(p => p.phase === sale.status);
+        if (mp) { closeoutAvailPct = mp.available_percentage || 0; closeoutBankedPct = mp.banked_percentage || 100; }
+      } else {
+        const phaseAvail = commissionRule.construction_phase_availability || [];
+        const mp = phaseAvail.find(p => p.phase === sale.status);
+        if (mp) { closeoutAvailPct = mp.available_percentage || 0; closeoutBankedPct = mp.banked_percentage || 100; }
+      }
+      const newBankedAmount = (newCommissionAmount * closeoutBankedPct) / 100;
+      const newAvailableAmount = (newCommissionAmount * closeoutAvailPct) / 100;
 
       const adjustmentNote = `CLOSEOUT ADJUSTMENT: Original contract: $${originalSaleAmount.toLocaleString()}, Final amount: $${saleAmount.toLocaleString()}, Delta: $${delta.toLocaleString()}, Rate: ${(effectiveRate * 100).toFixed(4)}%, Adjustment: ${adjustment >= 0 ? '+' : ''}$${adjustment.toLocaleString()}, New total commission: $${newCommissionAmount.toLocaleString()}`;
 
@@ -240,25 +256,34 @@ Deno.serve(async (req) => {
         amount: newCommissionAmount,
         sale_amount: saleAmount,
         banked_amount: newBankedAmount,
+        immediate_payout_amount: newAvailableAmount,
+        amount_made_available: newAvailableAmount,
         notes: adjustmentNote
       });
 
       // Update commission bank with the difference
       const bankedDiff = newBankedAmount - originalBankedAmount;
+      const availDiff = newAvailableAmount - originalAvailableAmount;
       const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedDiff;
+      const newAvailBalance = (commissionBank.available_balance || 0) + availDiff;
       const newTotalEarned = (commissionBank.total_earned || 0) + adjustment;
 
-      // Update YTD volume with the delta
+      // Update YTD volume with the delta (respecting sale type)
       const currentConstructionVolume = commissionBank.ytd_construction_volume || 0;
       const currentPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
-      const finalConstructionVolume = currentConstructionVolume + delta;
-      const finalTotalVolume = finalConstructionVolume + currentPreconVolume;
+      const finalConstructionVolume = sale_type === 'construction' 
+        ? currentConstructionVolume + delta : currentConstructionVolume;
+      const finalPreconVolume = sale_type === 'preconstruction' 
+        ? currentPreconVolume + delta : currentPreconVolume;
+      const finalTotalVolume = finalConstructionVolume + finalPreconVolume;
 
       await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
         current_bank_balance: newBankBalance,
+        available_balance: newAvailBalance,
         total_earned: newTotalEarned,
         ytd_sales_volume: finalTotalVolume,
-        ytd_construction_volume: finalConstructionVolume
+        ytd_construction_volume: finalConstructionVolume,
+        ytd_preconstruction_volume: finalPreconVolume
       });
 
       return Response.json({
