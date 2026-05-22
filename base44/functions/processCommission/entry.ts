@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     // Auth check only - this is called from frontend flows by any authenticated user
 
-    const { sale_id, sale_type, final_amount, is_update } = await req.json();
+    const { sale_id, sale_type, final_amount, is_update, is_closeout } = await req.json();
 
     if (!sale_id || !sale_type) {
       return Response.json({ error: 'Missing sale_id or sale_type' }, { status: 400 });
@@ -212,6 +212,69 @@ Deno.serve(async (req) => {
       transaction_type: 'sale_commission'
     });
     
+    // CLOSEOUT MODE: adjust commission based on delta between original and final amount,
+    // using the same effective tier rate from the initial commission
+    if (is_closeout && existingTransactions.length > 0) {
+      const existingTransaction = existingTransactions[0];
+      const originalSaleAmount = existingTransaction.sale_amount || 0;
+      const originalCommission = existingTransaction.amount || 0;
+      const originalBankedAmount = existingTransaction.banked_amount || 0;
+
+      // Calculate effective rate from original transaction
+      const effectiveRate = originalSaleAmount > 0 ? (originalCommission / originalSaleAmount) : 0;
+
+      // Delta between final amount and original contract value
+      const delta = saleAmount - originalSaleAmount;
+      if (delta === 0) {
+        return Response.json({ success: true, updated: false, message: 'No change in final amount vs original contract' });
+      }
+
+      // Adjustment uses the SAME rate as the initial commission
+      const adjustment = delta * effectiveRate;
+      const newCommissionAmount = originalCommission + adjustment;
+      const newBankedAmount = newCommissionAmount; // 100% banked for construction
+
+      const adjustmentNote = `CLOSEOUT ADJUSTMENT: Original contract: $${originalSaleAmount.toLocaleString()}, Final amount: $${saleAmount.toLocaleString()}, Delta: $${delta.toLocaleString()}, Rate: ${(effectiveRate * 100).toFixed(4)}%, Adjustment: ${adjustment >= 0 ? '+' : ''}$${adjustment.toLocaleString()}, New total commission: $${newCommissionAmount.toLocaleString()}`;
+
+      await base44.asServiceRole.entities.CommissionTransaction.update(existingTransaction.id, {
+        amount: newCommissionAmount,
+        sale_amount: saleAmount,
+        banked_amount: newBankedAmount,
+        notes: adjustmentNote
+      });
+
+      // Update commission bank with the difference
+      const bankedDiff = newBankedAmount - originalBankedAmount;
+      const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedDiff;
+      const newTotalEarned = (commissionBank.total_earned || 0) + adjustment;
+
+      // Update YTD volume with the delta
+      const currentConstructionVolume = commissionBank.ytd_construction_volume || 0;
+      const currentPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
+      const finalConstructionVolume = currentConstructionVolume + delta;
+      const finalTotalVolume = finalConstructionVolume + currentPreconVolume;
+
+      await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
+        current_bank_balance: newBankBalance,
+        total_earned: newTotalEarned,
+        ytd_sales_volume: finalTotalVolume,
+        ytd_construction_volume: finalConstructionVolume
+      });
+
+      return Response.json({
+        success: true,
+        updated: true,
+        closeout: true,
+        original_amount: originalSaleAmount,
+        final_amount: saleAmount,
+        delta,
+        effective_rate: effectiveRate,
+        adjustment,
+        new_commission: newCommissionAmount,
+        new_bank_balance: newBankBalance
+      });
+    }
+
     // If this is an update OR if a transaction already exists, update instead of creating new
     if (is_update || existingTransactions.length > 0) {
       if (existingTransactions.length > 0) {
@@ -428,7 +491,7 @@ Deno.serve(async (req) => {
       sale_id: sale.id,
       transaction_type: 'sale_commission',
       amount: commissionAmount,
-      commission_rate: null,
+      commission_rate: commissionAmount > 0 && saleAmount > 0 ? (commissionAmount / saleAmount) * 100 : null,
       sale_amount: saleAmount,
       tier_at_time: applicableTier.tier_name,
       phase_name: phaseApplied,

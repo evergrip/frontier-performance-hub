@@ -451,17 +451,17 @@ export default function Projects() {
       return;
     }
     
-    // Update commission with final contract value
+    // Adjust commission with final actual costs (entered by VP of Construction)
     if (selectedProject.sale_id) {
       try {
         await base44.functions.invoke('processCommission', {
           sale_id: selectedProject.sale_id,
           sale_type: 'construction',
-          final_amount: selectedProject.contract_value || 0,
-          is_update: true
+          final_amount: parseFloat(projectForm.actual_costs) || 0,
+          is_closeout: true
         });
       } catch (err) {
-        console.warn('Commission update skipped:', err.message || err);
+        console.warn('Commission closeout adjustment skipped:', err.message || err);
       }
     }
     
