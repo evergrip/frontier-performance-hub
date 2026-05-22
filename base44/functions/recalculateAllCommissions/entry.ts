@@ -107,20 +107,7 @@ Deno.serve(async (req) => {
 
         const state = getUserState(sale.assigned_to);
 
-        // Check if we've crossed an anniversary boundary
-        const txDate = new Date(transaction.created_date);
-        const startDate = salesperson.commission_start_date;
-        if (startDate) {
-          const windowStart = getAnniversaryWindowStart(startDate, txDate);
-          if (state.current_anniversary_start === null) {
-            state.current_anniversary_start = windowStart;
-          } else if (windowStart > state.current_anniversary_start) {
-            // Anniversary crossed — reset YTD
-            state.ytd_construction = 0;
-            state.ytd_preconstruction = 0;
-            state.current_anniversary_start = windowStart;
-          }
-        }
+        // No anniversary reset — tiers are based on LIFETIME cumulative volume since start date
 
         const saleAmount = transaction.sale_amount || sale.contract_value || 0;
         const ytdConstruction = state.ytd_construction;
