@@ -451,17 +451,18 @@ export default function Projects() {
       return;
     }
     
-    // Update commission with actual construction cost
+    // Update commission with final contract value
     if (selectedProject.sale_id) {
-      const actualCostsVal = parseFloat(projectForm.actual_costs) || 0;
-      const actualMarginVal = parseFloat(projectForm.actual_margin) || 0;
-      const actualGrossRevenue = actualMarginVal < 100 ? actualCostsVal / (1 - (actualMarginVal / 100)) : actualCostsVal;
-      await base44.functions.invoke('processCommission', {
-        sale_id: selectedProject.sale_id,
-        sale_type: 'construction',
-        final_amount: actualGrossRevenue,
-        is_update: true
-      });
+      try {
+        await base44.functions.invoke('processCommission', {
+          sale_id: selectedProject.sale_id,
+          sale_type: 'construction',
+          final_amount: selectedProject.contract_value || 0,
+          is_update: true
+        });
+      } catch (err) {
+        console.warn('Commission update skipped:', err.message || err);
+      }
     }
     
     // Add 'closed' to status_history
