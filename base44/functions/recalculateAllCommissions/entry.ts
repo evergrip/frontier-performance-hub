@@ -299,13 +299,46 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Only include tier or commission amount changes (not just banking pct)
+    const tierChanges = changes.filter(c => 
+      Math.abs(c.new_amount - c.old_amount) > 0.01 || c.new_tier !== c.old_tier
+    ).map(c => ({
+      sale: c.sale_title,
+      type: c.sale_type,
+      person: c.salesperson,
+      sale_amt: c.sale_amount,
+      old_comm: +c.old_amount.toFixed(2),
+      new_comm: +c.new_amount.toFixed(2),
+      diff: +(c.new_amount - c.old_amount).toFixed(2),
+      old_tier: c.old_tier,
+      new_tier: c.new_tier,
+      detail: c.tier_detail
+    }));
+
+    const bankingChanges = changes.filter(c => 
+      Math.abs(c.new_amount - c.old_amount) <= 0.01 && c.new_tier === c.old_tier
+    ).map(c => ({
+      sale: c.sale_title,
+      type: c.sale_type,
+      old_bank_pct: c.old_bank_pct,
+      new_bank_pct: c.new_bank_pct,
+      old_banked: +c.old_banked.toFixed(2),
+      new_banked: +c.new_banked.toFixed(2),
+      phase: c.phase
+    }));
+
+    // Limit output for dry_run readability
+    const tierSummary = tierChanges.map(c => `${c.sale} (${c.type}): ${c.old_tier||'none'}→${c.new_tier} $${c.old_comm}→$${c.new_comm} (${c.diff>=0?'+':''}${c.diff})`);
+    const bankingSummary = bankingChanges.map(c => `${c.sale} (${c.type}): bank% ${c.old_bank_pct}→${c.new_bank_pct} phase:${c.phase}`);
+
     return Response.json({
       success: true,
       dry_run,
       total_transactions: results.length,
-      transactions_changed: changes.length,
-      changes,
-      all_results: results,
+      total_changed: changes.length,
+      tier_changes_count: tierChanges.length,
+      tier_changes: tierSummary,
+      banking_changes_count: bankingChanges.length,
       bank_summaries: bankSummaries,
       errors
     });
