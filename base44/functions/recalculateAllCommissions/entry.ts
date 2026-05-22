@@ -56,8 +56,12 @@ Deno.serve(async (req) => {
     function getUserState(userId) {
       if (!userState[userId]) {
         userState[userId] = {
+          // YTD = resets each anniversary (used for tier calculation)
           ytd_construction: 0,
           ytd_preconstruction: 0,
+          // Lifetime = cumulative since start date (used for bank summary)
+          lifetime_construction: 0,
+          lifetime_preconstruction: 0,
           total_earned: 0,
           bank_balance: 0,
           available_balance: 0,
@@ -107,7 +111,20 @@ Deno.serve(async (req) => {
 
         const state = getUserState(sale.assigned_to);
 
-        // No anniversary reset — tiers are based on LIFETIME cumulative volume since start date
+        // Check if we've crossed an anniversary boundary — reset YTD for tier calc
+        const txDate = new Date(transaction.created_date);
+        const startDate = salesperson.commission_start_date;
+        if (startDate) {
+          const windowStart = getAnniversaryWindowStart(startDate, txDate);
+          if (state.current_anniversary_start === null) {
+            state.current_anniversary_start = windowStart;
+          } else if (windowStart > state.current_anniversary_start) {
+            // Anniversary crossed — reset YTD (tier calc only)
+            state.ytd_construction = 0;
+            state.ytd_preconstruction = 0;
+            state.current_anniversary_start = windowStart;
+          }
+        }
 
         const saleAmount = transaction.sale_amount || sale.contract_value || 0;
         const ytdConstruction = state.ytd_construction;
@@ -185,8 +202,13 @@ Deno.serve(async (req) => {
         }
 
         // Update running state
-        if (sale_type === 'construction') state.ytd_construction += saleAmount;
-        else state.ytd_preconstruction += saleAmount;
+        if (sale_type === 'construction') {
+          state.ytd_construction += saleAmount;
+          state.lifetime_construction += saleAmount;
+        } else {
+          state.ytd_preconstruction += saleAmount;
+          state.lifetime_preconstruction += saleAmount;
+        }
         state.total_earned += commissionAmount;
         state.bank_balance += bankedAmt;
         state.available_balance += availableAmt;
@@ -264,6 +286,8 @@ Deno.serve(async (req) => {
         total_earned: state.total_earned,
         bank_balance: state.bank_balance,
         available_balance: state.available_balance,
+        lifetime_construction: state.lifetime_construction,
+        lifetime_preconstruction: state.lifetime_preconstruction,
         ytd_construction: state.ytd_construction,
         ytd_preconstruction: state.ytd_preconstruction
       };
