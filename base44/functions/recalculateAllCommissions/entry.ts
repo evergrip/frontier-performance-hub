@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
   try {
@@ -9,300 +9,304 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Get all commission transactions and sort by creation date
+    const { dry_run = true } = await req.json();
+
+    // Load all data upfront
     const allTransactions = await base44.asServiceRole.entities.CommissionTransaction.list();
     const saleCommissions = allTransactions
       .filter(t => t.transaction_type === 'sale_commission' && t.sale_id)
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
 
-    const results = [];
-    const errors = [];
-
-    // Reset all commission banks to zero
     const allBanks = await base44.asServiceRole.entities.CommissionBank.list();
-    for (const bank of allBanks) {
-      await base44.asServiceRole.entities.CommissionBank.update(bank.id, {
-        total_earned: 0,
-        current_bank_balance: 0,
-        ytd_sales_volume: 0,
-        ytd_construction_volume: 0,
-        ytd_preconstruction_volume: 0
-      });
+    const allUsers = await base44.asServiceRole.entities.User.list();
+    const allRules = await base44.asServiceRole.entities.CommissionRule.list();
+    const allSales = await base44.asServiceRole.entities.Sale.list();
+    const allProjects = await base44.asServiceRole.entities.Project.list();
+
+    // Index lookups
+    const userMap = {};
+    allUsers.forEach(u => { userMap[u.id] = u; });
+    const ruleMap = {};
+    allRules.forEach(r => { ruleMap[r.id] = r; });
+    const saleMap = {};
+    allSales.forEach(s => { saleMap[s.id] = s; });
+    const projectsBySaleId = {};
+    allProjects.forEach(p => {
+      if (p.sale_id) projectsBySaleId[p.sale_id] = p;
+    });
+
+    // Helper: get anniversary window start for a user at a given date
+    function getAnniversaryWindowStart(commissionStartDate, asOfDate) {
+      if (!commissionStartDate) return null;
+      const start = new Date(commissionStartDate);
+      const asOf = new Date(asOfDate);
+      
+      // Find the most recent anniversary on or before asOfDate
+      let anniversaryYear = asOf.getFullYear();
+      let candidate = new Date(anniversaryYear, start.getMonth(), start.getDate());
+      if (candidate > asOf) {
+        candidate = new Date(anniversaryYear - 1, start.getMonth(), start.getDate());
+      }
+      return candidate;
     }
 
-    // Process each sale commission transaction
+    // Track per-user running state
+    const userState = {};
+
+    function getUserState(userId) {
+      if (!userState[userId]) {
+        userState[userId] = {
+          ytd_construction: 0,
+          ytd_preconstruction: 0,
+          total_earned: 0,
+          bank_balance: 0,
+          available_balance: 0,
+          current_anniversary_start: null
+        };
+      }
+      return userState[userId];
+    }
+
+    const results = [];
+    const errors = [];
+    const changes = [];
+
     for (const transaction of saleCommissions) {
       try {
-        // Get the sale
-        const sales = await base44.asServiceRole.entities.Sale.filter({ id: transaction.sale_id });
-        const sale = sales[0];
-
+        const sale = saleMap[transaction.sale_id];
         if (!sale || !sale.assigned_to) {
-          errors.push({ transaction_id: transaction.id, error: 'Sale not found or no salesperson' });
+          errors.push({ tx_id: transaction.id, error: 'Sale not found or unassigned' });
           continue;
         }
 
-        // Get salesperson
-        const users = await base44.asServiceRole.entities.User.filter({ id: sale.assigned_to });
-        const salesperson = users[0];
-
+        const salesperson = userMap[sale.assigned_to];
         if (!salesperson || !salesperson.commission_rule_ids?.length) {
-          errors.push({ transaction_id: transaction.id, error: 'No commission rules assigned' });
+          errors.push({ tx_id: transaction.id, error: 'No commission rules' });
           continue;
         }
 
-        // Get all commission rules
-        const allRules = await base44.asServiceRole.entities.CommissionRule.filter({ 
-          id: { $in: salesperson.commission_rule_ids }
-        });
-
-        // Find correct rule based on sale_type - prioritize exact match
         const sale_type = transaction.sale_type || sale.sale_type;
-        let commissionRule = allRules.find(rule => rule.sale_type === sale_type);
-        
-        if (!commissionRule) {
-          commissionRule = allRules.find(rule => rule.sale_type === 'both');
+
+        // Find the correct rule for this sale type
+        let rule = salesperson.commission_rule_ids
+          .map(id => ruleMap[id]).filter(Boolean)
+          .find(r => r.sale_type === sale_type);
+        if (!rule) {
+          rule = salesperson.commission_rule_ids
+            .map(id => ruleMap[id]).filter(Boolean)
+            .find(r => r.sale_type === 'both');
         }
-        
-        if (!commissionRule) {
-          commissionRule = allRules[0];
+        if (!rule) {
+          rule = ruleMap[salesperson.commission_rule_ids[0]];
         }
 
-        if (!commissionRule || !commissionRule.tiers?.length) {
-          errors.push({ transaction_id: transaction.id, error: 'No valid commission rule found' });
+        if (!rule || !rule.tiers?.length) {
+          errors.push({ tx_id: transaction.id, error: 'No valid rule found' });
           continue;
         }
 
-        // Get or create commission bank
-        let banks = await base44.asServiceRole.entities.CommissionBank.filter({ user_id: sale.assigned_to });
-        let commissionBank = banks[0];
+        const state = getUserState(sale.assigned_to);
 
-        if (!commissionBank) {
-          commissionBank = await base44.asServiceRole.entities.CommissionBank.create({
-            user_id: sale.assigned_to,
-            total_earned: 0,
-            current_bank_balance: 0,
-            total_paid_out: 0,
-            ytd_sales_volume: 0,
-            commission_rule_id: commissionRule.id
-          });
+        // Check if we've crossed an anniversary boundary
+        const txDate = new Date(transaction.created_date);
+        const startDate = salesperson.commission_start_date;
+        if (startDate) {
+          const windowStart = getAnniversaryWindowStart(startDate, txDate);
+          if (state.current_anniversary_start === null) {
+            state.current_anniversary_start = windowStart;
+          } else if (windowStart > state.current_anniversary_start) {
+            // Anniversary crossed — reset YTD
+            state.ytd_construction = 0;
+            state.ytd_preconstruction = 0;
+            state.current_anniversary_start = windowStart;
+          }
         }
 
-        // Calculate commission with tier splitting
-        // IMPORTANT: Only construction sales count towards tier progression
-        const ytdConstructionVolume = commissionBank.ytd_construction_volume || 0;
-        const ytdPreconVolume = commissionBank.ytd_preconstruction_volume || 0;
         const saleAmount = transaction.sale_amount || sale.contract_value || 0;
-        
-        // Use construction volume for tier calculation
-        const ytdVolume = ytdConstructionVolume;
-        const newTotalVolume = ytdVolume + (sale_type === 'construction' ? saleAmount : 0);
-        
-        // Sort tiers by min_volume
-        const sortedTiers = [...commissionRule.tiers].sort((a, b) => a.min_volume - b.min_volume);
-        
+        const ytdConstruction = state.ytd_construction;
+        const sortedTiers = [...rule.tiers].sort((a, b) => a.min_volume - b.min_volume);
+
         let commissionAmount = 0;
-        let remainingAmount = saleAmount;
-        let currentVolume = ytdVolume;
         let tierBreakdown = [];
-        
-        // Calculate commission across tiers
-        // For construction: split across tiers as volume increases
-        // For preconstruction: apply current tier rate to entire amount
+
         if (sale_type === 'construction') {
-          for (let i = 0; i < sortedTiers.length; i++) {
-            const tier = sortedTiers[i];
-            
-            // Skip if we're already completely past this tier
-            if (currentVolume >= (tier.max_volume || Infinity)) {
-              continue;
+          let remaining = saleAmount;
+          let vol = ytdConstruction;
+
+          for (const tier of sortedTiers) {
+            if (vol >= (tier.max_volume || Infinity)) continue;
+
+            const tierStart = Math.max(tier.min_volume || 0, vol);
+            const tierEnd = tier.max_volume || Infinity;
+            const inTier = Math.min(tierEnd - tierStart, remaining);
+
+            if (inTier > 0) {
+              const comm = (inTier * tier.commission_rate) / 100;
+              commissionAmount += comm;
+              vol += inTier;
+              remaining -= inTier;
+              tierBreakdown.push({ tier: tier.tier_name, amount: inTier, rate: tier.commission_rate, commission: comm });
             }
-            
-            // Calculate the effective start within this tier
-            const tierEffectiveStart = Math.max(tier.min_volume || 0, currentVolume);
-            const tierEffectiveEnd = tier.max_volume || Infinity;
-            
-            // How much volume can fit in this tier
-            const volumeInTier = Math.min(
-              tierEffectiveEnd - tierEffectiveStart,
-              remainingAmount
-            );
-            
-            if (volumeInTier > 0) {
-              const tierCommission = (volumeInTier * tier.commission_rate) / 100;
-              commissionAmount += tierCommission;
-              currentVolume += volumeInTier;
-              remainingAmount -= volumeInTier;
-              
-              tierBreakdown.push({
-                tier_name: tier.tier_name,
-                amount: volumeInTier,
-                rate: tier.commission_rate,
-                commission: tierCommission
-              });
-            }
-            
-            if (remainingAmount <= 0) {
-              break;
-            }
+            if (remaining <= 0) break;
           }
         } else {
-          // Preconstruction: apply current tier rate based on construction volume
+          // Precon: use current construction volume to determine tier
           let applicableTier = sortedTiers[0];
           for (const tier of sortedTiers) {
-            if (currentVolume >= tier.min_volume && (!tier.max_volume || currentVolume < tier.max_volume)) {
+            if (ytdConstruction >= tier.min_volume && (!tier.max_volume || ytdConstruction < tier.max_volume)) {
               applicableTier = tier;
               break;
             }
           }
-          
           commissionAmount = (saleAmount * applicableTier.commission_rate) / 100;
-          tierBreakdown.push({
-            tier_name: applicableTier.tier_name,
-            amount: saleAmount,
-            rate: applicableTier.commission_rate,
-            commission: commissionAmount
-          });
+          tierBreakdown.push({ tier: applicableTier.tier_name, amount: saleAmount, rate: applicableTier.commission_rate, commission: commissionAmount });
         }
-        
-        // Get the final tier for recording purposes
-        let applicableTier = sortedTiers[0];
+
+        // Determine phase and banking split
+        let availPct = 0;
+        let bankPct = 100;
+        let phaseApplied = 'N/A';
+
+        if (sale_type === 'preconstruction') {
+          const project = projectsBySaleId[sale.id];
+          if (project) {
+            const mp = (rule.construction_phase_availability || []).find(p => p.phase === project.status);
+            if (mp) { availPct = mp.available_percentage || 0; bankPct = mp.banked_percentage || 100; phaseApplied = project.status; }
+          } else {
+            const mp = (rule.precon_phase_availability || []).find(p => p.phase === sale.status);
+            if (mp) { availPct = mp.available_percentage || 0; bankPct = mp.banked_percentage || 100; phaseApplied = sale.status; }
+          }
+        } else {
+          const project = projectsBySaleId[sale.id];
+          if (project) {
+            const mp = (rule.construction_phase_availability || []).find(p => p.phase === project.status);
+            if (mp) { availPct = mp.available_percentage || 0; bankPct = mp.banked_percentage || 100; phaseApplied = project.status; }
+          }
+        }
+
+        const availableAmt = (commissionAmount * availPct) / 100;
+        const bankedAmt = (commissionAmount * bankPct) / 100;
+
+        // Final tier
+        const newConVol = ytdConstruction + (sale_type === 'construction' ? saleAmount : 0);
+        let finalTier = sortedTiers[0];
         for (const tier of sortedTiers) {
-          if (newTotalVolume >= tier.min_volume && (!tier.max_volume || newTotalVolume < tier.max_volume)) {
-            applicableTier = tier;
+          if (newConVol >= tier.min_volume && (!tier.max_volume || newConVol < tier.max_volume)) {
+            finalTier = tier;
             break;
           }
         }
 
-        // Determine available/banked percentages based on phase
-        let availablePercentage = 0;
-        let bankedPercentage = 0;
-        let phaseApplied = 'N/A';
+        // Update running state
+        if (sale_type === 'construction') state.ytd_construction += saleAmount;
+        else state.ytd_preconstruction += saleAmount;
+        state.total_earned += commissionAmount;
+        state.bank_balance += bankedAmt;
+        state.available_balance += availableAmt;
 
-        if (sale_type === 'preconstruction') {
-          // Check if this precon sale was converted to a project
-          const projects = await base44.asServiceRole.entities.Project.filter({ sale_id: sale.id });
-          const convertedProject = projects[0];
+        // Record the change
+        const oldAmount = transaction.amount || 0;
+        const oldBanked = transaction.banked_amount || 0;
+        const oldTier = transaction.tier_at_time || '';
+        const oldBankPct = transaction.banking_percentage;
 
-          if (convertedProject) {
-            // Precon converted to construction - use construction phase availability
-            const phaseAvailability = commissionRule.construction_phase_availability || [];
-            const matchingPhase = phaseAvailability.find(p => p.phase === convertedProject.status);
-            if (matchingPhase) {
-              availablePercentage = matchingPhase.available_percentage || 0;
-              bankedPercentage = matchingPhase.banked_percentage || 100;
-              phaseApplied = convertedProject.status;
-            } else {
-              availablePercentage = 0;
-              bankedPercentage = 100;
-            }
-          } else {
-            // Still in precon phase
-            const phaseAvailability = commissionRule.precon_phase_availability || [];
-            const matchingPhase = phaseAvailability.find(p => p.phase === sale.status);
-            if (matchingPhase) {
-              availablePercentage = matchingPhase.available_percentage || 0;
-              bankedPercentage = matchingPhase.banked_percentage || 100;
-              phaseApplied = sale.status;
-            } else {
-              availablePercentage = 0;
-              bankedPercentage = 100;
-            }
-          }
-        } else if (sale_type === 'construction') {
-          // Fetch the project associated with the sale to get its current status
-          const projects = await base44.asServiceRole.entities.Project.filter({ sale_id: sale.id });
-          const currentProject = projects[0];
+        const changed = Math.abs(commissionAmount - oldAmount) > 0.01 ||
+                        Math.abs(bankedAmt - oldBanked) > 0.01 ||
+                        finalTier.tier_name !== oldTier;
 
-          if (currentProject) {
-            const phaseAvailability = commissionRule.construction_phase_availability || [];
-            const matchingPhase = phaseAvailability.find(p => p.phase === currentProject.status);
-            if (matchingPhase) {
-              availablePercentage = matchingPhase.available_percentage || 0;
-              bankedPercentage = matchingPhase.banked_percentage || 100;
-              phaseApplied = currentProject.status;
-            } else {
-              availablePercentage = 0;
-              bankedPercentage = 100;
-            }
-          }
-        }
-
-        const availableAmount = (commissionAmount * availablePercentage) / 100;
-        const bankedAmount = (commissionAmount * bankedPercentage) / 100;
-        const immediatePayout = availableAmount;
-
-        // Update transaction with tier breakdown
-        let tierBreakdownNote = '';
+        let tierNote = '';
         if (sale_type === 'construction' && tierBreakdown.length > 0) {
-          tierBreakdownNote = ` Tier breakdown: ${tierBreakdown.map(t => 
-            `${t.tier_name}: $${t.amount.toLocaleString()} @ ${t.rate}% = $${t.commission.toLocaleString()}`
-          ).join(' + ')} = Total: $${commissionAmount.toLocaleString()}`;
+          tierNote = `Tier: ${tierBreakdown.map(t => `${t.tier}: $${t.amount.toFixed(2)} @ ${t.rate}% = $${t.commission.toFixed(2)}`).join(' + ')}`;
         } else if (tierBreakdown.length === 1) {
-          tierBreakdownNote = ` Applied at ${tierBreakdown[0].tier_name} tier: $${saleAmount.toLocaleString()} @ ${tierBreakdown[0].rate}% = $${commissionAmount.toLocaleString()}`;
+          tierNote = `${tierBreakdown[0].tier}: $${saleAmount.toFixed(2)} @ ${tierBreakdown[0].rate}% = $${commissionAmount.toFixed(2)}`;
         }
-        
-        await base44.asServiceRole.entities.CommissionTransaction.update(transaction.id, {
-          amount: commissionAmount,
-          commission_rate: null,
-          tier_at_time: applicableTier.tier_name,
-          phase_name: phaseApplied,
-          phase_payout_percentage: availablePercentage,
-          amount_made_available: availableAmount,
-          banking_percentage: bankedPercentage,
-          banked_amount: bankedAmount,
-          immediate_payout_amount: immediatePayout,
-          sale_type: sale_type,
-          notes: `Recalculated using ${sale_type} rules (${commissionRule.rule_name}).${tierBreakdownNote}`
-        });
 
-        // Update commission bank
-        const newBankBalance = (commissionBank.current_bank_balance || 0) + bankedAmount;
-        const newAvailableBalance = (commissionBank.available_balance || 0) + availableAmount;
-        const newTotalEarned = (commissionBank.total_earned || 0) + commissionAmount;
-        
-        // Update volumes based on sale type
-        const newConstructionVolume = sale_type === 'construction' 
-          ? ytdConstructionVolume + saleAmount 
-          : ytdConstructionVolume;
-        const newPreconVolume = sale_type === 'preconstruction' 
-          ? ytdPreconVolume + saleAmount 
-          : ytdPreconVolume;
-        const newTotalYtdVolume = newConstructionVolume + newPreconVolume;
-
-        await base44.asServiceRole.entities.CommissionBank.update(commissionBank.id, {
-          current_bank_balance: newBankBalance,
-          available_balance: newAvailableBalance,
-          total_earned: newTotalEarned,
-          ytd_sales_volume: newTotalYtdVolume,
-          ytd_construction_volume: newConstructionVolume,
-          ytd_preconstruction_volume: newPreconVolume
-        });
-
-        results.push({
-          transaction_id: transaction.id,
-          sale_id: sale.id,
-          sale_type: sale_type,
-          old_amount: transaction.amount,
-          new_amount: commissionAmount,
-          rule_used: commissionRule.rule_name,
-          tier: applicableTier.tier_name,
-          ytd_before: ytdVolume,
-          ytd_after: newTotalVolume,
+        const entry = {
+          tx_id: transaction.id,
+          sale_title: sale.title,
+          sale_type,
+          salesperson: salesperson.full_name,
           sale_amount: saleAmount,
-          tier_breakdown: tierBreakdown
-        });
+          ytd_con_before: ytdConstruction,
+          ytd_con_after: state.ytd_construction,
+          old_tier: oldTier,
+          new_tier: finalTier.tier_name,
+          old_amount: oldAmount,
+          new_amount: commissionAmount,
+          old_banked: oldBanked,
+          new_banked: bankedAmt,
+          old_bank_pct: oldBankPct,
+          new_bank_pct: bankPct,
+          phase: phaseApplied,
+          tier_detail: tierNote,
+          changed
+        };
 
-      } catch (error) {
-        errors.push({ transaction_id: transaction.id, error: error.message });
+        results.push(entry);
+        if (changed) changes.push(entry);
+
+        // If not dry_run, apply the changes
+        if (!dry_run) {
+          let recalcNote = `Recalculated: ${tierNote}`;
+          if (phaseApplied !== 'N/A') recalcNote += ` | Phase: ${phaseApplied} (${availPct}% avail, ${bankPct}% banked)`;
+
+          await base44.asServiceRole.entities.CommissionTransaction.update(transaction.id, {
+            amount: commissionAmount,
+            commission_rate: null,
+            tier_at_time: finalTier.tier_name,
+            phase_name: phaseApplied,
+            phase_payout_percentage: availPct,
+            amount_made_available: availableAmt,
+            banking_percentage: bankPct,
+            banked_amount: bankedAmt,
+            immediate_payout_amount: availableAmt,
+            sale_type,
+            notes: recalcNote
+          });
+        }
+      } catch (err) {
+        errors.push({ tx_id: transaction.id, error: err.message });
+      }
+    }
+
+    // Build final bank summaries
+    const bankSummaries = {};
+    for (const [userId, state] of Object.entries(userState)) {
+      const sp = userMap[userId];
+      bankSummaries[sp?.full_name || userId] = {
+        total_earned: state.total_earned,
+        bank_balance: state.bank_balance,
+        available_balance: state.available_balance,
+        ytd_construction: state.ytd_construction,
+        ytd_preconstruction: state.ytd_preconstruction
+      };
+    }
+
+    // If not dry_run, update banks
+    if (!dry_run) {
+      for (const bank of allBanks) {
+        const state = userState[bank.user_id];
+        if (state) {
+          await base44.asServiceRole.entities.CommissionBank.update(bank.id, {
+            total_earned: state.total_earned,
+            current_bank_balance: state.bank_balance,
+            available_balance: state.available_balance,
+            ytd_sales_volume: state.ytd_construction + state.ytd_preconstruction,
+            ytd_construction_volume: state.ytd_construction,
+            ytd_preconstruction_volume: state.ytd_preconstruction
+          });
+        }
       }
     }
 
     return Response.json({
       success: true,
-      processed: results.length,
-      errors: errors.length,
-      results,
+      dry_run,
+      total_transactions: results.length,
+      transactions_changed: changes.length,
+      changes,
+      all_results: results,
+      bank_summaries: bankSummaries,
       errors
     });
 
