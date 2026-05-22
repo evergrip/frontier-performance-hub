@@ -384,12 +384,16 @@ export default function Projects() {
       return;
     }
     
-    // Update phase-based commission availability
-    await base44.functions.invoke('updatePhaseCommission', {
-      project_id: selectedProject.id,
-      phase: nextStatus,
-      type: 'construction'
-    });
+    // Update phase-based commission availability (non-blocking — don't prevent advance if commission fails)
+    try {
+      await base44.functions.invoke('updatePhaseCommission', {
+        project_id: selectedProject.id,
+        phase: nextStatus,
+        type: 'construction'
+      });
+    } catch (err) {
+      console.warn('Commission update skipped:', err.message || err);
+    }
     
     // Build status history — tag with source: 'project'
     const currentHistory = selectedProject.status_history || [];
