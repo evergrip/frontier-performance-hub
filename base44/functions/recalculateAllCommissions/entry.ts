@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { dry_run = true } = await req.json();
+    const { dry_run = true, report = false } = await req.json();
 
     // Load all data upfront
     const allTransactions = await base44.asServiceRole.entities.CommissionTransaction.list();
@@ -230,6 +230,11 @@ Deno.serve(async (req) => {
           tierNote = `${tierBreakdown[0].tier}: $${saleAmount.toFixed(2)} @ ${tierBreakdown[0].rate}% = $${commissionAmount.toFixed(2)}`;
         }
 
+        const hasManualEdits = (transaction.audit_log && transaction.audit_log.length > 0);
+        const manualEditNotes = hasManualEdits
+          ? transaction.audit_log.map(a => `${a.timestamp?.slice(0,10)||'?'}: ${a.changes||''} ${a.note||''}`).join(' | ')
+          : null;
+
         const entry = {
           tx_id: transaction.id,
           sale_title: sale.title,
@@ -240,6 +245,8 @@ Deno.serve(async (req) => {
           ytd_con_after: state.ytd_construction,
           old_tier: oldTier,
           new_tier: finalTier.tier_name,
+          old_rate: transaction.commission_rate,
+          calculated_rate: tierBreakdown.length === 1 ? tierBreakdown[0].rate : tierBreakdown.map(t => `${t.rate}%`).join('/'),
           old_amount: oldAmount,
           new_amount: commissionAmount,
           old_banked: oldBanked,
@@ -248,6 +255,8 @@ Deno.serve(async (req) => {
           new_bank_pct: bankPct,
           phase: phaseApplied,
           tier_detail: tierNote,
+          has_manual_edits: hasManualEdits,
+          manual_edit_notes: manualEditNotes,
           changed
         };
 
@@ -351,6 +360,7 @@ Deno.serve(async (req) => {
       tier_changes: tierSummary,
       banking_changes_count: bankingChanges.length,
       bank_summaries: bankSummaries,
+      ...(report ? { all_transactions: results } : {}),
       errors
     });
 
