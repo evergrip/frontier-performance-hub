@@ -1,0 +1,157 @@
+{
+  "name": "StaffDetail",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "name": {
+      "type": "string",
+      "description": "Staff member's name or role title"
+    },
+    "role": {
+      "type": "string",
+      "description": "Job title or role"
+    },
+    "pay_type": {
+      "type": "string",
+      "enum": [
+        "salary",
+        "hourly"
+      ],
+      "default": "salary",
+      "description": "Whether the staff member is paid a salary or hourly wage"
+    },
+    "salary": {
+      "type": "number",
+      "description": "Annual salary or wage (for salary pay type, or computed annual for hourly)"
+    },
+    "hourly_rate": {
+      "type": "number",
+      "description": "Hourly wage rate (used when pay_type is hourly)"
+    },
+    "hours_per_week": {
+      "type": "number",
+      "description": "Hours worked per week (used when pay_type is hourly)"
+    },
+    "commission_amount": {
+      "type": "number",
+      "description": "Projected annual commission amount (always flows to COGS)"
+    },
+    "benefits": {
+      "type": "array",
+      "description": "Custom benefit line items for this staff member",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Benefit name"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "percent_of_income"
+            ],
+            "default": "fixed"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Annual cost (fixed or resolved)"
+          },
+          "percent_value": {
+            "type": "number",
+            "description": "Percentage of income"
+          }
+        }
+      }
+    },
+    "benefits_cost": {
+      "type": "number",
+      "description": "Annual cost of general benefits (legacy, computed from benefits array)"
+    },
+    "hsa_cost": {
+      "type": "number",
+      "description": "Annual Health Spending Account contribution (legacy)"
+    },
+    "rrsp_match_cost": {
+      "type": "number",
+      "description": "Annual RRSP match contribution (legacy)"
+    },
+    "taxes_cost": {
+      "type": "number",
+      "description": "Annual cost of employer payroll obligations (total, auto-calculated)"
+    },
+    "payroll_obligation_overrides": {
+      "type": "array",
+      "description": "Per-staff overrides for specific payroll obligations (overrides budget defaults)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "obligation_id": {
+            "type": "string",
+            "description": "ID matching the PayrollObligations obligation"
+          },
+          "rate": {
+            "type": "number",
+            "description": "Override rate (percentage, e.g. 5.95)"
+          },
+          "annual_cap": {
+            "type": "number",
+            "description": "Override annual cap"
+          },
+          "exempt": {
+            "type": "boolean",
+            "default": false,
+            "description": "Staff is exempt from this obligation"
+          }
+        }
+      }
+    },
+    "cost_category": {
+      "type": "string",
+      "enum": [
+        "overhead",
+        "cogs",
+        "split"
+      ],
+      "default": "overhead",
+      "description": "Whether this staff cost is Overhead, COGS, or Split"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected start date within the budget year"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected end date within the budget year"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department the staff member belongs to"
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": [
+        "full_time",
+        "part_time",
+        "contract"
+      ],
+      "default": "full_time",
+      "description": "Employment type"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "budget_id",
+    "name",
+    "salary"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "EditLog",
+  "type": "object",
+  "properties": {
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "lead",
+        "sale",
+        "project"
+      ],
+      "description": "Which entity type was edited"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the edited entity"
+    },
+    "entity_title": {
+      "type": "string",
+      "description": "Title of the edited entity at the time of edit"
+    },
+    "edited_by_id": {
+      "type": "string",
+      "description": "User ID of the editor"
+    },
+    "edited_by_name": {
+      "type": "string",
+      "description": "Full name of the editor"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "description": "Field name that was changed"
+          },
+          "field_label": {
+            "type": "string",
+            "description": "Human-readable field label"
+          },
+          "old_value": {
+            "type": "string",
+            "description": "Previous value (stringified)"
+          },
+          "new_value": {
+            "type": "string",
+            "description": "New value (stringified)"
+          }
+        }
+      },
+      "description": "List of field-level changes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional edit notes/reason"
+    }
+  },
+  "required": [
+    "entity_type",
+    "entity_id",
+    "edited_by_id",
+    "changes"
+  ]
+}

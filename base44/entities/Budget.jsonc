@@ -1,0 +1,160 @@
+{
+  "name": "Budget",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the budget (e.g., '2026 Annual Budget')"
+    },
+    "fiscal_year": {
+      "type": "number",
+      "description": "Fiscal year this budget applies to"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft",
+      "description": "Current status of the budget"
+    },
+    "description": {
+      "type": "string",
+      "description": "Overall description or notes for the budget"
+    },
+    "departments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Departments included in this budget"
+    },
+    "net_profit_target_amount": {
+      "type": "number",
+      "description": "Target net profit amount in dollars"
+    },
+    "net_profit_target_percentage": {
+      "type": "number",
+      "description": "Target net profit percentage (e.g., 15 for 15%)"
+    },
+    "gross_revenue_projection": {
+      "type": "number",
+      "description": "Projected gross revenue for the fiscal year"
+    },
+    "cost_of_goods_sold_projection": {
+      "type": "number",
+      "description": "Projected total cost of goods sold"
+    },
+    "total_overhead_projection": {
+      "type": "number",
+      "description": "Projected total overhead expenses"
+    },
+    "line_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "revenue",
+              "cogs",
+              "overhead",
+              "other"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "annual",
+              "monthly",
+              "quarterly"
+            ]
+          }
+        }
+      },
+      "description": "General budget line items"
+    },
+    "current_version": {
+      "type": "number",
+      "default": 1,
+      "description": "Current version number of the budget"
+    },
+    "version_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changed_by": {
+            "type": "string",
+            "description": "Email of user who made the change"
+          },
+          "changed_by_name": {
+            "type": "string",
+            "description": "Full name of user who made the change"
+          },
+          "change_summary": {
+            "type": "string",
+            "description": "Description of what changed"
+          },
+          "snapshot": {
+            "type": "object",
+            "description": "Snapshot of budget fields at this version",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "net_profit_target_amount": {
+                "type": "number"
+              },
+              "net_profit_target_percentage": {
+                "type": "number"
+              },
+              "gross_revenue_projection": {
+                "type": "number"
+              },
+              "cost_of_goods_sold_projection": {
+                "type": "number"
+              },
+              "total_overhead_projection": {
+                "type": "number"
+              },
+              "line_items": {
+                "type": "array"
+              }
+            }
+          }
+        }
+      },
+      "description": "History of budget versions with snapshots for revert"
+    }
+  },
+  "required": [
+    "name",
+    "fiscal_year"
+  ]
+}

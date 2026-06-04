@@ -1,0 +1,80 @@
+{
+  "name": "CommissionBank",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Link to User (salesperson)"
+    },
+    "total_earned": {
+      "type": "number",
+      "default": 0,
+      "description": "Total commissions earned lifetime"
+    },
+    "current_bank_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Current banked commission balance (not yet available)"
+    },
+    "available_balance": {
+      "type": "number",
+      "default": 0,
+      "description": "Commission available for payout based on completed phases"
+    },
+    "total_paid_out": {
+      "type": "number",
+      "default": 0,
+      "description": "Total commissions paid out"
+    },
+    "recurring_payout_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Fixed dollar amount to pay out each pay period (set by admin)"
+    },
+    "next_payout_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Next scheduled recurring payout date"
+    },
+    "quarterly_payout_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Current per-period payout suggestion (available/26)"
+    },
+    "last_quarterly_calculation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Last date quarterly recalculation was performed"
+    },
+    "ytd_sales_volume": {
+      "type": "number",
+      "default": 0,
+      "description": "Year-to-date TOTAL sales volume (construction + preconstruction combined)"
+    },
+    "ytd_construction_volume": {
+      "type": "number",
+      "default": 0,
+      "description": "Year-to-date construction sales volume (used for tier calculation)"
+    },
+    "ytd_preconstruction_volume": {
+      "type": "number",
+      "default": 0,
+      "description": "Year-to-date preconstruction sales volume (tracked separately)"
+    },
+    "current_tier": {
+      "type": "string",
+      "description": "Current commission tier based on construction volume only"
+    },
+    "commission_rule_id": {
+      "type": "string",
+      "description": "Link to CommissionRule applied to this salesperson"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

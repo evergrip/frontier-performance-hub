@@ -1,0 +1,85 @@
+{
+  "name": "DataFlag",
+  "type": "object",
+  "properties": {
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "Project",
+        "Sale",
+        "Lead",
+        "Client",
+        "CommissionTransaction"
+      ],
+      "description": "Which entity type this flag is for"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the flagged entity record"
+    },
+    "entity_title": {
+      "type": "string",
+      "description": "Display title of the flagged record for quick reference"
+    },
+    "field_name": {
+      "type": "string",
+      "description": "Specific field that has an issue (optional \u2014 blank means general issue)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_progress",
+        "resolved",
+        "dismissed"
+      ],
+      "default": "open",
+      "description": "Current status of this flag"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium",
+      "description": "Priority level"
+    },
+    "issue_description": {
+      "type": "string",
+      "description": "Description of what is wrong with the data"
+    },
+    "flagged_by_user_id": {
+      "type": "string",
+      "description": "User ID who flagged the issue"
+    },
+    "flagged_by_name": {
+      "type": "string",
+      "description": "Name of user who flagged"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "description": "How the issue was resolved"
+    },
+    "resolved_by_user_id": {
+      "type": "string",
+      "description": "User ID who resolved the issue"
+    },
+    "resolved_by_name": {
+      "type": "string",
+      "description": "Name of user who resolved"
+    },
+    "resolved_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the issue was resolved"
+    }
+  },
+  "required": [
+    "entity_type",
+    "entity_id",
+    "issue_description"
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "name": "ExpenseDetail",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the expense (e.g., Insurance, Heat, Internet)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "insurance",
+        "utilities",
+        "office",
+        "subscriptions",
+        "professional_services",
+        "marketing",
+        "travel",
+        "supplies",
+        "other"
+      ],
+      "default": "other",
+      "description": "Expense category"
+    },
+    "amount_mode": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "percent_of_revenue"
+      ],
+      "default": "fixed",
+      "description": "Whether the expense is a fixed dollar amount or a percentage of gross revenue"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Cost amount (fixed dollar value)"
+    },
+    "percent_of_revenue": {
+      "type": "number",
+      "description": "Percentage of gross revenue (e.g., 5 for 5%)"
+    },
+    "period": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "quarterly",
+        "annual"
+      ],
+      "default": "monthly",
+      "description": "How often this expense recurs (used for fixed amounts)"
+    },
+    "cost_type": {
+      "type": "string",
+      "enum": [
+        "overhead",
+        "cogs"
+      ],
+      "default": "overhead",
+      "description": "Whether this expense is overhead or COGS"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department this expense belongs to (empty for company-wide)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "budget_id",
+    "name"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Holiday",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "The holiday date"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the holiday (e.g., Christmas Day, Labor Day)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about the holiday"
+    }
+  },
+  "required": [
+    "date",
+    "name"
+  ]
+}

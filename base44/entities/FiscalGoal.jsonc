@@ -1,0 +1,49 @@
+{
+  "name": "FiscalGoal",
+  "type": "object",
+  "properties": {
+    "fiscal_year": {
+      "type": "number",
+      "description": "Fiscal year (e.g., 2026)"
+    },
+    "revenue_target": {
+      "type": "number",
+      "description": "Annual revenue target in dollars"
+    },
+    "gross_margin_target": {
+      "type": "number",
+      "description": "Target gross margin percentage"
+    },
+    "net_margin_target": {
+      "type": "number",
+      "description": "Target net margin percentage"
+    },
+    "operating_expense_budget": {
+      "type": "number",
+      "description": "Annual operating expense budget"
+    },
+    "project_count_target": {
+      "type": "number",
+      "description": "Target number of projects to complete"
+    },
+    "sales_volume_target": {
+      "type": "number",
+      "description": "Target sales volume (total contract value)"
+    },
+    "ebitda_target": {
+      "type": "number",
+      "description": "EBITDA target in dollars"
+    },
+    "cash_flow_target": {
+      "type": "number",
+      "description": "Operating cash flow target"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about fiscal goals"
+    }
+  },
+  "required": [
+    "fiscal_year"
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "name": "PayrollObligations",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "region": {
+      "type": "string",
+      "description": "Country/region label (e.g., Canada - Ontario, USA - California)"
+    },
+    "obligations": {
+      "type": "array",
+      "description": "List of employer payroll obligations / statutory deductions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique ID for this obligation"
+          },
+          "name": {
+            "type": "string",
+            "description": "Obligation name (e.g., CPP, EI, WSIB, EHT, Social Security)"
+          },
+          "rate": {
+            "type": "number",
+            "description": "Percentage rate as a decimal fraction (e.g., 5.95 for 5.95%)"
+          },
+          "applies_to": {
+            "type": "string",
+            "enum": [
+              "salary",
+              "salary_and_commission",
+              "total_compensation"
+            ],
+            "default": "salary",
+            "description": "What compensation base this rate applies to"
+          },
+          "annual_cap": {
+            "type": "number",
+            "description": "Optional annual maximum contribution per employee (0 or null for no cap)"
+          },
+          "is_preset": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this came from a preset region template"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "budget_id"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "name": "KPITarget",
+  "type": "object",
+  "properties": {
+    "kpi_id": {
+      "type": "string",
+      "description": "Link to KPI definition"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User this target applies to (optional for department-wide targets)"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "sales",
+        "operations",
+        "finance",
+        "precon",
+        "projects"
+      ],
+      "description": "Department this target applies to (if not user-specific)"
+    },
+    "reporting_period_start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of period this target applies to"
+    },
+    "reporting_period_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "End of period this target applies to"
+    },
+    "target_value": {
+      "type": "number",
+      "description": "Specific target value for this period"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional context for this target"
+    }
+  },
+  "required": [
+    "kpi_id",
+    "reporting_period_start_date",
+    "reporting_period_end_date",
+    "target_value"
+  ]
+}

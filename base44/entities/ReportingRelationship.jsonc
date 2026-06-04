@@ -1,0 +1,33 @@
+{
+  "name": "ReportingRelationship",
+  "type": "object",
+  "properties": {
+    "manager_id": {
+      "type": "string",
+      "description": "User ID of the manager"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "User ID of the employee"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this reporting relationship began"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this reporting relationship ended (null if current)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this reporting relationship is currently active"
+    }
+  },
+  "required": [
+    "manager_id",
+    "employee_id"
+  ]
+}

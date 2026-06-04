@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
     try {
@@ -34,6 +34,10 @@ Deno.serve(async (req) => {
                 commissions_created: 0
             }
         };
+
+        // Pre-fetch company settings once (not per-row)
+        const settingsList = await base44.asServiceRole.entities.CompanySettings.list();
+        const fiscalStartMonth = settingsList[0]?.fiscal_year_start_month || 10;
 
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
@@ -198,10 +202,6 @@ Deno.serve(async (req) => {
                     const transDate = new Date(transactionDate);
                     const transYear = transDate.getFullYear();
                     const transMonth = transDate.getMonth() + 1;
-                    
-                    // Get company settings for fiscal year start
-                    const settingsList = await base44.asServiceRole.entities.CompanySettings.list();
-                    const fiscalStartMonth = settingsList[0]?.fiscal_year_start_month || 10;
                     
                     // Calculate if this transaction is in current fiscal year
                     const now = new Date();

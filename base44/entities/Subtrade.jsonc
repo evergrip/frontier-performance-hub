@@ -1,0 +1,46 @@
+{
+  "name": "Subtrade",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the subtrade company or individual (e.g., 'Reliable Electricians', 'John Doe Plumbing')"
+    },
+    "trade_type": {
+      "type": "string",
+      "enum": [
+        "electrician",
+        "plumber",
+        "hvac",
+        "painter",
+        "carpenter",
+        "drywaller",
+        "roofer",
+        "landscaper",
+        "other"
+      ],
+      "description": "Type of trade"
+    },
+    "contact_person": {
+      "type": "string",
+      "description": "Primary contact person for the subtrade"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Contact phone number"
+    },
+    "contact_email": {
+      "type": "string",
+      "format": "email",
+      "description": "Contact email address"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Any additional notes about the subtrade"
+    }
+  },
+  "required": [
+    "name",
+    "trade_type"
+  ]
+}

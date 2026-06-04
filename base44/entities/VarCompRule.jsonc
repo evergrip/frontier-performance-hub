@@ -1,0 +1,159 @@
+{
+  "name": "VarCompRule",
+  "type": "object",
+  "properties": {
+    "rule_name": {
+      "type": "string",
+      "description": "Name of the variable compensation rule set"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of this rule set"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft",
+      "description": "Rule status \u2014 only one can be active at a time"
+    },
+    "effective_fiscal_year": {
+      "type": "number",
+      "description": "Fiscal year this rule applies to (e.g. 2026)"
+    },
+    "payout_gate_type": {
+      "type": "string",
+      "enum": [
+        "annual_np_percent",
+        "annual_np_dollar"
+      ],
+      "default": "annual_np_percent",
+      "description": "Type of payout gate threshold"
+    },
+    "payout_gate_value": {
+      "type": "number",
+      "description": "Threshold value (e.g. 10.0 for 10% NP gate)"
+    },
+    "min_net_profit_dollars": {
+      "type": "number",
+      "description": "Minimum net profit dollar floor before profit sharing can start, even if NP% gate is met"
+    },
+    "company_retention_percent": {
+      "type": "number",
+      "description": "Percentage of excess profit retained by company (e.g. 20)"
+    },
+    "distribution_percent": {
+      "type": "number",
+      "description": "Percentage of excess profit distributed to pools (e.g. 80)"
+    },
+    "payout_schedule": {
+      "type": "string",
+      "enum": [
+        "quarterly",
+        "annual"
+      ],
+      "default": "quarterly",
+      "description": "How often payouts are calculated \u2014 quarterly evaluates each quarter independently, annual evaluates at year-end only"
+    },
+    "payout_quarters": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Which quarters to evaluate for payouts (e.g. [1,2,3,4]). Only used when payout_schedule is quarterly."
+    },
+    "pools": {
+      "type": "array",
+      "description": "Distribution pools with allocation percentages",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pool_name": {
+            "type": "string",
+            "description": "Pool name (e.g. Shareholders, Leadership, Full Staff)"
+          },
+          "allocation_percent": {
+            "type": "number",
+            "description": "Percentage of distributed amount going to this pool (all pools should sum to 100)"
+          },
+          "eligible_roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Which user roles participate in this pool (e.g. ['leadership'], ['all'])"
+          },
+          "also_participates_in": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of other pools these members also participate in"
+          }
+        }
+      }
+    },
+    "eligibility_rules": {
+      "type": "object",
+      "description": "Eligibility criteria for employees",
+      "properties": {
+        "must_be_employed_at_year_end": {
+          "type": "boolean",
+          "default": true
+        },
+        "min_months_employed": {
+          "type": "number",
+          "default": 3,
+          "description": "Minimum months of employment to be eligible (0-3 months = not eligible means min is 3)"
+        },
+        "tenure_multiplier_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether tenure-based multiplier is used"
+        },
+        "tenure_multipliers": {
+          "type": "array",
+          "description": "Tenure-based payout multipliers",
+          "items": {
+            "type": "object",
+            "properties": {
+              "min_years": {
+                "type": "number"
+              },
+              "max_years": {
+                "type": "number",
+                "description": "null for unlimited"
+              },
+              "multiplier": {
+                "type": "number",
+                "description": "e.g. 1.0 for 1x, 5.0 for 5x cap"
+              }
+            }
+          }
+        }
+      }
+    },
+    "tracking_interval": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "quarterly",
+        "annual"
+      ],
+      "default": "monthly",
+      "description": "How frequently NP% actuals are entered for tracking"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "rule_name",
+    "effective_fiscal_year",
+    "payout_gate_value"
+  ]
+}

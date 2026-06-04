@@ -1,0 +1,111 @@
+{
+  "name": "CommissionRule",
+  "type": "object",
+  "properties": {
+    "rule_name": {
+      "type": "string",
+      "description": "Name of the commission rule set"
+    },
+    "sale_type": {
+      "type": "string",
+      "enum": [
+        "preconstruction",
+        "construction",
+        "both"
+      ],
+      "description": "Type of sales this rule applies to"
+    },
+    "tiers": {
+      "type": "array",
+      "description": "Volume-based commission tiers",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tier_name": {
+            "type": "string"
+          },
+          "min_volume": {
+            "type": "number",
+            "description": "Minimum sales volume for this tier"
+          },
+          "max_volume": {
+            "type": "number",
+            "description": "Maximum sales volume (null for unlimited)"
+          },
+          "commission_rate": {
+            "type": "number",
+            "description": "Commission percentage for this tier"
+          }
+        }
+      }
+    },
+    "precon_phase_availability": {
+      "type": "array",
+      "description": "Preconstruction phase-based commission availability breakdown",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "enum": [
+              "feasibility",
+              "design_material_selections",
+              "engineering_permits",
+              "pending_construction_sale"
+            ],
+            "description": "Sale phase"
+          },
+          "available_percentage": {
+            "type": "number",
+            "description": "Percentage of commission available for payout at this phase"
+          },
+          "banked_percentage": {
+            "type": "number",
+            "description": "Percentage of commission retained in bank at this phase"
+          }
+        }
+      }
+    },
+    "construction_phase_availability": {
+      "type": "array",
+      "description": "Construction phase-based commission availability breakdown",
+      "items": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "enum": [
+              "awaiting_to_be_scheduled",
+              "mobilization",
+              "active_construction",
+              "substantial_completion_closeout",
+              "closed"
+            ],
+            "description": "Project phase"
+          },
+          "available_percentage": {
+            "type": "number",
+            "description": "Percentage of commission available for payout at this phase"
+          },
+          "banked_percentage": {
+            "type": "number",
+            "description": "Percentage of commission retained in bank at this phase"
+          }
+        }
+      }
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this rule is currently active"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about this commission rule"
+    }
+  },
+  "required": [
+    "rule_name",
+    "sale_type"
+  ]
+}

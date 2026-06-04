@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const DEFAULT_FIELDS = ['title', 'client', 'client_email', 'client_phone', 'source', 'estimated_precon_value', 'estimated_construction_value', 'notes'];
 

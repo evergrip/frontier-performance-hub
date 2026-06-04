@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
   try {
@@ -9,9 +9,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const today = new Date();
-    const todayMonth = today.getUTCMonth() + 1; // 1-12
-    const todayDay = today.getUTCDate();
+    // Use Eastern time (America/Toronto) to match the business timezone
+    const nowEastern = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+    const todayMonth = nowEastern.getMonth() + 1; // 1-12
+    const todayDay = nowEastern.getDate();
 
     const allUsers = await base44.asServiceRole.entities.User.list();
     const commissionBanks = await base44.asServiceRole.entities.CommissionBank.list();
@@ -20,9 +21,9 @@ Deno.serve(async (req) => {
     for (const u of allUsers) {
       if (!u.is_commission_eligible || !u.commission_start_date) continue;
 
-      const startDate = new Date(u.commission_start_date);
-      const startMonth = startDate.getUTCMonth() + 1;
-      const startDay = startDate.getUTCDate();
+      const startDate = new Date(u.commission_start_date + 'T12:00:00'); // noon to avoid timezone shift
+      const startMonth = startDate.getMonth() + 1;
+      const startDay = startDate.getDate();
 
       // Check if today is this user's anniversary
       if (todayMonth === startMonth && todayDay === startDay) {

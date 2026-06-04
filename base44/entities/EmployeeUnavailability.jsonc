@@ -1,0 +1,48 @@
+{
+  "name": "EmployeeUnavailability",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "User ID of the employee"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date of unavailability"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "End date of unavailability (same as start_date for single day)"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "holiday",
+        "sick",
+        "no_show",
+        "early_dismissal",
+        "reduced_duties",
+        "injury",
+        "vacation",
+        "other"
+      ],
+      "description": "Reason for unavailability"
+    },
+    "hours_available": {
+      "type": "number",
+      "description": "For reduced duties/early dismissal - how many hours available (0 for fully unavailable)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes about the unavailability"
+    }
+  },
+  "required": [
+    "employee_id",
+    "start_date",
+    "end_date",
+    "reason"
+  ]
+}

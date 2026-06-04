@@ -1,0 +1,73 @@
+{
+  "name": "EmployeeAssignment",
+  "type": "object",
+  "properties": {
+    "assignment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Specific date of the assignment"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ID of the Project assigned to"
+    },
+    "status": {
+      "type": "string",
+      "description": "Assignment status (e.g., 'Assigned')"
+    },
+    "employee_assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "employee_id": {
+            "type": "string",
+            "description": "ID of the employee"
+          },
+          "hours": {
+            "type": "number",
+            "default": 8,
+            "description": "Hours assigned for this employee"
+          }
+        },
+        "required": [
+          "employee_id"
+        ]
+      },
+      "description": "Array of employees assigned to this job with their hours"
+    },
+    "subtrade_assignments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "subtrade_id": {
+            "type": "string",
+            "description": "ID of the subtrade"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes about the subtrade assignment for this day"
+          }
+        },
+        "required": [
+          "subtrade_id"
+        ]
+      },
+      "description": "Array of subtrades assigned to this job (do not count toward staff hours or unassigned status)"
+    },
+    "color": {
+      "type": "string",
+      "description": "Optional color code for visual representation in calendar"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes about the assignment"
+    }
+  },
+  "required": [
+    "assignment_date",
+    "project_id",
+    "status"
+  ]
+}

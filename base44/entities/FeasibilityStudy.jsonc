@@ -1,0 +1,130 @@
+{
+  "name": "FeasibilityStudy",
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string",
+      "description": "Link to the Client entity"
+    },
+    "sale_id": {
+      "type": "string",
+      "description": "Link to a preconstruction Sale (optional)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the feasibility study"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address for the study"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "Municipality or jurisdiction"
+    },
+    "scope_summary": {
+      "type": "string",
+      "description": "Brief scope description of the proposed project"
+    },
+    "overall_feasibility_rating": {
+      "type": "string",
+      "enum": [
+        "highly_feasible",
+        "feasible_with_conditions",
+        "marginally_feasible",
+        "not_feasible",
+        ""
+      ],
+      "default": "",
+      "description": "Overall feasibility rating"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "in_progress",
+        "ready_to_generate",
+        "generated",
+        "sent",
+        "archived"
+      ],
+      "default": "draft",
+      "description": "Status of the feasibility study"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "User ID of the assigned pre-con staff"
+    },
+    "template_doc_id": {
+      "type": "string",
+      "description": "Google Docs template ID for generation"
+    },
+    "output_folder_id": {
+      "type": "string",
+      "description": "Google Drive folder ID for output"
+    },
+    "generated_doc_url": {
+      "type": "string",
+      "description": "URL of the generated Google Doc"
+    },
+    "generated_pdf_url": {
+      "type": "string",
+      "description": "URL of the generated PDF"
+    },
+    "last_built_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the document was last generated"
+    },
+    "appendix_items": {
+      "type": "array",
+      "description": "Appendix text items to include at the end of the report",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Appendix item title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Appendix item content/description"
+          },
+          "sort_order": {
+            "type": "number",
+            "description": "Display order"
+          }
+        }
+      }
+    },
+    "photos": {
+      "type": "array",
+      "description": "Photos to include in the report appendix",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Uploaded photo URL"
+          },
+          "caption": {
+            "type": "string",
+            "description": "Photo caption/description"
+          },
+          "sort_order": {
+            "type": "number",
+            "description": "Display order"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "client_id",
+    "title"
+  ]
+}

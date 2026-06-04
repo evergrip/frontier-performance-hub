@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const LEAD_STATUSES = {
   new_project_lead: 'New Project Lead', initial_video_consult: 'Initial Video Consult',

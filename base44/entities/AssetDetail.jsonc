@@ -1,0 +1,69 @@
+{
+  "name": "AssetDetail",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name or description of the asset"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "equipment",
+        "property",
+        "software_license",
+        "tools",
+        "other"
+      ],
+      "description": "Type of asset"
+    },
+    "purchase_cost": {
+      "type": "number",
+      "description": "Purchase cost of the asset"
+    },
+    "depreciation_method": {
+      "type": "string",
+      "enum": [
+        "straight_line",
+        "declining_balance"
+      ],
+      "default": "straight_line",
+      "description": "Depreciation method"
+    },
+    "useful_life_years": {
+      "type": "number",
+      "description": "Estimated useful life in years"
+    },
+    "salvage_value": {
+      "type": "number",
+      "description": "Estimated salvage value"
+    },
+    "monthly_maintenance_cost": {
+      "type": "number",
+      "description": "Estimated monthly maintenance cost"
+    },
+    "acquisition_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the asset is expected to be acquired"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department this asset belongs to (empty for company-wide)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "budget_id",
+    "name",
+    "type",
+    "purchase_cost"
+  ]
+}

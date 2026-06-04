@@ -1,0 +1,203 @@
+{
+  "name": "KPI",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the KPI (e.g., 'New Leads per Week', 'Gross Margin')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed explanation of what this KPI measures and why it matters"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "calculated",
+        "scorecard"
+      ],
+      "description": "manual = requires user input, calculated = automatically computed from data, scorecard = multi-question checklist with point values"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "sales",
+        "operations",
+        "finance",
+        "precon",
+        "projects"
+      ],
+      "description": "Department or category this KPI belongs to"
+    },
+    "measurement_unit": {
+      "type": "string",
+      "enum": [
+        "count",
+        "percentage",
+        "days",
+        "USD",
+        "hours",
+        "points"
+      ],
+      "description": "Unit of measurement for this KPI"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "department",
+        "company"
+      ],
+      "default": "company",
+      "description": "personal = created by user for self, department = by manager for department, company = by admin for company"
+    },
+    "assigned_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of user IDs who should fill out this KPI (empty = all users in category)"
+    },
+    "source_entity": {
+      "type": "string",
+      "description": "For calculated KPIs: entity to query (Lead, Sale, Project, etc.)"
+    },
+    "metric_field": {
+      "type": "string",
+      "description": "For calculated KPIs: field to measure (status, contract_value, etc.)"
+    },
+    "date_field": {
+      "type": "string",
+      "description": "For calculated KPIs: date field for filtering (created_date, close_date, etc.)"
+    },
+    "aggregation_method": {
+      "type": "string",
+      "enum": [
+        "count",
+        "sum",
+        "average",
+        "min",
+        "max"
+      ],
+      "description": "For calculated KPIs: how to aggregate values"
+    },
+    "filter_conditions": {
+      "type": "object",
+      "description": "For calculated KPIs: JSON object with filter conditions (e.g., {\"status\": \"converted\"})"
+    },
+    "responsible_user_field": {
+      "type": "string",
+      "description": "For calculated KPIs: field linking to User (assigned_to, project_manager_id, etc.)"
+    },
+    "question": {
+      "type": "string",
+      "description": "For manual KPIs: question to ask the user"
+    },
+    "response_type": {
+      "type": "string",
+      "enum": [
+        "yes_no",
+        "number",
+        "text"
+      ],
+      "description": "For manual KPIs: type of expected answer"
+    },
+    "scorecard_questions": {
+      "type": "array",
+      "description": "For scorecard KPIs: array of questions with point values",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "Question text"
+          },
+          "response_type": {
+            "type": "string",
+            "enum": [
+              "yes_no",
+              "number"
+            ],
+            "description": "Type of response expected"
+          },
+          "point_value_if_yes": {
+            "type": "number",
+            "description": "Points awarded for 'yes' answer"
+          },
+          "point_value_if_no": {
+            "type": "number",
+            "description": "Points awarded for 'no' answer"
+          },
+          "expected_number_value": {
+            "type": "number",
+            "description": "For number questions: the target value"
+          },
+          "points_per_unit": {
+            "type": "number",
+            "description": "For number questions: points awarded per unit"
+          },
+          "max_points": {
+            "type": "number",
+            "description": "Maximum points possible for this question"
+          },
+          "requires_explanation_if_wrong": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether user must explain if they don't get max points"
+          }
+        }
+      }
+    },
+    "target_value": {
+      "type": "number",
+      "description": "Default target value for this KPI"
+    },
+    "threshold_comparison": {
+      "type": "string",
+      "enum": [
+        "less_than",
+        "greater_than",
+        "equal_to",
+        "not_equal_to",
+        "within_range"
+      ],
+      "description": "How to compare actual value to threshold"
+    },
+    "threshold_value": {
+      "type": "number",
+      "description": "Value that triggers a flag if crossed"
+    },
+    "explanation_required_on_flag": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, user must explain when threshold is crossed"
+    },
+    "reporting_period_type": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly",
+        "monthly",
+        "quarterly",
+        "yearly"
+      ],
+      "default": "monthly",
+      "description": "How often this KPI is measured"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this KPI is currently in use"
+    },
+    "display_order": {
+      "type": "number",
+      "description": "Order for displaying this KPI in lists"
+    }
+  },
+  "required": [
+    "name",
+    "type",
+    "category"
+  ]
+}

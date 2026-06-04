@@ -1,0 +1,71 @@
+{
+  "name": "CommissionPayout",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Link to User (salesperson)"
+    },
+    "payout_type": {
+      "type": "string",
+      "enum": [
+        "regular_period",
+        "balloon",
+        "quarterly",
+        "adjustment"
+      ],
+      "description": "Type of payout"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payout amount"
+    },
+    "payout_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of payout"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "paid"
+      ],
+      "default": "pending",
+      "description": "Payout status"
+    },
+    "request_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date balloon payment was requested"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "User ID who approved the payout"
+    },
+    "approval_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payout was approved"
+    },
+    "bank_balance_before": {
+      "type": "number",
+      "description": "Commission bank balance before payout"
+    },
+    "bank_balance_after": {
+      "type": "number",
+      "description": "Commission bank balance after payout"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Payout notes or reason"
+    }
+  },
+  "required": [
+    "user_id",
+    "payout_type",
+    "amount"
+  ]
+}

@@ -1,4 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+const ALLOWED_UPDATE_FIELDS = ['amount', 'commission_rate', 'sale_amount', 'tier_at_time', 'phase_name', 'phase_payout_percentage', 'amount_made_available', 'banking_percentage', 'banked_amount', 'immediate_payout_amount', 'status', 'sale_type', 'notes', 'user_id'];
 
 Deno.serve(async (req) => {
   try {
@@ -9,10 +11,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
     }
 
-    const { transaction_id, updates, note } = await req.json();
+    const { transaction_id, updates: rawUpdates, note } = await req.json();
 
-    if (!transaction_id || !updates || !note) {
+    if (!transaction_id || !rawUpdates || !note) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Whitelist allowed fields to prevent arbitrary field injection
+    const updates = {};
+    for (const key of ALLOWED_UPDATE_FIELDS) {
+      if (rawUpdates[key] !== undefined) {
+        updates[key] = rawUpdates[key];
+      }
     }
 
     // Get the original transaction

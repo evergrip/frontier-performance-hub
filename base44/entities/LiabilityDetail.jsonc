@@ -1,0 +1,61 @@
+{
+  "name": "LiabilityDetail",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the liability (e.g., 'Bank Loan', 'Line of Credit')"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "loan",
+        "line_of_credit",
+        "accounts_payable",
+        "lease",
+        "other"
+      ],
+      "description": "Type of liability"
+    },
+    "principal_amount": {
+      "type": "number",
+      "description": "Original principal amount"
+    },
+    "interest_rate": {
+      "type": "number",
+      "description": "Annual interest rate as percentage (e.g., 5 for 5%)"
+    },
+    "monthly_payment": {
+      "type": "number",
+      "description": "Required monthly payment"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the liability was incurred"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected payoff date"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department this liability belongs to (empty for company-wide)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "budget_id",
+    "name",
+    "type",
+    "principal_amount"
+  ]
+}

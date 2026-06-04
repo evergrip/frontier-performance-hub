@@ -1,0 +1,46 @@
+{
+  "name": "AlertDigest",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User this digest item is for"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email to send to"
+    },
+    "alert_rule_id": {
+      "type": "string",
+      "description": "Which alert rule matched"
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Lead, Sale, or Project"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the changed record"
+    },
+    "entity_title": {
+      "type": "string",
+      "description": "Title of the changed record"
+    },
+    "event_summary": {
+      "type": "string",
+      "description": "Human-readable description of what happened"
+    },
+    "sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this has been included in a digest email"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "entity_type",
+    "entity_id",
+    "event_summary"
+  ]
+}

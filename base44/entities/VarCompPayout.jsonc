@@ -1,0 +1,77 @@
+{
+  "name": "VarCompPayout",
+  "type": "object",
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "description": "Link to VarCompRule used for this calculation"
+    },
+    "fiscal_year": {
+      "type": "number",
+      "description": "Fiscal year of payout"
+    },
+    "quarter": {
+      "type": "number",
+      "description": "Quarter number (1-4) if quarterly payout, null/0 for annual"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Employee user ID"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Employee full name (snapshot)"
+    },
+    "pool_name": {
+      "type": "string",
+      "description": "Which pool this payout comes from"
+    },
+    "base_share_amount": {
+      "type": "number",
+      "description": "Base share before tenure multiplier"
+    },
+    "tenure_multiplier": {
+      "type": "number",
+      "description": "Tenure multiplier applied"
+    },
+    "tenure_years": {
+      "type": "number",
+      "description": "Years of tenure at time of calculation"
+    },
+    "final_payout_amount": {
+      "type": "number",
+      "description": "Final calculated payout amount"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "projected",
+        "approved",
+        "paid"
+      ],
+      "default": "projected",
+      "description": "Payout status"
+    },
+    "calculation_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this was calculated"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When this was actually paid"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes"
+    }
+  },
+  "required": [
+    "rule_id",
+    "fiscal_year",
+    "user_id",
+    "pool_name",
+    "final_payout_amount"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "MeetingType",
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "Display name for the meeting type"
+    },
+    "value": {
+      "type": "string",
+      "description": "Internal key for the meeting type (lowercase, underscored)"
+    },
+    "default_duration_minutes": {
+      "type": "number",
+      "default": 60,
+      "description": "Standard duration in minutes for this meeting type"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this meeting type is available for selection"
+    },
+    "display_order": {
+      "type": "number",
+      "default": 0,
+      "description": "Order in which this type appears in dropdowns"
+    }
+  },
+  "required": [
+    "label",
+    "value"
+  ]
+}

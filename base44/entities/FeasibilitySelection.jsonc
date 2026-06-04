@@ -1,0 +1,41 @@
+{
+  "name": "FeasibilitySelection",
+  "type": "object",
+  "properties": {
+    "study_id": {
+      "type": "string",
+      "description": "Link to FeasibilityStudy"
+    },
+    "clause_id": {
+      "type": "string",
+      "description": "Link to FeasibilityClause"
+    },
+    "included": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this clause is included in the study"
+    },
+    "user_data": {
+      "type": "object",
+      "description": "Staff's input data for this clause, keyed by field key"
+    },
+    "staff_notes": {
+      "type": "string",
+      "description": "Additional notes from staff for this clause"
+    },
+    "completion_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "complete"
+      ],
+      "default": "not_started",
+      "description": "Whether the staff has filled out all required inputs"
+    }
+  },
+  "required": [
+    "study_id",
+    "clause_id"
+  ]
+}

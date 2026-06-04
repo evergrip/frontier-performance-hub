@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const FIREFLIES_API_URL = 'https://api.fireflies.ai/graphql';
 
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
         fireflies_synced_at: new Date().toISOString(),
       };
 
-      await base44.entities.Meeting.update(meeting_id, updateData);
+      await base44.asServiceRole.entities.Meeting.update(meeting_id, updateData);
       return Response.json({ status: 'success', transcript_title: transcript.title });
     }
 

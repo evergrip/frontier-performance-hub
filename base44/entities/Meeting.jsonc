@@ -1,0 +1,494 @@
+{
+  "name": "Meeting",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Name or subject of the meeting"
+    },
+    "description": {
+      "type": "string",
+      "description": "Agenda, purpose, or detailed notes"
+    },
+    "agenda_html": {
+      "type": "string",
+      "description": "Rich HTML content for the meeting agenda"
+    },
+    "minutes_html": {
+      "type": "string",
+      "description": "Rich HTML content for meeting minutes"
+    },
+    "agenda_template_id": {
+      "type": "string",
+      "description": "ID of the MeetingAgendaTemplate used"
+    },
+    "agenda_sections": {
+      "type": "array",
+      "description": "Filled-in structured agenda sections from the template",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "type": "number"
+          },
+          "content": {
+            "type": "string",
+            "description": "Filled text for text_input and notes types"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "checked": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "description": "Items for checklist and discussion types"
+          }
+        }
+      }
+    },
+    "meeting_type": {
+      "type": "string",
+      "description": "Meeting type value key (references MeetingType entity)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start date and time"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "End date and time"
+    },
+    "actual_start_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the meeting actually started"
+    },
+    "actual_end_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the meeting actually ended"
+    },
+    "location": {
+      "type": "string",
+      "description": "Meeting location or virtual link"
+    },
+    "parent_meeting_id": {
+      "type": "string",
+      "description": "ID of the parent/previous meeting this is a follow-up to"
+    },
+    "related_client_id": {
+      "type": "string",
+      "description": "Associated Client ID"
+    },
+    "related_lead_id": {
+      "type": "string",
+      "description": "Associated Lead ID"
+    },
+    "related_project_id": {
+      "type": "string",
+      "description": "Associated Project ID"
+    },
+    "attendees": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "User IDs of attendees"
+    },
+    "organizer_id": {
+      "type": "string",
+      "description": "User ID of the organizer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "scheduled",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "rescheduled"
+      ],
+      "default": "scheduled",
+      "description": "Current meeting status"
+    },
+    "is_private": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, only admins, the organizer, attendees, and users in visible_to_user_ids can see this meeting"
+    },
+    "visible_to_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional user IDs who can see this private meeting"
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "file",
+              "link"
+            ],
+            "description": "Whether this is an uploaded file or an external link"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name for the material"
+          },
+          "url": {
+            "type": "string",
+            "description": "URL of the file or external link"
+          }
+        }
+      },
+      "description": "Attached files and links for meeting preparation"
+    },
+    "previous_business_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "assigned_to_user_id": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "default": false
+          },
+          "completed_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completion_notes": {
+            "type": "string"
+          },
+          "file_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "linked_kpi_id": {
+            "type": "string"
+          },
+          "kpi_impact_value": {
+            "type": "number"
+          },
+          "source_meeting_id": {
+            "type": "string",
+            "description": "Meeting this item originally came from"
+          }
+        }
+      },
+      "description": "Action items carried forward from a previous meeting"
+    },
+    "action_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "assigned_to_user_id": {
+            "type": "string"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "default": false
+          },
+          "completed_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "completion_notes": {
+            "type": "string",
+            "description": "Notes provided when marking the task complete"
+          },
+          "file_urls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Files attached on completion"
+          },
+          "linked_kpi_id": {
+            "type": "string",
+            "description": "Optional link to a KPI this action item impacts"
+          },
+          "kpi_impact_value": {
+            "type": "number",
+            "description": "Value to add to the KPI when completed"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "fireflies"
+            ],
+            "default": "manual",
+            "description": "Where this action item originated from"
+          }
+        },
+        "required": [
+          "description",
+          "assigned_to_user_id",
+          "due_date"
+        ]
+      },
+      "description": "Tasks/action items from the meeting"
+    },
+    "outcome_summary": {
+      "type": "string",
+      "description": "Summary of key decisions or outcomes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional meeting notes"
+    },
+    "has_agenda": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this meeting has a defined agenda"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a recurring meeting"
+    },
+    "recurrence_pattern": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "weekly",
+        "biweekly",
+        "monthly"
+      ],
+      "description": "How often the meeting recurs"
+    },
+    "recurrence_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When the recurring series ends"
+    },
+    "recurring_series_id": {
+      "type": "string",
+      "description": "Shared ID linking all meetings in the same recurring series"
+    },
+    "fireflies_transcript_id": {
+      "type": "string",
+      "description": "Fireflies.ai transcript ID linked to this meeting"
+    },
+    "fireflies_transcript_url": {
+      "type": "string",
+      "description": "URL to the full transcript on Fireflies.ai"
+    },
+    "fireflies_summary": {
+      "type": "string",
+      "description": "AI-generated meeting summary from Fireflies.ai"
+    },
+    "fireflies_action_items": {
+      "type": "string",
+      "description": "AI-generated action items text from Fireflies.ai"
+    },
+    "fireflies_minutes": {
+      "type": "string",
+      "description": "AI-generated meeting minutes/outline from Fireflies.ai"
+    },
+    "fireflies_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When Fireflies data was last synced"
+    },
+    "invite_fireflies": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to include fred@fireflies.ai as a guest for AI notetaking"
+    },
+    "fireflies_recheck_attempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of times the system has tried to find a matching Fireflies transcript"
+    },
+    "fireflies_recheck_last_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the last Fireflies recheck attempt"
+    },
+    "effectiveness_scorecard": {
+      "type": "object",
+      "description": "Legacy single scorecard (deprecated in favor of attendee_scorecards)",
+      "properties": {
+        "agenda_distributed_prior": {
+          "type": "boolean",
+          "default": false
+        },
+        "clear_chairperson": {
+          "type": "boolean",
+          "default": false
+        },
+        "started_with_review": {
+          "type": "boolean",
+          "default": false
+        },
+        "senior_talks_last": {
+          "type": "boolean",
+          "default": false
+        },
+        "started_on_time": {
+          "type": "boolean",
+          "default": false
+        },
+        "finished_on_time": {
+          "type": "boolean",
+          "default": false
+        },
+        "stuck_to_agenda": {
+          "type": "boolean",
+          "default": false
+        },
+        "participants_focused": {
+          "type": "boolean",
+          "default": false
+        },
+        "phones_off": {
+          "type": "boolean",
+          "default": false
+        },
+        "sufficient_notice": {
+          "type": "boolean",
+          "default": false
+        },
+        "participants_prepared": {
+          "type": "boolean",
+          "default": false
+        },
+        "good_use_of_time": {
+          "type": "boolean",
+          "default": false
+        },
+        "submitted_by": {
+          "type": "string"
+        },
+        "submitted_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "attendee_scorecards": {
+      "type": "array",
+      "description": "Per-attendee effectiveness scorecards",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "User ID of the attendee who submitted"
+          },
+          "submitted_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "agenda_distributed_prior": {
+            "type": "boolean",
+            "default": false
+          },
+          "clear_chairperson": {
+            "type": "boolean",
+            "default": false
+          },
+          "started_with_review": {
+            "type": "boolean",
+            "default": false
+          },
+          "senior_talks_last": {
+            "type": "boolean",
+            "default": false
+          },
+          "started_on_time": {
+            "type": "boolean",
+            "default": false
+          },
+          "finished_on_time": {
+            "type": "boolean",
+            "default": false
+          },
+          "stuck_to_agenda": {
+            "type": "boolean",
+            "default": false
+          },
+          "participants_focused": {
+            "type": "boolean",
+            "default": false
+          },
+          "phones_off": {
+            "type": "boolean",
+            "default": false
+          },
+          "sufficient_notice": {
+            "type": "boolean",
+            "default": false
+          },
+          "participants_prepared": {
+            "type": "boolean",
+            "default": false
+          },
+          "good_use_of_time": {
+            "type": "boolean",
+            "default": false
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "title",
+    "meeting_type",
+    "start_date",
+    "organizer_id"
+  ]
+}

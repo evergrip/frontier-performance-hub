@@ -1,0 +1,89 @@
+{
+  "name": "AlertRule",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User who owns this alert rule"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email to send notifications to"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Display name of the user"
+    },
+    "name": {
+      "type": "string",
+      "description": "Friendly name for this alert rule"
+    },
+    "triggers": {
+      "type": "array",
+      "description": "Array of trigger conditions \u2014 all are checked, any match fires the alert",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entity_type": {
+            "type": "string",
+            "enum": [
+              "Lead",
+              "Sale",
+              "Project"
+            ],
+            "description": "Which entity type to watch"
+          },
+          "event_type": {
+            "type": "string",
+            "enum": [
+              "status_change",
+              "any_status_change",
+              "record_created"
+            ],
+            "description": "What kind of event triggers this alert"
+          },
+          "from_status": {
+            "type": "string",
+            "description": "Optional: only trigger when moving FROM this status"
+          },
+          "to_status": {
+            "type": "string",
+            "description": "Optional: only trigger when moving TO this status"
+          }
+        }
+      }
+    },
+    "only_my_records": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, only alert on records assigned to this user"
+    },
+    "delivery_method": {
+      "type": "string",
+      "enum": [
+        "immediate",
+        "daily_digest"
+      ],
+      "default": "immediate",
+      "description": "How to deliver the notification"
+    },
+    "email_subject_template": {
+      "type": "string",
+      "description": "Custom email subject line (use {event} as placeholder)"
+    },
+    "email_intro_text": {
+      "type": "string",
+      "description": "Custom intro paragraph for the email body"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this alert rule is currently active"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "delivery_method"
+  ]
+}

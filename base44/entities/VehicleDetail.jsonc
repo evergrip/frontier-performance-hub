@@ -1,0 +1,74 @@
+{
+  "name": "VehicleDetail",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "make": {
+      "type": "string",
+      "description": "Vehicle make"
+    },
+    "model": {
+      "type": "string",
+      "description": "Vehicle model"
+    },
+    "year": {
+      "type": "number",
+      "description": "Manufacture year"
+    },
+    "purchase_cost": {
+      "type": "number",
+      "description": "Purchase cost"
+    },
+    "depreciation_method": {
+      "type": "string",
+      "enum": [
+        "straight_line",
+        "declining_balance"
+      ],
+      "default": "straight_line",
+      "description": "Depreciation method"
+    },
+    "useful_life_years": {
+      "type": "number",
+      "description": "Estimated useful life in years"
+    },
+    "salvage_value": {
+      "type": "number",
+      "description": "Estimated salvage value"
+    },
+    "monthly_insurance_cost": {
+      "type": "number",
+      "description": "Estimated monthly insurance cost"
+    },
+    "monthly_fuel_cost": {
+      "type": "number",
+      "description": "Estimated monthly fuel cost"
+    },
+    "monthly_maintenance_cost": {
+      "type": "number",
+      "description": "Estimated monthly maintenance cost"
+    },
+    "acquisition_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the vehicle is expected to be acquired"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department this vehicle belongs to (empty for company-wide)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "budget_id",
+    "make",
+    "model",
+    "purchase_cost"
+  ]
+}

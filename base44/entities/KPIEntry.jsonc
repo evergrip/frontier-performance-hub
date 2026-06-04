@@ -1,0 +1,118 @@
+{
+  "name": "KPIEntry",
+  "type": "object",
+  "properties": {
+    "kpi_id": {
+      "type": "string",
+      "description": "Link to KPI definition"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User this entry applies to"
+    },
+    "reporting_period_start_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of reporting period"
+    },
+    "reporting_period_end_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "End of reporting period"
+    },
+    "actual_value": {
+      "type": "number",
+      "description": "The measured or entered value"
+    },
+    "target_value_at_entry": {
+      "type": "number",
+      "description": "Target value at time of entry (for historical comparison)"
+    },
+    "is_flagged": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if threshold was crossed"
+    },
+    "explanation_provided": {
+      "type": "string",
+      "description": "Explanation if flagged"
+    },
+    "scorecard_answers": {
+      "type": "array",
+      "description": "For scorecard KPIs: answers to each question",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question_index": {
+            "type": "number",
+            "description": "Index of question in KPI definition"
+          },
+          "question_text": {
+            "type": "string",
+            "description": "Question text (copied for historical record)"
+          },
+          "answer": {
+            "type": "string",
+            "description": "User's answer (yes/no or number as string)"
+          },
+          "points_earned": {
+            "type": "number",
+            "description": "Points earned for this answer"
+          },
+          "max_points": {
+            "type": "number",
+            "description": "Maximum points possible"
+          },
+          "is_flagged": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether this answer didn't meet expectations"
+          },
+          "explanation": {
+            "type": "string",
+            "description": "User's explanation if flagged"
+          }
+        }
+      }
+    },
+    "source_data_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of records that contributed to this entry"
+    },
+    "source_meeting_id": {
+      "type": "string",
+      "description": "Meeting ID that generated this KPI entry (for traceability)"
+    },
+    "source_action_item_description": {
+      "type": "string",
+      "description": "Description of the action item that generated this entry"
+    },
+    "manual_entry": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if manually entered by user"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Manager who reviewed this entry"
+    },
+    "reviewed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this entry was reviewed"
+    },
+    "manager_notes": {
+      "type": "string",
+      "description": "Manager's feedback on this entry"
+    }
+  },
+  "required": [
+    "kpi_id",
+    "user_id",
+    "reporting_period_start_date",
+    "reporting_period_end_date"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "name": "SurveyInsightsChat",
+  "type": "object",
+  "properties": {
+    "survey_id": {
+      "type": "string",
+      "description": "Link to Survey entity"
+    },
+    "title": {
+      "type": "string",
+      "description": "Chat session title"
+    },
+    "messages": {
+      "type": "array",
+      "description": "Array of chat messages",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "User ID of the chat owner"
+    },
+    "shared_with": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of user IDs who have access to view this chat"
+    }
+  },
+  "required": [
+    "survey_id",
+    "owner_id"
+  ]
+}

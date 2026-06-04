@@ -1,0 +1,56 @@
+{
+  "name": "BrandAsset",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name for the asset"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "logo",
+        "banner",
+        "color",
+        "font"
+      ],
+      "description": "Type of brand asset"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL for uploaded image assets (logos, banners)"
+    },
+    "color_value": {
+      "type": "string",
+      "description": "Hex color value for color assets"
+    },
+    "font_family": {
+      "type": "string",
+      "description": "Font family name for font assets"
+    },
+    "font_url": {
+      "type": "string",
+      "description": "Google Fonts or custom font URL"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for organizing assets (e.g. primary, secondary, dark, light)"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a default/primary asset of its type"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Usage notes or description"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

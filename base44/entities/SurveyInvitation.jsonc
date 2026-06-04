@@ -1,0 +1,49 @@
+{
+  "name": "SurveyInvitation",
+  "type": "object",
+  "properties": {
+    "survey_id": {
+      "type": "string",
+      "description": "Link to Survey entity"
+    },
+    "email": {
+      "type": "string",
+      "description": "Invited person's email"
+    },
+    "name": {
+      "type": "string",
+      "description": "Invited person's name"
+    },
+    "token": {
+      "type": "string",
+      "description": "Unique access token for this invitation"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sent",
+        "opened",
+        "completed",
+        "expired"
+      ],
+      "default": "pending",
+      "description": "Invitation status"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the invitation was sent"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the survey was completed"
+    }
+  },
+  "required": [
+    "survey_id",
+    "email",
+    "token"
+  ]
+}

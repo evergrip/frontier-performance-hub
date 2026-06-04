@@ -1,0 +1,139 @@
+{
+  "name": "FeasibilityClause",
+  "type": "object",
+  "properties": {
+    "clause_id": {
+      "type": "string",
+      "description": "Unique clause identifier (e.g., FS-SZ-001)"
+    },
+    "section": {
+      "type": "string",
+      "enum": [
+        "Site & Zoning Analysis",
+        "Structural & Building Condition",
+        "Utility & Service Assessment",
+        "Budget Analysis",
+        "Regulatory & Permit Pathway",
+        "Risk Assessment",
+        "Recommendations & Next Steps"
+      ],
+      "description": "Which report section this clause belongs to"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of this clause/item"
+    },
+    "template_body": {
+      "type": "string",
+      "description": "Template text with merge placeholders like {{lot_dimensions}}"
+    },
+    "input_fields": {
+      "type": "array",
+      "description": "Dynamic input fields the staff must fill out",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Field key matching the placeholder in template_body"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable label for the input"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "textarea",
+              "number",
+              "select",
+              "boolean"
+            ],
+            "description": "Input type"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Options for select type"
+          },
+          "placeholder": {
+            "type": "string",
+            "description": "Placeholder text"
+          },
+          "required": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "description": "Rules that auto-require other clauses based on conditions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition_type": {
+            "type": "string",
+            "enum": [
+              "clause_selected",
+              "field_value"
+            ],
+            "description": "What triggers this rule: clause being included, or a specific field value"
+          },
+          "field_key": {
+            "type": "string",
+            "description": "For field_value condition: which input field key to watch"
+          },
+          "field_value": {
+            "type": "string",
+            "description": "For field_value condition: what value triggers the rule (exact match or 'true' for boolean)"
+          },
+          "target_clause_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "IDs (entity IDs) of clauses that become required when this trigger fires"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of this trigger rule"
+          }
+        }
+      }
+    },
+    "default_include": {
+      "type": "boolean",
+      "default": true,
+      "description": "Include by default in new studies"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Display order within its section"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Medium",
+        "High"
+      ],
+      "description": "Risk level"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this clause is available for use"
+    }
+  },
+  "required": [
+    "clause_id",
+    "section",
+    "title",
+    "template_body"
+  ]
+}

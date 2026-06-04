@@ -1,0 +1,60 @@
+{
+  "name": "GrossMarginReport",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "ID of the project this report is for"
+    },
+    "project_title": {
+      "type": "string",
+      "description": "Snapshot of the project title at time of report"
+    },
+    "reporting_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the report covers"
+    },
+    "contract_value": {
+      "type": "number",
+      "description": "Current contract value at time of report"
+    },
+    "actual_costs": {
+      "type": "number",
+      "description": "Actual costs incurred at time of report"
+    },
+    "gross_margin_percent": {
+      "type": "number",
+      "description": "Calculated gross margin percentage"
+    },
+    "gross_margin_dollars": {
+      "type": "number",
+      "description": "Calculated gross margin in dollars"
+    },
+    "projected_gross_margin_at_completion": {
+      "type": "number",
+      "description": "Project Manager's projected gross margin percentage at project completion"
+    },
+    "percent_complete": {
+      "type": "number",
+      "description": "Estimated percentage of the job completed (0-100)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes from the project manager"
+    },
+    "submitted_by": {
+      "type": "string",
+      "description": "User ID of person who submitted"
+    },
+    "submitted_by_name": {
+      "type": "string",
+      "description": "Name of person who submitted"
+    }
+  },
+  "required": [
+    "project_id",
+    "reporting_date",
+    "gross_margin_percent"
+  ]
+}

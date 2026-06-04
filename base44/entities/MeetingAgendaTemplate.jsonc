@@ -1,0 +1,75 @@
+{
+  "name": "MeetingAgendaTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Template name"
+    },
+    "meeting_type": {
+      "type": "string",
+      "description": "Optional: meeting type value this template is associated with"
+    },
+    "sections": {
+      "type": "array",
+      "description": "Structured agenda sections",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique section ID"
+          },
+          "title": {
+            "type": "string",
+            "description": "Section heading"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "discussion",
+              "text_input",
+              "checklist",
+              "action_review",
+              "notes",
+              "time_boxed"
+            ],
+            "description": "Section type: discussion (talking points), text_input (fillable text area), checklist (checkbox items), action_review (review previous actions), notes (free-form notes), time_boxed (timed discussion topic)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Helper text / instructions for this section"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "description": "Suggested time allocation in minutes"
+          },
+          "default_items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Pre-filled items for checklist or discussion types"
+          }
+        }
+      }
+    },
+    "content_html": {
+      "type": "string",
+      "description": "Legacy: Rich HTML content (deprecated, kept for migration)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this template is available for selection"
+    },
+    "display_order": {
+      "type": "number",
+      "default": 0,
+      "description": "Order in which this template appears"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "name": "ProfitSharingPlan",
+  "type": "object",
+  "properties": {
+    "budget_id": {
+      "type": "string",
+      "description": "ID of the linked Budget entity"
+    },
+    "company_retention_amount": {
+      "type": "number",
+      "description": "Fixed dollar amount the company retains before any profit sharing (e.g., 450000)"
+    },
+    "distribution_tiers": {
+      "type": "array",
+      "description": "Ordered list of distribution tiers applied to the remaining profit after company retention",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique tier ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Tier name (e.g., Ownership Distribution, Staff Bonus Pool)"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "percentage_of_remainder",
+              "fixed_amount",
+              "percentage_of_net_profit"
+            ],
+            "description": "How this tier is calculated"
+          },
+          "value": {
+            "type": "number",
+            "description": "Percentage (0-100) or fixed dollar amount depending on type"
+          },
+          "recipients": {
+            "type": "array",
+            "description": "Individual recipients within this tier with their split weights",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Recipient name or role"
+                },
+                "weight": {
+                  "type": "number",
+                  "description": "Relative weight for splitting this tier's allocation (e.g., 1, 2, 3)"
+                },
+                "cap_amount": {
+                  "type": "number",
+                  "description": "Optional maximum payout for this recipient"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "General notes about the profit sharing plan"
+    }
+  },
+  "required": [
+    "budget_id",
+    "company_retention_amount"
+  ]
+}

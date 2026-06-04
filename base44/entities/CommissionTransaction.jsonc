@@ -1,0 +1,118 @@
+{
+  "name": "CommissionTransaction",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Link to User (salesperson)"
+    },
+    "sale_id": {
+      "type": "string",
+      "description": "Link to Sale that generated this commission"
+    },
+    "sale_type": {
+      "type": "string",
+      "enum": [
+        "preconstruction",
+        "construction"
+      ],
+      "description": "Type of sale (preconstruction or construction)"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Link to Project if phase-based"
+    },
+    "transaction_type": {
+      "type": "string",
+      "enum": [
+        "sale_commission",
+        "phase_commission",
+        "adjustment",
+        "bonus"
+      ],
+      "description": "Type of commission transaction"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Commission amount earned"
+    },
+    "commission_rate": {
+      "type": "number",
+      "description": "Commission rate applied"
+    },
+    "sale_amount": {
+      "type": "number",
+      "description": "Sale amount this commission is based on"
+    },
+    "tier_at_time": {
+      "type": "string",
+      "description": "Commission tier at time of earning"
+    },
+    "phase_name": {
+      "type": "string",
+      "description": "Project phase name if phase-based"
+    },
+    "phase_payout_percentage": {
+      "type": "number",
+      "description": "Percentage of commission made available at this phase"
+    },
+    "amount_made_available": {
+      "type": "number",
+      "description": "Amount moved from bank to available at this phase"
+    },
+    "banking_percentage": {
+      "type": "number",
+      "description": "Percentage of commission banked (e.g., 25 for precon)"
+    },
+    "banked_amount": {
+      "type": "number",
+      "description": "Amount added to bank"
+    },
+    "immediate_payout_amount": {
+      "type": "number",
+      "description": "Amount paid immediately"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "banked",
+        "available",
+        "paid"
+      ],
+      "default": "pending",
+      "description": "Status of this commission"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Transaction notes"
+    },
+    "audit_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "edited_by": {
+            "type": "string"
+          },
+          "changes": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Permanent audit log of all changes made to this transaction"
+    }
+  },
+  "required": [
+    "user_id",
+    "transaction_type",
+    "amount"
+  ]
+}

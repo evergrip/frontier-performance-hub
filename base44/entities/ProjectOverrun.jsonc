@@ -1,0 +1,38 @@
+{
+  "name": "ProjectOverrun",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "ID of the project that was extended"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "User ID of the employee whose assignment caused the overrun"
+    },
+    "original_target_completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "The project's target completion date before this overrun"
+    },
+    "new_target_completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "The new target completion date after extension"
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Manager's explanation for the overrun"
+    },
+    "explained_by_user_id": {
+      "type": "string",
+      "description": "User ID of the manager who approved the extension"
+    }
+  },
+  "required": [
+    "project_id",
+    "original_target_completion_date",
+    "new_target_completion_date",
+    "explanation"
+  ]
+}

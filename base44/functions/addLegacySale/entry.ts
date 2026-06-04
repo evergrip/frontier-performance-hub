@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
   try {
@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
       transaction_type: 'sale_commission',
       amount: commission_amount,
       sale_amount: sale_amount,
+      sale_type: 'construction',
       status: 'banked',
       notes: `Legacy sale - ${lead_name} (${sale_date})`
     });
