@@ -9,11 +9,11 @@ Deno.serve(async (req) => {
   const { survey_id } = await req.json();
   if (!survey_id) return Response.json({ error: 'Missing survey_id' }, { status: 400 });
 
-  const surveys = await base44.entities.Survey.filter({ id: survey_id });
+  const surveys = await base44.asServiceRole.entities.Survey.filter({ id: survey_id });
   const survey = surveys[0];
   if (!survey) return Response.json({ error: 'Survey not found' }, { status: 404 });
 
-  const responses = await base44.entities.SurveyResponse.filter({ survey_id });
+  const responses = await base44.asServiceRole.entities.SurveyResponse.filter({ survey_id });
   const questions = survey.questions || [];
 
   const doc = new jsPDF();
