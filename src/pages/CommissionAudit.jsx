@@ -35,6 +35,7 @@ export default function CommissionAudit() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
   const [verifyNote, setVerifyNote] = useState('');
+  const [verifyEditData, setVerifyEditData] = useState({ amount: 0, sale_amount: 0 });
   const [flagNote, setFlagNote] = useState('');
   const [editFormData, setEditFormData] = useState({});
   const [editNote, setEditNote] = useState('');
@@ -123,16 +124,32 @@ export default function CommissionAudit() {
     discrepancies: userFiltered.filter(t => t.hasDiscrepancy).length,
   };
 
-  // Verify mutation
+  // Verify mutation (with optional edits)
   const verifyMutation = useMutation({
-    mutationFn: async ({ txId, note }) => {
-      await base44.entities.CommissionTransaction.update(txId, {
+    mutationFn: async ({ txId, note, edits }) => {
+      const updates = {
         verified: true,
         verified_by_user_id: user.id,
         verified_date: new Date().toISOString(),
         verification_notes: note || '',
         flagged_for_review: false,
-      });
+      };
+      // If amount or sale_amount changed, apply edits and log
+      const hasEdits = edits && (edits.amount !== selectedTx.amount || edits.sale_amount !== selectedTx.sale_amount);
+      if (hasEdits) {
+        if (edits.amount !== selectedTx.amount) updates.amount = parseFloat(edits.amount);
+        if (edits.sale_amount !== selectedTx.sale_amount) updates.sale_amount = parseFloat(edits.sale_amount);
+        const changes = [];
+        if (edits.amount !== selectedTx.amount) changes.push(`amount: $${selectedTx.amount?.toFixed(2)} → $${parseFloat(edits.amount).toFixed(2)}`);
+        if (edits.sale_amount !== selectedTx.sale_amount) changes.push(`sale_amount: $${Math.round(selectedTx.sale_amount || 0)} → $${Math.round(parseFloat(edits.sale_amount))}`);
+        updates.audit_log = [...(selectedTx.audit_log || []), {
+          timestamp: new Date().toISOString(),
+          edited_by: user.full_name || 'admin',
+          changes: changes.join('; '),
+          note: `Corrected during verification: ${note || ''}`,
+        }];
+      }
+      await base44.entities.CommissionTransaction.update(txId, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allCommissionTransactions'] });
@@ -175,7 +192,7 @@ export default function CommissionAudit() {
     onError: (err) => toast.error(err.response?.data?.error || 'Update failed'),
   });
 
-  const handleVerify = (tx) => { setSelectedTx(tx); setVerifyNote(''); setVerifyDialogOpen(true); };
+  const handleVerify = (tx) => { setSelectedTx(tx); setVerifyNote(''); setVerifyEditData({ amount: tx.amount, sale_amount: tx.sale_amount || 0 }); setVerifyDialogOpen(true); };
   const handleFlag = (tx) => { setSelectedTx(tx); setFlagNote(''); setFlagDialogOpen(true); };
   const handleViewDetail = (tx) => { setSelectedTx(tx); setDetailDialogOpen(true); };
   const handleEdit = (tx) => {
@@ -327,13 +344,23 @@ export default function CommissionAudit() {
                   <p className="text-xs text-amber-800 font-medium">⚠️ Sale value discrepancy detected. Review before verifying.</p>
                 </div>
               )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Commission Amount</Label>
+                  <Input type="number" step="0.01" value={verifyEditData.amount} onChange={e => setVerifyEditData({...verifyEditData, amount: e.target.value})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sale Amount</Label>
+                  <Input type="number" step="0.01" value={verifyEditData.sale_amount} onChange={e => setVerifyEditData({...verifyEditData, sale_amount: e.target.value})} />
+                </div>
+              </div>
               <div className="space-y-2">
-                <Label>Verification Note (optional)</Label>
+                <Label>Verification Note {(verifyEditData.amount != selectedTx.amount || verifyEditData.sale_amount != selectedTx.sale_amount) ? '(required — explain correction) *' : '(optional)'}</Label>
                 <Textarea placeholder="e.g. Verified against signed contract..." value={verifyNote} onChange={e => setVerifyNote(e.target.value)} rows={2} />
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setVerifyDialogOpen(false)}>Cancel</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={verifyMutation.isPending} onClick={() => verifyMutation.mutate({ txId: selectedTx.id, note: verifyNote })}>
+                <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={verifyMutation.isPending || (verifyEditData.amount != selectedTx.amount && !verifyNote.trim()) || (verifyEditData.sale_amount != selectedTx.sale_amount && !verifyNote.trim())} onClick={() => verifyMutation.mutate({ txId: selectedTx.id, note: verifyNote, edits: verifyEditData })}>
                   {verifyMutation.isPending ? 'Verifying...' : 'Verify ✓'}
                 </Button>
               </div>
