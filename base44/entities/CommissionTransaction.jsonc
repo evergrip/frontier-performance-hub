@@ -28,7 +28,8 @@
         "sale_commission",
         "phase_commission",
         "adjustment",
-        "bonus"
+        "bonus",
+        "correction_debit"
       ],
       "description": "Type of commission transaction"
     },
@@ -82,6 +83,33 @@
       ],
       "default": "pending",
       "description": "Status of this commission"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this transaction has been verified by an admin"
+    },
+    "verified_by_user_id": {
+      "type": "string",
+      "description": "User ID of admin who verified this transaction"
+    },
+    "verified_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this transaction was verified"
+    },
+    "verification_notes": {
+      "type": "string",
+      "description": "Admin notes from verification"
+    },
+    "flagged_for_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this transaction is flagged for review"
+    },
+    "flag_notes": {
+      "type": "string",
+      "description": "Reason for flagging this transaction"
     },
     "notes": {
       "type": "string",

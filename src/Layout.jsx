@@ -135,6 +135,7 @@ export default function Layout({ children, currentPageName }) {
     ] : []),
     ...(hasPermission(user, 'commissions_admin') ? [
       { name: 'Commission Rules', icon: DollarSign, page: 'CommissionRules' },
+      { name: 'Commission Audit', icon: DollarSign, page: 'CommissionAudit' },
     ] : []),
   ];
 
