@@ -135,13 +135,15 @@ export default function CommissionAudit() {
         flagged_for_review: false,
       };
       // If amount or sale_amount changed, apply edits and log
-      const hasEdits = edits && (edits.amount !== selectedTx.amount || edits.sale_amount !== selectedTx.sale_amount);
+      const hasEdits = edits && (edits.amount !== selectedTx.amount || edits.sale_amount !== selectedTx.sale_amount || edits.tier_at_time !== (selectedTx.tier_at_time || ''));
       if (hasEdits) {
         if (edits.amount !== selectedTx.amount) updates.amount = parseFloat(edits.amount);
         if (edits.sale_amount !== selectedTx.sale_amount) updates.sale_amount = parseFloat(edits.sale_amount);
+        if (edits.tier_at_time !== (selectedTx.tier_at_time || '')) updates.tier_at_time = edits.tier_at_time;
         const changes = [];
         if (edits.amount !== selectedTx.amount) changes.push(`amount: $${selectedTx.amount?.toFixed(2)} → $${parseFloat(edits.amount).toFixed(2)}`);
         if (edits.sale_amount !== selectedTx.sale_amount) changes.push(`sale_amount: $${Math.round(selectedTx.sale_amount || 0)} → $${Math.round(parseFloat(edits.sale_amount))}`);
+        if (edits.tier_at_time !== (selectedTx.tier_at_time || '')) changes.push(`tier: ${selectedTx.tier_at_time || 'none'} → ${edits.tier_at_time || 'none'}`);
         updates.audit_log = [...(selectedTx.audit_log || []), {
           timestamp: new Date().toISOString(),
           edited_by: user.full_name || 'admin',
@@ -192,7 +194,7 @@ export default function CommissionAudit() {
     onError: (err) => toast.error(err.response?.data?.error || 'Update failed'),
   });
 
-  const handleVerify = (tx) => { setSelectedTx(tx); setVerifyNote(''); setVerifyEditData({ amount: tx.amount, sale_amount: tx.sale_amount || 0 }); setVerifyDialogOpen(true); };
+  const handleVerify = (tx) => { setSelectedTx(tx); setVerifyNote(''); setVerifyEditData({ amount: tx.amount, sale_amount: tx.sale_amount || 0, tier_at_time: tx.tier_at_time || '' }); setVerifyDialogOpen(true); };
   const handleFlag = (tx) => { setSelectedTx(tx); setFlagNote(''); setFlagDialogOpen(true); };
   const handleViewDetail = (tx) => { setSelectedTx(tx); setDetailDialogOpen(true); };
   const handleEdit = (tx) => {
@@ -344,7 +346,7 @@ export default function CommissionAudit() {
                   <p className="text-xs text-amber-800 font-medium">⚠️ Sale value discrepancy detected. Review before verifying.</p>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>Commission Amount</Label>
                   <Input type="number" step="0.01" value={verifyEditData.amount} onChange={e => setVerifyEditData({...verifyEditData, amount: e.target.value})} />
@@ -353,14 +355,19 @@ export default function CommissionAudit() {
                   <Label>Sale Amount</Label>
                   <Input type="number" step="0.01" value={verifyEditData.sale_amount} onChange={e => setVerifyEditData({...verifyEditData, sale_amount: e.target.value})} />
                 </div>
+                <div className="space-y-2">
+                  <Label>Tier</Label>
+                  <Input placeholder="e.g. Bronze, Silver" value={verifyEditData.tier_at_time} onChange={e => setVerifyEditData({...verifyEditData, tier_at_time: e.target.value})} />
+                </div>
               </div>
+              {(() => { const hasChanges = verifyEditData.amount != selectedTx.amount || verifyEditData.sale_amount != selectedTx.sale_amount || verifyEditData.tier_at_time !== (selectedTx.tier_at_time || ''); return null; })()}
               <div className="space-y-2">
-                <Label>Verification Note {(verifyEditData.amount != selectedTx.amount || verifyEditData.sale_amount != selectedTx.sale_amount) ? '(required — explain correction) *' : '(optional)'}</Label>
+                <Label>Verification Note {(verifyEditData.amount != selectedTx.amount || verifyEditData.sale_amount != selectedTx.sale_amount || verifyEditData.tier_at_time !== (selectedTx.tier_at_time || '')) ? '(required — explain correction) *' : '(optional)'}</Label>
                 <Textarea placeholder="e.g. Verified against signed contract..." value={verifyNote} onChange={e => setVerifyNote(e.target.value)} rows={2} />
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setVerifyDialogOpen(false)}>Cancel</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={verifyMutation.isPending || (verifyEditData.amount != selectedTx.amount && !verifyNote.trim()) || (verifyEditData.sale_amount != selectedTx.sale_amount && !verifyNote.trim())} onClick={() => verifyMutation.mutate({ txId: selectedTx.id, note: verifyNote, edits: verifyEditData })}>
+                <Button className="bg-emerald-600 hover:bg-emerald-700" disabled={verifyMutation.isPending || ((verifyEditData.amount != selectedTx.amount || verifyEditData.sale_amount != selectedTx.sale_amount || verifyEditData.tier_at_time !== (selectedTx.tier_at_time || '')) && !verifyNote.trim())} onClick={() => verifyMutation.mutate({ txId: selectedTx.id, note: verifyNote, edits: verifyEditData })}>
                   {verifyMutation.isPending ? 'Verifying...' : 'Verify ✓'}
                 </Button>
               </div>
