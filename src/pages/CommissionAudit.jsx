@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Shield, CheckCircle2, Flag, AlertTriangle, Users, Plus, FileText } from 'lucide-react';
+import { Shield, CheckCircle2, Flag, AlertTriangle, Users, Plus, FileText, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import StatCard from '@/components/common/StatCard';
@@ -77,6 +77,18 @@ export default function CommissionAudit() {
   const { data: clients = [] } = useQuery({
     queryKey: ['allClients'],
     queryFn: () => base44.entities.Client.list(),
+    enabled: !!user,
+  });
+
+  const { data: commissionBanks = [] } = useQuery({
+    queryKey: ['allCommissionBanks'],
+    queryFn: () => base44.entities.CommissionBank.list(),
+    enabled: !!user,
+  });
+
+  const { data: payouts = [] } = useQuery({
+    queryKey: ['allCommissionPayouts'],
+    queryFn: () => base44.entities.CommissionPayout.list(),
     enabled: !!user,
   });
 
@@ -211,6 +223,93 @@ export default function CommissionAudit() {
 
   const handleDelete = (tx) => { setSelectedTx(tx); setDeleteNote(''); setDeleteDialogOpen(true); };
 
+  // Rebuild bank from verified transactions
+  const [rebuildDialogOpen, setRebuildDialogOpen] = useState(false);
+  const [rebuildPreview, setRebuildPreview] = useState(null);
+
+  const calculateRebuild = () => {
+    const verifiedTxs = transactions.filter(t => t.verified);
+    const paidPayouts = payouts.filter(p => p.status === 'paid' || p.status === 'approved');
+    
+    // Group by user
+    const userTotals = {};
+    verifiedTxs.forEach(tx => {
+      if (!userTotals[tx.user_id]) userTotals[tx.user_id] = { total_earned: 0, sale_volume_construction: 0, sale_volume_precon: 0 };
+      userTotals[tx.user_id].total_earned += (tx.amount || 0);
+      if (tx.sale_type === 'construction') userTotals[tx.user_id].sale_volume_construction += (tx.sale_amount || 0);
+      if (tx.sale_type === 'preconstruction') userTotals[tx.user_id].sale_volume_precon += (tx.sale_amount || 0);
+    });
+    
+    const userPayouts = {};
+    paidPayouts.forEach(p => {
+      if (!userPayouts[p.user_id]) userPayouts[p.user_id] = 0;
+      userPayouts[p.user_id] += (p.amount || 0);
+    });
+
+    const preview = [];
+    // Include all users that have either a bank record or verified transactions
+    const allUserIds = new Set([
+      ...commissionBanks.map(b => b.user_id),
+      ...Object.keys(userTotals),
+    ]);
+    
+    allUserIds.forEach(userId => {
+      const bank = commissionBanks.find(b => b.user_id === userId);
+      const totals = userTotals[userId] || { total_earned: 0, sale_volume_construction: 0, sale_volume_precon: 0 };
+      const totalPaid = userPayouts[userId] || 0;
+      const newBankBalance = totals.total_earned - totalPaid;
+      const userName = allUsers.find(u => u.id === userId)?.full_name || 'Unknown';
+      
+      preview.push({
+        userId,
+        userName,
+        bankId: bank?.id,
+        old: {
+          total_earned: bank?.total_earned || 0,
+          current_bank_balance: bank?.current_bank_balance || 0,
+          total_paid_out: bank?.total_paid_out || 0,
+          available_balance: bank?.available_balance || 0,
+        },
+        new: {
+          total_earned: Math.round(totals.total_earned * 100) / 100,
+          current_bank_balance: Math.round(newBankBalance * 100) / 100,
+          total_paid_out: Math.round(totalPaid * 100) / 100,
+          available_balance: Math.round(newBankBalance * 100) / 100,
+          ytd_construction_volume: Math.round(totals.sale_volume_construction * 100) / 100,
+          ytd_preconstruction_volume: Math.round(totals.sale_volume_precon * 100) / 100,
+          ytd_sales_volume: Math.round((totals.sale_volume_construction + totals.sale_volume_precon) * 100) / 100,
+        },
+      });
+    });
+    
+    setRebuildPreview(preview);
+    setRebuildDialogOpen(true);
+  };
+
+  const rebuildMutation = useMutation({
+    mutationFn: async () => {
+      for (const item of rebuildPreview) {
+        if (item.bankId) {
+          await base44.entities.CommissionBank.update(item.bankId, {
+            total_earned: item.new.total_earned,
+            current_bank_balance: item.new.current_bank_balance,
+            total_paid_out: item.new.total_paid_out,
+            available_balance: item.new.available_balance,
+            ytd_construction_volume: item.new.ytd_construction_volume,
+            ytd_preconstruction_volume: item.new.ytd_preconstruction_volume,
+            ytd_sales_volume: item.new.ytd_sales_volume,
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCommissionBanks'] });
+      queryClient.invalidateQueries({ queryKey: ['commissionBank'] });
+      toast.success('Commission banks rebuilt from verified transactions');
+      setRebuildDialogOpen(false);
+    },
+  });
+
   const handleVerify = (tx) => { setSelectedTx(tx); setVerifyNote(''); setVerifyEditData({ amount: tx.amount, sale_amount: tx.sale_amount || 0, tier_at_time: tx.tier_at_time || '' }); setVerifyDialogOpen(true); };
   const handleFlag = (tx) => { setSelectedTx(tx); setFlagNote(''); setFlagDialogOpen(true); };
   const handleViewDetail = (tx) => { setSelectedTx(tx); setDetailDialogOpen(true); };
@@ -258,6 +357,10 @@ export default function CommissionAudit() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" className="gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" onClick={calculateRebuild}>
+            <RefreshCw className="w-4 h-4" />
+            Rebuild Banks from Verified
+          </Button>
           <AddCommissionTransactionForm allUsers={allUsers} />
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-slate-400" />
@@ -512,6 +615,55 @@ export default function CommissionAudit() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Rebuild Bank Dialog */}
+      <Dialog open={rebuildDialogOpen} onOpenChange={setRebuildDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-blue-600" />
+              Rebuild Commission Banks from Verified Transactions
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+              This will recalculate all bank balances using <strong>only verified</strong> commission transactions and recorded payouts. All existing bank values will be overwritten.
+            </div>
+            {rebuildPreview?.map(item => (
+              <div key={item.userId} className="p-4 border rounded-lg space-y-3">
+                <p className="font-semibold text-slate-900">{item.userName}</p>
+                <div className="grid grid-cols-4 gap-3 text-xs">
+                  {['total_earned', 'current_bank_balance', 'available_balance', 'total_paid_out'].map(field => {
+                    const label = field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const oldVal = item.old[field];
+                    const newVal = item.new[field];
+                    const changed = Math.abs(oldVal - newVal) > 0.01;
+                    return (
+                      <div key={field} className={`p-2 rounded ${changed ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
+                        <p className="text-slate-500 text-[10px]">{label}</p>
+                        {changed ? (
+                          <>
+                            <p className="text-red-500 line-through">${Math.round(oldVal).toLocaleString()}</p>
+                            <p className="text-emerald-700 font-bold">${Math.round(newVal).toLocaleString()}</p>
+                          </>
+                        ) : (
+                          <p className="font-medium">${Math.round(newVal).toLocaleString()}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setRebuildDialogOpen(false)}>Cancel</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700" disabled={rebuildMutation.isPending} onClick={() => rebuildMutation.mutate()}>
+                {rebuildMutation.isPending ? 'Rebuilding...' : 'Apply Rebuild'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
