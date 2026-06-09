@@ -39,6 +39,8 @@ export default function CommissionAudit() {
   const [flagNote, setFlagNote] = useState('');
   const [editFormData, setEditFormData] = useState({});
   const [editNote, setEditNote] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteNote, setDeleteNote] = useState('');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -194,6 +196,21 @@ export default function CommissionAudit() {
     onError: (err) => toast.error(err.response?.data?.error || 'Update failed'),
   });
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async ({ txId }) => {
+      await base44.entities.CommissionTransaction.delete(txId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allCommissionTransactions'] });
+      toast.success('Transaction deleted');
+      setDeleteDialogOpen(false);
+      setDeleteNote('');
+    },
+  });
+
+  const handleDelete = (tx) => { setSelectedTx(tx); setDeleteNote(''); setDeleteDialogOpen(true); };
+
   const handleVerify = (tx) => { setSelectedTx(tx); setVerifyNote(''); setVerifyEditData({ amount: tx.amount, sale_amount: tx.sale_amount || 0, tier_at_time: tx.tier_at_time || '' }); setVerifyDialogOpen(true); };
   const handleFlag = (tx) => { setSelectedTx(tx); setFlagNote(''); setFlagDialogOpen(true); };
   const handleViewDetail = (tx) => { setSelectedTx(tx); setDetailDialogOpen(true); };
@@ -299,6 +316,7 @@ export default function CommissionAudit() {
             onFlag={handleFlag}
             onEdit={handleEdit}
             onViewDetail={handleViewDetail}
+            onDelete={handleDelete}
           />
         </CardContent>
       </Card>
@@ -462,6 +480,34 @@ export default function CommissionAudit() {
                 <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
                 <Button disabled={editMutation.isPending} onClick={submitEdit}>
                   {editMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Commission Transaction
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTx && (
+            <div className="space-y-4">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm space-y-1">
+                <p className="font-medium text-red-900">{selectedTx.saleName}</p>
+                <p className="text-red-800">Commission: ${selectedTx.amount?.toFixed(2)}</p>
+                <p className="text-red-800">Salesperson: {selectedTx.userName}</p>
+              </div>
+              <p className="text-sm text-slate-600">This action is <strong>permanent</strong> and cannot be undone. Are you sure?</p>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                <Button variant="destructive" disabled={deleteMutation.isPending} onClick={() => deleteMutation.mutate({ txId: selectedTx.id })}>
+                  {deleteMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
                 </Button>
               </div>
             </div>

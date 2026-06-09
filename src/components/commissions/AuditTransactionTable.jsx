@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Flag, AlertTriangle, Edit2, Eye, Shield } from 'lucide-react';
+import { CheckCircle2, Flag, AlertTriangle, Edit2, Eye, Shield, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import SaleStatusTag from './SaleStatusTag';
 
@@ -48,7 +48,8 @@ export default function AuditTransactionTable({
   onVerify, 
   onFlag, 
   onEdit, 
-  onViewDetail 
+  onViewDetail,
+  onDelete 
 }) {
   const getUserName = (userId) => {
     const u = allUsers?.find(u => u.id === userId);
@@ -141,6 +142,9 @@ export default function AuditTransactionTable({
                     </Button>
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600" title="View Details" onClick={() => onViewDetail(tx)}>
                       <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-400 hover:text-red-600" title="Delete" onClick={() => onDelete(tx)}>
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </TableCell>
