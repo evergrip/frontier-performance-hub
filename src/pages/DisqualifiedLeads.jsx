@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -16,6 +16,8 @@ export default function DisqualifiedLeads() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
@@ -51,6 +53,36 @@ export default function DisqualifiedLeads() {
   };
 
   const allDisqualifiedCount = leads.filter(l => l.status === 'disqualified').length;
+
+  const getDqDate = (lead) => {
+    const dqEntry = [...(lead.status_history || [])].reverse().find(h => h.status === 'disqualified');
+    return dqEntry?.entered_date || lead.created_date || '';
+  };
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir(field === 'date' ? 'desc' : 'asc');
+    }
+  };
+
+  const SortIcon = ({ field }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
+
+  const sortedLeads = [...disqualifiedLeads].sort((a, b) => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    switch (sortField) {
+      case 'lead': return dir * (a.title || '').localeCompare(b.title || '');
+      case 'client': return dir * getClientName(a.client_id).localeCompare(getClientName(b.client_id));
+      case 'date': return dir * (getDqDate(a).localeCompare(getDqDate(b)));
+      case 'reason': return dir * (a.disqualification_reason || '').localeCompare(b.disqualification_reason || '');
+      default: return 0;
+    }
+  });
 
   const updateLeadStatusMutation = useMutation({
     mutationFn: ({ leadId, status, currentLead }) => {
@@ -95,15 +127,28 @@ export default function DisqualifiedLeads() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-slate-50">
-                  <th className="text-left px-4 py-2.5 font-medium text-slate-600">Lead</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-slate-600">Client</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-slate-600">Disqualified</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-slate-600">Reason</th>
+                  {[
+                    { key: 'lead', label: 'Lead' },
+                    { key: 'client', label: 'Client' },
+                    { key: 'date', label: 'Disqualified' },
+                    { key: 'reason', label: 'Reason' },
+                  ].map(col => (
+                    <th
+                      key={col.key}
+                      className="text-left px-4 py-2.5 font-medium text-slate-600 cursor-pointer hover:text-slate-900 select-none"
+                      onClick={() => toggleSort(col.key)}
+                    >
+                      <span className="inline-flex items-center">
+                        {col.label}
+                        <SortIcon field={col.key} />
+                      </span>
+                    </th>
+                  ))}
                   <th className="text-right px-4 py-2.5 font-medium text-slate-600"></th>
                 </tr>
               </thead>
               <tbody>
-                {disqualifiedLeads.map(lead => (
+                {sortedLeads.map(lead => (
                   <tr key={lead.id} className="border-b last:border-0 hover:bg-slate-50">
                     <td className="px-4 py-2.5 font-medium text-slate-900">{lead.title}</td>
                     <td className="px-4 py-2.5 text-slate-500">{getClientName(lead.client_id)}</td>
