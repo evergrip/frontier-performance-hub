@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Search } from 'lucide-react';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -14,6 +15,7 @@ export default function DisqualifiedLeads() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
@@ -33,12 +35,22 @@ export default function DisqualifiedLeads() {
     initialData: [],
   });
 
-  const disqualifiedLeads = leads.filter(l => l.status === 'disqualified');
+  const disqualifiedLeads = leads.filter(l => {
+    if (l.status !== 'disqualified') return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const clientName = getClientName(l.client_id).toLowerCase();
+    return (l.title || '').toLowerCase().includes(q) ||
+           clientName.includes(q) ||
+           (l.disqualification_reason || '').toLowerCase().includes(q);
+  });
 
   const getClientName = (clientId) => {
     const client = clients.find(c => c.id === clientId);
     return client?.company_name || client?.contact_name || 'Unknown Client';
   };
+
+  const allDisqualifiedCount = leads.filter(l => l.status === 'disqualified').length;
 
   const updateLeadStatusMutation = useMutation({
     mutationFn: ({ leadId, status, currentLead }) => {
@@ -63,8 +75,18 @@ export default function DisqualifiedLeads() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Disqualified Leads</h1>
-          <p className="text-sm text-slate-500">{disqualifiedLeads.length} disqualified leads</p>
+          <p className="text-sm text-slate-500">{allDisqualifiedCount} disqualified leads</p>
         </div>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Input
+          placeholder="Search by lead name, client, or reason..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
       {disqualifiedLeads.length > 0 ? (
