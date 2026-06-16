@@ -109,6 +109,23 @@ export default function EditLeadDialog({ open, onOpenChange, lead, clients, user
             </Select>
           </div>
 
+          {/* Client contact info (read-only) */}
+          {form.client_id && (() => {
+            const selectedClient = clients.find(c => c.id === form.client_id);
+            if (!selectedClient) return null;
+            const hasInfo = selectedClient.email || selectedClient.phone || selectedClient.address;
+            if (!hasInfo) return null;
+            return (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Client Contact</p>
+                {selectedClient.contact_name && <p className="text-sm text-slate-700">{selectedClient.contact_name}</p>}
+                {selectedClient.email && <p className="text-sm text-slate-600">{selectedClient.email}</p>}
+                {selectedClient.phone && <p className="text-sm text-slate-600">{selectedClient.phone}</p>}
+                {selectedClient.address && <p className="text-sm text-slate-600">{selectedClient.address}</p>}
+              </div>
+            );
+          })()}
+
           <div>
             <Label>Lead Source</Label>
             <LeadSourcePicker value={form.source || ''} onChange={(v) => set('source', v)} />

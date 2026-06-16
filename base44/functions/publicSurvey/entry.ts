@@ -347,6 +347,28 @@ Deno.serve(async (req) => {
           return Array.isArray(val) ? val.join(', ') : (val || '(no answer)');
         };
 
+        // Build respondent info section
+        const respondentName = authenticatedUser?.full_name || '';
+        const respondentEmail = authenticatedUser?.email || '';
+        let respondentInfoHtml = '';
+        if (respondentName || respondentEmail) {
+          respondentInfoHtml = `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;">
+            <p style="margin:0 0 4px;font-weight:600;color:#333645;font-size:13px;">Respondent</p>
+            ${respondentName ? `<p style="margin:0;color:#475569;font-size:14px;">${respondentName}</p>` : ''}
+            ${respondentEmail ? `<p style="margin:0;color:#475569;font-size:14px;">${respondentEmail}</p>` : ''}
+          </div>`;
+        }
+
+        // Build all answers table for default email
+        let allAnswersTableHtml = '';
+        const allAnswerRows = questions
+          .filter(q => responses[q.id] !== undefined && responses[q.id] !== null && responses[q.id] !== '')
+          .map(q => `<tr><td style="padding:6px 12px;font-weight:600;color:#333645;white-space:nowrap;vertical-align:top;border-bottom:1px solid #f1f5f9;">${q.text}</td><td style="padding:6px 12px;color:#1e293b;border-bottom:1px solid #f1f5f9;">${getAnswer(q.id)}</td></tr>`)
+          .filter(Boolean);
+        if (allAnswerRows.length > 0) {
+          allAnswersTableHtml = `<table style="border-collapse:collapse;margin:16px 0;width:100%;">${allAnswerRows.join('')}</table>`;
+        }
+
         let answersTableHtml = '';
         if (includedQIds.length > 0) {
           const rows = includedQIds.map(qId => {
@@ -383,6 +405,7 @@ Deno.serve(async (req) => {
                 <h2 style="color:#fff;margin:0;font-size:18px;">${emailSubject}</h2>
               </div>
               <div style="background:#ffffff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
+                ${respondentInfoHtml}
                 ${resolvePlaceholders(customBody).replace(/\n/g, '<br>')}
               </div>
             </div>`;
@@ -395,7 +418,8 @@ Deno.serve(async (req) => {
               <div style="background:#ffffff;padding:24px 32px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;">
                 <p style="color:#333645;font-size:15px;margin:0 0 4px;">A new response was submitted for:</p>
                 <p style="color:#ea7924;font-size:17px;font-weight:600;margin:0 0 16px;">${survey.title}</p>
-                ${answersTableHtml}
+                ${respondentInfoHtml}
+                ${includedQIds.length > 0 ? answersTableHtml : allAnswersTableHtml}
                 <p style="color:#64748b;font-size:13px;margin:16px 0 0;">Total responses: ${(survey.total_responses || 0) + 1}</p>
               </div>
             </div>`;
