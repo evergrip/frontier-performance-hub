@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Target, Briefcase, ChevronRight, Pencil, Settings2, History, Trash2 } from 'lucide-react';
+import { Target, Briefcase, ChevronRight, Pencil, Settings2, History, Trash2, Plus } from 'lucide-react';
 import LeadAlertConfigDialog from '../components/leads/LeadAlertConfigDialog';
 import LeadAlertLogDialog from '../components/leads/LeadAlertLogDialog';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import { Link } from 'react-router-dom';
 import EmptyState from '../components/common/EmptyState';
 import EditableTimeline from '../components/common/EditableTimeline';
 import EditLeadDialog from '../components/leads/EditLeadDialog';
+import AddLeadDialog from '../components/leads/AddLeadDialog';
 import { createPageUrl } from '../utils';
 
 export default function Leads() {
@@ -28,6 +29,7 @@ export default function Leads() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [alertConfigOpen, setAlertConfigOpen] = useState(false);
   const [alertLogOpen, setAlertLogOpen] = useState(false);
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [disqualifyReason, setDisqualifyReason] = useState('');
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
@@ -270,6 +272,12 @@ export default function Leads() {
         <p className="text-lg text-slate-500">Track potential projects from first contact through proposal — drag cards to advance stages</p>
       </div>
 
+      <div className="flex justify-end">
+        <Button onClick={() => setAddLeadOpen(true)} className="bg-[#ea7924] hover:bg-[#d66a1f] gap-2">
+          <Plus className="w-4 h-4" /> Add Lead
+        </Button>
+      </div>
+
       {/* Salesperson Filter & Alert Config - admin only */}
       {isAdmin && (
         <div className="flex items-center gap-3">
@@ -399,9 +407,9 @@ export default function Leads() {
             <EmptyState
               icon={Target}
               title="No leads yet"
-              description="Leads are created from the Clients page. Go to Clients → click a client → Create Lead. Once created, leads appear here and can be dragged between stages."
-              actionLabel="Go to Clients"
-              onAction={() => window.location.href = createPageUrl('Clients')}
+              description="Click 'Add Lead' above to create your first lead. You can select an existing client or create a new one at the same time."
+              actionLabel="Add Lead"
+              onAction={() => setAddLeadOpen(true)}
             />
           </CardContent>
         </Card>
@@ -533,6 +541,14 @@ export default function Leads() {
         onDisqualify={(lead) => openDisqualifyDialog(lead)}
         onDelete={(lead) => deleteLeadMutation.mutate(lead.id)}
         onViewTimeline={(lead) => { setSelectedLead(lead); setTimelineDialogOpen(true); }}
+      />
+
+      {/* Add Lead Dialog */}
+      <AddLeadDialog
+        open={addLeadOpen}
+        onOpenChange={setAddLeadOpen}
+        clients={clients}
+        users={users}
       />
 
       {/* Lead Alert Config Dialog */}
