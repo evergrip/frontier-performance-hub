@@ -10,11 +10,13 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 import EditLeadDialog from '../components/leads/EditLeadDialog';
+import DisqualifiedLeadInfoDialog from '../components/leads/DisqualifiedLeadInfoDialog';
 
 export default function DisqualifiedLeads() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
@@ -149,7 +151,7 @@ export default function DisqualifiedLeads() {
               </thead>
               <tbody>
                 {sortedLeads.map(lead => (
-                  <tr key={lead.id} className="border-b last:border-0 hover:bg-slate-50">
+                  <tr key={lead.id} className="border-b last:border-0 hover:bg-slate-50 cursor-pointer" onClick={() => { setSelectedLead(lead); setInfoDialogOpen(true); }}>
                     <td className="px-4 py-2.5 font-medium text-slate-900">{lead.title}</td>
                     <td className="px-4 py-2.5 text-slate-500">{getClientName(lead.client_id)}</td>
                     <td className="px-4 py-2.5 text-slate-500 text-xs whitespace-nowrap">
@@ -163,14 +165,14 @@ export default function DisqualifiedLeads() {
                       <div className="flex gap-1 justify-end">
                         <Button
                           size="sm" variant="ghost" className="text-xs h-7"
-                          onClick={() => { setSelectedLead(lead); setEditDialogOpen(true); }}
+                          onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); setEditDialogOpen(true); }}
                         >
-                          View
+                          Edit
                         </Button>
                         <Button
                           size="sm" variant="ghost"
                           className="text-xs h-7 text-emerald-600 hover:text-emerald-700"
-                          onClick={() => updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'new_project_lead', currentLead: lead })}
+                          onClick={(e) => { e.stopPropagation(); updateLeadStatusMutation.mutate({ leadId: lead.id, status: 'new_project_lead', currentLead: lead }); }}
                         >
                           Reactivate
                         </Button>
@@ -189,6 +191,13 @@ export default function DisqualifiedLeads() {
           </CardContent>
         </Card>
       )}
+
+      <DisqualifiedLeadInfoDialog
+        open={infoDialogOpen}
+        onOpenChange={setInfoDialogOpen}
+        lead={selectedLead}
+        client={selectedLead ? clients.find(c => c.id === selectedLead.client_id) : null}
+      />
 
       <EditLeadDialog
         open={editDialogOpen}
