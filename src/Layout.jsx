@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import FloatingReportButton from '@/components/devlog/FloatingReportButton';
 
-const PUBLIC_PAGES = ['SurveyPublic'];
+const PUBLIC_PAGES = ['SurveyPublic', 'DesignStudio'];
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
