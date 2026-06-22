@@ -16,10 +16,11 @@
         "general",
         "feasibility",
         "feedback",
-        "assessment"
+        "assessment",
+        "contest"
       ],
       "default": "general",
-      "description": "Type of survey \u2014 determines UI mode (e.g. feasibility uses tab navigation)"
+      "description": "Type of survey \u2014 determines UI mode (e.g. feasibility uses tab navigation, contest uses entry/photo upload flow)"
     },
     "status": {
       "type": "string",
