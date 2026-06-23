@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark, Sparkles, AlertCircle, Trophy } from "lucide-react";
+import { Plus, Search, ClipboardList, Eye, BarChart3, Copy, Check, ExternalLink, Pencil, Trash2, BookOpen, Bookmark, Sparkles, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { appParams } from "@/lib/app-params";
@@ -73,14 +73,6 @@ export default function Surveys() {
     setShowForm(true);
   };
 
-  const [contestMode, setContestMode] = useState(false);
-
-  const handleCreateContest = () => {
-    setEditingSurvey(null);
-    setContestMode(true);
-    setShowForm(true);
-  };
-
   const [copiedId, setCopiedId] = useState(null);
 
   const getSurveyLink = (survey) => {
@@ -110,9 +102,6 @@ export default function Surveys() {
           </Button>
           <Button variant="outline" onClick={() => setShowAIGenerate(true)}>
             <Sparkles className="w-4 h-4 mr-2" /> AI Generate
-          </Button>
-          <Button variant="outline" onClick={handleCreateContest} className="gap-2">
-            <Trophy className="w-4 h-4" /> New Contest
           </Button>
           <Button onClick={handleCreate} className="bg-[#ea7924] hover:bg-[#d66a1f]">
             <Plus className="w-4 h-4 mr-2" /> New Survey
@@ -164,8 +153,8 @@ export default function Surveys() {
               <CardContent>
                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-3 flex-wrap">
                   {survey.survey_type && survey.survey_type !== "general" && (
-                    <Badge className={`text-[10px] ${survey.survey_type === "contest" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
-                      {survey.survey_type === "feasibility" ? "Feasibility" : survey.survey_type === "assessment" ? "Assessment" : survey.survey_type === "contest" ? "Contest" : "Feedback"}
+                    <Badge className="bg-blue-100 text-blue-700 text-[10px]">
+                      {survey.survey_type === "feasibility" ? "Feasibility" : survey.survey_type === "assessment" ? "Assessment" : "Feedback"}
                     </Badge>
                   )}
                   <span>{accessLabels[survey.access_type] || "Link Only"}</span>
@@ -241,12 +230,8 @@ export default function Surveys() {
 
       <SurveyFormDialog
         open={showForm}
-        onOpenChange={(open) => {
-          setShowForm(open);
-          if (!open) setContestMode(false);
-        }}
+        onOpenChange={setShowForm}
         survey={editingSurvey}
-        contestMode={contestMode}
       />
 
       <SurveyTemplateLibrary

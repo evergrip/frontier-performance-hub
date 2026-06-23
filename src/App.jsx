@@ -19,7 +19,6 @@ const ProcessMapView = lazy(() => import('./pages/ProcessMapView'));
 const SurveyPublicPage = lazy(() => import('./pages/SurveyPublic'));
 const DevelopmentLogPage = lazy(() => import('./pages/DevelopmentLog'));
 const CommissionAuditPage = lazy(() => import('./pages/CommissionAudit'));
-const DesignStudioPage = lazy(() => import('./pages/DesignStudio'));
 
 
 
@@ -41,7 +40,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
-const PUBLIC_PATHS = ['/SurveyPublic', '/DesignStudio'];
+const PUBLIC_PATHS = ['/SurveyPublic'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -98,7 +97,6 @@ const AuthenticatedApp = () => {
         <Route path="/ProcessMapView" element={<LayoutWrapper currentPageName="ProcessMapView"><ProcessMapView /></LayoutWrapper>} />
         <Route path="/DevelopmentLog" element={<LayoutWrapper currentPageName="DevelopmentLog"><DevelopmentLogPage /></LayoutWrapper>} />
         <Route path="/CommissionAudit" element={<LayoutWrapper currentPageName="CommissionAudit"><CommissionAuditPage /></LayoutWrapper>} />
-        <Route path="/DesignStudio" element={<PageSuspense><DesignStudioPage /></PageSuspense>} />
 
         <Route path="*" element={<PageNotFound />} />
       </Routes>

@@ -310,7 +310,7 @@ function StylingTab({ form, updateStyling, setForm }) {
   );
 }
 
-export default function SurveyFormDialog({ open, onOpenChange, survey, contestMode = false }) {
+export default function SurveyFormDialog({ open, onOpenChange, survey }) {
   const queryClient = useQueryClient();
   const isEditing = !!survey;
 
@@ -361,23 +361,10 @@ export default function SurveyFormDialog({ open, onOpenChange, survey, contestMo
         thank_you_page_content: survey.thank_you_page_content || "",
         thank_you_show_social_share: survey.thank_you_show_social_share || false,
       });
-    } else if (contestMode) {
-      setForm({
-        ...defaultForm,
-        title: "",
-        survey_type: "contest",
-        description: "Upload a photo of your space for a chance to win!",
-        allow_anonymous_responses: true,
-        allow_multiple_responses: false,
-        welcome_page_enabled: true,
-        welcome_page_content: "Enter our renovation contest! Upload a photo of the room you'd love to transform, and our AI will show you what it could look like. Plus, you'll be entered to win a free design consultation.",
-        welcome_page_button_text: "Enter Now",
-        success_message: "Thank you for entering! We'll announce the winner soon.",
-      });
     } else {
       setForm(defaultForm);
     }
-  }, [survey, open, contestMode]);
+  }, [survey, open]);
 
   const mutation = useMutation({
     mutationFn: (data) => {
@@ -433,7 +420,6 @@ export default function SurveyFormDialog({ open, onOpenChange, survey, contestMo
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General Survey</SelectItem>
-                    <SelectItem value="contest">Contest / Giveaway</SelectItem>
                     <SelectItem value="feasibility">Feasibility Study</SelectItem>
                     <SelectItem value="feedback">Feedback Form</SelectItem>
                     <SelectItem value="assessment">Assessment</SelectItem>
@@ -442,8 +428,6 @@ export default function SurveyFormDialog({ open, onOpenChange, survey, contestMo
                 <p className="text-[11px] text-slate-400 mt-1">
                   {form.survey_type === "feasibility" 
                     ? "Feasibility studies use tab navigation for sections with per-section progress tracking"
-                    : form.survey_type === "contest"
-                    ? "Contests collect entries with photo uploads and optional AI design generation"
                     : "Sections are displayed as scroll-through groups"}
                 </p>
               </div>
