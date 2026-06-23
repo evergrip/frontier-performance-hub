@@ -43,7 +43,8 @@ export default function Dashboard() {
     preconRevenue: true,
     constructionRevenue: true,
     winRate: true,
-    avgProjectSize: true
+    avgProjectSize: true,
+    medianProjectSize: true
   });
 
   useEffect(() => {
@@ -298,6 +299,13 @@ export default function Dashboard() {
       ? closedConstructionProjects.reduce((sum, p) => sum + (p.contract_value || 0), 0) / closedConstructionProjects.length
       : 0;
 
+    const medianProjectSize = (() => {
+      const vals = closedConstructionProjects.map(p => p.contract_value || 0).sort((a, b) => a - b);
+      if (vals.length === 0) return 0;
+      const mid = Math.floor(vals.length / 2);
+      return vals.length % 2 !== 0 ? vals[mid] : (vals[mid - 1] + vals[mid]) / 2;
+    })();
+
     const convertedLeads = filteredLeads.filter(l => l.status === 'converted').length;
     const totalLeadsForConversion = filteredLeads.filter(l => ['converted', 'disqualified'].includes(l.status)).length;
     const conversionRate = totalLeadsForConversion > 0 ? (convertedLeads / totalLeadsForConversion) * 100 : 0;
@@ -316,7 +324,7 @@ export default function Dashboard() {
       convertedLeads, totalLeadsForConversion, conversionRate,
       proposalLeads, convertedAfterProposal, winRate,
       activeRecognizedRevenue,
-      avgProjectSize, closedConstructionProjects
+      avgProjectSize, medianProjectSize, closedConstructionProjects
     };
   }, [filteredSales, filteredProjects, filteredLeads, scopedProjects, scopedSales, scopedLeads, dateRange]);
 
@@ -656,6 +664,10 @@ export default function Dashboard() {
         )}
         {visibleMetrics.avgProjectSize && (
           <StatCard title="Avg Project Size" value={`$${(metrics.avgProjectSize / 1000).toFixed(0)}K`} icon={Building2}
+            subtitle={`${metrics.closedConstructionProjects.length} closed construction projects`} onClick={() => setDrilldownMetric('avgProjectSize')} />
+        )}
+        {visibleMetrics.medianProjectSize && (
+          <StatCard title="Median Project Size" value={`$${(metrics.medianProjectSize / 1000).toFixed(0)}K`} icon={Building2}
             subtitle={`${metrics.closedConstructionProjects.length} closed construction projects`} onClick={() => setDrilldownMetric('avgProjectSize')} />
         )}
       </div>
