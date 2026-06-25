@@ -487,9 +487,9 @@ export default function Leads() {
               <Button type="button" variant="outline" onClick={() => setSaleDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={convertToSaleMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button type="submit" disabled={convertToSaleMutation.isPending || convertToSaleMutation.isSuccess} className="bg-emerald-600 hover:bg-emerald-700">
                 <Briefcase className="w-4 h-4 mr-2" />
-                Convert to Preconstruction Sale
+                {convertToSaleMutation.isPending ? 'Converting...' : 'Convert to Preconstruction Sale'}
               </Button>
             </div>
           </form>
