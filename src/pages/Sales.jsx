@@ -1148,9 +1148,9 @@ export default function Sales() {
               <Button type="button" variant="outline" onClick={() => setConstructionDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={convertToConstructionMutation.isPending || !convertAuditPassed} className="bg-amber-600 hover:bg-amber-700">
+              <Button type="submit" disabled={convertToConstructionMutation.isPending || convertToConstructionMutation.isSuccess || !convertAuditPassed} className="bg-amber-600 hover:bg-amber-700">
                 <Building2 className="w-4 h-4 mr-2" />
-                Convert to Construction
+                {convertToConstructionMutation.isPending ? 'Converting...' : 'Convert to Construction'}
               </Button>
               {!convertAuditPassed && (
                 <p className="text-xs text-red-600 mt-1">Resolve or skip all audit items before converting</p>
@@ -1560,7 +1560,7 @@ export default function Sales() {
               <Button variant="outline" onClick={() => setReopenPreconDialogOpen(false)}>Cancel</Button>
               <Button
                 className={reopenAction === 'convert' ? 'bg-amber-600 hover:bg-amber-700' : ''}
-                disabled={reopenPreconMutation.isPending || (reopenAction === 'convert' && !constructionForm.construction_budget)}
+                disabled={reopenPreconMutation.isPending || reopenPreconMutation.isSuccess || (reopenAction === 'convert' && !constructionForm.construction_budget)}
                 onClick={() => reopenPreconMutation.mutate({ sale: selectedSale, action: reopenAction })}
               >
                 {reopenAction === 'convert' ? (
