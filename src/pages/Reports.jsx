@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Briefcase, Building2, FileText, TrendingUp, Calendar, List } from 'lucide-react';
+import { BarChart3, Briefcase, Building2, FileText, TrendingUp, Calendar } from 'lucide-react';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format } from 'date-fns';
 import { getFiscalYearDates } from '../components/utils/fiscalYear';
 import SalesReport from '../components/reports/SalesReport';
@@ -237,7 +237,7 @@ export default function Reports() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="sales" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Sales
@@ -249,10 +249,6 @@ export default function Reports() {
           <TabsTrigger value="construction" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" />
             Construction
-          </TabsTrigger>
-          <TabsTrigger value="salesbymonth" className="flex items-center gap-2">
-            <List className="w-4 h-4" />
-            Sales by Month
           </TabsTrigger>
           <TabsTrigger value="company" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
@@ -270,10 +266,6 @@ export default function Reports() {
 
         <TabsContent value="construction" className="space-y-6 mt-6">
           <ConstructionPerformanceReport dateRange={dateRange} staffId={selectedStaffId} />
-        </TabsContent>
-
-        <TabsContent value="salesbymonth" className="space-y-6 mt-6">
-          <SalesByMonthReport dateRange={dateRange} staffId={selectedStaffId} />
         </TabsContent>
 
         <TabsContent value="company" className="space-y-6 mt-6">

@@ -10,6 +10,7 @@ import { TrendingUp, TrendingDown, Minus, DollarSign } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Bar, ComposedChart } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, eachQuarterOfInterval, startOfQuarter, endOfQuarter } from 'date-fns';
 import QualifiedLeadsBySourceReport from './QualifiedLeadsBySourceReport';
+import SalesByMonthReport from './SalesByMonthReport';
 
 export default function SalesReport({ dateRange, staffId }) {
   const [trendPeriod, setTrendPeriod] = useState('monthly');
@@ -775,6 +776,9 @@ export default function SalesReport({ dateRange, staffId }) {
           )}
         </CardContent>
       </Card>
+      {/* Sales by Month */}
+      <SalesByMonthReport dateRange={dateRange} staffId={staffId} />
+
       {/* Qualified Leads by Source */}
       <QualifiedLeadsBySourceReport leads={leads} dateRange={dateRange} staffId={staffId} />
     </div>
