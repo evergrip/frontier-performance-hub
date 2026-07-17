@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, CalendarRange, Building2, Wrench, Eye, EyeOf
 import { toast } from 'sonner';
 
 import { getFiscalYearLabel } from '@/components/utils/fiscalYear';
+import { calculateAllocatedRevenue, getProjectRevenue } from '@/lib/projectFinancials';
 
 export default function ConstructionForecast({ projects, clients, sales, companySettings, onProjectClick, preconSales, onPreconSaleClick }) {
   const queryClient = useQueryClient();
@@ -82,7 +83,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
     projects.forEach(project => {
       const allocations = project.monthly_revenue_allocations || [];
       const subAllocations = project.monthly_sub_allocations || [];
-      const contractValue = project.contract_value || 0;
+      const contractValue = getProjectRevenue(project);
 
       const monthValues = {};
       const monthSubPct = {};
@@ -92,7 +93,7 @@ export default function ConstructionForecast({ projects, clients, sales, company
         const key = `${fm.year}-${fm.month}`;
         const alloc = allocations.find(a => Number(a.year) === fm.year && Number(a.month) === fm.month);
         const pct = alloc ? Number(alloc.percentage) || 0 : 0;
-        const dollarValue = Math.round(contractValue * (pct / 100));
+        const dollarValue = Math.round(calculateAllocatedRevenue(project, pct));
         monthValues[key] = dollarValue;
         if (dollarValue > 0) hasAnyInFY = true;
 

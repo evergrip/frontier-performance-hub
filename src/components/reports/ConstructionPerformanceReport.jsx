@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Building2, DollarSign, Clock, TrendingUp, TrendingDown, AlertTriangle, Users } from 'lucide-react';
 import { format, differenceInDays, eachMonthOfInterval, endOfMonth } from 'date-fns';
 import DataInspector from '../common/DataInspector';
+import { calculateProjectFinancials } from '@/lib/projectFinancials';
 
 export default function ConstructionPerformanceReport({ dateRange, staffId }) {
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -117,14 +118,8 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
   const kpis = useMemo(() => {
     const totalContractValue = closedInRange.reduce((s, p) => s + (p.contract_value || 0), 0);
     
-    // Calculate true costs using actual_margin when actual_costs === contract_value (historical imports)
-    const totalTrueCosts = closedInRange.reduce((s, p) => {
-      if (p.actual_margin != null && p.actual_margin > 0) {
-        return s + (p.contract_value || 0) * (1 - p.actual_margin / 100);
-      }
-      return s + (p.actual_costs || 0);
-    }, 0);
-    const totalGrossProfit = totalContractValue - totalTrueCosts;
+    const totalActualCosts = closedInRange.reduce((s, p) => s + calculateProjectFinancials(p).costs, 0);
+    const totalGrossProfit = totalContractValue - totalActualCosts;
     const avgMargin = totalContractValue > 0 ? (totalGrossProfit / totalContractValue) * 100 : 0;
 
     // Average project duration for closed projects
@@ -142,18 +137,14 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
     }).filter(Boolean);
     const avgDuration = durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;
 
-    // Avg margin variance = actual margin - estimated margin (only for projects with estimated margin)
     const varianceProjects = closedInRange.filter(p => {
       const linkedSale = sales.find(s => s.id === p.sale_id);
       return linkedSale?.estimated_margin != null;
     });
     const avgVariance = varianceProjects.length > 0
       ? varianceProjects.reduce((sum, p) => {
-          const actualMargin = (p.actual_margin != null && p.actual_margin > 0) ? p.actual_margin
-            : (p.contract_value && p.actual_costs && p.actual_costs !== p.contract_value)
-              ? ((p.contract_value - p.actual_costs) / p.contract_value) * 100 : 0;
           const linkedSale = sales.find(s => s.id === p.sale_id);
-          return sum + (actualMargin - (linkedSale?.estimated_margin || 0));
+          return sum + (calculateProjectFinancials(p).grossMargin - (linkedSale?.estimated_margin || 0));
         }, 0) / varianceProjects.length
       : null;
 
@@ -163,7 +154,7 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
       closedCount: closedInRange.length,
       activeCount: activeProjects.length,
       totalContractValue,
-      totalActualCosts: totalTrueCosts,
+      totalActualCosts,
       totalGrossProfit,
       avgMargin,
       avgDuration,
@@ -175,25 +166,11 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
   // Project-level detail table for closed projects
   const closedProjectDetails = useMemo(() => {
     return closedInRange.map(p => {
-      // Use actual_margin field if available (historical imports have actual_costs === contract_value)
-      let margin;
-      if (p.actual_margin != null && p.actual_margin > 0) {
-        margin = p.actual_margin;
-      } else if (p.contract_value && p.actual_costs && p.actual_costs !== p.contract_value) {
-        margin = ((p.contract_value - p.actual_costs) / p.contract_value) * 100;
-      } else {
-        margin = 0;
-      }
-      
-      // Calculate true cost using margin
-      const trueCost = p.contract_value ? p.contract_value * (1 - margin / 100) : 0;
-      
-      // Variance = actual margin - estimated margin from linked sale
+      const financials = calculateProjectFinancials(p);
       const linkedSale = sales.find(s => s.id === p.sale_id);
       const estimatedMargin = linkedSale?.estimated_margin;
-      const variance = (estimatedMargin != null) ? (margin - estimatedMargin) : null;
-      
-      return { ...p, variance, margin, trueCost, estimatedMargin };
+      const variance = estimatedMargin != null ? financials.grossMargin - estimatedMargin : null;
+      return { ...p, variance, margin: financials.grossMargin, trueCost: financials.costs, estimatedMargin };
     }).sort((a, b) => (b.contract_value || 0) - (a.contract_value || 0));
   }, [closedInRange, sales]);
 

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 import DataInspector from '../common/DataInspector';
+import { calculateProjectFinancials } from '@/lib/projectFinancials';
 
 export default function MetricDrilldownDialog({ 
   open, 
@@ -121,7 +122,7 @@ export default function MetricDrilldownDialog({
 
         return {
           title: 'Construction Revenue Breakdown',
-          formula: 'Sum of (actual_costs or contract_value) for closed construction projects in date range, plus recognized revenue from active projects based on past monthly_revenue_allocations percentages applied to (actual_costs or contract_value).',
+          formula: 'Sum of contract_value for closed construction projects in the date range, plus recognized revenue from active projects based on past monthly_revenue_allocations percentages applied to contract_value.',
           items: allItems,
           columns: ['Project', 'Client', 'Status', 'Contract Value', 'Recognized Revenue', 'Margin', 'Closed Date'],
           renderRow: (p) => (
@@ -213,7 +214,7 @@ export default function MetricDrilldownDialog({
 
         return {
           title: 'Total Revenue Breakdown',
-          formula: 'Pre-Construction Revenue (closed_won precon sale contract values) + Construction Revenue (closed project actual_costs/contract_value + active project recognized revenue from monthly allocations). Does NOT include active precon sales.',
+          formula: 'Pre-Construction Revenue (closed_won precon sale contract values) + Construction Revenue (closed project contract values + active project recognized revenue from monthly allocations). Does NOT include active precon sales.',
           items: allItems,
           columns: ['Name', 'Type', 'Client', 'Revenue', 'Date'],
           renderRow: (item) => (

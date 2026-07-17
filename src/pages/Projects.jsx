@@ -26,6 +26,7 @@ import PreconAllocationDialog from '../components/projects/PreconAllocationDialo
 import SubAllocationDialog from '../components/projects/SubAllocationDialog';
 import { getFiscalYearLabel } from '../components/utils/fiscalYear';
 import { createPageUrl } from '../utils';
+import { getCloseoutCommissionDecision } from '@/lib/projectFinancials';
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -451,24 +452,31 @@ export default function Projects() {
       return;
     }
     
-    // Adjust commission with final actual costs (entered by VP of Construction)
-    if (selectedProject.sale_id) {
+    const commissionDecision = getCloseoutCommissionDecision(selectedProject, linkedSale);
+    let commissionWarning = commissionDecision.shouldProcess ? null : commissionDecision.reason;
+
+    if (commissionDecision.shouldProcess) {
+      if (commissionDecision.hasContractMismatch) {
+        commissionWarning = `Project contract value differs from linked Sale contract value; the verified linked Sale value was used`;
+        console.warn(`Commission review required for ${selectedProject.title}: ${commissionWarning}.`);
+      }
       try {
         await base44.functions.invoke('processCommission', {
-          sale_id: selectedProject.sale_id,
+          sale_id: linkedSale.id,
           sale_type: 'construction',
-          final_amount: linkedSale.contract_value || 0,
+          final_amount: commissionDecision.finalAmount,
           is_closeout: true
         });
       } catch (err) {
-        console.warn('Commission closeout adjustment skipped:', err.message || err);
+        commissionWarning = `commission processing failed: ${err.message || err}`;
+        console.warn(`Commission review required for ${selectedProject.title}: ${commissionWarning}.`);
       }
     }
     
     // Add 'closed' to status_history
     const closedHistory = [...(selectedProject.status_history || []), { status: 'closed', entered_date: new Date().toISOString(), source: 'project' }];
 
-    updateProjectStatusMutation.mutate({
+    await updateProjectStatusMutation.mutateAsync({
       projectId: selectedProject.id,
       status: 'closed',
       status_history: closedHistory,
@@ -484,6 +492,9 @@ export default function Projects() {
         return n || selectedProject.notes;
       })()
     });
+    if (commissionWarning) {
+      toast.warning(`${selectedProject.title} was closed, but commission processing requires administrative review: ${commissionWarning}.`);
+    }
   };
 
   const handleUpdateProject = (e) => {
@@ -1040,7 +1051,7 @@ export default function Projects() {
                   <div className="flex justify-between">
                     <span>Gross Profit:</span>
                     <span className="font-semibold text-emerald-700">
-                      ${((parseFloat(projectForm.actual_costs) * (parseFloat(projectForm.actual_margin) / 100)) / 1000).toFixed(0)}k
+                      ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs)) / 1000).toFixed(0)}k
                     </span>
                   </div>
                 </div>
@@ -1052,7 +1063,7 @@ export default function Projects() {
               <div className="border-t pt-4 mt-4">
                 <Label className="block mb-2">Revenue Forecast (Optional)</Label>
                 <p className="text-xs text-slate-500 mb-3">
-                  Start forecasting monthly revenue for this ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} project. You can adjust this anytime during construction.
+                  Start forecasting monthly revenue for this ${(selectedProject?.contract_value || 0).toLocaleString()} project. You can adjust this anytime during construction.
                 </p>
                 <Button
                   type="button"
@@ -1233,7 +1244,7 @@ export default function Projects() {
                   <div className="flex justify-between">
                     <span>Gross Profit:</span>
                     <span className="font-semibold text-emerald-700">
-                      ${((parseFloat(projectForm.actual_costs) * (parseFloat(projectForm.actual_margin) / 100)) / 1000).toFixed(0)}k
+                      ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs)) / 1000).toFixed(0)}k
                     </span>
                   </div>
                 </div>
@@ -1281,7 +1292,7 @@ export default function Projects() {
                       {selectedProject.monthly_revenue_allocations.reduce((sum, a) => sum + (a.percentage || 0), 0).toFixed(1)}% allocated across {selectedProject.monthly_revenue_allocations.filter(a => a.percentage > 0).length} months
                     </p>
                     <p className="text-xs text-emerald-700 mt-1">
-                      Revenue: ${(((parseFloat(projectForm.actual_costs) || 0) * selectedProject.monthly_revenue_allocations.reduce((sum, a) => sum + (a.percentage || 0), 0) / 100)).toLocaleString(undefined, {maximumFractionDigits: 0})} of ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} recognized
+                      Revenue: ${(((selectedProject.contract_value || 0) * selectedProject.monthly_revenue_allocations.reduce((sum, a) => sum + (a.percentage || 0), 0) / 100)).toLocaleString(undefined, {maximumFractionDigits: 0})} of ${(selectedProject.contract_value || 0).toLocaleString()} recognized
                     </p>
                   </div>
                 )}
@@ -1450,13 +1461,13 @@ export default function Projects() {
                 <div>
                   <Label className="text-amber-700">Variance Explanation *</Label>
                   <p className="text-xs text-amber-600 mb-2">
-                    Revenue variance of {variance.toFixed(2)}% exceeds the {threshold}% threshold. Please explain.
+                    Cost variance of {variance.toFixed(2)}% exceeds the {threshold}% threshold. Please explain.
                   </p>
                   <Input
                     type="text"
                     value={projectForm.variance_explanation}
                     onChange={(e) => setProjectForm({...projectForm, variance_explanation: e.target.value})}
-                    placeholder="Explain the difference between contract value and actual revenue"
+                    placeholder="Explain the difference between contract value and final project costs"
                     required
                   />
                 </div>
@@ -1519,7 +1530,7 @@ export default function Projects() {
             <div>
               <Label className="block mb-2">Monthly Revenue Allocation *</Label>
               <p className="text-xs text-slate-500 mb-3">
-                Distribute the ${(parseFloat(projectForm.actual_costs) || 0).toLocaleString()} gross revenue across months. Must total 100%. Switch fiscal years to allocate across multiple years.
+                Distribute the ${(selectedProject?.contract_value || 0).toLocaleString()} contract revenue across months. Must total 100%. Switch fiscal years to allocate across multiple years.
               </p>
               <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-lg p-3 bg-slate-50">
                 {monthlyAllocations
@@ -1573,13 +1584,13 @@ export default function Projects() {
                    <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
-                   <span>Actual Gross Revenue:</span>
-                   <span className="font-semibold">${((parseFloat(projectForm.actual_costs) / (1 - (parseFloat(projectForm.actual_margin) / 100))) / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
+                   <span>Contract Revenue:</span>
+                   <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
+                   </div>
+                   <div className="flex justify-between border-t border-emerald-300 pt-1 mt-1">
                    <span className="font-bold">Gross Profit:</span>
                    <span className="font-bold text-emerald-700">
-                     ${(((parseFloat(projectForm.actual_costs) / (1 - (parseFloat(projectForm.actual_margin) / 100))) - parseFloat(projectForm.actual_costs)) / 1000).toFixed(0)}k
+                     ${(((selectedProject.contract_value || 0) - parseFloat(projectForm.actual_costs)) / 1000).toFixed(0)}k
                    </span>
                   </div>
                   <div className="flex justify-between">

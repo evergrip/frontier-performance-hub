@@ -6,7 +6,7 @@ import StatCard from '../components/common/StatCard';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, format, eachMonthOfInterval } from 'date-fns';
-import { getFiscalYearLabel, getFiscalYearDates } from '../components/utils/fiscalYear';
+import { getFiscalYearDates } from '../components/utils/fiscalYear';
 import MetricDrilldownDialog from '../components/dashboard/MetricDrilldownDialog';
 import DateRangeSelector from '../components/dashboard/DateRangeSelector';
 import BuildCapacityForecast from '../components/dashboard/BuildCapacityForecast';
@@ -17,6 +17,7 @@ import MyMeetingsDashboard from '../components/dashboard/MyMeetingsDashboard';
 import GettingStartedChecklist from '../components/dashboard/GettingStartedChecklist';
 import MeetingReminderPopup from '../components/meetings/MeetingReminderPopup';
 import CEOGrossMarginDialog from '../components/dashboard/CEOGrossMarginDialog';
+import { calculateProjectFinancials } from '@/lib/projectFinancials';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -287,10 +288,9 @@ export default function Dashboard() {
     let totalProjectRevenue = 0;
     let totalGrossProfit = 0;
     closedProjects.forEach(p => {
-      const revenue = p.contract_value || 0;
-      const marginPct = p.actual_margin || 0;
-      totalProjectRevenue += revenue;
-      totalGrossProfit += revenue * (marginPct / 100);
+      const financials = calculateProjectFinancials(p);
+      totalProjectRevenue += financials.revenue;
+      totalGrossProfit += financials.grossProfit;
     });
     const marginPercent = totalProjectRevenue > 0 ? (totalGrossProfit / totalProjectRevenue) * 100 : 0;
 
