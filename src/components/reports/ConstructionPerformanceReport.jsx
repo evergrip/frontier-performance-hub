@@ -215,8 +215,8 @@ export default function ConstructionPerformanceReport({ dateRange, staffId }) {
         const alloc = (p.monthly_revenue_allocations || []).find(a => 
           (a.period === period) || (Number(a.year) === yearNum && Number(a.month) === monthNum)
         );
-        if (alloc && (p.actual_costs || p.contract_value)) {
-          const revenueBase = p.actual_costs || p.contract_value;
+        if (alloc && p.contract_value) {
+          const revenueBase = p.contract_value;
           const amount = (alloc.percentage / 100) * revenueBase;
           recognized += amount;
           // Estimate cost proportionally using margin

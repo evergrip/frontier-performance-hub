@@ -78,7 +78,7 @@ export default function MetricDrilldownDialog({
             p.monthly_revenue_allocations?.length > 0
           )
           .map(p => {
-            const revenueBase = p.actual_costs || p.contract_value || 0;
+            const revenueBase = p.contract_value || 0;
             const pastAllocations = (p.monthly_revenue_allocations || []).filter(a => {
               let aYear = a.year != null ? Number(a.year) : null;
               let aMonth = a.month != null ? Number(a.month) : null;
@@ -102,7 +102,7 @@ export default function MetricDrilldownDialog({
           })
           .filter(p => p._recognizedRevenue > 0);
 
-        const closedTotal = closedConstruction.reduce((s, p) => s + (p.actual_costs || p.contract_value || 0), 0);
+        const closedTotal = closedConstruction.reduce((s, p) => s + (p.contract_value || 0), 0);
         const activeTotal = activeWithRevenue.reduce((s, p) => s + p._recognizedRevenue, 0);
 
         const monthlyData = dateRange.start && dateRange.end ? eachMonthOfInterval({ start: dateRange.start, end: dateRange.end }).map(month => {
@@ -110,12 +110,12 @@ export default function MetricDrilldownDialog({
           const mEnd = endOfMonth(month);
           const monthRevenue = closedConstruction
             .filter(p => { const d = getProjectEffectiveDate(p); return d >= mStart && d <= mEnd; })
-            .reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+            .reduce((sum, p) => sum + (p.contract_value || 0), 0);
           return { month: format(month, 'MMM yy'), revenue: monthRevenue / 1000 };
         }) : [];
 
         const allItems = [
-          ...closedConstruction.map(p => ({ ...p, _source: 'closed', _displayRevenue: p.actual_costs || p.contract_value || 0 })),
+          ...closedConstruction.map(p => ({ ...p, _source: 'closed', _displayRevenue: p.contract_value || 0 })),
           ...activeWithRevenue.map(p => ({ ...p, _source: 'active', _displayRevenue: p._recognizedRevenue })),
         ];
 
@@ -202,13 +202,13 @@ export default function MetricDrilldownDialog({
           const mStart = startOfMonth(month);
           const mEnd = endOfMonth(month);
           const precon = closedPrecon.filter(s => { const d = getSaleEffectiveDate(s); return d >= mStart && d <= mEnd; }).reduce((sum, s) => sum + (s.contract_value || 0), 0);
-          const constr = closedConstruction.filter(p => { const d = getProjectEffectiveDate(p); return d >= mStart && d <= mEnd; }).reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+          const constr = closedConstruction.filter(p => { const d = getProjectEffectiveDate(p); return d >= mStart && d <= mEnd; }).reduce((sum, p) => sum + (p.contract_value || 0), 0);
           return { month: format(month, 'MMM yy'), precon: precon / 1000, construction: constr / 1000 };
         }) : [];
 
         const allItems = [
           ...closedPrecon.map(s => ({ ...s, _type: 'precon', _revenue: s.contract_value || 0, _date: getSaleEffectiveDate(s) })),
-          ...closedConstruction.map(p => ({ ...p, _type: 'construction', _revenue: p.actual_costs || p.contract_value || 0, _date: getProjectEffectiveDate(p) }))
+          ...closedConstruction.map(p => ({ ...p, _type: 'construction', _revenue: p.contract_value || 0, _date: getProjectEffectiveDate(p) }))
         ].sort((a, b) => b._date - a._date);
 
         return {

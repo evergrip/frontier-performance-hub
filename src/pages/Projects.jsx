@@ -457,7 +457,7 @@ export default function Projects() {
         await base44.functions.invoke('processCommission', {
           sale_id: selectedProject.sale_id,
           sale_type: 'construction',
-          final_amount: parseFloat(projectForm.actual_costs) || 0,
+          final_amount: linkedSale.contract_value || 0,
           is_closeout: true
         });
       } catch (err) {
@@ -1034,7 +1034,7 @@ export default function Projects() {
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Actual Gross Revenue:</span>
+                    <span>Actual Project Costs:</span>
                     <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
@@ -1227,7 +1227,7 @@ export default function Projects() {
                     <span className="font-semibold">${((selectedProject.contract_value || 0) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Actual Gross Revenue:</span>
+                    <span>Actual Project Costs:</span>
                     <span className="font-semibold">${(parseFloat(projectForm.actual_costs) / 1000).toFixed(0)}k</span>
                   </div>
                   <div className="flex justify-between">

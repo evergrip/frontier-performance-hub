@@ -246,7 +246,7 @@ export default function Dashboard() {
     
     const closedConstructionRevenue = closedProjects
       .filter(p => p.project_type === 'construction')
-      .reduce((sum, p) => sum + (p.actual_costs || p.contract_value || 0), 0);
+      .reduce((sum, p) => sum + (p.contract_value || 0), 0);
 
     const activeRecognizedRevenue = scopedProjects
       .filter(p => 
@@ -255,7 +255,7 @@ export default function Dashboard() {
         p.monthly_revenue_allocations?.length > 0
       )
       .reduce((sum, p) => {
-        const revenueBase = p.actual_costs || p.contract_value || 0;
+        const revenueBase = p.contract_value || 0;
         const pastAllocations = (p.monthly_revenue_allocations || []).filter(a => {
           let aYear = a.year != null ? Number(a.year) : null;
           let aMonth = a.month != null ? Number(a.month) : null;
@@ -501,7 +501,7 @@ export default function Dashboard() {
         const d = getProjectEffectiveDate(p);
         return d >= mStart && d <= mEnd;
       }).forEach(p => {
-        monthConstruction += p.actual_costs || p.contract_value || 0;
+        monthConstruction += p.contract_value || 0;
       });
       
       return { month: format(month, 'MMM yy'), revenue: (monthPrecon + monthConstruction) / 1000 };
