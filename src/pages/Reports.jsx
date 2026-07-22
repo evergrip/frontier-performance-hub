@@ -15,6 +15,7 @@ import PreConstructionReport from '../components/reports/PreConstructionReport';
 import ConstructionPerformanceReport from '../components/reports/ConstructionPerformanceReport';
 import CompanyPerformanceReport from '../components/reports/CompanyPerformanceReport';
 import SalesByMonthReport from '../components/reports/SalesByMonthReport';
+import LeadPipelineReport from '../components/reports/LeadPipelineReport';
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('sales');
@@ -237,7 +238,7 @@ export default function Reports() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="sales" className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Sales
@@ -253,6 +254,10 @@ export default function Reports() {
           <TabsTrigger value="company" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Company
+          </TabsTrigger>
+          <TabsTrigger value="leads" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Leads
           </TabsTrigger>
         </TabsList>
 
@@ -270,6 +275,10 @@ export default function Reports() {
 
         <TabsContent value="company" className="space-y-6 mt-6">
           <CompanyPerformanceReport dateRange={dateRange} staffId={selectedStaffId} />
+        </TabsContent>
+
+        <TabsContent value="leads" className="space-y-6 mt-6">
+          <LeadPipelineReport dateRange={dateRange} staffId={selectedStaffId} />
         </TabsContent>
       </Tabs>
     </div>
